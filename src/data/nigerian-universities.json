@@ -1,0 +1,1197 @@
+[
+  {
+    "name": "Abubakar Tafawa Balewa University",
+    "short_name": "ATBU",
+    "type": "federal"
+  },
+  {
+    "name": "Ahmadu Bello University",
+    "short_name": "ABU",
+    "type": "federal"
+  },
+  {
+    "name": "Air Force Institute of Technology",
+    "short_name": "AFIT",
+    "type": "federal"
+  },
+  {
+    "name": "Alex Ekwueme Federal University, Ndufu-Alike",
+    "short_name": "AE-FUNAI",
+    "type": "federal"
+  },
+  {
+    "name": "Bayero University",
+    "short_name": "BUK",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University of Agriculture, Abeokuta",
+    "short_name": "FUNAAB",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University of Health Sciences, Azare",
+    "short_name": "FUHSA",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University of Health Sciences, Ila-Orangun",
+    "short_name": "FUHSI",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University of Health Sciences, Otukpo",
+    "short_name": "FUHSO",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University of Petroleum Resources",
+    "short_name": "FUPRE",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University of Technology, Akure",
+    "short_name": "FUTA",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University of Technology, Babura",
+    "short_name": "FUTB",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University of Technology, Ikot Abasi",
+    "short_name": "FUTIA",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University of Technology, Minna",
+    "short_name": "FUTMINNA",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University of Technology, Owerri",
+    "short_name": "FUTO",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University, Birnin Kebbi",
+    "short_name": "FUBK",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University, Dutse",
+    "short_name": "FUD",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University, Dutsin-Ma",
+    "short_name": "FUDMA",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University, Gashua",
+    "short_name": "FUGASHUA",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University, Gusau",
+    "short_name": "FUGUS",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University, Kashere",
+    "short_name": "FUK",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University, Lafia",
+    "short_name": "FULAFIA",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University, Lokoja",
+    "short_name": "FULOKOJA",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University, Otuoke",
+    "short_name": "FUOTUOKE",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University, Oye-Ekiti",
+    "short_name": "FUOYE",
+    "type": "federal"
+  },
+  {
+    "name": "Federal University, Wukari",
+    "short_name": "FUWUKARI",
+    "type": "federal"
+  },
+  {
+    "name": "Michael Okpara University of Agriculture",
+    "short_name": "MOUAU",
+    "type": "federal"
+  },
+  {
+    "name": "Modibbo Adama University",
+    "short_name": "MAU",
+    "type": "federal"
+  },
+  {
+    "name": "National Open University of Nigeria",
+    "short_name": "NOUN",
+    "type": "federal"
+  },
+  {
+    "name": "Nigeria Maritime University",
+    "short_name": "NMU",
+    "type": "federal"
+  },
+  {
+    "name": "Nigerian Army University, Biu",
+    "short_name": "NAUB",
+    "type": "federal"
+  },
+  {
+    "name": "Nigerian Defence Academy",
+    "short_name": "NDA",
+    "type": "federal"
+  },
+  {
+    "name": "Nigerian Police Academy",
+    "short_name": "POLAC",
+    "type": "federal"
+  },
+  {
+    "name": "Nnamdi Azikiwe University",
+    "short_name": "UNIZIK",
+    "type": "federal"
+  },
+  {
+    "name": "Obafemi Awolowo University",
+    "short_name": "OAU",
+    "type": "federal"
+  },
+  {
+    "name": "University of Abuja",
+    "short_name": "UNIABUJA",
+    "type": "federal"
+  },
+  {
+    "name": "University of Agriculture, Makurdi",
+    "short_name": "UAM",
+    "type": "federal"
+  },
+  {
+    "name": "University of Benin",
+    "short_name": "UNIBEN",
+    "type": "federal"
+  },
+  {
+    "name": "University of Calabar",
+    "short_name": "UNICAL",
+    "type": "federal"
+  },
+  {
+    "name": "University of Ibadan",
+    "short_name": "UI",
+    "type": "federal"
+  },
+  {
+    "name": "University of Ilorin",
+    "short_name": "UNILORIN",
+    "type": "federal"
+  },
+  {
+    "name": "University of Jos",
+    "short_name": "UNIJOS",
+    "type": "federal"
+  },
+  {
+    "name": "University of Lagos",
+    "short_name": "UNILAG",
+    "type": "federal"
+  },
+  {
+    "name": "University of Maiduguri",
+    "short_name": "UNIMAID",
+    "type": "federal"
+  },
+  {
+    "name": "University of Nigeria",
+    "short_name": "UNN",
+    "type": "federal"
+  },
+  {
+    "name": "University of Port Harcourt",
+    "short_name": "UNIPORT",
+    "type": "federal"
+  },
+  {
+    "name": "University of Uyo",
+    "short_name": "UNIUYO",
+    "type": "federal"
+  },
+  {
+    "name": "Usmanu Danfodiyo University",
+    "short_name": "UDUS",
+    "type": "federal"
+  },
+  {
+    "name": "Abia State University",
+    "short_name": "ABSU",
+    "type": "state"
+  },
+  {
+    "name": "Adamawa State University",
+    "short_name": "ADSU",
+    "type": "state"
+  },
+  {
+    "name": "Adekunle Ajasin University",
+    "short_name": "AAUA",
+    "type": "state"
+  },
+  {
+    "name": "Akwa Ibom State University",
+    "short_name": "AKSU",
+    "type": "state"
+  },
+  {
+    "name": "Ambrose Alli University",
+    "short_name": "AAU",
+    "type": "state"
+  },
+  {
+    "name": "Bauchi State University",
+    "short_name": "BASUG",
+    "type": "state"
+  },
+  {
+    "name": "Bayelsa Medical University",
+    "short_name": "BMU",
+    "type": "state"
+  },
+  {
+    "name": "Benue State University",
+    "short_name": "BSU",
+    "type": "state"
+  },
+  {
+    "name": "Borno State University",
+    "short_name": "BOSU",
+    "type": "state"
+  },
+  {
+    "name": "Bamidele Olumilua University of Education, Science and Technology",
+    "short_name": "BOUESTI",
+    "type": "state"
+  },
+  {
+    "name": "Chukwuemeka Odumegwu Ojukwu University",
+    "short_name": "COOU",
+    "type": "state"
+  },
+  {
+    "name": "Confluence University of Science and Technology",
+    "short_name": "CUSTECH",
+    "type": "state"
+  },
+  {
+    "name": "Cross River University of Technology",
+    "short_name": "CRUTECH",
+    "type": "state"
+  },
+  {
+    "name": "Delta State University",
+    "short_name": "DELSU",
+    "type": "state"
+  },
+  {
+    "name": "Delta University of Science and Technology",
+    "short_name": "DSUST",
+    "type": "state"
+  },
+  {
+    "name": "Dennis Osadebay University",
+    "short_name": "DOU",
+    "type": "state"
+  },
+  {
+    "name": "Ebonyi State University",
+    "short_name": "EBSU",
+    "type": "state"
+  },
+  {
+    "name": "Edo State University",
+    "short_name": "EDSU",
+    "type": "state"
+  },
+  {
+    "name": "Ekiti State University",
+    "short_name": "EKSU",
+    "type": "state"
+  },
+  {
+    "name": "Enugu State University of Science and Technology",
+    "short_name": "ESUT",
+    "type": "state"
+  },
+  {
+    "name": "First Technical University",
+    "short_name": "TECH-U",
+    "type": "state"
+  },
+  {
+    "name": "Gombe State University",
+    "short_name": "GSU",
+    "type": "state"
+  },
+  {
+    "name": "Gombe State University of Science and Technology",
+    "short_name": "GSUST",
+    "type": "state"
+  },
+  {
+    "name": "Ibrahim Badamasi Babangida University",
+    "short_name": "IBBU",
+    "type": "state"
+  },
+  {
+    "name": "Ignatius Ajuru University of Education",
+    "short_name": "IAUE",
+    "type": "state"
+  },
+  {
+    "name": "Imo State University",
+    "short_name": "IMSU",
+    "type": "state"
+  },
+  {
+    "name": "Kaduna State University",
+    "short_name": "KASU",
+    "type": "state"
+  },
+  {
+    "name": "Kano University of Science and Technology",
+    "short_name": "KUST",
+    "type": "state"
+  },
+  {
+    "name": "Kebbi State University of Science and Technology",
+    "short_name": "KSUSTA",
+    "type": "state"
+  },
+  {
+    "name": "Kingsley Ozumba Mbadiwe University",
+    "short_name": "KOMU",
+    "type": "state"
+  },
+  {
+    "name": "Kogi State University",
+    "short_name": "KSU",
+    "type": "state"
+  },
+  {
+    "name": "Kwara State University",
+    "short_name": "KWASU",
+    "type": "state"
+  },
+  {
+    "name": "Ladoke Akintola University of Technology",
+    "short_name": "LAUTECH",
+    "type": "state"
+  },
+  {
+    "name": "Lagos State University",
+    "short_name": "LASU",
+    "type": "state"
+  },
+  {
+    "name": "Lagos State University of Education",
+    "short_name": "LASUED",
+    "type": "state"
+  },
+  {
+    "name": "Lagos State University of Science and Technology",
+    "short_name": "LASUSTECH",
+    "type": "state"
+  },
+  {
+    "name": "Moshood Abiola University of Science and Technology",
+    "short_name": "MAUSTECH",
+    "type": "state"
+  },
+  {
+    "name": "Nasarawa State University",
+    "short_name": "NSUK",
+    "type": "state"
+  },
+  {
+    "name": "Niger Delta University",
+    "short_name": "NDU",
+    "type": "state"
+  },
+  {
+    "name": "Olabisi Onabanjo University",
+    "short_name": "OOU",
+    "type": "state"
+  },
+  {
+    "name": "Olusegun Agagu University of Science and Technology",
+    "short_name": "OAUSTECH",
+    "type": "state"
+  },
+  {
+    "name": "Ondo State University of Medical Sciences",
+    "short_name": "UNIMED",
+    "type": "state"
+  },
+  {
+    "name": "Osun State University",
+    "short_name": "UNIOSUN",
+    "type": "state"
+  },
+  {
+    "name": "Plateau State University",
+    "short_name": "PLASU",
+    "type": "state"
+  },
+  {
+    "name": "Prince Abubakar Audu University",
+    "short_name": "PAAU",
+    "type": "state"
+  },
+  {
+    "name": "Rivers State University",
+    "short_name": "RSU",
+    "type": "state"
+  },
+  {
+    "name": "Sa’adatu Rimi University of Education",
+    "short_name": "SRUE",
+    "type": "state"
+  },
+  {
+    "name": "Shehu Shagari University of Education",
+    "short_name": "SSUE",
+    "type": "state"
+  },
+  {
+    "name": "Sokoto State University",
+    "short_name": "SSU",
+    "type": "state"
+  },
+  {
+    "name": "Sule Lamido University",
+    "short_name": "SLU",
+    "type": "state"
+  },
+  {
+    "name": "Tai Solarin University of Education",
+    "short_name": "TASUED",
+    "type": "state"
+  },
+  {
+    "name": "Taraba State University",
+    "short_name": "TSU",
+    "type": "state"
+  },
+  {
+    "name": "Umaru Musa Yar’adua University",
+    "short_name": "UMYU",
+    "type": "state"
+  },
+  {
+    "name": "University of Cross River State",
+    "short_name": "UNICROSS",
+    "type": "state"
+  },
+  {
+    "name": "University of Delta",
+    "short_name": "UNIDEL",
+    "type": "state"
+  },
+  {
+    "name": "University of Ilesa",
+    "short_name": "UNILESA",
+    "type": "state"
+  },
+  {
+    "name": "Yobe State University",
+    "short_name": "YSU",
+    "type": "state"
+  },
+  {
+    "name": "Yusuf Maitama Sule University, Kano",
+    "short_name": "YUMSUK",
+    "type": "state"
+  },
+  {
+    "name": "Zamfara State University",
+    "short_name": "ZAMSU",
+    "type": "state"
+  },
+  {
+    "name": "Achievers University",
+    "short_name": "AU",
+    "type": "private"
+  },
+  {
+    "name": "Adeleke University",
+    "short_name": "AUE",
+    "type": "private"
+  },
+  {
+    "name": "Admiralty University of Nigeria",
+    "short_name": "ADUN",
+    "type": "private"
+  },
+  {
+    "name": "Afe Babalola University",
+    "short_name": "ABUAD",
+    "type": "private"
+  },
+  {
+    "name": "African University of Science and Technology",
+    "short_name": "AUST",
+    "type": "private"
+  },
+  {
+    "name": "Ahman Pategi University",
+    "short_name": "APU",
+    "type": "private"
+  },
+  {
+    "name": "Ajayi Crowther University",
+    "short_name": "ACU",
+    "type": "private"
+  },
+  {
+    "name": "Al-Ansar University",
+    "short_name": "AUM",
+    "type": "private"
+  },
+  {
+    "name": "Al-Hikmah University",
+    "short_name": "AHU",
+    "type": "private"
+  },
+  {
+    "name": "Al-Istiqama University",
+    "short_name": "AUSU",
+    "type": "private"
+  },
+  {
+    "name": "Al-Qalam University",
+    "short_name": "AUK",
+    "type": "private"
+  },
+  {
+    "name": "American University of Nigeria",
+    "short_name": "AUN",
+    "type": "private"
+  },
+  {
+    "name": "Anchor University",
+    "short_name": "AUL",
+    "type": "private"
+  },
+  {
+    "name": "Arthur Jarvis University",
+    "short_name": "AJU",
+    "type": "private"
+  },
+  {
+    "name": "Atiba University",
+    "short_name": "ATU",
+    "type": "private"
+  },
+  {
+    "name": "Augustine University",
+    "short_name": "AUI",
+    "type": "private"
+  },
+  {
+    "name": "Ave Maria University",
+    "short_name": "AMU",
+    "type": "private"
+  },
+  {
+    "name": "Babcock University",
+    "short_name": "BU",
+    "type": "private"
+  },
+  {
+    "name": "Baze University",
+    "short_name": "BAZE",
+    "type": "private"
+  },
+  {
+    "name": "Bells University of Technology",
+    "short_name": "BELLS",
+    "type": "private"
+  },
+  {
+    "name": "Benson Idahosa University",
+    "short_name": "BIU",
+    "type": "private"
+  },
+  {
+    "name": "Bingham University",
+    "short_name": "BHU",
+    "type": "private"
+  },
+  {
+    "name": "Bowen University",
+    "short_name": "BOWEN",
+    "type": "private"
+  },
+  {
+    "name": "British Canadian University",
+    "short_name": "BCU",
+    "type": "private"
+  },
+  {
+    "name": "Caleb University",
+    "short_name": "CUL",
+    "type": "private"
+  },
+  {
+    "name": "Capital City University",
+    "short_name": "CCU",
+    "type": "private"
+  },
+  {
+    "name": "Caritas University",
+    "short_name": "CUE",
+    "type": "private"
+  },
+  {
+    "name": "Chrisland University",
+    "short_name": "CHRISLAND",
+    "type": "private"
+  },
+  {
+    "name": "Christopher University",
+    "short_name": "UNICHRIS",
+    "type": "private"
+  },
+  {
+    "name": "Claretian University of Nigeria",
+    "short_name": "CUN",
+    "type": "private"
+  },
+  {
+    "name": "Clifford University",
+    "short_name": "CLU",
+    "type": "private"
+  },
+  {
+    "name": "Coal City University",
+    "short_name": "CCU",
+    "type": "private"
+  },
+  {
+    "name": "Cosmopolitan University",
+    "short_name": "COSMO",
+    "type": "private"
+  },
+  {
+    "name": "Covenant University",
+    "short_name": "CU",
+    "type": "private"
+  },
+  {
+    "name": "Crawford University",
+    "short_name": "CRU",
+    "type": "private"
+  },
+  {
+    "name": "Crescent University",
+    "short_name": "CUAB",
+    "type": "private"
+  },
+  {
+    "name": "Dominican University",
+    "short_name": "DU",
+    "type": "private"
+  },
+  {
+    "name": "Dominion University",
+    "short_name": "DOMINION",
+    "type": "private"
+  },
+  {
+    "name": "Edusoko University",
+    "short_name": "EU",
+    "type": "private"
+  },
+  {
+    "name": "Edwin Clark University",
+    "short_name": "ECU",
+    "type": "private"
+  },
+  {
+    "name": "Eko University of Medical and Health Sciences",
+    "short_name": "EKOUNIMED",
+    "type": "private"
+  },
+  {
+    "name": "El-Amin University",
+    "short_name": "EL-AMIN",
+    "type": "private"
+  },
+  {
+    "name": "Elizade University",
+    "short_name": "EU",
+    "type": "private"
+  },
+  {
+    "name": "Elrazi University of Medical Sciences",
+    "short_name": "ELRAZI",
+    "type": "private"
+  },
+  {
+    "name": "European University of Nigeria",
+    "short_name": "EUN",
+    "type": "private"
+  },
+  {
+    "name": "Evangel University",
+    "short_name": "EUA",
+    "type": "private"
+  },
+  {
+    "name": "Fountain University",
+    "short_name": "FUO",
+    "type": "private"
+  },
+  {
+    "name": "Franco British International University",
+    "short_name": "FBIU",
+    "type": "private"
+  },
+  {
+    "name": "Gerar University of Medical Sciences",
+    "short_name": "GUMED",
+    "type": "private"
+  },
+  {
+    "name": "Glorious Vision University",
+    "short_name": "GVU",
+    "type": "private"
+  },
+  {
+    "name": "Godfrey Okoye University",
+    "short_name": "GOUNI",
+    "type": "private"
+  },
+  {
+    "name": "Greenfield University",
+    "short_name": "GFU",
+    "type": "private"
+  },
+  {
+    "name": "Gregory University",
+    "short_name": "GUU",
+    "type": "private"
+  },
+  {
+    "name": "Hallmark University",
+    "short_name": "HALLMARK",
+    "type": "private"
+  },
+  {
+    "name": "Havilla University",
+    "short_name": "HUNI",
+    "type": "private"
+  },
+  {
+    "name": "Hensard University",
+    "short_name": "HENSARD",
+    "type": "private"
+  },
+  {
+    "name": "Hezekiah University",
+    "short_name": "UNIHEZ",
+    "type": "private"
+  },
+  {
+    "name": "Hillside University of Science and Technology",
+    "short_name": "HUST",
+    "type": "private"
+  },
+  {
+    "name": "Huda University",
+    "short_name": "HUG",
+    "type": "private"
+  },
+  {
+    "name": "Iconic Open University",
+    "short_name": "ICONIC",
+    "type": "private"
+  },
+  {
+    "name": "Igbinedion University",
+    "short_name": "IUO",
+    "type": "private"
+  },
+  {
+    "name": "James Hope University",
+    "short_name": "JHU",
+    "type": "private"
+  },
+  {
+    "name": "Joseph Ayo Babalola University",
+    "short_name": "JABU",
+    "type": "private"
+  },
+  {
+    "name": "Karl Kumm University",
+    "short_name": "KKU",
+    "type": "private"
+  },
+  {
+    "name": "Khadija University",
+    "short_name": "KUM",
+    "type": "private"
+  },
+  {
+    "name": "Khalifa Isiyaku Rabiu University",
+    "short_name": "KHAIRUN",
+    "type": "private"
+  },
+  {
+    "name": "Kings University",
+    "short_name": "UNIKINGS",
+    "type": "private"
+  },
+  {
+    "name": "Kola Daisi University",
+    "short_name": "KDU",
+    "type": "private"
+  },
+  {
+    "name": "Kwararafa University",
+    "short_name": "WUKARI",
+    "type": "private"
+  },
+  {
+    "name": "Landmark University",
+    "short_name": "LMU",
+    "type": "private"
+  },
+  {
+    "name": "Lead City University",
+    "short_name": "LCU",
+    "type": "private"
+  },
+  {
+    "name": "Legacy University",
+    "short_name": "LUO",
+    "type": "private"
+  },
+  {
+    "name": "Lux Mundi University",
+    "short_name": "LMU",
+    "type": "private"
+  },
+  {
+    "name": "Madonna University",
+    "short_name": "MADONNA",
+    "type": "private"
+  },
+  {
+    "name": "Maranatha University",
+    "short_name": "MUG",
+    "type": "private"
+  },
+  {
+    "name": "Margaret Lawrence University",
+    "short_name": "MLU",
+    "type": "private"
+  },
+  {
+    "name": "Maryam Abacha American University of Nigeria",
+    "short_name": "MAAUN",
+    "type": "private"
+  },
+  {
+    "name": "McPherson University",
+    "short_name": "MCU",
+    "type": "private"
+  },
+  {
+    "name": "Mercy Medical University",
+    "short_name": "MMU",
+    "type": "private"
+  },
+  {
+    "name": "Mewar University",
+    "short_name": "MEWAR",
+    "type": "private"
+  },
+  {
+    "name": "Michael and Cecilia Ibru University",
+    "short_name": "MCIU",
+    "type": "private"
+  },
+  {
+    "name": "Miva Open University",
+    "short_name": "MIVA",
+    "type": "private"
+  },
+  {
+    "name": "Mountain Top University",
+    "short_name": "MTU",
+    "type": "private"
+  },
+  {
+    "name": "Mudiame University",
+    "short_name": "MUDIAME",
+    "type": "private"
+  },
+  {
+    "name": "Muhammad Kamalud-Deen University",
+    "short_name": "MKU",
+    "type": "private"
+  },
+  {
+    "name": "Newgate University",
+    "short_name": "NUM",
+    "type": "private"
+  },
+  {
+    "name": "Nigerian British University",
+    "short_name": "NBU",
+    "type": "private"
+  },
+  {
+    "name": "Nile University of Nigeria",
+    "short_name": "NILE",
+    "type": "private"
+  },
+  {
+    "name": "Nok University",
+    "short_name": "NOK",
+    "type": "private"
+  },
+  {
+    "name": "Northwest University",
+    "short_name": "NWU",
+    "type": "private"
+  },
+  {
+    "name": "Novena University",
+    "short_name": "NOVENA",
+    "type": "private"
+  },
+  {
+    "name": "Obong University",
+    "short_name": "OBONG",
+    "type": "private"
+  },
+  {
+    "name": "Oduduwa University",
+    "short_name": "OUI",
+    "type": "private"
+  },
+  {
+    "name": "PAMO University of Medical Sciences",
+    "short_name": "PAMO",
+    "type": "private"
+  },
+  {
+    "name": "Pan-Atlantic University",
+    "short_name": "PAU",
+    "type": "private"
+  },
+  {
+    "name": "Paul University",
+    "short_name": "PAUL",
+    "type": "private"
+  },
+  {
+    "name": "Peaceland University",
+    "short_name": "PEACELAND",
+    "type": "private"
+  },
+  {
+    "name": "Pen Resource University",
+    "short_name": "PRU",
+    "type": "private"
+  },
+  {
+    "name": "Peter University",
+    "short_name": "PETER",
+    "type": "private"
+  },
+  {
+    "name": "Philomath University",
+    "short_name": "PHILOMATH",
+    "type": "private"
+  },
+  {
+    "name": "Phoenix University",
+    "short_name": "PHOENIX",
+    "type": "private"
+  },
+  {
+    "name": "Precious Cornerstone University",
+    "short_name": "PCU",
+    "type": "private"
+  },
+  {
+    "name": "Rayhaan University",
+    "short_name": "RAYHAAN",
+    "type": "private"
+  },
+  {
+    "name": "Redeemer's University",
+    "short_name": "RUN",
+    "type": "private"
+  },
+  {
+    "name": "Renaissance University",
+    "short_name": "RNU",
+    "type": "private"
+  },
+  {
+    "name": "Rhema University",
+    "short_name": "RHEMA",
+    "type": "private"
+  },
+  {
+    "name": "Ritman University",
+    "short_name": "RITMAN",
+    "type": "private"
+  },
+  {
+    "name": "Saisa University of Medical Sciences and Technology",
+    "short_name": "SAISA",
+    "type": "private"
+  },
+  {
+    "name": "Salem University",
+    "short_name": "SALEM",
+    "type": "private"
+  },
+  {
+    "name": "Sam Maris University",
+    "short_name": "SMU",
+    "type": "private"
+  },
+  {
+    "name": "Shanahan University",
+    "short_name": "SHANAHAN",
+    "type": "private"
+  },
+  {
+    "name": "Skyline University Nigeria",
+    "short_name": "SUN",
+    "type": "private"
+  },
+  {
+    "name": "Southwestern University",
+    "short_name": "SUN",
+    "type": "private"
+  },
+  {
+    "name": "Spiritan University",
+    "short_name": "SPIRITAN",
+    "type": "private"
+  },
+  {
+    "name": "Sports University",
+    "short_name": "SPORTS",
+    "type": "private"
+  },
+  {
+    "name": "Summit University",
+    "short_name": "SUMMIT",
+    "type": "private"
+  },
+  {
+    "name": "Tansian University",
+    "short_name": "TANSIAN",
+    "type": "private"
+  },
+  {
+    "name": "The Duke Medical University",
+    "short_name": "TDMU",
+    "type": "private"
+  },
+  {
+    "name": "Thomas Adewumi University",
+    "short_name": "TAU",
+    "type": "private"
+  },
+  {
+    "name": "Topfaith University",
+    "short_name": "TOPFAITH",
+    "type": "private"
+  },
+  {
+    "name": "Trinity University",
+    "short_name": "TRINITY",
+    "type": "private"
+  },
+  {
+    "name": "University of Mkar",
+    "short_name": "UNIMKAR",
+    "type": "private"
+  },
+  {
+    "name": "University of Offa",
+    "short_name": "UNIOFFA",
+    "type": "private"
+  },
+  {
+    "name": "University on the Niger",
+    "short_name": "UNINIGER",
+    "type": "private"
+  },
+  {
+    "name": "Venite University",
+    "short_name": "VENITE",
+    "type": "private"
+  },
+  {
+    "name": "Veritas University",
+    "short_name": "VERITAS",
+    "type": "private"
+  },
+  {
+    "name": "Wellspring University",
+    "short_name": "WELLSPRING",
+    "type": "private"
+  },
+  {
+    "name": "Wesley University",
+    "short_name": "WESLEY",
+    "type": "private"
+  },
+  {
+    "name": "West Midland Open University",
+    "short_name": "WMOU",
+    "type": "private"
+  },
+  {
+    "name": "Western Delta University",
+    "short_name": "WDU",
+    "type": "private"
+  },
+  {
+    "name": "Westland University",
+    "short_name": "WESTLAND",
+    "type": "private"
+  },
+  {
+    "name": "Wigwe University",
+    "short_name": "WIGWE",
+    "type": "private"
+  }
+]
