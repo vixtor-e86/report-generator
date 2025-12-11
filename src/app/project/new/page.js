@@ -182,7 +182,7 @@ export default function NewProject() {
               <span className="hidden sm:inline">Back to Dashboard</span>
               <span className="sm:hidden">Back</span>
             </Link>
-            <span className="text-lg sm:text-2xl font-bold text-indigo-600">📄 ReportGen</span>
+            <span className="text-lg sm:text-2xl font-bold text-indigo-600">📄 W3 WriteLab</span>
           </div>
         </div>
       </nav>

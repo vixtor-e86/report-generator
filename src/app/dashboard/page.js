@@ -77,7 +77,7 @@ export default function Dashboard() {
             {/* Logo */}
             <Link href="/dashboard" className="flex items-center gap-2 group">
               <span className="text-xl sm:text-2xl font-bold text-indigo-600 group-hover:text-indigo-700 transition">
-                📄 ReportGen
+                📄 W3 WriteLab
               </span>
             </Link>
             

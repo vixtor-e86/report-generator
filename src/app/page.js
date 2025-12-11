@@ -13,7 +13,7 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <span className="text-2xl font-bold text-indigo-600">
-                📄 ReportGen
+                📄 W3 WriteLab
               </span>
             </div>
             
@@ -410,7 +410,7 @@ export default function Home() {
               </p>
 
               <p className="text-gray-700 text-lg leading-relaxed">
-                <span className="font-bold">No manual work needed!</span> You don&apos;t need to format citations yourself—ReportGen 
+                <span className="font-bold">No manual work needed!</span> You don&apos;t need to format citations yourself—W3 WrietLab
                 handles everything automatically following IEEE standards.
               </p>
             </div>
@@ -441,7 +441,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="text-white text-lg font-bold mb-4">📄 ReportGen</h3>
+              <h3 className="text-white text-lg font-bold mb-4">📄 W3 WriteLab</h3>
               <p className="text-sm">
                 AI-powered engineering report generator for Nigerian students. 
                 Save time, maintain quality.
@@ -476,7 +476,7 @@ export default function Home() {
           </div>
           
           <div className="border-t border-gray-800 pt-8 text-center">
-            <p className="text-sm">&copy; 2024 ReportGen. All rights reserved.</p>
+            <p className="text-sm">&copy; 2024 W3 WriteLab. All rights reserved.</p>
             <p className="mt-2 text-sm">🇳🇬 Proudly built for Nigerian Engineering Students</p>
           </div>
         </div>
