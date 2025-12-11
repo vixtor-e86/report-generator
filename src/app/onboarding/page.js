@@ -77,9 +77,11 @@ export default function Onboarding() {
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    // UPDATED: Added px-4 for mobile side padding and reduced py-12 to py-6 on mobile
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        {/* UPDATED: text-2xl for mobile, 3xl for desktop */}
+        <h2 className="mt-6 text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
           Complete Your Profile
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
@@ -88,7 +90,8 @@ export default function Onboarding() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        {/* UPDATED: Added rounded-lg (always rounded) and kept shadow */}
+        <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             
             {/* Username */}
@@ -100,7 +103,8 @@ export default function Onboarding() {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  // UPDATED: text-base prevents iOS zoom, sm:text-sm for desktop
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
                   placeholder="e.g. Vixtor_Engr"
                 />
               </div>
@@ -122,7 +126,8 @@ export default function Onboarding() {
                   required
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  // UPDATED: text-base for mobile
+                  className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
                 >
                   <option value="">Select Department</option>
                   {departmentsList.map((dept, index) => (

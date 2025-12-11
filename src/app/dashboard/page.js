@@ -76,7 +76,7 @@ export default function Dashboard() {
             
             {/* Logo */}
             <Link href="/dashboard" className="flex items-center gap-2 group">
-              <span className="text-2xl font-bold text-indigo-600 group-hover:text-indigo-700 transition">
+              <span className="text-xl sm:text-2xl font-bold text-indigo-600 group-hover:text-indigo-700 transition">
                 📄 ReportGen
               </span>
             </Link>
@@ -116,7 +116,7 @@ export default function Dashboard() {
             <div className="md:hidden flex items-center">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-gray-700 hover:text-indigo-600 focus:outline-none"
+                className="text-gray-700 hover:text-indigo-600 focus:outline-none p-2"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {isMenuOpen ? (
@@ -134,14 +134,14 @@ export default function Dashboard() {
         {isMenuOpen && (
           <div className="md:hidden bg-white border-t border-gray-200 p-4">
             <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
-              <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+              <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                 {(profile.username || user.email)[0].toUpperCase()}
               </div>
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">{profile.username}</p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
               </div>
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">Free</span>
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium flex-shrink-0">Free</span>
             </div>
             <button 
               onClick={handleLogout}
@@ -157,13 +157,13 @@ export default function Dashboard() {
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 sm:mb-10">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Welcome back, {profile.username || 'Student'}! 👋</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Welcome back, {profile.username || 'Student'}! 👋</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
               {profile.department && profile.department !== 'Other' ? (
                 <span>{profile.department} • </span>
               ) : null}
@@ -172,7 +172,7 @@ export default function Dashboard() {
           </div>
           <Link 
             href="/project/new" 
-            className="bg-indigo-600 text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition shadow-md flex items-center justify-center gap-2 hover:shadow-lg"
+            className="bg-indigo-600 text-white px-4 sm:px-6 py-3 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition shadow-md flex items-center justify-center gap-2 hover:shadow-lg w-full sm:w-auto"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
@@ -182,77 +182,81 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
           {/* Plan Card */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl shadow-sm border border-green-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-700 text-sm font-medium uppercase tracking-wider">Current Plan</h3>
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 sm:p-6 rounded-xl shadow-sm border border-green-200">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-gray-700 text-xs sm:text-sm font-medium uppercase tracking-wider">Current Plan</h3>
               <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">ACTIVE</span>
             </div>
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-3xl font-bold text-gray-900">Free</span>
+              <span className="text-2xl sm:text-3xl font-bold text-gray-900">Free</span>
             </div>
-            <p className="text-sm text-gray-600">1 free report available</p>
+            <p className="text-xs sm:text-sm text-gray-600">
+                {projects.some(p => p.tier === 'free') 
+                ? '0 free reports available' 
+                : '1 free report available'}
+            </p>
           </div>
 
           {/* Total Reports Card */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">Total Projects</h3>
+          <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-gray-500 text-xs sm:text-sm font-medium uppercase tracking-wider">Total Projects</h3>
               <div className="p-2 bg-indigo-50 rounded-lg">
-                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
             </div>
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-3xl font-bold text-gray-900">{totalReports}</span>
+              <span className="text-2xl sm:text-3xl font-bold text-gray-900">{totalReports}</span>
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-500">
               {totalReports === 0 ? 'No projects yet' : `${completedReports} completed, ${inProgressReports} in progress`}
             </p>
           </div>
 
           {/* Completed Card */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">Completed</h3>
+          <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-gray-500 text-xs sm:text-sm font-medium uppercase tracking-wider">Completed</h3>
               <div className="p-2 bg-blue-50 rounded-lg">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-3xl font-bold text-gray-900">{completedReports}</span>
+              <span className="text-2xl sm:text-3xl font-bold text-gray-900">{completedReports}</span>
             </div>
-            <p className="text-sm text-gray-500">Reports ready to export</p>
+            <p className="text-xs sm:text-sm text-gray-500">Reports ready to export</p>
           </div>
 
           {/* Storage Card */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wider">Images Quota</h3>
+          <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-gray-500 text-xs sm:text-sm font-medium uppercase tracking-wider">Images Quota</h3>
               <div className="p-2 bg-orange-50 rounded-lg">
-                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
             </div>
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-3xl font-bold text-gray-900">2</span>
-              <span className="text-sm text-gray-500">images/project</span>
+              <span className="text-2xl sm:text-3xl font-bold text-gray-900">2</span>
+              <span className="text-xs sm:text-sm text-gray-500">images/project</span>
             </div>
-            <p className="text-sm text-gray-500">Free tier limit</p>
+            <p className="text-xs sm:text-sm text-gray-500">Free tier limit</p>
           </div>
         </div>
 
         {/* Recent Projects Section */}
         <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Recent Projects</h2>
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Recent Projects</h2>
             {projects.length > 0 && (
-              <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+              <button className="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700 font-medium">
                 View All →
               </button>
             )}
@@ -260,20 +264,20 @@ export default function Dashboard() {
           
           {projects.length === 0 ? (
             /* Empty State */
-            <div className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-12 text-center hover:border-indigo-400 transition group">
-              <div className="w-20 h-20 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition shadow-md">
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-8 sm:p-12 text-center hover:border-indigo-400 transition group">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition shadow-md">
+                <svg className="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Create your first report</h3>
-              <p className="text-gray-500 max-w-md mx-auto mb-8 leading-relaxed">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">Create your first report</h3>
+              <p className="text-sm sm:text-base text-gray-500 max-w-md mx-auto mb-6 sm:mb-8 leading-relaxed">
                 Start by creating a new project. You&apos;ll need your project topic, engineering department, 
                 components used, and a brief description of your project.
               </p>
               <Link 
                 href="/project/new" 
-                className="inline-flex items-center bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition shadow-md hover:shadow-lg gap-2"
+                className="inline-flex items-center bg-indigo-600 text-white px-5 sm:px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition shadow-md hover:shadow-lg gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/>
@@ -283,31 +287,31 @@ export default function Dashboard() {
             </div>
           ) : (
             /* Projects Grid */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {projects.map((project) => (
                 <Link 
                   key={project.id} 
                   href={`/project/${project.id}`}
-                  className="bg-white rounded-xl p-6 border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition group"
+                  className="bg-white rounded-xl p-5 sm:p-6 border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition group"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 text-lg mb-1 group-hover:text-indigo-600 transition line-clamp-2">
+                    <div className="flex-1 min-w-0 mr-2">
+                      <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1 group-hover:text-indigo-600 transition line-clamp-2">
                         {project.title}
                       </h3>
-                      <p className="text-sm text-gray-500">{project.department}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 truncate">{project.department}</p>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${
                       project.status === 'completed' ? 'bg-green-100 text-green-700' :
                       project.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
                       'bg-gray-100 text-gray-700'
                     }`}>
-                      {project.status === 'completed' ? 'Completed' :
-                       project.status === 'in_progress' ? 'In Progress' : 'Draft'}
+                      {project.status === 'completed' ? 'Done' :
+                       project.status === 'in_progress' ? 'Progress' : 'Draft'}
                     </span>
                   </div>
                   
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+                  <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-4">
                     {project.description}
                   </p>
 

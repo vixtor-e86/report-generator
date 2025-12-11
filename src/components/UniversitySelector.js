@@ -66,7 +66,8 @@ export default function UniversitySelector({ onSelect, selectedId }) {
   };
 
   return (
-    <div className="relative w-full max-w-md" ref={wrapperRef}>
+    // Removed max-w-md constraints here so it fills the parent container from Onboarding
+    <div className="relative w-full" ref={wrapperRef}>
       <label className="block text-sm font-medium text-gray-700 mb-1">
         Select your University
       </label>
@@ -75,7 +76,11 @@ export default function UniversitySelector({ onSelect, selectedId }) {
       <div className="relative">
         <input
           type="text"
-          className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+          // UPDATED: 
+          // 1. appearance-none: removes native mobile styles
+          // 2. text-base: prevents iOS zoom on focus (Must be 16px+)
+          // 3. sm:text-sm: scales back down for desktop
+          className="appearance-none block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-base sm:text-sm"
           placeholder={loading ? "Loading universities..." : "Type to search..."}
           value={searchTerm}
           onChange={(e) => {
@@ -95,16 +100,18 @@ export default function UniversitySelector({ onSelect, selectedId }) {
 
       {/* Dropdown List */}
       {isOpen && !loading && (
-        <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+        // UPDATED: Changed max-h-60 to max-h-[50vh] or 60 to allow better scrolling on small phones
+        <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 sm:max-h-72 overflow-y-auto">
           {filteredUnis.length > 0 ? (
             filteredUnis.map((uni) => (
               <li 
                 key={uni.id}
                 onClick={() => handleSelect(uni)}
-                className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-gray-700 border-b border-gray-100 last:border-0 flex justify-between items-center"
+                // UPDATED: Added active:bg-blue-100 for better touch feedback
+                className="px-4 py-3 hover:bg-blue-50 active:bg-blue-100 cursor-pointer text-gray-700 border-b border-gray-100 last:border-0 flex justify-between items-center text-sm sm:text-base"
               >
                 <span>{uni.name}</span>
-                <span className={`text-xs px-2 py-1 rounded-full ${
+                <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ml-2 ${
                   uni.type === 'federal' ? 'bg-green-100 text-green-700' :
                   uni.type === 'state' ? 'bg-orange-100 text-orange-700' :
                   'bg-purple-100 text-purple-700'
@@ -114,13 +121,13 @@ export default function UniversitySelector({ onSelect, selectedId }) {
               </li>
             ))
           ) : (
-            <li className="px-4 py-3 text-gray-500 italic">No universities found.</li>
+            <li className="px-4 py-3 text-gray-500 italic text-sm">No universities found.</li>
           )}
           
           {/* Always show "Other" option at bottom */}
           <li 
             onClick={handleCustom}
-            className="px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer text-blue-600 font-medium border-t-2 border-gray-100"
+            className="px-4 py-3 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 cursor-pointer text-blue-600 font-medium border-t-2 border-gray-100 text-sm sm:text-base"
           >
             My university is not listed
           </li>

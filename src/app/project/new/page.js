@@ -59,6 +59,7 @@ export default function NewProject() {
   const handleTierSelect = (tier) => {
     setSelectedTier(tier);
     
+    // Only allow FREE tier to proceed immediately
     if (tier !== 'free') {
       setShowComingSoon(true);
     }
@@ -93,16 +94,24 @@ export default function NewProject() {
     setCreating(true);
 
     try {
-      console.log('Creating project with:', {
-        user_id: user.id,
-        title: projectTitle,
-        department: department,
-        components: components,
-        description: description,
-        tier: selectedTier,
-      });
+      // Check for existing free project
+      if (selectedTier === 'free') {
+        const { data: existingProjects, error: checkError } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('tier', 'free');
 
-      // 1. Create Project
+        if (checkError) throw checkError;
+
+        if (existingProjects && existingProjects.length > 0) {
+          alert('You are limited to 1 Free project. Purchase the Standard or Premium package to create a new one.');
+          setCreating(false);
+          return;
+        }
+      }
+
+      // Create Project
       const { data: project, error: projectError } = await supabase
         .from('projects')
         .insert({
@@ -123,9 +132,7 @@ export default function NewProject() {
         throw new Error(projectError.message || 'Failed to create project');
       }
 
-      console.log('Project created:', project);
-
-      // 2. Create 5 Empty Chapters
+      // Create 5 Empty Chapters
       const chapters = [
         { project_id: project.id, chapter_number: 1, title: 'Introduction', status: 'not_generated' },
         { project_id: project.id, chapter_number: 2, title: 'Literature Review', status: 'not_generated' },
@@ -143,9 +150,7 @@ export default function NewProject() {
         throw new Error(chaptersError.message || 'Failed to create chapters');
       }
 
-      console.log('Chapters created successfully');
-
-      // 3. Redirect to Workspace
+      // Redirect to Workspace
       router.push(`/project/${project.id}`);
 
     } catch (error) {
@@ -166,164 +171,165 @@ export default function NewProject() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header - Mobile Responsive */}
       <nav className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <Link href="/dashboard" className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 text-sm sm:text-base">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
               </svg>
-              Back to Dashboard
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </Link>
-            <span className="text-2xl font-bold text-indigo-600">📄 ReportGen</span>
+            <span className="text-lg sm:text-2xl font-bold text-indigo-600">📄 ReportGen</span>
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Create New Project</h1>
-          <p className="text-gray-600 text-lg">Let&apos;s generate your engineering report in minutes</p>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-2 sm:mb-4">Create New Project</h1>
+          <p className="text-gray-600 text-sm sm:text-lg">Let&apos;s generate your engineering report in minutes</p>
         </div>
 
         {/* Step 1: Tier Selection */}
-        {!selectedTier ? (
+        {!selectedTier || showComingSoon ? (
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Step 1: Choose Your Tier</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">Step 1: Choose Your Tier</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 mb-8 sm:mb-12">
               {/* FREE Tier */}
               <div 
                 onClick={() => handleTierSelect('free')}
-                className="bg-white border-2 border-gray-300 rounded-2xl p-8 hover:border-indigo-500 hover:shadow-xl transition cursor-pointer group"
+                className="bg-white border-2 border-gray-300 rounded-xl sm:rounded-2xl p-6 sm:p-8 hover:border-indigo-500 hover:shadow-xl transition cursor-pointer group"
               >
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Free</h3>
-                  <div className="text-5xl font-extrabold text-gray-900 mb-2">₦0</div>
-                  <p className="text-gray-500">Try it out</p>
+                <div className="text-center mb-4 sm:mb-6">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Free</h3>
+                  <div className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-2">₦0</div>
+                  <p className="text-gray-500 text-sm sm:text-base">Try it out</p>
                 </div>
                 
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center gap-2 text-gray-700">
-                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
+                  <li className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     Basic AI quality
                   </li>
-                  <li className="flex items-center gap-2 text-gray-700">
-                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <li className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     2 images max
                   </li>
-                  <li className="flex items-center gap-2 text-gray-700">
-                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <li className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     PDF export only
                   </li>
                 </ul>
                 
-                <div className="bg-indigo-50 text-indigo-700 py-3 rounded-lg font-semibold text-center group-hover:bg-indigo-600 group-hover:text-white transition">
+                <div className="bg-indigo-50 text-indigo-700 py-2.5 sm:py-3 rounded-lg font-semibold text-center group-hover:bg-indigo-600 group-hover:text-white transition text-sm sm:text-base">
                   Select Free
                 </div>
               </div>
 
-              {/* STANDARD Tier */}
+              {/* STANDARD Tier - UPDATED PRICE */}
               <div 
                 onClick={() => handleTierSelect('standard')}
-                className="bg-gradient-to-br from-indigo-50 to-white border-2 border-indigo-500 rounded-2xl p-8 relative hover:shadow-2xl transition cursor-pointer group transform hover:scale-105"
+                className="bg-gradient-to-br from-indigo-50 to-white border-2 border-indigo-500 rounded-xl sm:rounded-2xl p-6 sm:p-8 relative hover:shadow-2xl transition cursor-pointer group transform hover:scale-105"
               >
-                <div className="absolute top-0 right-0 bg-indigo-600 text-white px-4 py-1 rounded-bl-lg rounded-tr-xl text-sm font-bold">
+                <div className="absolute top-0 right-0 bg-indigo-600 text-white px-3 py-1 rounded-bl-lg rounded-tr-xl text-xs sm:text-sm font-bold">
                   POPULAR
                 </div>
                 
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Standard</h3>
-                  <div className="text-5xl font-extrabold text-indigo-600 mb-2">₦7,500</div>
-                  <p className="text-gray-500">Best value</p>
+                <div className="text-center mb-4 sm:mb-6">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Standard</h3>
+                  <div className="text-4xl sm:text-5xl font-extrabold text-indigo-600 mb-2">₦10,000</div>
+                  <p className="text-gray-500 text-sm sm:text-base">Best value</p>
                 </div>
                 
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center gap-2 text-gray-700 font-semibold">
+                <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
+                  <li className="flex items-center gap-2 text-gray-700 font-semibold text-sm sm:text-base">
                     Everything in Free, plus:
                   </li>
-                  <li className="flex items-center gap-2 text-gray-700">
-                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <li className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     Enhanced AI (Gemini Pro)
                   </li>
-                  <li className="flex items-center gap-2 text-gray-700">
-                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <li className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     5 images max
                   </li>
-                  <li className="flex items-center gap-2 text-gray-700">
-                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <li className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     DOCX export
                   </li>
                 </ul>
                 
-                <div className="bg-indigo-600 text-white py-3 rounded-lg font-semibold text-center group-hover:bg-indigo-700 transition">
+                <div className="bg-indigo-600 text-white py-2.5 sm:py-3 rounded-lg font-semibold text-center group-hover:bg-indigo-700 transition text-sm sm:text-base">
                   Select Standard
                 </div>
               </div>
 
-              {/* PREMIUM Tier */}
+              {/* PREMIUM Tier - UPDATED PRICE */}
               <div 
                 onClick={() => handleTierSelect('premium')}
-                className="bg-white border-2 border-gray-300 rounded-2xl p-8 hover:border-purple-500 hover:shadow-xl transition cursor-pointer group"
+                className="bg-white border-2 border-gray-300 rounded-xl sm:rounded-2xl p-6 sm:p-8 hover:border-purple-500 hover:shadow-xl transition cursor-pointer group sm:col-span-2 lg:col-span-1"
               >
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium</h3>
-                  <div className="text-5xl font-extrabold text-gray-900 mb-2">₦15,000</div>
-                  <p className="text-gray-500">Best quality</p>
+                <div className="text-center mb-4 sm:mb-6">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Premium</h3>
+                  <div className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-2">₦20,000</div>
+                  <p className="text-gray-500 text-sm sm:text-base">Best quality</p>
                 </div>
                 
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center gap-2 text-gray-700 font-semibold">
+                <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
+                  <li className="flex items-center gap-2 text-gray-700 font-semibold text-sm sm:text-base">
                     Everything in Standard, plus:
                   </li>
-                  <li className="flex items-center gap-2 text-gray-700">
-                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <li className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     Premium AI (Claude 3.5)
                   </li>
-                  <li className="flex items-center gap-2 text-gray-700">
-                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <li className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     Unlimited images
                   </li>
-                  <li className="flex items-center gap-2 text-gray-700">
-                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <li className="flex items-center gap-2 text-gray-700 text-sm sm:text-base">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     Priority support
                   </li>
                 </ul>
                 
-                <div className="bg-gray-900 text-white py-3 rounded-lg font-semibold text-center group-hover:bg-gray-800 transition">
+                <div className="bg-gray-900 text-white py-2.5 sm:py-3 rounded-lg font-semibold text-center group-hover:bg-gray-800 transition text-sm sm:text-base">
                   Select Premium
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          /* Step 2: Project Details Form */
+          /* Step 2: Project Details Form - Mobile Responsive */
           <div className="max-w-3xl mx-auto">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">Step 2: Project Details</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Step 2: Project Details</h2>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Selected:</span>
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                <span className="text-xs sm:text-sm text-gray-500">Selected:</span>
+                <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${
                   selectedTier === 'free' ? 'bg-gray-100 text-gray-700' :
                   selectedTier === 'standard' ? 'bg-indigo-100 text-indigo-700' :
                   'bg-purple-100 text-purple-700'
@@ -332,14 +338,14 @@ export default function NewProject() {
                 </span>
                 <button
                   onClick={() => setSelectedTier(null)}
-                  className="text-sm text-indigo-600 hover:text-indigo-700 underline"
+                  className="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700 underline"
                 >
                   Change
                 </button>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 space-y-6">
+            <div className="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-200 space-y-5 sm:space-y-6">
               {/* Project Title */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -350,7 +356,7 @@ export default function NewProject() {
                   value={projectTitle}
                   onChange={(e) => setProjectTitle(e.target.value)}
                   placeholder="e.g. Smart Home Automation System"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm sm:text-base"
                 />
               </div>
 
@@ -362,7 +368,7 @@ export default function NewProject() {
                 <select
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm sm:text-base"
                 >
                   <option value="">Select Department</option>
                   {departmentsList.map((dept, index) => (
@@ -384,14 +390,14 @@ export default function NewProject() {
                     {components.map((comp, index) => (
                       <div 
                         key={index}
-                        className="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2"
+                        className="bg-indigo-100 text-indigo-700 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2"
                       >
-                        {comp}
+                        <span className="truncate max-w-[150px] sm:max-w-none">{comp}</span>
                         <button
                           onClick={() => removeComponent(index)}
-                          className="hover:text-indigo-900 transition"
+                          className="hover:text-indigo-900 transition flex-shrink-0"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
@@ -406,17 +412,17 @@ export default function NewProject() {
                     value={componentInput}
                     onChange={(e) => setComponentInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addComponent())}
-                    placeholder="e.g. Arduino Uno, DHT11 Sensor..."
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                    placeholder="e.g. Arduino Uno, DHT11..."
+                    className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-sm sm:text-base"
                   />
                   <button
                     onClick={addComponent}
-                    className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center gap-2"
+                    className="bg-indigo-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center gap-1.5 sm:gap-2 flex-shrink-0"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                     </svg>
-                    Add
+                    <span className="hidden sm:inline">Add</span>
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Press Enter or click Add to add each component</p>
@@ -430,29 +436,29 @@ export default function NewProject() {
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  rows="6"
+                  rows="5"
                   placeholder="Describe what your project does, its purpose, and main features..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none text-sm sm:text-base"
                 />
                 <p className="text-xs text-gray-500 mt-1">{description.length} characters</p>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-4 pt-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 sm:pt-6">
                 <button
                   onClick={() => setSelectedTier(null)}
-                  className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
+                  className="w-full sm:flex-1 bg-gray-100 text-gray-700 py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-gray-200 transition text-sm sm:text-base"
                 >
                   Back
                 </button>
                 <button
                   onClick={handleCreateProject}
                   disabled={creating}
-                  className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full sm:flex-1 bg-indigo-600 text-white py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   {creating ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-white border-t-transparent"></div>
                       Creating...
                     </>
                   ) : (
@@ -465,38 +471,31 @@ export default function NewProject() {
         )}
       </div>
 
-      {/* Coming Soon Modal */}
+      {/* Coming Soon Modal - Mobile Responsive */}
       {showComingSoon && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
             <div className="text-center">
-              <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Payment Coming Soon!</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Paystack integration is under development. For now, you can continue with the{' '}
-                <span className="font-semibold">{selectedTier}</span> tier features, but payment will be required before final export.
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Payment Coming Soon!</h3>
+              <p className="text-gray-600 text-sm sm:text-base mb-5 sm:mb-6 leading-relaxed">
+                Paystack integration is currently in development. The <span className="font-semibold text-gray-900">{selectedTier}</span> tier is not yet available for project creation.
+                <br /><br />
+                Please proceed with the <span className="font-bold text-indigo-600">Free</span> tier to create your project now.
               </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowComingSoon(false);
-                    setSelectedTier(null);
-                  }}
-                  className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
-                >
-                  Go Back
-                </button>
-                <button
-                  onClick={() => setShowComingSoon(false)}
-                  className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
-                >
-                  Continue Anyway
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  setShowComingSoon(false);
+                  setSelectedTier(null);
+                }}
+                className="w-full bg-indigo-600 text-white py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm sm:text-base"
+              >
+                Okay, Go Back
+              </button>
             </div>
           </div>
         </div>
