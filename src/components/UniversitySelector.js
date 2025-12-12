@@ -2,32 +2,56 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-export default function UniversitySelector({ onSelect, selectedId }) {
-  const [universities, setUniversities] = useState([]);
-  const [filteredUnis, setFilteredUnis] = useState([]);
+export default function UniversitySelector({ onSelect }) {
+  const [allInstitutions, setAllInstitutions] = useState([]);
+  const [filteredList, setFilteredList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'uni', 'poly'
+  
   const wrapperRef = useRef(null);
 
-  // 1. Fetch universities on mount
   useEffect(() => {
-    async function fetchUniversities() {
+    async function fetchInstitutions() {
       try {
         const res = await fetch('/api/universities');
         const data = await res.json();
-        setUniversities(data);
-        setFilteredUnis(data);
+        // Sort alphabetically
+        data.sort((a, b) => a.name.localeCompare(b.name));
+        setAllInstitutions(data);
+        setFilteredList(data);
       } catch (error) {
-        console.error('Failed to load universities:', error);
+        console.error('Failed to load institutions:', error);
       } finally {
         setLoading(false);
       }
     }
-    fetchUniversities();
+    fetchInstitutions();
   }, []);
 
-  // 2. Handle click outside to close dropdown
+  // Filter logic: Search Term + Category Tab
+  useEffect(() => {
+    let result = allInstitutions;
+
+    // 1. Filter by Tab
+    if (activeTab === 'uni') {
+      result = result.filter(i => ['federal', 'state', 'private'].includes(i.type));
+    } else if (activeTab === 'poly') {
+      result = result.filter(i => ['federal_poly', 'state_poly', 'private_poly'].includes(i.type));
+    }
+
+    // 2. Filter by Search
+    if (searchTerm !== '') {
+      result = result.filter(i => 
+        i.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (i.short_name && i.short_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    setFilteredList(result);
+  }, [searchTerm, activeTab, allInstitutions]);
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -38,50 +62,37 @@ export default function UniversitySelector({ onSelect, selectedId }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [wrapperRef]);
 
-  // 3. Filter list when typing
-  useEffect(() => {
-    if (searchTerm === '') {
-      setFilteredUnis(universities);
-    } else {
-      const lowerSearch = searchTerm.toLowerCase();
-      const filtered = universities.filter(uni => 
-        uni.name.toLowerCase().includes(lowerSearch)
-      );
-      setFilteredUnis(filtered);
-    }
-  }, [searchTerm, universities]);
-
-  // 4. Handle Selection
-  const handleSelect = (uni) => {
-    setSearchTerm(uni.name);
-    onSelect(uni); // Send data back to parent
+  const handleSelect = (item) => {
+    setSearchTerm(item.name);
+    onSelect(item);
     setIsOpen(false);
   };
 
-  const handleCustom = () => {
-    const customUni = { id: 'other', name: 'Other / Not Listed', type: 'custom' };
-    setSearchTerm(customUni.name);
-    onSelect(customUni);
-    setIsOpen(false);
+  const getBadgeStyle = (type) => {
+    if (type.includes('federal')) return 'bg-green-100 text-green-700 border-green-200';
+    if (type.includes('state')) return 'bg-orange-100 text-orange-700 border-orange-200';
+    return 'bg-purple-100 text-purple-700 border-purple-200';
+  };
+
+  const formatType = (type) => {
+    const map = {
+      federal: 'Fed Uni', state: 'State Uni', private: 'Private Uni',
+      federal_poly: 'Fed Poly', state_poly: 'State Poly', private_poly: 'Pvt Poly'
+    };
+    return map[type] || type;
   };
 
   return (
-    // Removed max-w-md constraints here so it fills the parent container from Onboarding
     <div className="relative w-full" ref={wrapperRef}>
       <label className="block text-sm font-medium text-gray-700 mb-1">
-        Select your University
+        Select Institution
       </label>
       
-      {/* Input Field */}
       <div className="relative">
         <input
           type="text"
-          // UPDATED: 
-          // 1. appearance-none: removes native mobile styles
-          // 2. text-base: prevents iOS zoom on focus (Must be 16px+)
-          // 3. sm:text-sm: scales back down for desktop
           className="appearance-none block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-base sm:text-sm"
-          placeholder={loading ? "Loading universities..." : "Type to search..."}
+          placeholder={loading ? "Loading..." : "Search University or Poly..."}
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
@@ -92,46 +103,64 @@ export default function UniversitySelector({ onSelect, selectedId }) {
         />
         
         {loading && (
-          <div className="absolute right-3 top-3.5">
-            <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-          </div>
+          <div className="absolute right-3 top-3.5 animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
         )}
       </div>
 
-      {/* Dropdown List */}
       {isOpen && !loading && (
-        // UPDATED: Changed max-h-60 to max-h-[50vh] or 60 to allow better scrolling on small phones
-        <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 sm:max-h-72 overflow-y-auto">
-          {filteredUnis.length > 0 ? (
-            filteredUnis.map((uni) => (
-              <li 
-                key={uni.id}
-                onClick={() => handleSelect(uni)}
-                // UPDATED: Added active:bg-blue-100 for better touch feedback
-                className="px-4 py-3 hover:bg-blue-50 active:bg-blue-100 cursor-pointer text-gray-700 border-b border-gray-100 last:border-0 flex justify-between items-center text-sm sm:text-base"
-              >
-                <span>{uni.name}</span>
-                <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ml-2 ${
-                  uni.type === 'federal' ? 'bg-green-100 text-green-700' :
-                  uni.type === 'state' ? 'bg-orange-100 text-orange-700' :
-                  'bg-purple-100 text-purple-700'
-                }`}>
-                  {uni.type}
-                </span>
-              </li>
-            ))
-          ) : (
-            <li className="px-4 py-3 text-gray-500 italic text-sm">No universities found.</li>
-          )}
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
           
-          {/* Always show "Other" option at bottom */}
-          <li 
-            onClick={handleCustom}
-            className="px-4 py-3 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 cursor-pointer text-blue-600 font-medium border-t-2 border-gray-100 text-sm sm:text-base"
-          >
-            My university is not listed
-          </li>
-        </ul>
+          {/* CATEGORY TABS */}
+          <div className="flex border-b border-gray-100 bg-gray-50">
+            {['all', 'uni', 'poly'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-2 text-xs font-medium uppercase tracking-wider transition-colors ${
+                  activeTab === tab 
+                    ? 'bg-white text-blue-600 border-b-2 border-blue-600' 
+                    : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                {tab === 'all' ? 'All' : tab === 'uni' ? 'Universities' : 'Polytechnics'}
+              </button>
+            ))}
+          </div>
+
+          <ul className="max-h-60 sm:max-h-72 overflow-y-auto">
+            {filteredList.length > 0 ? (
+              filteredList.map((item) => (
+                <li 
+                  key={item.id}
+                  onClick={() => handleSelect(item)}
+                  className="px-4 py-3 hover:bg-blue-50 active:bg-blue-100 cursor-pointer text-gray-700 border-b border-gray-100 last:border-0 flex justify-between items-center"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{item.name}</span>
+                    {item.short_name && <span className="text-xs text-gray-400">{item.short_name}</span>}
+                  </div>
+                  <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded border ${getBadgeStyle(item.type)}`}>
+                    {formatType(item.type)}
+                  </span>
+                </li>
+              ))
+            ) : (
+              <li className="px-4 py-8 text-center text-gray-500 text-sm">
+                No results found.
+              </li>
+            )}
+            
+            <li 
+              onClick={() => {
+                 onSelect({ id: 'other', name: 'Other / Not Listed', type: 'custom' });
+                 setIsOpen(false);
+              }}
+              className="px-4 py-3 bg-gray-50 hover:bg-gray-100 text-blue-600 font-medium border-t border-gray-100 text-sm cursor-pointer"
+            >
+              My institution is not listed
+            </li>
+          </ul>
+        </div>
       )}
     </div>
   );

@@ -6,6 +6,8 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 async function testConnection() {
   // We are using a model confirmed to be in your list
   const modelName = "gemini-flash-latest"; 
+
+
   
   console.log(`Testing connection with '${modelName}'...`);
 

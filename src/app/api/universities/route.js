@@ -1,28 +1,30 @@
+// src/app/api/universities/route.js
+
+import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 
-export async function GET(request) {
+export async function GET() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
   try {
-    // Get search query from URL (optional, for server-side filtering)
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q');
-
-    let dbQuery = supabase
+    // Fetch ALL institutions from the database (universities + polytechnics)
+    const { data, error } = await supabase
       .from('universities')
-      .select('id, name, type')
-      .order('name');
-
-    // If there's a search term, filter by it
-    if (query) {
-      dbQuery = dbQuery.ilike('name', `%${query}%`);
-    }
-
-    const { data, error } = await dbQuery;
+      .select('*')
+      .order('name', { ascending: true });
 
     if (error) throw error;
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, { status: 200 });
+
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error fetching universities:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message 
+    }, { status: 500 });
   }
 }

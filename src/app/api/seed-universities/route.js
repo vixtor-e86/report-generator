@@ -1,42 +1,60 @@
+// src/app/api/seed-universities/route.js
+
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import universities from '@/data/nigerian-universities.json'; // Make sure this path is correct
+import universities from '@/data/nigerian-universities.json';
 
 export async function GET() {
-  // Initialize Supabase Client with Service Role (needed for admin inserts)
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
   try {
-    // 1. Check if we already have data to avoid duplicates
-    const { count, error: countError } = await supabase
+    // STEP 1: Clean the JSON file itself (Remove duplicates inside the file)
+    const uniqueNamesInFile = new Set();
+    const cleanList = [];
+
+    for (const uni of universities) {
+      // If we haven't seen this name yet in this loop, add it
+      if (!uniqueNamesInFile.has(uni.name)) {
+        uniqueNamesInFile.add(uni.name);
+        cleanList.push(uni);
+      }
+    }
+
+    // STEP 2: Check the Database for existing schools
+    const { data: existingData, error: fetchError } = await supabase
       .from('universities')
-      .select('*', { count: 'exact', head: true });
+      .select('name');
 
-    if (countError) throw countError;
+    if (fetchError) throw fetchError;
 
-    if (count > 0) {
+    // Create a Set of names that are ALREADY in the DB
+    const existingDbNames = new Set(existingData.map(u => u.name));
+
+    // STEP 3: Filter out schools that are already in the DB
+    const finalListToInsert = cleanList.filter(inst => !existingDbNames.has(inst.name));
+
+    if (finalListToInsert.length === 0) {
       return NextResponse.json({ 
-        message: 'Universities table already has data. Skipping seed.', 
-        count 
+        message: 'No new institutions to add. Database is up to date.', 
+        totalInFile: cleanList.length 
       }, { status: 200 });
     }
 
-    // 2. Insert the data
-    // Supabase will automatically map the JSON keys (name, type, etc) to columns
-    // and ignore missing columns like 'location' (leaving them null)
+    // STEP 4: Insert the final clean list
     const { data, error } = await supabase
       .from('universities')
-      .insert(universities)
+      .insert(finalListToInsert)
       .select();
 
     if (error) throw error;
 
     return NextResponse.json({
       success: true,
-      message: `Successfully seeded ${data.length} universities!`,
+      message: `Success! Added ${data.length} new institutions.`,
+      addedInstitutions: data
     }, { status: 200 });
 
   } catch (error) {

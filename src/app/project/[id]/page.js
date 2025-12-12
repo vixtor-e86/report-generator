@@ -19,14 +19,16 @@ export default function Workspace({ params }) {
   const [chapters, setChapters] = useState([]);
   const [images, setImages] = useState([]);
   const [selectedChapter, setSelectedChapter] = useState(1);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Changed default to false for mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showCaptionModal, setShowCaptionModal] = useState(false);
   const [tempImageData, setTempImageData] = useState(null);
   const [imageCaption, setImageCaption] = useState('');
   const [generating, setGenerating] = useState(false);
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
 
-  const componentRef = useRef();
+  const currentChapterRef = useRef();
+  const fullReportRef = useRef();
 
   // Load Project Data
   useEffect(() => {
@@ -37,6 +39,15 @@ export default function Workspace({ params }) {
         return;
       }
       setUser(currentUser);
+
+      // Load user profile
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('*, universities(name)')
+        .eq('id', currentUser.id)
+        .single();
+      
+      setUserProfile(profileData);
 
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
@@ -157,7 +168,7 @@ export default function Workspace({ params }) {
           : ch
       ));
 
-      alert('Chapter generated successfully! Review and approve to continue.');
+      alert('Chapter generated successfully!');
 
     } catch (error) {
       console.error('Generation error:', error);
@@ -167,13 +178,27 @@ export default function Workspace({ params }) {
     }
   };
 
-  const handlePrint = useReactToPrint({
-    contentRef: componentRef,
+  // Print Current Chapter
+  const handlePrintCurrentChapter = useReactToPrint({
+    contentRef: currentChapterRef,
     documentTitle: `Chapter-${selectedChapter}-${project?.title || 'Report'}`,
     pageStyle: `
       @page { size: auto; margin: 20mm; }
       @media print {
         body { -webkit-print-color-adjust: exact; }
+      }
+    `
+  });
+
+  // Print Full Report
+  const handlePrintFullReport = useReactToPrint({
+    contentRef: fullReportRef,
+    documentTitle: `${project?.title || 'Full-Report'}`,
+    pageStyle: `
+      @page { size: A4; margin: 25mm; }
+      @media print {
+        body { -webkit-print-color-adjust: exact; }
+        .page-break { page-break-before: always; }
       }
     `
   });
@@ -187,11 +212,12 @@ export default function Workspace({ params }) {
   }
 
   const currentChapter = chapters.find(ch => ch.chapter_number === selectedChapter);
-  const maxImages = project.tier === 'free' ? 2 : project.tier === 'standard' ? 5 : 999;
+  const maxImages = 2; // Free tier fixed at 2 images
+  const allChaptersGenerated = chapters.every(ch => ch.status === 'draft' || ch.status === 'approved');
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
-      {/* LEFT SIDEBAR - Mobile: Overlay, Desktop: Fixed width */}
+      {/* LEFT SIDEBAR */}
       <div className={`
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} 
         fixed lg:relative inset-y-0 left-0 z-40
@@ -211,7 +237,6 @@ export default function Workspace({ params }) {
               Dashboard
             </Link>
             
-            {/* Mobile: Close button */}
             <button 
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden text-gray-600 hover:text-gray-900"
@@ -224,12 +249,8 @@ export default function Workspace({ params }) {
           
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-gray-900 truncate text-sm sm:text-base">{project.title}</h2>
-            <span className={`text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ml-2 ${
-              project.tier === 'free' ? 'bg-gray-100 text-gray-700' :
-              project.tier === 'standard' ? 'bg-blue-100 text-blue-700' :
-              'bg-purple-100 text-purple-700'
-            }`}>
-              {project.tier}
+            <span className="text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ml-2 bg-gray-100 text-gray-700">
+              FREE
             </span>
           </div>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">{project.department}</p>
@@ -244,7 +265,7 @@ export default function Workspace({ params }) {
                 key={chapter.id}
                 onClick={() => {
                   setSelectedChapter(chapter.chapter_number);
-                  setSidebarOpen(false); // Close sidebar on mobile after selection
+                  setSidebarOpen(false);
                 }}
                 className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition ${
                   selectedChapter === chapter.chapter_number
@@ -333,10 +354,9 @@ export default function Workspace({ params }) {
 
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Bar - Mobile Responsive */}
+        {/* Top Bar */}
         <div className="bg-white border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4 print:hidden">
           <div className="flex justify-between items-center gap-2">
-            {/* Left: Menu + Title */}
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               <button 
                 onClick={() => setSidebarOpen(!sidebarOpen)} 
@@ -352,9 +372,8 @@ export default function Workspace({ params }) {
               </h1>
             </div>
 
-            {/* Right: Action Buttons */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              {currentChapter?.status !== 'approved' && (
+              {currentChapter?.status === 'not_generated' && (
                 <button 
                   onClick={handleGenerateChapter}
                   disabled={generating}
@@ -365,22 +384,36 @@ export default function Workspace({ params }) {
                 </button>
               )}
               
+              {/* Print Current Chapter */}
               <button 
-                onClick={handlePrint}
+                onClick={handlePrintCurrentChapter}
                 disabled={currentChapter?.status === 'not_generated'}
-                className="bg-gray-800 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold hover:bg-gray-900 transition flex items-center gap-1.5 sm:gap-2 disabled:opacity-50 text-xs sm:text-base"
+                className="bg-gray-800 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold hover:bg-gray-900 transition flex items-center gap-1.5 disabled:opacity-50 text-xs sm:text-base"
+                title="Print Current Chapter"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                <span className="hidden sm:inline">Print / Save PDF</span>
-                <span className="sm:hidden">Print</span>
+                <span className="hidden lg:inline">Print Chapter</span>
+              </button>
+
+              {/* Print Full Report */}
+              <button 
+                onClick={handlePrintFullReport}
+                disabled={!allChaptersGenerated}
+                className="bg-green-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold hover:bg-green-700 transition flex items-center gap-1.5 disabled:opacity-50 disabled:bg-gray-400 text-xs sm:text-base"
+                title={allChaptersGenerated ? "Print Full Report" : "Generate all chapters first"}
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="hidden lg:inline">Full Report</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Chapter Content Area - Mobile Responsive */}
+        {/* Chapter Content Area */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8">
           {currentChapter?.status === 'not_generated' ? (
             <div className="max-w-4xl mx-auto bg-white p-6 sm:p-12 text-center rounded-xl sm:rounded-2xl border-2 border-dashed border-gray-300">
@@ -388,10 +421,9 @@ export default function Workspace({ params }) {
               <p className="text-gray-600 text-sm sm:text-base">Click &quot;Generate Chapter&quot; to begin.</p>
             </div>
           ) : (
-            <div ref={componentRef} className="print:p-8"> 
+            <div ref={currentChapterRef} className="print:p-8"> 
               <div className="max-w-4xl mx-auto bg-white p-4 sm:p-8 lg:p-12 shadow-sm border border-gray-200 min-h-[600px] sm:min-h-[800px] print:shadow-none print:border-none print:p-0">
                 
-                {/* Academic Styling - Mobile Responsive */}
                 <div className="prose prose-sm sm:prose-lg max-w-none 
                   text-gray-900 
                   prose-p:text-justify prose-p:leading-relaxed prose-p:mb-4 sm:prose-p:mb-6
@@ -410,38 +442,114 @@ export default function Workspace({ params }) {
                     <div className="text-gray-500 italic text-sm sm:text-base">Content will appear here...</div>
                   )}
                 </div>
-
-                {/* List of Figures (Chapter 5 only) - Mobile Responsive */}
-                {currentChapter.chapter_number === 5 && images.length > 0 && (
-                  <div className="mt-12 sm:mt-16 pt-6 sm:pt-8 border-t-2 border-gray-900 break-before-page">
-                    <h2 className="text-xl sm:text-2xl font-bold text-center uppercase mb-6 sm:mb-8 text-gray-900">List of Figures</h2>
-                    <div className="space-y-8 sm:space-y-12">
-                      {images.map((img, index) => (
-                        <div key={img.id} className="flex flex-col items-center break-inside-avoid">
-                          <div className="relative w-full max-w-2xl h-[250px] sm:h-[400px] mb-3 sm:mb-4">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img 
-                              src={img.cloudinary_url} 
-                              alt={img.caption}
-                              className="w-full h-full object-contain border border-gray-200 rounded-lg"
-                            />
-                          </div>
-                          <p className="text-gray-900 font-bold italic text-center text-xs sm:text-base px-2">
-                            Figure {index + 1}: {img.caption}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Caption Modal - Mobile Responsive */}
+      {/* HIDDEN FULL REPORT FOR PRINTING */}
+      <div className="hidden print:block">
+        <div ref={fullReportRef}>
+          {/* Cover Page */}
+          <div className="min-h-screen flex flex-col items-center justify-center text-center p-12 page-break">
+            <div className="mb-12">
+              <div className="w-24 h-24 mx-auto mb-6 bg-indigo-600 rounded-full flex items-center justify-center">
+                <span className="text-4xl font-bold text-white">R</span>
+              </div>
+              <h1 className="text-4xl font-bold uppercase mb-4 text-gray-900">{project.title}</h1>
+              <div className="w-32 h-1 bg-indigo-600 mx-auto mb-8"></div>
+            </div>
+
+            <div className="space-y-3 text-lg text-gray-700 mb-12">
+              <p className="font-semibold">BY</p>
+              <p className="text-xl font-bold text-gray-900">{userProfile?.full_name || userProfile?.username || 'Student Name'}</p>
+            </div>
+
+            <div className="space-y-2 text-gray-700 mb-16">
+              <p className="font-semibold uppercase">{project.department}</p>
+              <p>{userProfile?.universities?.name || userProfile?.custom_institution || 'University Name'}</p>
+            </div>
+
+            <div className="text-gray-600">
+              <p className="font-semibold">
+                {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+
+          {/* Table of Contents */}
+          <div className="min-h-screen p-12 page-break">
+            <h2 className="text-3xl font-bold text-center uppercase mb-12 text-gray-900">Table of Contents</h2>
+            <div className="max-w-3xl mx-auto space-y-4">
+              {chapters.map((chapter, index) => (
+                <div key={chapter.id} className="flex justify-between items-baseline border-b border-gray-300 pb-2">
+                  <span className="font-semibold text-gray-900">
+                    CHAPTER {chapter.chapter_number}: {chapter.title.toUpperCase()}
+                  </span>
+                  <span className="text-gray-600">{index + 1}</span>
+                </div>
+              ))}
+              {images.length > 0 && (
+                <div className="flex justify-between items-baseline border-b border-gray-300 pb-2">
+                  <span className="font-semibold text-gray-900">LIST OF FIGURES</span>
+                  <span className="text-gray-600">{chapters.length + 1}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* All Chapters */}
+          {chapters.map((chapter) => (
+            <div key={chapter.id} className="page-break p-12">
+              <div className="prose prose-lg max-w-none 
+                text-gray-900 text-base
+                prose-p:text-justify prose-p:leading-relaxed prose-p:mb-6 prose-p:text-base
+                prose-headings:font-bold prose-headings:text-gray-900 
+                prose-h2:text-3xl prose-h2:text-center prose-h2:uppercase prose-h2:tracking-wide prose-h2:mb-10 prose-h2:mt-0
+                prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-h3:border-b prose-h3:border-gray-200 prose-h3:pb-2
+                prose-li:text-gray-800 prose-li:mb-2 prose-li:text-base
+                prose-strong:text-black prose-strong:font-bold
+                prose-table:text-base prose-td:text-base prose-th:text-base">
+                
+                {chapter.content ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {chapter.content}
+                  </ReactMarkdown>
+                ) : (
+                  <div className="text-gray-400 italic">Chapter not generated yet</div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* List of Figures */}
+          {images.length > 0 && (
+            <div className="page-break p-12">
+              <h2 className="text-3xl font-bold text-center uppercase mb-12 text-gray-900">List of Figures</h2>
+              <div className="space-y-12">
+                {images.map((img, index) => (
+                  <div key={img.id} className="flex flex-col items-center">
+                    <div className="relative w-full max-w-2xl h-[400px] mb-4">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img 
+                        src={img.cloudinary_url} 
+                        alt={img.caption}
+                        className="w-full h-full object-contain border border-gray-200 rounded-lg"
+                      />
+                    </div>
+                    <p className="text-gray-900 font-bold italic text-center">
+                      Figure {index + 1}: {img.caption}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Caption Modal */}
       {showCaptionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
@@ -460,7 +568,7 @@ export default function Workspace({ params }) {
             <textarea
               value={imageCaption}
               onChange={(e) => setImageCaption(e.target.value)}
-              placeholder="Caption..."
+              placeholder="Describe this image (e.g., 'Circuit diagram showing power supply connections')..."
               rows="3"
               className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg mb-4 sm:mb-6 text-sm sm:text-base"
               autoFocus
