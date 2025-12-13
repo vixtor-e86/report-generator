@@ -186,8 +186,23 @@ export default function Workspace({ params }) {
       @page { size: auto; margin: 20mm; }
       @media print {
         body { -webkit-print-color-adjust: exact; }
+        @page { size: auto; margin: 20mm; }
       }
-    `
+    `,
+    onBeforeGetContent: () => {
+      // Hide the full report div completely during single chapter print
+      const fullReportDiv = fullReportRef.current?.parentElement;
+      if (fullReportDiv) {
+        fullReportDiv.style.display = 'none';
+      }
+    },
+    onAfterPrint: () => {
+      // Restore the full report div after printing
+      const fullReportDiv = fullReportRef.current?.parentElement;
+      if (fullReportDiv) {
+        fullReportDiv.style.display = '';
+      }
+    }
   });
 
   // Print Full Report
@@ -200,7 +215,29 @@ export default function Workspace({ params }) {
         body { -webkit-print-color-adjust: exact; }
         .page-break { page-break-before: always; }
       }
-    `
+    `,
+    onBeforeGetContent: () => {
+      // Show the full report div and hide current chapter during full report print
+      const fullReportDiv = fullReportRef.current?.parentElement;
+      const currentChapterDiv = currentChapterRef.current;
+      if (fullReportDiv) {
+        fullReportDiv.style.display = 'block';
+      }
+      if (currentChapterDiv) {
+        currentChapterDiv.style.display = 'none';
+      }
+    },
+    onAfterPrint: () => {
+      // Restore both divs after printing
+      const fullReportDiv = fullReportRef.current?.parentElement;
+      const currentChapterDiv = currentChapterRef.current;
+      if (fullReportDiv) {
+        fullReportDiv.style.display = '';
+      }
+      if (currentChapterDiv) {
+        currentChapterDiv.style.display = '';
+      }
+    }
   });
 
   if (loading || !project) {
@@ -449,7 +486,7 @@ export default function Workspace({ params }) {
       </div>
 
       {/* HIDDEN FULL REPORT FOR PRINTING */}
-      <div className="hidden print:block">
+      <div className="hidden print:hidden">
         <div ref={fullReportRef}>
           {/* Cover Page */}
           <div className="min-h-screen flex flex-col items-center justify-center text-center p-12 page-break">

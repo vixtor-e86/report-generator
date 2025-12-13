@@ -229,8 +229,9 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center">
-            <p className="text-sm">&copy; 2024 W3 WriteLab. All rights reserved.</p>
-            <p className="mt-2 text-sm">Developed by <span className="font-semibold text-indigo-400">WaleHub</span></p>
+            <p className="text-sm">&copy; 2025 W3 WriteLab. All rights reserved.</p>
+            <p className="mt-2 text-sm">Developed by <span className="font-semibold text-indigo-400">WhaleHub</span></p>
+
           </div>
         </div>
       </footer>
