@@ -618,6 +618,7 @@ function NewProjectContent() {
   );
 }
 
+
 // ✅ Main component wrapped in Suspense
 export default function StandardNewProject() {
   return (
