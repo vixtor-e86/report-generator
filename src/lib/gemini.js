@@ -14,11 +14,11 @@ export async function generateChapter({
   previousChapters = [],
   imagesCaptions = []
 }) {
-  // Select model based on tier
-  // UPDATED: Using the aliases that we confirmed are in your active list
-  const modelName = tier === 'free' ? 'gemini-flash-latest' : 'gemini-pro-latest';
+  // Select model from environment variable or use default based on tier
+  // You can now easily change the model in .env.local!
+  const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest';
   
-  console.log(`Using model: ${modelName} for tier: ${tier}`); // Debugging help
+  console.log(`Using model: ${modelName} for tier: ${tier}`);
   
   const model = genAI.getGenerativeModel({ model: modelName });
 

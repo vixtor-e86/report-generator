@@ -607,7 +607,7 @@ export default function Workspace({ params }) {
               onChange={(e) => setImageCaption(e.target.value)}
               placeholder="Describe this image (e.g., 'Circuit diagram showing power supply connections')..."
               rows="3"
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg mb-4 sm:mb-6 text-sm sm:text-base"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg mb-4 sm:mb-6 text-sm sm:text-base placeholder-gray-700 text-gray-900"
               autoFocus
             />
             <div className="flex gap-3">

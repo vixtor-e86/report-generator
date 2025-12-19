@@ -25,3 +25,221 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* ============================================
+   PRINT STYLES FOR PDF EXPORT
+   Add this to the END of /src/app/globals.css
+   ============================================ */
+
+@media print {
+  /* Force all elements to be visible */
+  *, *::before, *::after {
+    visibility: visible !important;
+  }
+  
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide UI elements completely */
+  aside,
+  nav,
+  button,
+  header:has(button),
+  [class*="sidebar"],
+  [class*="Sidebar"],
+  [class*="TopBar"],
+  [class*="topbar"],
+  .print\:hidden,
+  [aria-label="sidebar"],
+  [role="navigation"] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 1in;
+  }
+
+  /* Body styling */
+  body {
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+    color: #000 !important;
+  }
+
+  /* Ensure main content is visible */
+  main,
+  article,
+  section,
+  .chapter-content,
+  [class*="prose"] {
+    display: block !important;
+    visibility: visible !important;
+    page-break-inside: auto !important;
+  }
+
+  /* Headings - Times New Roman */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Times New Roman', Times, serif !important;
+    font-weight: bold !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+    color: #000 !important;
+  }
+
+  h1, h2 {
+    font-size: 14pt !important;
+    text-align: center !important;
+    margin: 24pt 0 18pt 0 !important;
+    text-transform: uppercase !important;
+  }
+
+  h3 {
+    font-size: 13pt !important;
+    margin: 18pt 0 12pt 0 !important;
+    border-bottom: none !important;
+  }
+
+  h4 {
+    font-size: 12pt !important;
+    margin: 12pt 0 10pt 0 !important;
+  }
+
+  /* Paragraphs - Times New Roman, justified */
+  p {
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+    text-align: justify !important;
+    margin-bottom: 12pt !important;
+    color: #000 !important;
+    orphans: 3 !important;
+    widows: 3 !important;
+  }
+
+  /* Lists */
+  ul, ol {
+    margin-left: 0.5in !important;
+    margin-bottom: 12pt !important;
+  }
+
+  li {
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+    margin-bottom: 6pt !important;
+    color: #000 !important;
+  }
+
+  /* Images - uniform sizing */
+  img {
+    max-width: 6in !important;
+    height: auto !important;
+    page-break-inside: avoid !important;
+    display: block !important;
+    margin: 12pt auto !important;
+  }
+
+  /* Figure containers */
+  .figure-container,
+  [class*="figure"] {
+    page-break-inside: avoid !important;
+    text-align: center !important;
+    margin: 18pt 0 !important;
+  }
+
+  /* Figure captions */
+  .figure-caption,
+  [class*="caption"] {
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 11pt !important;
+    font-style: italic !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    margin-top: 6pt !important;
+    color: #000 !important;
+  }
+
+  /* Tables */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 12pt 0 !important;
+    page-break-inside: avoid !important;
+    font-size: 11pt !important;
+    font-family: 'Times New Roman', Times, serif !important;
+  }
+
+  th, td {
+    border: 1pt solid #000 !important;
+    padding: 6pt !important;
+    text-align: left !important;
+  }
+
+  th {
+    font-weight: bold !important;
+    background-color: #f0f0f0 !important;
+  }
+
+  /* Text formatting */
+  strong, b {
+    font-weight: bold !important;
+    color: #000 !important;
+  }
+
+  em, i {
+    font-style: italic !important;
+  }
+
+  /* Remove all shadows, borders, rounded corners */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Links - black, no underline */
+  a {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+
+  a[href]:after {
+    content: none !important;
+  }
+
+  /* Remove background colors and borders from containers */
+  div, section, article, main {
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Page breaks */
+  .page-break {
+    page-break-after: always !important;
+  }
+
+  /* Avoid breaks inside these elements */
+  blockquote,
+  pre,
+  code,
+  figure,
+  .figure-container {
+    page-break-inside: avoid !important;
+  }
+
+  /* Hide Next.js Image loader */
+  img[src*="/_next/image"] {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+  }
+}
