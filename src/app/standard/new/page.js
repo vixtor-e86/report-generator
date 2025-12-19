@@ -1,12 +1,13 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { CldUploadWidget } from 'next-cloudinary';
 import Image from 'next/image';
 
-export default function StandardNewProject() {
+// ✅ Separate component that uses useSearchParams
+function NewProjectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const templateId = searchParams.get('template');
@@ -614,5 +615,21 @@ export default function StandardNewProject() {
         </div>
       )}
     </div>
+  );
+}
+
+// ✅ Main component wrapped in Suspense
+export default function StandardNewProject() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <NewProjectContent />
+    </Suspense>
   );
 }
