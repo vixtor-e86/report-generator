@@ -97,13 +97,15 @@ export async function POST(request) {
         .join('\n\n');
     }
 
-    // 7. Fetch images
+   // 7. Fetch images (Fetch Global images AND images specific to this chapter)
     const { data: images } = await supabase
       .from('standard_images')
       .select('*')
       .eq('project_id', projectId)
+      // This is the magic line: get images where chapter_number is NULL OR matches current chapter
+      .or(`chapter_number.is.null,chapter_number.eq.${chapterNumber}`)
       .order('order_number', { ascending: true });
-
+      
     // 8. Fetch template structure
     const { data: template } = await supabase
       .from('templates')

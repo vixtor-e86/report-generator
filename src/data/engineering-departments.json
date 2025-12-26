@@ -1,22 +1,86 @@
-[
-  "Agricultural & Bioresources Engineering",
-  "Automotive Engineering",
-  "Biomedical Engineering",
-  "Chemical Engineering",
-  "Civil Engineering",
-  "Computer Engineering",
-  "Electrical & Electronics Engineering",
-  "Food Science & Engineering",
-  "Industrial & Production Engineering",
-  "Marine Engineering",
-  "Materials & Metallurgical Engineering",
-  "Mechanical Engineering",
-  "Mechatronics Engineering",
-  "Mining Engineering",
-  "Petroleum Engineering",
-  "Software Engineering",
-  "Structural Engineering",
-  "Systems Engineering",
-  "Telecommunications Engineering",
-  "Water Resources Engineering"
-]
+{
+  "Engineering": [
+    "Agricultural & Bioresources Engineering",
+    "Automotive Engineering",
+    "Biomedical Engineering",
+    "Chemical Engineering",
+    "Civil Engineering",
+    "Computer Engineering",
+    "Electrical & Electronics Engineering",
+    "Food Science & Engineering",
+    "Industrial & Production Engineering",
+    "Mechanical Engineering",
+    "Mechatronics Engineering",
+    "Petroleum Engineering",
+    "Software Engineering",
+    "Structural Engineering",
+    "Systems Engineering"
+  ],
+  "Science": [
+    "Biochemistry",
+    "Computer Science",
+    "Geology",
+    "Industrial Chemistry",
+    "Mathematics",
+    "Microbiology",
+    "Physics",
+    "Statistics",
+    "Zoology"
+  ],
+  "Management Sciences": [
+    "Accounting",
+    "Banking and Finance",
+    "Business Administration",
+    "Marketing",
+    "Public Administration"
+  ],
+  "Arts & Humanities": [
+    "English and Literary Studies",
+    "History and International Studies",
+    "Linguistics",
+    "Philosophy",
+    "Religious Studies",
+    "Theatre and Media Arts"
+  ],
+  "Law": [
+    "Commercial Law",
+    "International Law",
+    "Private and Property Law",
+    "Public Law"
+  ],
+  "Social Sciences": [
+    "Economics",
+    "Geography",
+    "Mass Communication",
+    "Political Science",
+    "Psychology",
+    "Sociology"
+  ],
+  "Environmental Sciences": [
+    "Architecture",
+    "Building",
+    "Estate Management",
+    "Quantity Surveying",
+    "Urban and Regional Planning"
+  ],
+  "Education": [
+    "Arts Education",
+    "Educational Management",
+    "Guidance and Counseling",
+    "Science Education",
+    "Vocational and Technical Education"
+  ],
+  "Agriculture": [
+    "Agricultural Economics",
+    "Animal Science",
+    "Crop Science",
+    "Soil Science"
+  ],
+  "Basic Medical Sciences": [
+    "Anatomy",
+    "Medical Laboratory Science",
+    "Nursing Science",
+    "Physiology",
+    "Public Health"
+  ]
+}

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import departments from '@/data/engineering-departments.json';
+import universityStructure from '@/data/engineering-departments.json'; // The file we just updated
 
 export async function GET() {
-  return NextResponse.json(departments);
+  return NextResponse.json(universityStructure);
 }

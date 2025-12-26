@@ -93,7 +93,7 @@ export default function ModifyModal({ isOpen, onClose, onSubmit, chapter }) {
               onChange={(e) => setInstruction(e.target.value.slice(0, maxChars))}
               rows="4"
               placeholder="e.g., Make it more technical with equations and formulas..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 text-sm placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none"
               autoFocus
             />
             <div className="flex justify-between items-center mt-1">

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Added useEffect
 
 export default function PreviewModal({ 
   isOpen, 
@@ -14,13 +14,7 @@ export default function PreviewModal({
   const [tokensUsed, setTokensUsed] = useState(0);
   const [estimatedTokens, setEstimatedTokens] = useState(0);
 
-  // Fetch preview when modal opens
-  useState(() => {
-    if (isOpen && chapter && !outline && !previewLoading) {
-      fetchPreview();
-    }
-  }, [isOpen]);
-
+  // ✅ FIX 1: Define the function FIRST (before using it)
   const fetchPreview = async () => {
     setPreviewLoading(true);
     setError('');
@@ -53,6 +47,14 @@ export default function PreviewModal({
       setPreviewLoading(false);
     }
   };
+
+  // ✅ FIX 2: Use useEffect (not useState) for side effects
+  useEffect(() => {
+    if (isOpen && chapter && !outline && !previewLoading) {
+      fetchPreview();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]); // Runs whenever the modal opens
 
   const handleProceed = () => {
     setOutline('');

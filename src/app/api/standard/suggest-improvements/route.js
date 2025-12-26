@@ -89,7 +89,7 @@ export async function POST(request) {
     const startTime = Date.now();
     
     const aiResult = await callAI(prompt, {
-      maxTokens: 500, // ✅ Just for suggestions
+      maxTokens: 1000, // ✅ Just for suggestions
       temperature: 0.6
     });
     

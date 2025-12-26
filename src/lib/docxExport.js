@@ -1,5 +1,18 @@
 // /src/lib/docxExport.js
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun } from 'docx';
+import { 
+  Document, 
+  Packer, 
+  Paragraph, 
+  TextRun, 
+  HeadingLevel, 
+  AlignmentType, 
+  ImageRun, 
+  Table, 
+  TableRow, 
+  TableCell, 
+  WidthType, 
+  BorderStyle 
+} from 'docx'; //
 
 export async function generateDocx(data) {
   const { project, chapters, images } = data;
@@ -30,12 +43,7 @@ export async function generateDocx(data) {
       {
         properties: {
           page: {
-            margin: {
-              top: 1440, // 1 inch
-              right: 1440,
-              bottom: 1440,
-              left: 1440,
-            },
+            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
           },
         },
         children: [
@@ -45,7 +53,7 @@ export async function generateDocx(data) {
             alignment: AlignmentType.CENTER,
             spacing: { after: 800 },
           }),
-          ...chapters.map((chapter, index) => 
+          ...chapters.map((chapter) => 
             new Paragraph({
               text: `CHAPTER ${chapter.chapter_number}: ${chapter.title.toUpperCase()}`,
               spacing: { after: 300, before: 100 },
@@ -59,12 +67,7 @@ export async function generateDocx(data) {
       ...await Promise.all(chapters.map(async (chapter) => ({
         properties: {
           page: {
-            margin: {
-              top: 1440,
-              right: 1440,
-              bottom: 1440,
-              left: 1440,
-            },
+            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
           },
         },
         children: await convertMarkdownToDocx(chapter.content || 'Content not available', validImages, chapter.chapter_number),
@@ -75,247 +78,222 @@ export async function generateDocx(data) {
   return doc;
 }
 
-// ✅ Helper function to parse inline formatting (bold, italic)
-function parseInlineFormatting(text, fontSize = 24) {
+// Helper to parse inline formatting (bold, italic)
+function parseInlineFormatting(text, fontSize = 24, isBold = false) {
   const textRuns = [];
   let currentIndex = 0;
   
-  // Match **bold** or *italic*
   const formatRegex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)/g;
   let match;
   
   while ((match = formatRegex.exec(text)) !== null) {
-    // Add plain text before the match
     if (match.index > currentIndex) {
       const plainText = text.substring(currentIndex, match.index);
       if (plainText) {
         textRuns.push(new TextRun({ 
           text: plainText,
           font: 'Times New Roman',
-          size: fontSize
+          size: fontSize,
+          bold: isBold 
         }));
       }
     }
     
-    // Add formatted text
-    if (match[2]) {
-      // Bold text (**text**)
+    if (match[2]) { // Bold
       textRuns.push(new TextRun({
         text: match[2],
         bold: true,
         font: 'Times New Roman',
         size: fontSize
       }));
-    } else if (match[4]) {
-      // Italic text (*text*)
+    } else if (match[4]) { // Italic
       textRuns.push(new TextRun({
         text: match[4],
         italics: true,
         font: 'Times New Roman',
-        size: fontSize
+        size: fontSize,
+        bold: isBold
       }));
     }
     
     currentIndex = match.index + match[0].length;
   }
   
-  // Add remaining plain text
   if (currentIndex < text.length) {
     const remainingText = text.substring(currentIndex);
     if (remainingText) {
       textRuns.push(new TextRun({ 
         text: remainingText,
         font: 'Times New Roman',
-        size: fontSize
+        size: fontSize,
+        bold: isBold
       }));
     }
   }
   
-  // If no formatting found, return plain text
   if (textRuns.length === 0) {
     textRuns.push(new TextRun({ 
       text: text,
       font: 'Times New Roman',
-      size: fontSize
+      size: fontSize,
+      bold: isBold
     }));
   }
   
   return textRuns;
 }
 
-// Convert Markdown to DOCX paragraphs with image embedding
+// Convert Markdown to DOCX paragraphs with real tables
 async function convertMarkdownToDocx(markdown, images, chapterNumber) {
   const lines = markdown.split('\n');
   const paragraphs = [];
-  let skipNextHeading = false; // Flag to skip AI-generated chapter heading
+  let skipNextHeading = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
 
     if (!line) {
-      // Empty line - add spacing
       paragraphs.push(new Paragraph({ text: '', spacing: { after: 200 } }));
       continue;
     }
 
-    // Skip the first ## heading (AI already adds "CHAPTER X: Title")
+    // Skip the first ## heading
     if (line.startsWith('## ') && !skipNextHeading) {
       skipNextHeading = true;
       continue;
     }
 
-    // Handle headings
+    // ✅ NEW: Detect and Build Tables
+    if (line.startsWith('|')) {
+      const tableLines = [line];
+      // Look ahead to capture the full table
+      let j = i + 1;
+      while (j < lines.length && lines[j].trim().startsWith('|')) {
+        tableLines.push(lines[j].trim());
+        j++;
+      }
+      // Advance the main loop index
+      i = j - 1;
+
+      // Filter out the separator line (e.g. |---|---|)
+      const contentLines = tableLines.filter(row => !row.includes('---'));
+      
+      const tableRows = contentLines.map((rowText, rowIndex) => {
+        // Remove leading/trailing pipes and split by pipe
+        const cells = rowText.split('|').filter((cell, idx, arr) => {
+          // Keep cells between pipes (ignore empty first/last if created by split)
+          return idx > 0 && idx < arr.length - 1; 
+        });
+
+        return new TableRow({
+          children: cells.map(cellText => 
+            new TableCell({
+              children: [new Paragraph({
+                children: parseInlineFormatting(cellText.trim(), 22, rowIndex === 0), // Bold header
+                alignment: AlignmentType.CENTER
+              })],
+              shading: rowIndex === 0 ? { fill: "E0E0E0" } : undefined, // Grey header background
+              verticalAlign: "center",
+              margins: {
+                top: 100, bottom: 100, left: 100, right: 100
+              }
+            })
+          )
+        });
+      });
+
+      if (tableRows.length > 0) {
+        paragraphs.push(new Table({
+          rows: tableRows,
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          borders: {
+            top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+            bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+            left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+            right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+            insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+            insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+          }
+        }));
+        // Add spacing after table
+        paragraphs.push(new Paragraph({ text: "", spacing: { after: 300 } }));
+      }
+      continue;
+    }
+
+    // Standard Headings
     if (line.startsWith('## ')) {
       paragraphs.push(new Paragraph({
-        children: [
-          new TextRun({
-            text: line.replace('## ', '').toUpperCase(),
-            font: 'Times New Roman',
-            size: 28, // 14pt
-            bold: true,
-          })
-        ],
+        children: [new TextRun({ text: line.replace('## ', '').toUpperCase(), font: 'Times New Roman', size: 28, bold: true })],
         heading: HeadingLevel.HEADING_1,
         alignment: AlignmentType.CENTER,
         spacing: { before: 400, after: 400 },
       }));
     } else if (line.startsWith('### ')) {
       paragraphs.push(new Paragraph({
-        children: [
-          new TextRun({
-            text: line.replace('### ', ''),
-            font: 'Times New Roman',
-            size: 26, // 13pt
-            bold: true,
-          })
-        ],
+        children: [new TextRun({ text: line.replace('### ', ''), font: 'Times New Roman', size: 26, bold: true })],
         heading: HeadingLevel.HEADING_2,
         spacing: { before: 300, after: 300 },
       }));
     } else if (line.startsWith('#### ')) {
       paragraphs.push(new Paragraph({
-        children: [
-          new TextRun({
-            text: line.replace('#### ', ''),
-            font: 'Times New Roman',
-            size: 24, // 12pt
-            bold: true,
-          })
-        ],
+        children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 24, bold: true })],
         heading: HeadingLevel.HEADING_3,
         spacing: { before: 200, after: 200 },
       }));
     }
-    // Handle bullet points - ✅ FIXED: Now handles bold text in bullets
+    // Bullet Points
     else if (line.startsWith('- ') || line.startsWith('* ')) {
       const bulletText = line.replace(/^[-*] /, '');
-      const formattedRuns = parseInlineFormatting(bulletText, 24); // 12pt
-      
-      // Add bullet manually
       paragraphs.push(new Paragraph({
-        children: [
-          new TextRun({ 
-            text: '• ',
-            font: 'Times New Roman',
-            size: 24
-          }),
-          ...formattedRuns
-        ],
+        children: [new TextRun({ text: '• ', font: 'Times New Roman', size: 24 }), ...parseInlineFormatting(bulletText, 24)],
         spacing: { after: 100 },
         indent: { left: 720 },
       }));
     }
-    // Handle numbered lists - ✅ FIXED: Now handles bold text in lists
+    // Numbered Lists
     else if (/^\d+\. /.test(line)) {
       paragraphs.push(new Paragraph({
-        children: parseInlineFormatting(line, 24), // 12pt
+        children: parseInlineFormatting(line, 24),
         spacing: { after: 100 },
         indent: { left: 720 },
       }));
     }
-    // Handle figure placeholders - EMBED ACTUAL IMAGES (UNCHANGED - this was working!)
+    // Images
     else if (line.includes('{{figure')) {
       const match = line.match(/\{\{figure(\d+)\.(\d+)\}\}/);
       if (match) {
         const figChapter = parseInt(match[1]);
         const figNumber = parseInt(match[2]);
-        
-        // Find the corresponding image (your original logic - it was working!)
         const imageIndex = figNumber - 1;
-        const image = images.find(img => 
-          img.placeholder_id === `figure${figChapter}.${figNumber}`
-        ) || images[imageIndex];
+        const image = images.find(img => img.placeholder_id === `figure${figChapter}.${figNumber}`) || images[imageIndex];
 
         if (image && image.buffer) {
           try {
-            // Add the actual image
             paragraphs.push(new Paragraph({
-              children: [
-                new ImageRun({
-                  data: image.buffer,
-                  transformation: {
-                    width: 500,
-                    height: 400,
-                  },
-                }),
-              ],
+              children: [new ImageRun({ data: image.buffer, transformation: { width: 500, height: 400 } })],
               alignment: AlignmentType.CENTER,
               spacing: { before: 300, after: 100 },
             }));
-
-            // Add caption below image
             paragraphs.push(new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Figure ${figChapter}.${figNumber}: ${image.caption}`,
-                  font: 'Times New Roman',
-                  size: 22, // 11pt for captions
-                  italics: true,
-                  bold: true,
-                })
-              ],
+              children: [new TextRun({ text: `Figure ${figChapter}.${figNumber}: ${image.caption}`, font: 'Times New Roman', size: 22, italics: true, bold: true })],
               alignment: AlignmentType.CENTER,
               spacing: { after: 300 },
             }));
           } catch (error) {
-            console.error('Error embedding image:', error);
-            // Fallback to placeholder text
-            paragraphs.push(new Paragraph({
-              text: `[Figure ${figChapter}.${figNumber}: ${image?.caption || 'Image'}]`,
-              italics: true,
-              alignment: AlignmentType.CENTER,
-              spacing: { before: 200, after: 200 },
-            }));
+            paragraphs.push(new Paragraph({ text: `[Figure ${figChapter}.${figNumber}: ${image?.caption || 'Image'}]`, italics: true, alignment: AlignmentType.CENTER }));
           }
         } else {
-          // No image found, show placeholder
-          paragraphs.push(new Paragraph({
-            text: `[Figure ${figChapter}.${figNumber} - Image not available]`,
-            italics: true,
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 200, after: 200 },
-          }));
+          paragraphs.push(new Paragraph({ text: `[Figure ${figChapter}.${figNumber} - Image not available]`, italics: true, alignment: AlignmentType.CENTER }));
         }
       }
     }
-    // Handle tables - ✅ FIXED: Now handles bold text in tables
-    else if (line.startsWith('|')) {
-      if (!line.includes('---')) {
-        paragraphs.push(new Paragraph({
-          children: parseInlineFormatting(line.replace(/\|/g, ' | '), 22), // 11pt for tables
-          spacing: { after: 100 },
-        }));
-      }
-    }
-    // Regular paragraphs - ✅ FIXED: Better bold/italic handling
+    // Standard Paragraph
     else {
       paragraphs.push(new Paragraph({
-        children: parseInlineFormatting(line, 24), // 12pt
+        children: parseInlineFormatting(line, 24),
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { 
-          after: 240,
-          line: 360, // 1.5 line spacing
-        },
+        spacing: { after: 240, line: 360 },
       }));
     }
   }

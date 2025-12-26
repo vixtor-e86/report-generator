@@ -219,7 +219,6 @@ export default function ChapterView({ chapter, images, generating }) {
         <div className="mt-8 pt-4 border-t border-gray-200 print:hidden">
           <div className="flex items-center justify-between text-xs text-gray-500">
             <div className="flex items-center gap-4">
-              <span>Model: {chapter.ai_model_used}</span>
               {chapter.tokens_input && chapter.tokens_output && (
                 <span>Tokens: {(chapter.tokens_input + chapter.tokens_output).toLocaleString()}</span>
               )}

@@ -13,8 +13,15 @@ export default function Onboarding() {
   // Form States
   const [username, setUsername] = useState('');
   const [university, setUniversity] = useState(null);
+  
+  // ✅ NEW: Faculty & Department States
+  const [faculty, setFaculty] = useState('');
   const [department, setDepartment] = useState('');
-  const [departmentsList, setDepartmentsList] = useState([]);
+  
+  // ✅ NEW: Data Management States
+  const [universityData, setUniversityData] = useState({}); // Stores full JSON
+  const [facultiesList, setFacultiesList] = useState([]);   // Stores ["Engineering", "Science"...]
+  const [departmentsList, setDepartmentsList] = useState([]); // Stores active department list
 
   // 1. Check Auth & Load Departments
   useEffect(() => {
@@ -27,20 +34,42 @@ export default function Onboarding() {
       }
       setUser(user);
 
-      // Load departments from our new API
-      const res = await fetch('/api/departments');
-      const data = await res.json();
-      setDepartmentsList(data);
+      // ✅ FIX: Load departments and handle Object structure
+      try {
+        const res = await fetch('/api/departments');
+        const data = await res.json();
+        
+        setUniversityData(data);
+        setFacultiesList(Object.keys(data)); // Extract Faculty names
+      } catch (error) {
+        console.error("Failed to load departments:", error);
+      }
       
       setLoading(false);
     }
     init();
   }, [router]);
 
+  // ✅ NEW: Handle Faculty Change
+  const handleFacultyChange = (e) => {
+    const selectedFaculty = e.target.value;
+    setFaculty(selectedFaculty);
+    
+    // Reset department
+    setDepartment('');
+    
+    // Update department list based on selected faculty
+    if (selectedFaculty && Array.isArray(universityData[selectedFaculty])) {
+      setDepartmentsList(universityData[selectedFaculty]);
+    } else {
+      setDepartmentsList([]);
+    }
+  };
+
   // 2. Handle Form Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!username || !university || !department) {
+    if (!username || !university || !faculty || !department) {
       alert('Please fill in all fields');
       return;
     }
@@ -57,6 +86,7 @@ export default function Onboarding() {
           username: username,
           university_id: university.id === 'other' ? null : university.id,
           custom_institution: university.id === 'other' ? university.name : null,
+          faculty: faculty, // ✅ SAVE FACULTY
           department: department,
           created_at: new Date().toISOString(),
         });
@@ -77,10 +107,8 @@ export default function Onboarding() {
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   return (
-    // UPDATED: Added px-4 for mobile side padding and reduced py-12 to py-6 on mobile
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* UPDATED: text-2xl for mobile, 3xl for desktop */}
         <h2 className="mt-6 text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
           Complete Your Profile
         </h2>
@@ -90,7 +118,6 @@ export default function Onboarding() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        {/* UPDATED: Added rounded-lg (always rounded) and kept shadow */}
         <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             
@@ -103,7 +130,6 @@ export default function Onboarding() {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  // UPDATED: text-base prevents iOS zoom, sm:text-sm for desktop
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
                   placeholder="e.g. Vixtor_Engr"
                 />
@@ -118,23 +144,56 @@ export default function Onboarding() {
                />
             </div>
 
+            {/* ✅ NEW: Faculty Selector */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Faculty</label>
+              <div className="mt-1">
+                <select
+                  required
+                  value={faculty}
+                  onChange={handleFacultyChange}
+                  className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
+                >
+                  <option value="">Select Faculty</option>
+                  {facultiesList.map((fac, index) => (
+                    <option key={index} value={fac}>{fac}</option>
+                  ))}
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
             {/* Department Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Department</label>
               <div className="mt-1">
-                <select
-                  required
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  // UPDATED: text-base for mobile
-                  className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
-                >
-                  <option value="">Select Department</option>
-                  {departmentsList.map((dept, index) => (
-                    <option key={index} value={dept}>{dept}</option>
-                  ))}
-                  <option value="Other">Other</option>
-                </select>
+                {faculty === 'Other' ? (
+                  // Text input if Faculty is Other
+                  <input
+                    type="text"
+                    required
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
+                    placeholder="Enter Department Name"
+                  />
+                ) : (
+                  // Dropdown if Faculty is selected
+                  <select
+                    required
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    disabled={!faculty}
+                    className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                  >
+                    <option value="">Select Department</option>
+                    {/* ✅ Safety Check Added */}
+                    {Array.isArray(departmentsList) && departmentsList.map((dept, index) => (
+                      <option key={index} value={dept}>{dept}</option>
+                    ))}
+                    <option value="Other">Other</option>
+                  </select>
+                )}
               </div>
             </div>
 
