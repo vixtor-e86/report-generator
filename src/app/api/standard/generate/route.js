@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getStandardPrompt } from '@/lib/standardPrompts';
-import { callAI, checkTokenLimit } from '@/lib/aiProvider'; // ✅ NEW
+import { callAI, checkTokenLimit } from '@/lib/aiProvider';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -43,7 +43,7 @@ export async function POST(request) {
       );
     }
 
-    // 3. ✅ NEW: Smart token limit check (estimate 10k tokens for generation)
+    // 3. Smart token limit check
     const tokenCheck = checkTokenLimit(project.tokens_used, project.tokens_limit, 10000);
     
     if (!tokenCheck.allowed) {
@@ -97,19 +97,18 @@ export async function POST(request) {
         .join('\n\n');
     }
 
-   // 7. Fetch images (Fetch Global images AND images specific to this chapter)
+    // 7. Fetch images (Global images AND chapter-specific images)
     const { data: images } = await supabase
       .from('standard_images')
       .select('*')
       .eq('project_id', projectId)
-      // This is the magic line: get images where chapter_number is NULL OR matches current chapter
       .or(`chapter_number.is.null,chapter_number.eq.${chapterNumber}`)
       .order('order_number', { ascending: true });
       
-    // 8. Fetch template structure
+    // 8. ✅ NEW: Fetch template with faculty information
     const { data: template } = await supabase
       .from('templates')
-      .select('structure')
+      .select('structure, faculty, template_type')
       .eq('id', project.template_id)
       .single();
 
@@ -117,7 +116,7 @@ export async function POST(request) {
       throw new Error('Template not found');
     }
 
-    // 9. Build AI prompt
+    // 9. ✅ NEW: Build AI prompt with faculty information
     const prompt = getStandardPrompt(chapterNumber, {
       projectTitle: project.title,
       department: project.department,
@@ -125,10 +124,11 @@ export async function POST(request) {
       description: project.description,
       images: images || [],
       context,
-      templateStructure: template.structure
+      templateStructure: template.structure,
+      faculty: template.faculty || 'Engineering' // ✅ Pass faculty to prompt generator
     });
 
-    // 10. ✅ NEW: Call AI using unified provider
+    // 10. Call AI using unified provider
     const startTime = Date.now();
     
     const aiResult = await callAI(prompt, {
