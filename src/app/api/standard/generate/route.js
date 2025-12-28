@@ -125,7 +125,8 @@ export async function POST(request) {
       images: images || [],
       context,
       templateStructure: template.structure,
-      faculty: template.faculty || 'Engineering' // ✅ Pass faculty to prompt generator
+      faculty: template.faculty || 'Engineering', // ✅ Pass faculty to prompt generator
+      referenceStyle: project.reference_style || 'apa' // ✅ Pass reference style
     });
 
     // 10. Call AI using unified provider

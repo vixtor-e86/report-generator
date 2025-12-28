@@ -266,6 +266,10 @@ export default function Workspace({ params }) {
       `}>
         {/* Sidebar Header */}
         <div className="p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex items-center gap-2 mb-6">
+            <img src="/favicon.ico" alt="W3 WriteLab" className="w-6 h-6" />
+            <span className="text-lg font-bold text-indigo-600">W3 WriteLab</span>
+          </div>
           <div className="flex items-center justify-between mb-4 lg:mb-6">
             <Link href="/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm sm:text-base">
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

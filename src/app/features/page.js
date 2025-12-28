@@ -12,9 +12,8 @@ export default function FeaturesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/dashboard" className="flex items-center gap-2 group">
-              <span className="text-xl sm:text-2xl font-bold text-indigo-600 group-hover:text-indigo-700 transition">
-                📄 W3 WriteLab
-              </span>
+              <img src="/favicon.ico" alt="W3 WriteLab" className="w-6 h-6 sm:w-7 sm:h-7" />
+              <span className="text-xl sm:text-2xl font-bold text-indigo-600">W3 WriteLab</span>
             </Link>
             <Link 
               href="/dashboard"
@@ -64,6 +63,14 @@ export default function FeaturesPage() {
                 <span className="text-sm text-gray-900">1 template</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm font-medium text-gray-700">Faculties</span>
+                <span className="text-sm text-red-600">Engineering only</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm font-medium text-gray-700">References</span>
+                <span className="text-sm text-red-600">✗ No</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">Edit Content</span>
                 <span className="text-sm text-red-600">✗ No</span>
               </div>
@@ -107,6 +114,14 @@ export default function FeaturesPage() {
                 <span className="text-sm text-indigo-900">3 templates</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm font-medium text-gray-700">Faculties</span>
+                <span className="text-sm font-bold text-green-600">✓ All 10 Faculties</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm font-medium text-gray-700">References</span>
+                <span className="text-sm text-green-600">✓ 3 Styles (APA/IEEE/Harvard)</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">Edit Content</span>
                 <span className="text-sm text-green-600">✓ Yes</span>
               </div>
@@ -147,6 +162,14 @@ export default function FeaturesPage() {
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">Templates</span>
                 <span className="text-sm text-purple-900">Custom</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm font-medium text-gray-700">Faculties</span>
+                <span className="text-sm font-bold text-green-600">✓ All 10 + Custom</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-sm font-medium text-gray-700">References</span>
+                <span className="text-sm text-green-600">✓ All Styles + Custom</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">Edit Content</span>
@@ -204,7 +227,7 @@ export default function FeaturesPage() {
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
                     <span className="text-indigo-900 font-semibold">Claude Sonnet 4 / Gemini Pro</span>
-                    <div className="text-xs text-indigo-700 mt-1">Good AI</div>
+                    <div className="text-xs text-indigo-700 mt-1">Advanced AI</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
                     <span className="text-purple-900 font-semibold">Claude Opus 4.5</span>
@@ -238,11 +261,49 @@ export default function FeaturesPage() {
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
                     <span className="text-indigo-900 font-semibold">3 templates</span>
-                    <div className="text-xs text-indigo-700 mt-1">Standard, SIWES, Thesis</div>
+                    <div className="text-xs text-indigo-700 mt-1">5-Chapter, 6-Chapter Thesis, SIWES</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
                     <span className="text-purple-900 font-semibold">Custom templates</span>
                     <div className="text-xs text-purple-700 mt-1">Your own structure</div>
+                  </td>
+                </tr>
+
+                {/* Faculty-Specific Templates */}
+                <tr className="hover:bg-gray-50 transition bg-blue-50">
+                  <td className="px-6 py-4 font-semibold text-gray-900">
+                    Faculty-Specific Templates
+                    <div className="text-xs text-gray-500 font-normal mt-1">Customized for your field</div>
+                  </td>
+                  <td className="px-6 py-4 text-center border-l border-gray-200">
+                    <span className="text-red-600">✗ Engineering only</span>
+                  </td>
+                  <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
+                    <span className="text-green-600">✓ All 10 Faculties</span>
+                    <div className="text-xs text-indigo-700 mt-1">Engineering, Sciences, Law, Medicine, etc.</div>
+                  </td>
+                  <td className="px-6 py-4 text-center border-l border-gray-200">
+                    <span className="text-green-600">✓ All 10 + Custom</span>
+                    <div className="text-xs text-purple-700 mt-1">Create your own faculty template</div>
+                  </td>
+                </tr>
+
+                {/* Academic References */}
+                <tr className="hover:bg-gray-50 transition bg-green-50">
+                  <td className="px-6 py-4 font-semibold text-gray-900">
+                    Academic References
+                    <div className="text-xs text-gray-500 font-normal mt-1">APA, IEEE, Harvard citation styles</div>
+                  </td>
+                  <td className="px-6 py-4 text-center border-l border-gray-200">
+                    <span className="text-red-600">✗ No</span>
+                  </td>
+                  <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
+                    <span className="text-green-600">✓ 3 Citation Styles</span>
+                    <div className="text-xs text-indigo-700 mt-1">APA, IEEE, Harvard + No References option</div>
+                  </td>
+                  <td className="px-6 py-4 text-center border-l border-gray-200">
+                    <span className="text-green-600">✓ All Styles + Custom</span>
+                    <div className="text-xs text-purple-700 mt-1">Define your own citation format</div>
                   </td>
                 </tr>
 
@@ -258,7 +319,7 @@ export default function FeaturesPage() {
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
                     <span className="text-green-600">✓ Yes</span>
-                    <div className="text-xs text-purple-700 mt-1">Advanced editor</div>
+                    <div className="text-xs text-purple-700 mt-1">Advanced editor with AI assist</div>
                   </td>
                 </tr>
 
@@ -270,7 +331,7 @@ export default function FeaturesPage() {
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
                     <span className="text-green-600">✓ Yes</span>
-                    <div className="text-xs text-indigo-700 mt-1">120k token limit (~12 regens)</div>
+                    <div className="text-xs text-indigo-700 mt-1">120k tokens (~12 full regenerations)</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
                     <span className="text-green-600">✓ Unlimited</span>
@@ -310,7 +371,7 @@ export default function FeaturesPage() {
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
                     <span className="text-green-600">✓ Yes</span>
-                    <div className="text-xs text-purple-700 mt-1">Advanced prompting</div>
+                    <div className="text-xs text-purple-700 mt-1">Advanced prompting + saved templates</div>
                   </td>
                 </tr>
 
@@ -323,18 +384,18 @@ export default function FeaturesPage() {
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
                     <span className="text-indigo-900 font-semibold">10 images</span>
-                    <div className="text-xs text-indigo-700 mt-1">Placed in chapters</div>
+                    <div className="text-xs text-indigo-700 mt-1">Placed contextually in chapters</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
                     <span className="text-purple-900 font-semibold">Unlimited</span>
-                    <div className="text-xs text-purple-700 mt-1">Anywhere</div>
+                    <div className="text-xs text-purple-700 mt-1">Anywhere in report</div>
                   </td>
                 </tr>
 
                 {/* Image Placement */}
                 <tr className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4 font-semibold text-gray-900">
-                    Image Placement System
+                    Smart Image Placement
                     <div className="text-xs text-gray-500 font-normal mt-1">AI places images contextually</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
@@ -342,11 +403,11 @@ export default function FeaturesPage() {
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
                     <span className="text-green-600">✓ Yes</span>
-                    <div className="text-xs text-indigo-700 mt-1">Automatic placement</div>
+                    <div className="text-xs text-indigo-700 mt-1">Automatic placement with captions</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
                     <span className="text-green-600">✓ Yes</span>
-                    <div className="text-xs text-purple-700 mt-1">Advanced placement</div>
+                    <div className="text-xs text-purple-700 mt-1">Advanced placement + manual control</div>
                   </td>
                 </tr>
 
@@ -358,7 +419,7 @@ export default function FeaturesPage() {
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
                     <span className="text-indigo-900 font-semibold">DOCX</span>
-                    <div className="text-xs text-indigo-700 mt-1">Times New Roman, 12pt</div>
+                    <div className="text-xs text-indigo-700 mt-1">Times New Roman, 12pt, 1.5 spacing</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
                     <span className="text-purple-900 font-semibold">DOCX + LaTeX</span>
@@ -406,10 +467,100 @@ export default function FeaturesPage() {
       {/* Feature Deep Dive Sections */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 sm:mb-12 text-center">
-          How It Works
+          Feature Highlights
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+          {/* Faculty-Specific Templates */}
+          <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 sm:p-8 shadow-lg border-2 border-blue-200">
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">10 Faculty-Specific Templates</h3>
+            <p className="text-sm sm:text-base text-gray-700 mb-4">
+              Get reports customized for your field of study. Each faculty has specialized terminology, structure, and requirements.
+            </p>
+            <ul className="space-y-2 sm:space-y-3 text-sm sm:text-base text-gray-700">
+              <li className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span><strong>Engineering:</strong> Hardware specs, circuit diagrams, technical methodology</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span><strong>Sciences:</strong> Lab procedures, experimental design, data analysis</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span><strong>Law:</strong> Case studies, legal frameworks, statutory analysis</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span><strong>Medicine:</strong> Clinical protocols, patient care, medical terminology</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>Plus: Business, Social Sciences, Arts, Agriculture, Environmental Studies</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Academic References */}
+          <div className="bg-gradient-to-br from-green-50 to-white rounded-xl p-6 sm:p-8 shadow-lg border-2 border-green-200">
+            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Multiple Citation Styles</h3>
+            <p className="text-sm sm:text-base text-gray-700 mb-4">
+              Professional academic references automatically added throughout your report in your preferred format.
+            </p>
+            <ul className="space-y-2 sm:space-y-3 text-sm sm:text-base text-gray-700">
+              <li className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span><strong>APA Style:</strong> Psychology, Education, Social Sciences</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span><strong>IEEE Style:</strong> Engineering, Computer Science, Technology</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span><strong>Harvard Style:</strong> Business, Humanities, Sciences</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span><strong>No References:</strong> For projects that don't require citations</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span><strong>Premium:</strong> Custom citation formats for unique requirements</span>
+              </li>
+            </ul>
+          </div>
+
           {/* Workspace Features */}
           <div className="bg-white rounded-xl p-6 sm:p-8 shadow-lg border border-gray-200">
             <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
@@ -442,72 +593,6 @@ export default function FeaturesPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                 </svg>
                 <span><strong>Real-time Preview:</strong> See formatted content as you work</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Token Optimization */}
-          <div className="bg-white rounded-xl p-6 sm:p-8 shadow-lg border border-gray-200">
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-            </div>
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Smart Token Saving</h3>
-            <ul className="space-y-2 sm:space-y-3 text-sm sm:text-base text-gray-700">
-              <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span><strong>Preview Outline (500 tokens):</strong> See what will be generated before committing</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span><strong>AI Suggestions (1k tokens):</strong> Get improvement ideas without full regeneration</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span><strong>Manual Editing (0 tokens):</strong> Make changes yourself without using tokens</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span><strong>Token Tracker:</strong> Live monitoring with warnings at 80%, 90%, 100%</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Template Options */}
-          <div className="bg-white rounded-xl p-6 sm:p-8 shadow-lg border border-gray-200">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-              </svg>
-            </div>
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">3 Template Options</h3>
-            <ul className="space-y-2 sm:space-y-3 text-sm sm:text-base text-gray-700">
-              <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span><strong>Standard 5-Chapter:</strong> Intro, Literature, Methodology, Results, Conclusion</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span><strong>SIWES/Industrial Training:</strong> 4-chapter structure for internship reports</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span><strong>Thesis/Dissertation:</strong> 6-chapter extended format for final year</span>
               </li>
             </ul>
           </div>
@@ -568,6 +653,24 @@ export default function FeaturesPage() {
 
           <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg border border-gray-200">
             <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
+              What faculties are supported?
+            </h3>
+            <p className="text-sm sm:text-base text-gray-700">
+              Standard and Premium tiers support all 10 major faculties: Engineering, Sciences, Law, Medicine, Business, Social Sciences, Arts, Agriculture, Environmental Studies, and Education. Each has customized templates with field-specific terminology.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg border border-gray-200">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
+              How do citation styles work?
+            </h3>
+            <p className="text-sm sm:text-base text-gray-700">
+              Choose from APA, IEEE, or Harvard citation styles. The AI automatically adds in-text citations and a complete reference list at the end of your report, properly formatted according to your chosen style.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg border border-gray-200">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
               What happens after 30 days?
             </h3>
             <p className="text-sm sm:text-base text-gray-700">
@@ -577,28 +680,10 @@ export default function FeaturesPage() {
 
           <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg border border-gray-200">
             <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
-              How many regenerations do I get?
-            </h3>
-            <p className="text-sm sm:text-base text-gray-700">
-              Standard tier: ~12 full chapter regenerations (120k tokens). Premium: unlimited. You can also use preview (500 tokens) and suggestions (1k tokens) to optimize before regenerating.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg border border-gray-200">
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
               Can I edit manually?
             </h3>
             <p className="text-sm sm:text-base text-gray-700">
               Yes! Standard and Premium tiers have a full text editor. Manual edits use 0 tokens, so you can perfect your report without limits.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg border border-gray-200">
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
-              Are images included in the export?
-            </h3>
-            <p className="text-sm sm:text-base text-gray-700">
-              Yes! All uploaded images are embedded in the DOCX file with captions. The AI places them contextually in relevant chapters.
             </p>
           </div>
 

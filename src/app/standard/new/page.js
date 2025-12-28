@@ -1,4 +1,6 @@
 "use client";
+import ReferenceInfoModal from '@/components/ReferenceInfoModal';
+import { getReferenceStyleOptions } from '@/lib/referenceStyles';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -24,6 +26,8 @@ function NewProjectContent() {
   const [facultiesList, setFacultiesList] = useState([]);   // Stores ["Engineering", "Science"...]
   const [departmentsList, setDepartmentsList] = useState([]); // Stores ONLY the active departments array
   const [description, setDescription] = useState('');
+  const [referenceStyle, setReferenceStyle] = useState('apa');
+  const [showReferenceInfo, setShowReferenceInfo] = useState(false);
   const [projectTitle, setProjectTitle] = useState('');
   const [components, setComponents] = useState([]);
   const [componentInput, setComponentInput] = useState('');
@@ -192,6 +196,7 @@ function NewProjectContent() {
         tokens_limit: 120000,
         status: 'in_progress',
         current_chapter: 1,
+        reference_style: referenceStyle,
         access_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       };
 
@@ -276,7 +281,10 @@ function NewProjectContent() {
               <span className="hidden sm:inline">Change Template</span>
               <span className="sm:hidden">Back</span>
             </Link>
-            <span className="text-lg sm:text-2xl font-bold text-indigo-600">📄 W3 WriteLab</span>
+            <div className="flex items-center gap-2">
+              <img src="/favicon.ico" alt="W3 WriteLab" className="w-6 h-6 sm:w-7 sm:h-7" />
+              <span className="text-lg sm:text-2xl font-bold text-indigo-600">W3 WriteLab</span>
+            </div>
           </div>
         </div>
       </nav>
@@ -496,6 +504,42 @@ function NewProjectContent() {
                 <p className="text-xs text-gray-600 mt-1">Press Enter or click Add</p>
               </div>
 
+              {/* Reference Style Selection */}
+              <div className="border-t border-gray-200 pt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs sm:text-sm font-bold text-gray-900">
+                    Reference Style
+                  </label>
+                  <button
+                    onClick={() => setShowReferenceInfo(true)}
+                    className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    View Examples
+                  </button>
+                </div>
+                <select
+                  value={referenceStyle}
+                  onChange={(e) => setReferenceStyle(e.target.value)}
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                >
+                  {getReferenceStyleOptions().map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.icon} {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-600 mt-2">
+                  {referenceStyle === 'none' 
+                    ? 'No references will be added - you can add them manually later'
+                    : `References will be generated in ${referenceStyle.toUpperCase()} format at the end of the final chapter`
+                  }
+                </p>
+              </div>
+
+
               <div>
                 <label className="block text-xs sm:text-sm font-bold text-gray-900 mb-2">
                   Project Description *
@@ -591,7 +635,6 @@ function NewProjectContent() {
               </div>
             )}
           </div>
-
           {/* Action Buttons - Mobile Optimized */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 border-t border-gray-200">
             <button
@@ -704,6 +747,12 @@ function NewProjectContent() {
           </div>
         </div>
       )}
+      {/* Reference Info Modal */}
+          <ReferenceInfoModal 
+            isOpen={showReferenceInfo}
+            onClose={() => setShowReferenceInfo(false)}
+            selectedStyle={referenceStyle}
+          />
     </div>
   );
 }

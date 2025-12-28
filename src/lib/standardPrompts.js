@@ -3,7 +3,7 @@
 // Supports: Regular Projects (all faculties), SIWES/Industrial Training
 
 export function getStandardPrompt(chapterNumber, data) {
-  const { templateStructure, faculty } = data;
+  const { templateStructure, faculty, referenceStyle = 'apa' } = data;
   
   // Check if this is a SIWES template
   const isSIWES = templateStructure?.chapters?.some(ch => 
@@ -21,6 +21,55 @@ export function getStandardPrompt(chapterNumber, data) {
 }
 
 // =====================================================
+// REFERENCE STYLE INSTRUCTIONS GENERATOR
+// =====================================================
+function getReferenceInstructions(referenceStyle, faculty, isLastChapter) {
+  if (referenceStyle === 'none') {
+    return `DO NOT include any references or in-text citations.`;
+  }
+
+  const styleInstructions = {
+    'apa': {
+      inText: 'Use APA format: (Author, Year) or (Author & Co-author, Year)',
+      format: 'Author, A. B. (Year). Title of work. Publisher/Journal Name.',
+      example: 'Adeyemi, T. A. (2021). Modern Electronic Systems Design. Lagos: Tech Publishers.'
+    },
+    'ieee': {
+      inText: 'Use IEEE format with numbered citations: [1], [2], [3]',
+      format: '[1] A. B. Author, "Title of work," Journal Name, vol. X, no. Y, pp. Z-Z, Year.',
+      example: '[1] T. A. Adeyemi, "Modern electronic systems design," Journal of Nigerian Engineering, vol. 15, no. 3, pp. 45-62, 2021.'
+    },
+    'harvard': {
+      inText: 'Use Harvard format: (Author Year) - no comma between author and year',
+      format: 'Author, A.B. (Year) Title of work. City: Publisher.',
+      example: 'Adeyemi, T.A. (2021) Modern Electronic Systems Design. Lagos: Tech Publishers.'
+    }
+  };
+
+  const style = styleInstructions[referenceStyle] || styleInstructions['apa'];
+
+  return `
+REFERENCES AND CITATIONS (${referenceStyle.toUpperCase()} Style):
+1. In-Text Citations: ${style.inText}
+   - Add 10-15 in-text citations throughout this chapter
+   - Distribute citations naturally across all sections
+   - Example: "Studies have shown that... ${referenceStyle === 'apa' ? '(Okonkwo, 2021)' : referenceStyle === 'ieee' ? '[1]' : '(Okonkwo 2021)'}"
+
+2. Reference List Format:
+   ${style.format}
+   
+3. Example Reference:
+   ${style.example}
+
+4. ${isLastChapter ? '**IMPORTANT - FINAL CHAPTER**: Include a comprehensive ## REFERENCES section at the END of this chapter listing ALL 40-60 references from ALL chapters (not just this chapter). This is the ONLY chapter that will have the complete reference list.' : '**DO NOT** include a ## REFERENCES section in this chapter. References will be compiled in the final chapter only.'}
+
+5. Use realistic, field-appropriate Nigerian sources for ${faculty}
+
+6. CRITICAL: ${isLastChapter ? 'This final chapter MUST include the complete reference list from all chapters.' : 'NO REFERENCES section in this chapter - only in-text citations.'}
+`;
+}
+
+// =====================================================
 // SIWES/Industrial Training Prompt (Unchanged)
 // =====================================================
 function getSIWESPrompt(partNumber, data) {
@@ -32,7 +81,8 @@ function getSIWESPrompt(partNumber, data) {
     images = [],
     context = '',
     customInstruction = '',
-    templateStructure
+    templateStructure,
+    referenceStyle = 'apa'
   } = data;
 
   const companyName = components[0] || 'the organization';
@@ -68,6 +118,15 @@ function getSIWESPrompt(partNumber, data) {
   }
 
   const sectionsText = partInfo.sections.map(section => `${section}`).join('\n');
+  
+  // Determine if this is the last part
+  const totalParts = templateStructure?.chapters?.length || 4;
+  const isLastPart = partNumber === totalParts;
+  
+  // Get reference instructions
+  const referenceInstructions = referenceStyle === 'none' 
+    ? 'DO NOT include any references or citations.' 
+    : getReferenceInstructions(referenceStyle, 'Industrial Training', isLastPart);
 
   const prompt = `You are an expert writer specializing in SIWES (Student Industrial Work Experience Scheme) and industrial training reports for Nigerian universities.
 
@@ -104,21 +163,13 @@ CONTENT REQUIREMENTS:
 6. Include practical examples from experience
 7. Reference ${department} department work specifically
 
-REFERENCES AND CITATIONS:
-1. Add in-text citations where appropriate using author-date format: (Author, Year)
-2. Include 8-12 relevant references throughout the content
-3. At the end, include a ## REFERENCES section with full citations in this format:
-   - Author, A. B. (Year). Title of work. Publisher/Journal.
-   - Use a mix of: textbooks, journal articles, company manuals, online resources
-4. Make references realistic and relevant to industrial training in Nigeria
-5. Example citations: (Adeyemi, 2022), (Nigerian Industrial Training Fund, 2023)
+${referenceInstructions}
 
 CRITICAL RULES:
 1. DO NOT include meta-commentary
-2. USE proper in-text citations as instructed above
-3. ONLY output actual content starting with ## heading
-4. Be honest and realistic about industrial training
-5. Focus on learning outcomes and practical skills
+2. ONLY output actual content starting with ## heading
+3. Be honest and realistic about industrial training
+4. Focus on learning outcomes and practical skills
 
 SPECIFIC GUIDANCE FOR ${partInfo.title.toUpperCase()}:
 ${getSIWESPartGuidance(partNumber, partInfo.title, companyName, department)}
@@ -182,7 +233,8 @@ function getFacultySpecificPrompt(chapterNumber, data) {
     context = '',
     customInstruction = '',
     templateStructure,
-    faculty
+    faculty,
+    referenceStyle = 'apa'
   } = data;
 
   const chapterInfo = templateStructure?.chapters?.find(ch => ch.number === chapterNumber);
@@ -216,6 +268,15 @@ function getFacultySpecificPrompt(chapterNumber, data) {
 
   // Get faculty-specific tone and terminology
   const facultyContext = getFacultyContext(faculty);
+  
+  // Determine if this is the last chapter
+  const totalChapters = templateStructure?.chapters?.length || 5;
+  const isLastChapter = chapterNumber === totalChapters;
+  
+  // Get reference instructions
+  const referenceInstructions = referenceStyle === 'none' 
+    ? 'DO NOT include any references or citations.' 
+    : getReferenceInstructions(referenceStyle, faculty, isLastChapter);
 
   const prompt = `You are an expert academic writer specializing in ${faculty} ${chapterInfo.title === 'Introduction' ? 'project reports' : 'research'} for Nigerian universities.
 
@@ -263,33 +324,14 @@ CONTENT REQUIREMENTS:
 8. ${faculty === 'Management Sciences' || faculty === 'Law' ? 'Include relevant Nigerian context/examples' : ''}
 9. ${faculty === 'Sciences' || faculty === 'Agricultural Sciences' || faculty === 'Basic Medical Sciences' ? 'Include experimental/methodological details' : ''}
 
-REFERENCES AND CITATIONS:
-1. Add in-text citations throughout using author-date format: (Author, Year)
-2. Include 10-15 relevant academic references distributed across sections
-3. At the end, after all content, include a ## REFERENCES section with full citations
-4. Format references as: Author, A. B. (Year). Title of work. Publisher/Journal Name. 
-5. Use realistic, field-appropriate sources:
-   - ${faculty === 'Engineering' ? 'IEEE papers, engineering textbooks, technical manuals' : ''}
-   - ${faculty === 'Sciences' ? 'Scientific journals, research papers, lab manuals' : ''}
-   - ${faculty === 'Management Sciences' ? 'Business journals, management books, case studies' : ''}
-   - ${faculty === 'Law' ? 'Law journals, case reports, legal texts (but NO specific case citations)' : ''}
-   - ${faculty === 'Social Sciences' ? 'Social science journals, research papers, surveys' : ''}
-   - ${faculty === 'Arts & Humanities' ? 'Literary texts, critical essays, humanities journals' : ''}
-   - ${faculty === 'Education' ? 'Educational journals, pedagogy books, curriculum guides' : ''}
-   - ${faculty === 'Agricultural Sciences' ? 'Agricultural journals, farming manuals, research papers' : ''}
-   - ${faculty === 'Environmental Science' ? 'Environmental journals, policy documents, reports' : ''}
-   - ${faculty === 'Basic Medical Sciences' ? 'Medical journals, anatomy texts, clinical papers' : ''}
-6. Example in-text: "Studies have shown that... (Okonkwo, 2021)." or "According to Adeyemi (2020)..."
-7. IMPORTANT: References should support claims, not just be listed randomly
+${referenceInstructions}
 
 CRITICAL RULES:
 1. NO meta-commentary like "This chapter will..."
 2. NO explanatory phrases about what was covered
-3. USE proper in-text citations as instructed above
-4. ADD ## REFERENCES section at the very end (after all chapter content)
-5. NO introductory text before ## heading
-6. ONLY output actual chapter content starting with ##
-7. If images available, reference using {{figureX.Y}} placeholders
+3. NO introductory text before ## heading
+4. ONLY output actual chapter content starting with ##
+5. If images available, reference using {{figureX.Y}} placeholders
 
 FACULTY-SPECIFIC GUIDANCE FOR ${chapterInfo.title.toUpperCase()}:
 ${getFacultyChapterGuidance(chapterNumber, chapterInfo.title, faculty, components, department)}

@@ -126,8 +126,9 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/dashboard" className="flex items-center gap-2 group">
+              <img src="/favicon.ico" alt="W3 WriteLab" className="w-6 h-6 sm:w-7 sm:h-7" />
               <span className="text-xl sm:text-2xl font-bold text-indigo-600 group-hover:text-indigo-700 transition">
-                📄 W3 WriteLab
+                W3 WriteLab
               </span>
             </Link>
             

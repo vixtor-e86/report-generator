@@ -130,7 +130,10 @@ export default function NewProject() {
               </svg>
               <span className="text-sm sm:text-base">Back to Dashboard</span>
             </Link>
-            <span className="text-xl sm:text-2xl font-bold text-indigo-600">📄 W3 WriteLab</span>
+            <div className="flex items-center gap-2">
+              <img src="/favicon.ico" alt="W3 WriteLab" className="w-6 h-6 sm:w-7 sm:h-7" />
+              <span className="text-xl sm:text-2xl font-bold text-indigo-600">W3 WriteLab</span>
+            </div>
           </div>
         </div>
       </nav>
