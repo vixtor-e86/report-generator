@@ -9,7 +9,6 @@ import ChapterEdit from '@/components/standard/ChapterEdit';
 import ModifyModal from '@/components/standard/ModifyModal';
 import PreviewModal from '@/components/standard/PreviewModal'; // ✅ NEW
 import SuggestionsModal from '@/components/standard/SuggestionsModal';
-import SuggestionsModal from '@/components/standard/SuggestionsModal';
 import FeedbackWidget from '@/components/FeedbackWidget';// ✅ NEW
 
 export default function StandardWorkspace({ params }) {
