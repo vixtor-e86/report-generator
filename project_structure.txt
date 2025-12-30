@@ -7,6 +7,7 @@ next.config.mjs
 package-lock.json
 package.json
 postcss.config.mjs
+project_structure.txt
 public/file.svg
 public/globe.svg
 public/next.svg
@@ -26,6 +27,7 @@ src/app/auth/auth-code-error/page.js
 src/app/auth/callback/page.js
 src/app/dashboard/page.js
 src/app/favicon.ico
+src/app/features/page.js
 src/app/globals.css
 src/app/layout.js
 src/app/onboarding/page.js
@@ -36,6 +38,7 @@ src/app/standard/[id]/page.js
 src/app/standard/new/page.js
 src/app/template-select/page.js
 src/components/GoogleAuthButton.js
+src/components/ReferenceInfoModal.js
 src/components/UniversitySelector.js
 src/components/standard/ChapterEdit.js
 src/components/standard/ChapterView.js
@@ -51,6 +54,7 @@ src/lib/aiProvider.js
 src/lib/docxExport.js
 src/lib/gemini.js
 src/lib/prompts.js
+src/lib/referenceStyles.js
 src/lib/standardPrompts.js
 src/lib/supabase.js
 test-key.js

@@ -176,7 +176,7 @@ function NewProjectContent() {
         return;
       }
     } else {
-      if (!projectTitle || !department || components.length === 0 || !description) {
+      if (!projectTitle || !department || !description) {
         alert('Please fill in all required fields and add at least one component');
         return;
       }
@@ -337,7 +337,7 @@ function NewProjectContent() {
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                     placeholder="Enter your department name"
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                   />
                 ) : (
                   <select
@@ -429,7 +429,7 @@ function NewProjectContent() {
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                     placeholder="Enter your department name"
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                   />
                 ) : (
                   <select
@@ -453,7 +453,7 @@ function NewProjectContent() {
 
               <div>
                 <label className="block text-xs sm:text-sm font-bold text-gray-900 mb-2">
-                  Components/Tools Used *
+                  Components/Tools/Materials/Focus Areas
                 </label>
 
                 {components.length > 0 && (
@@ -488,7 +488,7 @@ function NewProjectContent() {
                         addComponent();
                       }
                     }}
-                    placeholder="e.g., Arduino Uno, DHT11..."
+                    placeholder="e.g., Arduino Uno, Lab Equipment, Survey Tools, Research Methods..."
                     className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                   />
                   <button
@@ -501,7 +501,7 @@ function NewProjectContent() {
                     <span className="hidden sm:inline">Add</span>
                   </button>
                 </div>
-                <p className="text-xs text-gray-600 mt-1">Press Enter or click Add</p>
+                <p className="text-xs text-gray-600 mt-1">Optional - Add components, tools, materials, or research focus areas. Press Enter or click Add</p>
               </div>
 
               {/* Reference Style Selection */}
@@ -704,7 +704,7 @@ function NewProjectContent() {
               onChange={(e) => setImageCaption(e.target.value)}
               placeholder="Describe this image (e.g., 'Circuit diagram showing power supply connections')..."
               rows="3"
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg mb-4 sm:mb-6 text-sm sm:text-base"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg mb-4 sm:mb-6 text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
               autoFocus
             />
             {/* ✅ NEW: Chapter Selector for Onboarding */}

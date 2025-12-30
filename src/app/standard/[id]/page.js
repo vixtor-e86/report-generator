@@ -8,7 +8,9 @@ import ChapterView from '@/components/standard/ChapterView';
 import ChapterEdit from '@/components/standard/ChapterEdit';
 import ModifyModal from '@/components/standard/ModifyModal';
 import PreviewModal from '@/components/standard/PreviewModal'; // ✅ NEW
-import SuggestionsModal from '@/components/standard/SuggestionsModal'; // ✅ NEW
+import SuggestionsModal from '@/components/standard/SuggestionsModal';
+import SuggestionsModal from '@/components/standard/SuggestionsModal';
+import FeedbackWidget from '@/components/FeedbackWidget';// ✅ NEW
 
 export default function StandardWorkspace({ params }) {
   const resolvedParams = use(params);
@@ -403,6 +405,8 @@ export default function StandardWorkspace({ params }) {
           userId={user.id}
         />
       )}
+      {/* Feedback Widget */}
+      <FeedbackWidget projectId={project.id} userId={user.id} />
     </div>
   );
 }

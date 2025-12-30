@@ -52,7 +52,7 @@ export default function FeaturesPage() {
             <div className="p-4 space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">AI Model</span>
-                <span className="text-sm text-gray-900">Gemini Flash</span>
+                <span className="text-sm text-gray-900">Basic Quaaality</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">Projects</span>
@@ -103,7 +103,7 @@ export default function FeaturesPage() {
             <div className="p-4 space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">AI Model</span>
-                <span className="text-sm font-bold text-indigo-900">Claude/Gemini Pro</span>
+                <span className="text-sm font-bold text-indigo-900">Professional Quality</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">Projects</span>
@@ -153,7 +153,7 @@ export default function FeaturesPage() {
             <div className="p-4 space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">AI Model</span>
-                <span className="text-sm font-bold text-purple-900">Claude Opus</span>
+                <span className="text-sm font-bold text-purple-900">Premium Quality</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">Projects</span>
@@ -220,18 +220,18 @@ export default function FeaturesPage() {
               <tbody className="divide-y divide-gray-200">
                 {/* AI Quality */}
                 <tr className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4 font-semibold text-gray-900">AI Model Quality</td>
+                  <td className="px-6 py-4 font-semibold text-gray-900">Content Quality</td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
-                    <span className="text-gray-600">Gemini 1.5 Flash</span>
-                    <div className="text-xs text-gray-500 mt-1">Basic AI</div>
+                    <span className="text-gray-600">Basic</span>
+                    <div className="text-xs text-gray-500 mt-1">Good for simple projects</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
-                    <span className="text-indigo-900 font-semibold">Claude Sonnet 4 / Gemini Pro</span>
-                    <div className="text-xs text-indigo-700 mt-1">Advanced AI</div>
+                    <span className="text-indigo-900 font-semibold">Professional</span>
+                    <div className="text-xs text-indigo-700 mt-1">Advanced AI writing</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
-                    <span className="text-purple-900 font-semibold">Claude Opus 4.5</span>
-                    <div className="text-xs text-purple-700 mt-1">Best AI</div>
+                    <span className="text-purple-900 font-semibold">Premium</span>
+                    <div className="text-xs text-purple-700 mt-1">Highest quality AI</div>
                   </td>
                 </tr>
 

@@ -97,6 +97,7 @@ export async function POST(request) {
       });
     }
 
+  
     // 6. Fetch user profile
     const { data: userProfile } = await supabase
       .from('user_profiles')
@@ -104,13 +105,48 @@ export async function POST(request) {
       .eq('id', userId)
       .single();
 
+    // 6.5 ✅ NEW: Fetch template to get faculty
+    const { data: template } = await supabase
+      .from('templates')
+      .select('faculty')
+      .eq('id', project.template_id)
+      .single();
+
+    // 6.6 ✅ NEW: Generate Abstract using AI
+    console.log('Generating abstract...');
+    let abstractText = '';
+    
+    try {
+      const { getAbstractPrompt } = await import('@/lib/abstractGenerator');
+      const { callAI } = await import('@/lib/aiProvider');
+      
+      const abstractPrompt = getAbstractPrompt(
+        project, 
+        chapters, 
+        template?.faculty || 'Engineering'
+      );
+      
+      const aiResult = await callAI(abstractPrompt, {
+        maxTokens: 500,
+        temperature: 0.7
+      });
+      
+      abstractText = aiResult.content;
+      console.log('Abstract generated successfully');
+    } catch (error) {
+      console.error('Abstract generation failed:', error);
+      // Fallback abstract if AI fails
+      abstractText = `This report presents the design and implementation of ${project.title}. The project was developed in the ${project.department} department and focuses on ${project.components?.join(', ')}. The report documents the complete development process, testing procedures, and results achieved.`;
+    }
+
     // 7. Generate DOCX
     console.log('Starting DOCX generation...');
     const doc = await generateDocx({
       project,
       chapters,
       images: images || [],
-      userProfile
+      userProfile,
+      abstract: abstractText // ✅ Pass abstract to DOCX generator
     });
 
     // 8. Pack DOCX to blob

@@ -23,7 +23,7 @@ export function getStandardPrompt(chapterNumber, data) {
 // =====================================================
 // REFERENCE STYLE INSTRUCTIONS GENERATOR
 // =====================================================
-function getReferenceInstructions(referenceStyle, faculty, isLastChapter) {
+function getReferenceInstructions(referenceStyle, faculty, isLastChapter, existingReferences = []) {
   if (referenceStyle === 'none') {
     return `DO NOT include any references or in-text citations.`;
   }
@@ -47,6 +47,16 @@ function getReferenceInstructions(referenceStyle, faculty, isLastChapter) {
   };
 
   const style = styleInstructions[referenceStyle] || styleInstructions['apa'];
+  
+  // Build existing references list
+  let existingRefsText = '';
+  if (existingReferences && existingReferences.length > 0) {
+    existingRefsText = `\n\nEXISTING REFERENCES FROM PREVIOUS CHAPTERS:\n`;
+    existingReferences.forEach(ref => {
+      existingRefsText += `${ref.reference_key}: ${ref.reference_text}\n`;
+    });
+    existingRefsText += `\nIMPORTANT: REUSE these references where applicable instead of creating new ones. Only create NEW references for topics not covered by existing references.\n`;
+  }
 
   return `
 REFERENCES AND CITATIONS (${referenceStyle.toUpperCase()} Style):
@@ -61,11 +71,15 @@ REFERENCES AND CITATIONS (${referenceStyle.toUpperCase()} Style):
 3. Example Reference:
    ${style.example}
 
-4. ${isLastChapter ? '**IMPORTANT - FINAL CHAPTER**: Include a comprehensive ## REFERENCES section at the END of this chapter listing ALL 40-60 references from ALL chapters (not just this chapter). This is the ONLY chapter that will have the complete reference list.' : '**DO NOT** include a ## REFERENCES section in this chapter. References will be compiled in the final chapter only.'}
+${existingRefsText}
 
-5. Use realistic, field-appropriate Nigerian sources for ${faculty}
+4. ${isLastChapter ? '**IMPORTANT - FINAL CHAPTER**: Include a comprehensive ## REFERENCES section at the END of this chapter listing ALL references from ALL chapters (both existing and new). This is the ONLY chapter that will have the complete reference list.' : '**DO NOT** include a ## REFERENCES section in this chapter. References will be compiled in the final chapter only.'}
 
-6. CRITICAL: ${isLastChapter ? 'This final chapter MUST include the complete reference list from all chapters.' : 'NO REFERENCES section in this chapter - only in-text citations.'}
+5. New references should be realistic Nigerian sources for ${faculty}
+
+6. For ${referenceStyle === 'ieee' ? 'IEEE style, continue numbering from existing references (e.g., if 5 exist, start new ones at [6])' : referenceStyle === 'apa' ? 'APA style, maintain alphabetical order' : 'Harvard style, maintain alphabetical order'}
+
+7. CRITICAL: ${isLastChapter ? 'This final chapter MUST include the complete reference list from all chapters.' : 'NO REFERENCES section in this chapter - only in-text citations.'}
 `;
 }
 
@@ -82,7 +96,8 @@ function getSIWESPrompt(partNumber, data) {
     context = '',
     customInstruction = '',
     templateStructure,
-    referenceStyle = 'apa'
+    referenceStyle = 'apa',
+    existingReferences = [] // ✅ NEW
   } = data;
 
   const companyName = components[0] || 'the organization';
@@ -126,7 +141,7 @@ function getSIWESPrompt(partNumber, data) {
   // Get reference instructions
   const referenceInstructions = referenceStyle === 'none' 
     ? 'DO NOT include any references or citations.' 
-    : getReferenceInstructions(referenceStyle, 'Industrial Training', isLastPart);
+    : getReferenceInstructions(referenceStyle, 'Industrial Training', isLastPart, existingReferences); // ✅ Pass existing refs
 
   const prompt = `You are an expert writer specializing in SIWES (Student Industrial Work Experience Scheme) and industrial training reports for Nigerian universities.
 
@@ -234,7 +249,8 @@ function getFacultySpecificPrompt(chapterNumber, data) {
     customInstruction = '',
     templateStructure,
     faculty,
-    referenceStyle = 'apa'
+    referenceStyle = 'apa',
+    existingReferences = [] // ✅ NEW
   } = data;
 
   const chapterInfo = templateStructure?.chapters?.find(ch => ch.number === chapterNumber);
@@ -276,7 +292,7 @@ function getFacultySpecificPrompt(chapterNumber, data) {
   // Get reference instructions
   const referenceInstructions = referenceStyle === 'none' 
     ? 'DO NOT include any references or citations.' 
-    : getReferenceInstructions(referenceStyle, faculty, isLastChapter);
+    : getReferenceInstructions(referenceStyle, faculty, isLastChapter, existingReferences); // ✅ Pass existing refs
 
   const prompt = `You are an expert academic writer specializing in ${faculty} ${chapterInfo.title === 'Introduction' ? 'project reports' : 'research'} for Nigerian universities.
 

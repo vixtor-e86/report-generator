@@ -15,7 +15,7 @@ import {
 } from 'docx'; //
 
 export async function generateDocx(data) {
-  const { project, chapters, images } = data;
+  const { project, chapters, images, abstract } = data;
 
   // Fetch all images as base64
   const imagesData = await Promise.all(
@@ -39,8 +39,8 @@ export async function generateDocx(data) {
 
   const doc = new Document({
     sections: [
-      // Table of Contents Section
-      {
+      // ✅ NEW: Abstract Section (before TOC)
+      ...(abstract ? [{
         properties: {
           page: {
             margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
@@ -48,19 +48,31 @@ export async function generateDocx(data) {
         },
         children: [
           new Paragraph({
-            text: 'TABLE OF CONTENTS',
+            text: 'ABSTRACT',
             heading: HeadingLevel.HEADING_1,
             alignment: AlignmentType.CENTER,
-            spacing: { after: 800 },
+            spacing: { after: 400 },
           }),
-          ...chapters.map((chapter) => 
-            new Paragraph({
-              text: `CHAPTER ${chapter.chapter_number}: ${chapter.title.toUpperCase()}`,
-              spacing: { after: 300, before: 100 },
-              indent: { left: 720 },
-            })
-          ),
+          new Paragraph({
+            text: abstract,
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { after: 240, line: 360 },
+            children: [new TextRun({ 
+              text: abstract,
+              font: 'Times New Roman',
+              size: 24
+            })]
+          }),
         ],
+      }] : []),
+      // Table of Contents Section
+      {
+        properties: {
+          page: {
+            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
+          },
+        },
+        children: generateTableOfContents(chapters),
       },
 
       // Chapters Sections
@@ -80,15 +92,18 @@ export async function generateDocx(data) {
 
 // Helper to parse inline formatting (bold, italic)
 function parseInlineFormatting(text, fontSize = 24, isBold = false) {
+  // First, process mathematical expressions
+  const processedText = parseMathematicalText(text);
+  
   const textRuns = [];
   let currentIndex = 0;
   
   const formatRegex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)/g;
   let match;
   
-  while ((match = formatRegex.exec(text)) !== null) {
+  while ((match = formatRegex.exec(processedText)) !== null) {
     if (match.index > currentIndex) {
-      const plainText = text.substring(currentIndex, match.index);
+      const plainText = processedText.substring(currentIndex, match.index);
       if (plainText) {
         textRuns.push(new TextRun({ 
           text: plainText,
@@ -119,8 +134,8 @@ function parseInlineFormatting(text, fontSize = 24, isBold = false) {
     currentIndex = match.index + match[0].length;
   }
   
-  if (currentIndex < text.length) {
-    const remainingText = text.substring(currentIndex);
+  if (currentIndex < processedText.length) {
+    const remainingText = processedText.substring(currentIndex);
     if (remainingText) {
       textRuns.push(new TextRun({ 
         text: remainingText,
@@ -133,7 +148,7 @@ function parseInlineFormatting(text, fontSize = 24, isBold = false) {
   
   if (textRuns.length === 0) {
     textRuns.push(new TextRun({ 
-      text: text,
+      text: processedText,
       font: 'Times New Roman',
       size: fontSize,
       bold: isBold
@@ -141,6 +156,164 @@ function parseInlineFormatting(text, fontSize = 24, isBold = false) {
   }
   
   return textRuns;
+}
+function generateTableOfContents(chapters) {
+  const tocParagraphs = [
+    new Paragraph({
+      text: 'TABLE OF CONTENTS',
+      heading: HeadingLevel.HEADING_1,
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 600 },
+    }),
+    new Paragraph({ text: '', spacing: { after: 200 } })
+  ];
+
+  chapters.forEach((chapter, chapterIndex) => {
+    // Chapter heading
+    tocParagraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `CHAPTER ${chapter.chapter_number}: ${chapter.title.toUpperCase()}`,
+            font: 'Times New Roman',
+            size: 24,
+            bold: true
+          })
+        ],
+        spacing: { before: 200, after: 100 },
+        indent: { left: 360 }
+      })
+    );
+
+    // Extract sections from content
+    const sections = extractSections(chapter.content, chapter.chapter_number);
+    
+    sections.forEach(section => {
+      const indentLevel = section.level === 3 ? 720 : section.level === 4 ? 1080 : 720;
+      
+      tocParagraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: section.text,
+              font: 'Times New Roman',
+              size: 22
+            })
+          ],
+          spacing: { after: 80 },
+          indent: { left: indentLevel }
+        })
+      );
+    });
+
+    // Add spacing between chapters
+    if (chapterIndex < chapters.length - 1) {
+      tocParagraphs.push(new Paragraph({ text: '', spacing: { after: 150 } }));
+    }
+  });
+
+  return tocParagraphs;
+}
+
+// Extract section headings from markdown
+function extractSections(markdown, chapterNumber) {
+  if (!markdown) return [];
+  
+  const lines = markdown.split('\n');
+  const sections = [];
+  let skipFirst = true;
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    
+    // Skip first ## heading (chapter title)
+    if (trimmed.startsWith('## ') && skipFirst) {
+      skipFirst = false;
+      return;
+    }
+    
+    // Extract ### headings (main sections)
+    if (trimmed.startsWith('### ')) {
+      sections.push({
+        text: trimmed.replace('### ', ''),
+        level: 3
+      });
+    }
+    // Extract #### headings (subsections)
+    else if (trimmed.startsWith('#### ')) {
+      sections.push({
+        text: trimmed.replace('#### ', ''),
+        level: 4
+      });
+    }
+  });
+
+  return sections;
+}
+
+// Parse and format mathematical expressions
+function parseMathematicalText(text) {
+  const textRuns = [];
+  
+  // Replace common LaTeX/markdown math notations
+  let processedText = text
+    // Fractions: \frac{a}{b} → a/b
+    .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+    // Square root: \sqrt{x} → √x
+    .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
+    // Subscript: _{x} or _x → ₓ (for common subscripts)
+    .replace(/_\{([^}]+)\}/g, (match, p1) => convertToSubscript(p1))
+    .replace(/_([a-zA-Z0-9])/g, (match, p1) => convertToSubscript(p1))
+    // Superscript: ^{x} or ^x → ˣ
+    .replace(/\^\{([^}]+)\}/g, (match, p1) => convertToSuperscript(p1))
+    .replace(/\^([a-zA-Z0-9])/g, (match, p1) => convertToSuperscript(p1))
+    // Clean up dollar signs
+    .replace(/\$\$/g, '')
+    .replace(/\$/g, '')
+    // Greek letters
+    .replace(/\\pi/g, 'π')
+    .replace(/\\theta/g, 'θ')
+    .replace(/\\omega/g, 'ω')
+    .replace(/\\Omega/g, 'Ω')
+    .replace(/\\alpha/g, 'α')
+    .replace(/\\beta/g, 'β')
+    .replace(/\\gamma/g, 'γ')
+    .replace(/\\delta/g, 'δ')
+    .replace(/\\epsilon/g, 'ε')
+    .replace(/\\mu/g, 'μ')
+    // Math operators
+    .replace(/\\times/g, '×')
+    .replace(/\\div/g, '÷')
+    .replace(/\\pm/g, '±')
+    .replace(/\\approx/g, '≈')
+    .replace(/\\leq/g, '≤')
+    .replace(/\\geq/g, '≥')
+    .replace(/\\neq/g, '≠');
+
+  return processedText;
+}
+
+// Convert to Unicode subscript
+function convertToSubscript(char) {
+  const subscripts = {
+    '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
+    '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+    'a': 'ₐ', 'e': 'ₑ', 'i': 'ᵢ', 'o': 'ₒ', 'u': 'ᵤ',
+    'x': 'ₓ', 'n': 'ₙ', 'h': 'ₕ', 'k': 'ₖ', 'l': 'ₗ',
+    'm': 'ₘ', 'p': 'ₚ', 's': 'ₛ', 't': 'ₜ'
+  };
+  return subscripts[char] || `_${char}`;
+}
+
+// Convert to Unicode superscript
+function convertToSuperscript(char) {
+  const superscripts = {
+    '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+    '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+    'n': 'ⁿ', '+': '⁺', '-': '⁻', '=': '⁼',
+    'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ'
+  };
+  return superscripts[char] || `^${char}`;
 }
 
 // Convert Markdown to DOCX paragraphs with real tables

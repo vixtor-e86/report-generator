@@ -116,6 +116,13 @@ export async function POST(request) {
       throw new Error('Template not found');
     }
 
+    // 8.5 ✅ NEW: Fetch existing references for this project
+    const { data: existingReferences } = await supabase
+      .from('project_references')
+      .select('reference_key, reference_text, author, year')
+      .eq('project_id', projectId)
+      .order('order_number', { ascending: true });
+
     // 9. ✅ NEW: Build AI prompt with faculty information
     const prompt = getStandardPrompt(chapterNumber, {
       projectTitle: project.title,
@@ -125,8 +132,9 @@ export async function POST(request) {
       images: images || [],
       context,
       templateStructure: template.structure,
-      faculty: template.faculty || 'Engineering', // ✅ Pass faculty to prompt generator
-      referenceStyle: project.reference_style || 'apa' // ✅ Pass reference style
+      faculty: template.faculty || 'Engineering',
+      referenceStyle: project.reference_style || 'apa',
+      existingReferences: existingReferences || [] // ✅ Pass existing references
     });
 
     // 10. Call AI using unified provider

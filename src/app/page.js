@@ -234,7 +234,7 @@ export default function Home() {
           </div>
           <div className="border-t border-gray-800 pt-8 text-center">
             <p className="text-sm">&copy; 2025 W3 WriteLab. All rights reserved.</p>
-            <p className="mt-2 text-sm">Developed by <span className="font-semibold text-indigo-400">WhaleHub</span></p>
+            <p className="mt-2 text-sm">Developed by <span className="font-semibold text-indigo-400">W3 Hub</span></p>
 
           </div>
         </div>
