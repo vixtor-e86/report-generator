@@ -328,6 +328,25 @@ function NewProjectContent() {
 
               <div>
                 <label className="block text-xs sm:text-sm font-bold text-gray-900 mb-2">
+                  Faculty *
+                </label>
+                <select
+                  value={faculty}
+                  onChange={handleFacultyChange}
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                >
+                  <option value="">Select Faculty</option>
+                  {facultiesList.map((fac, i) => (
+                    <option key={i} value={fac}>
+                      {fac}
+                    </option>
+                  ))}
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-bold text-gray-900 mb-2">
                   Department *
                 </label>
                 
@@ -337,14 +356,14 @@ function NewProjectContent() {
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                     placeholder="Enter your department name"
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                   />
                 ) : (
                   <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                     disabled={!faculty}
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white"
+                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition disabled:bg-gray-50 disabled:text-gray-400 ${department ? 'text-gray-900' : 'text-gray-500'}`}
                   >
                     <option value="">Select Department</option>
                     {/* ✅ FIX: Add Array.isArray check before mapping */}
@@ -429,14 +448,14 @@ function NewProjectContent() {
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                     placeholder="Enter your department name"
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                   />
                 ) : (
                   <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                     disabled={!faculty}
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition disabled:bg-gray-100 disabled:text-gray-400"
+                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition disabled:bg-gray-50 disabled:text-gray-400 ${department ? 'text-gray-900' : 'text-gray-500'}`}
                   >
                     <option value="">Select Department</option>
                     {/* ✅ FIX: Added safety check here */}

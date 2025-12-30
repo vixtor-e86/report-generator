@@ -150,7 +150,7 @@ export default function FeedbackWidget({ projectId, userId }) {
                     onChange={(e) => setFeedback(e.target.value)}
                     rows="4"
                     placeholder="What did you like? What can we improve?"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm text-gray-900 placeholder-gray-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     {feedback.length}/500 characters
