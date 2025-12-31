@@ -81,7 +81,7 @@ export async function POST(request) {
       .update({ status: 'generating' })
       .eq('id', chapter.id);
 
-    // 6. Fetch previous chapters for context
+        // 6. Fetch previous chapters for context
     const { data: previousChapters } = await supabase
       .from('standard_chapters')
       .select('chapter_number, title, content')
@@ -93,18 +93,34 @@ export async function POST(request) {
     let context = '';
     if (previousChapters && previousChapters.length > 0) {
       context = previousChapters
-        .map(ch => `Chapter ${ch.chapter_number}: ${ch.title}\n${ch.content?.substring(0, 500)}...`)
+        .map(ch => {
+          // ✅ Strip figure references from context to avoid confusion
+          const cleanedContent = ch.content
+            ?.replace(/\{\{figure\d+\.\d+\}\}/g, '[figure]') // Replace {{figureX.Y}} with [figure]
+            ?.substring(0, 500);
+          
+          return `Chapter ${ch.chapter_number}: ${ch.title}\n${cleanedContent}...`;
+        })
         .join('\n\n');
     }
 
-    // 7. Fetch images (Global images AND chapter-specific images)
-    const { data: images } = await supabase
+    // 7. ✅ IMPROVED: Fetch ONLY images for THIS chapter (global + chapter-specific)
+    const { data: allImages } = await supabase
       .from('standard_images')
       .select('*')
       .eq('project_id', projectId)
       .or(`chapter_number.is.null,chapter_number.eq.${chapterNumber}`)
       .order('order_number', { ascending: true });
-      
+
+    // Filter and assign proper figure numbers for THIS chapter only
+    const images = (allImages || []).map((img, index) => ({
+      ...img,
+      chapterNumber: chapterNumber, // Force current chapter number
+      figureNumber: index + 1, // Sequential numbering for this chapter
+      placeholder: `{{figure${chapterNumber}.${index + 1}}}`
+    }));
+
+    console.log(`Chapter ${chapterNumber}: ${images.length} images available`);
     // 8. ✅ NEW: Fetch template with faculty information
     const { data: template } = await supabase
       .from('templates')

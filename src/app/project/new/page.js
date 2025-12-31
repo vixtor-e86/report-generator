@@ -131,7 +131,7 @@ export default function NewProject() {
               <span className="text-sm sm:text-base">Back to Dashboard</span>
             </Link>
             <div className="flex items-center gap-2">
-              <img src="/favicon.ico" alt="W3 WriteLab" className="w-6 h-6 sm:w-7 sm:h-7" />
+              <img src="/favicon.ico" alt="W3 WriteLab" className="w-8 h-8 sm:w-10 sm:h-10" />
               <span className="text-xl sm:text-2xl font-bold text-indigo-600">W3 WriteLab</span>
             </div>
           </div>

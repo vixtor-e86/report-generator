@@ -39,6 +39,16 @@ export async function generateDocx(data) {
 
   const doc = new Document({
     sections: [
+
+      // Table of Contents Section
+      {
+        properties: {
+          page: {
+            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
+          },
+        },
+        children: generateTableOfContents(chapters),
+      },
       // ✅ NEW: Abstract Section (before TOC)
       ...(abstract ? [{
         properties: {
@@ -65,16 +75,6 @@ export async function generateDocx(data) {
           }),
         ],
       }] : []),
-      // Table of Contents Section
-      {
-        properties: {
-          page: {
-            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
-          },
-        },
-        children: generateTableOfContents(chapters),
-      },
-
       // Chapters Sections
       ...await Promise.all(chapters.map(async (chapter) => ({
         properties: {

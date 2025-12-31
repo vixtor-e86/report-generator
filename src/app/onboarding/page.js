@@ -110,7 +110,7 @@ export default function Onboarding() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center mb-4">
         <div className="flex items-center gap-2 mb-2">
-          <img src="/favicon.ico" alt="W3 WriteLab" className="w-8 h-8" />
+          <img src="/favicon.ico" alt="W3 WriteLab" className="w-12 h-12" />
           <span className="text-2xl font-bold text-indigo-600">W3 WriteLab</span>
         </div>
         <h2 className="mt-6 text-center text-2xl sm:text-3xl font-extrabold text-gray-900">

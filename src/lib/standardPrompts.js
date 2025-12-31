@@ -114,12 +114,20 @@ function getSIWESPrompt(partNumber, data) {
 
   let imagesContext = '';
   if (images && images.length > 0) {
-    imagesContext = '\n\n=== AVAILABLE IMAGES ===\n';
+    imagesContext = '\n\n=== IMAGES AVAILABLE FOR THIS PART ===\n';
     images.forEach((img, idx) => {
-      imagesContext += `Image ${idx + 1}: ${img.caption}\n`;
+      imagesContext += `{{figure${partNumber}.${idx + 1}}}: ${img.caption}\n`;
     });
-    imagesContext += `\nReference these images using {{figure${partNumber}.1}}, {{figure${partNumber}.2}}, etc.\n`;
-    imagesContext += `Place figure references where appropriate (equipment photos, workplace images, diagrams).\n`;
+    imagesContext += `\n**CRITICAL IMAGE RULES:**\n`;
+    imagesContext += `1. You have ${images.length} image(s) available for THIS part (Part ${partNumber})\n`;
+    imagesContext += `2. ONLY reference images listed above using: {{figure${partNumber}.1}}, {{figure${partNumber}.2}}, etc.\n`;
+    imagesContext += `3. DO NOT reference images from other parts\n`;
+    imagesContext += `4. If no relevant image is available from the list above, DO NOT add any figure reference\n`;
+    imagesContext += `5. Place figure references naturally where equipment, workplace, or processes are described\n`;
+  } else {
+    imagesContext = '\n\n=== NO IMAGES AVAILABLE FOR THIS PART ===\n';
+    imagesContext += `IMPORTANT: Do NOT reference any images or figures in this part.\n`;
+    imagesContext += `Previous parts may have had images, but this part has none assigned.\n`;
   }
 
   let contextSection = '';
@@ -260,14 +268,23 @@ function getFacultySpecificPrompt(chapterNumber, data) {
   }
 
   // Build images context
+  // Build images context
   let imagesContext = '';
   if (images && images.length > 0) {
-    imagesContext = '\n\n=== AVAILABLE IMAGES ===\n';
+    imagesContext = '\n\n=== IMAGES AVAILABLE FOR THIS CHAPTER ===\n';
     images.forEach((img, idx) => {
-      imagesContext += `Image ${idx + 1}: ${img.caption}\n`;
+      imagesContext += `{{figure${chapterNumber}.${idx + 1}}}: ${img.caption}\n`;
     });
-    imagesContext += `\nReference images using {{figure${chapterNumber}.1}}, {{figure${chapterNumber}.2}}, etc.\n`;
-    imagesContext += `Place figure references WHERE APPROPRIATE.\n`;
+    imagesContext += `\n**CRITICAL IMAGE RULES:**\n`;
+    imagesContext += `1. You have ${images.length} image(s) available for THIS chapter (Chapter ${chapterNumber})\n`;
+    imagesContext += `2. ONLY reference images listed above using: {{figure${chapterNumber}.1}}, {{figure${chapterNumber}.2}}, etc.\n`;
+    imagesContext += `3. DO NOT reference images from other chapters (e.g., figure${chapterNumber - 1}.X or figure${chapterNumber + 1}.X)\n`;
+    imagesContext += `4. If no relevant image is available from the list above, DO NOT add any figure reference\n`;
+    imagesContext += `5. Place figure references naturally in the text where images would be helpful\n`;
+  } else {
+    imagesContext = '\n\n=== NO IMAGES AVAILABLE FOR THIS CHAPTER ===\n';
+    imagesContext += `IMPORTANT: Do NOT reference any images or figures in this chapter.\n`;
+    imagesContext += `Previous chapters may have had images, but this chapter has none assigned.\n`;
   }
 
   let contextSection = '';
