@@ -114,7 +114,7 @@ export default function Sidebar({
       <div
         className={`
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          fixed lg:relative inset-y-0 left-0 z-40 w-80 lg:w-80
+          fixed lg:relative inset-y-0 left-0 z-50 w-80 lg:w-80
           bg-white border-r border-gray-200 transition-transform duration-300 
           flex flex-col print:hidden
         `}
@@ -213,7 +213,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      {sidebarOpen && <div onClick={onToggleSidebar} className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden" />}
+      {sidebarOpen && <div onClick={onToggleSidebar} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden" />}
 
       {/* Caption Modal with Chapter Selector */}
       {showCaptionModal && (

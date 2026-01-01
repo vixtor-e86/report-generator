@@ -19,9 +19,9 @@ function NewProjectContent() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
-  const [faculty, setFaculty] = useState(''); 
+  const [faculty, setFaculty] = useState('');
   const [department, setDepartment] = useState('');
-  
+
   const [universityData, setUniversityData] = useState({}); // Stores the full object
   const [facultiesList, setFacultiesList] = useState([]);   // Stores ["Engineering", "Science"...]
   const [departmentsList, setDepartmentsList] = useState([]); // Stores ONLY the active departments array
@@ -40,7 +40,7 @@ function NewProjectContent() {
   const [targetChapter, setTargetChapter] = useState('');
 
   const maxImages = 10;
-  const isSIWES = template?.name?.toLowerCase().includes('siwes') || 
+  const isSIWES = template?.name?.toLowerCase().includes('siwes') ||
                   template?.name?.toLowerCase().includes('industrial');
 
   useEffect(() => {
@@ -91,14 +91,14 @@ function NewProjectContent() {
         setFaculty(profile.faculty);
         // Safely set departments for this faculty
         if (Array.isArray(data[profile.faculty])) {
-            setDepartmentsList(data[profile.faculty]);
+          setDepartmentsList(data[profile.faculty]);
         }
       }
-      
+
       if (profile.department) {
         setDepartment(profile.department);
       }
-      
+
       setUser(user);
       setProfile(profile);
       setTemplate(templateData);
@@ -111,10 +111,10 @@ function NewProjectContent() {
   const handleFacultyChange = (e) => {
     const selectedFaculty = e.target.value;
     setFaculty(selectedFaculty);
-    
+
     // Reset department choice
     setDepartment('');
-    
+
     // ✅ FIX: Ensure we only set an Array
     if (selectedFaculty && Array.isArray(universityData[selectedFaculty])) {
       setDepartmentsList(universityData[selectedFaculty]);
@@ -196,7 +196,7 @@ function NewProjectContent() {
         tokens_limit: 120000,
         status: 'in_progress',
         current_chapter: 1,
-        reference_style: referenceStyle,
+        reference_style: isSIWES ? 'none' : referenceStyle,
         access_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       };
 
@@ -302,7 +302,7 @@ function NewProjectContent() {
             {isSIWES ? 'Training Details' : 'Project Details'}
           </h1>
           <p className="text-sm sm:text-base text-gray-600 px-4">
-            {isSIWES 
+            {isSIWES
               ? 'Tell us about your industrial training experience'
               : 'Tell us about your project. You can add images now or later in the workspace.'
             }
@@ -349,7 +349,7 @@ function NewProjectContent() {
                 <label className="block text-xs sm:text-sm font-bold text-gray-900 mb-2">
                   Department *
                 </label>
-                
+
                 {faculty === 'Other' ? (
                   <input
                     type="text"
@@ -441,7 +441,7 @@ function NewProjectContent() {
                 <label className="block text-xs sm:text-sm font-bold text-gray-900 mb-2">
                   Department *
                 </label>
-                
+
                 {faculty === 'Other' ? (
                   <input
                     type="text"
@@ -524,39 +524,41 @@ function NewProjectContent() {
               </div>
 
               {/* Reference Style Selection */}
-              <div className="border-t border-gray-200 pt-6">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs sm:text-sm font-bold text-gray-900">
-                    Reference Style
-                  </label>
-                  <button
-                    onClick={() => setShowReferenceInfo(true)}
-                    className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-1"
+              {!isSIWES && ( // ✅ Only show for non-SIWES projects
+                <div className="border-t border-gray-200 pt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs sm:text-sm font-bold text-gray-900">
+                      Reference Style
+                    </label>
+                    <button
+                      onClick={() => setShowReferenceInfo(true)}
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      View Examples
+                    </button>
+                  </div>
+                  <select
+                    value={referenceStyle}
+                    onChange={(e) => setReferenceStyle(e.target.value)}
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    View Examples
-                  </button>
+                    {getReferenceStyleOptions().map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.icon} {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-600 mt-2">
+                    {referenceStyle === 'none' 
+                      ? 'No references will be added - you can add them manually later'
+                      : `References will be generated in ${referenceStyle.toUpperCase()} format at the end of the final chapter`
+                    }
+                  </p>
                 </div>
-                <select
-                  value={referenceStyle}
-                  onChange={(e) => setReferenceStyle(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                >
-                  {getReferenceStyleOptions().map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.icon} {option.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-600 mt-2">
-                  {referenceStyle === 'none' 
-                    ? 'No references will be added - you can add them manually later'
-                    : `References will be generated in ${referenceStyle.toUpperCase()} format at the end of the final chapter`
-                  }
-                </p>
-              </div>
+              )}
 
 
               <div>

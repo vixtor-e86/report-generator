@@ -51,7 +51,19 @@ export default function NewProject() {
 
       const res = await fetch('/api/departments');
       const data = await res.json();
-      setDepartmentsList(data);
+      
+      // Handle the case where data is an object (Faculties -> Departments)
+      let allDepartments = [];
+      if (Array.isArray(data)) {
+        allDepartments = data;
+      } else {
+        // Flatten values from { "Engineering": [...], "Science": [...] }
+        allDepartments = Object.values(data).flat();
+      }
+      
+      // Sort alphabetically
+      allDepartments.sort();
+      setDepartmentsList(allDepartments);
       setUser(user);
       setProfile(profile);
       setDepartment(profile.department || '');

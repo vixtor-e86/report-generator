@@ -28,7 +28,7 @@ export default function StandardWorkspace({ params }) {
   const [showModifyModal, setShowModifyModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false); // ✅ NEW
   const [showSuggestionsModal, setShowSuggestionsModal] = useState(false); // ✅ NEW
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Load workspace data
   useEffect(() => {

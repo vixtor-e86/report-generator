@@ -82,7 +82,23 @@ export async function generateDocx(data) {
             margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
           },
         },
-        children: await convertMarkdownToDocx(chapter.content || 'Content not available', validImages, chapter.chapter_number),
+        children: [
+          // Explicitly add Chapter Heading
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `CHAPTER ${chapter.chapter_number}: ${chapter.title.toUpperCase()}`,
+                font: 'Times New Roman',
+                size: 28,
+                bold: true
+              })
+            ],
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 400, after: 400 },
+          }),
+          ...(await convertMarkdownToDocx(chapter.content || 'Content not available', validImages, chapter.chapter_number))
+        ],
       }))),
     ],
   });

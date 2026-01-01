@@ -2,27 +2,6 @@
 // Faculty-Aware Dynamic Standard Tier AI Prompts
 // Supports: Regular Projects (all faculties), SIWES/Industrial Training
 
-export function getStandardPrompt(chapterNumber, data) {
-  const { templateStructure, faculty, referenceStyle = 'apa' } = data;
-  
-  // Check if this is a SIWES template
-  const isSIWES = templateStructure?.chapters?.some(ch => 
-    ch.title?.toLowerCase().includes('siwes') || 
-    ch.title?.toLowerCase().includes('industrial') ||
-    ch.title?.toLowerCase().includes('work experience')
-  );
-
-  // Route to appropriate prompt function
-  if (isSIWES) {
-    return getSIWESPrompt(chapterNumber, data);
-  } else {
-    return getFacultySpecificPrompt(chapterNumber, data);
-  }
-}
-
-// =====================================================
-// REFERENCE STYLE INSTRUCTIONS GENERATOR
-// =====================================================
 function getReferenceInstructions(referenceStyle, faculty, isLastChapter, existingReferences = []) {
   if (referenceStyle === 'none') {
     return `DO NOT include any references or in-text citations.`;
@@ -51,7 +30,7 @@ function getReferenceInstructions(referenceStyle, faculty, isLastChapter, existi
   // Build existing references list
   let existingRefsText = '';
   if (existingReferences && existingReferences.length > 0) {
-    existingRefsText = `\n\nEXISTING REFERENCES FROM PREVIOUS CHAPTERS:\n`;
+    existingRefsText = `\n\n=== EXISTING REFERENCES FROM PREVIOUS CHAPTERS ===\n`;
     existingReferences.forEach(ref => {
       existingRefsText += `${ref.reference_key}: ${ref.reference_text}\n`;
     });
@@ -60,6 +39,7 @@ function getReferenceInstructions(referenceStyle, faculty, isLastChapter, existi
 
   return `
 REFERENCES AND CITATIONS (${referenceStyle.toUpperCase()} Style):
+
 1. In-Text Citations: ${style.inText}
    - Add 10-15 in-text citations throughout this chapter
    - Distribute citations naturally across all sections
@@ -73,11 +53,27 @@ REFERENCES AND CITATIONS (${referenceStyle.toUpperCase()} Style):
 
 ${existingRefsText}
 
-4. ${isLastChapter ? '**IMPORTANT - FINAL CHAPTER**: Include a comprehensive ## REFERENCES section at the END of this chapter listing ALL references from ALL chapters (both existing and new). This is the ONLY chapter that will have the complete reference list.' : '**DO NOT** include a ## REFERENCES section in this chapter. References will be compiled in the final chapter only.'}
+4. ${isLastChapter ? `**IMPORTANT - FINAL CHAPTER REFERENCES**: 
+   
+   At the END of this chapter, include a comprehensive ## REFERENCES section with ALL references from the entire project.
+   
+   **CRITICAL INSTRUCTIONS FOR FINAL REFERENCE LIST:**
+   - Include ALL existing references listed above (${existingReferences.length} references)
+   - Add 8-12 NEW references for topics covered in THIS chapter
+   - ${referenceStyle === 'ieee' ? `Number them sequentially: [1], [2], [3]... up to [${existingReferences.length + 12}]` : 'List alphabetically by author surname'}
+   - Do NOT duplicate any existing references
+   - This is the COMPLETE, FINAL reference list for the entire project
+   
+   **Format for Final Chapter:**
+   ${referenceStyle === 'ieee' ? 
+     `Start with [1] and continue sequentially to include all ${existingReferences.length} existing plus your new ones` :
+     `List all references alphabetically (A-Z by author surname), integrating new ones into correct positions`
+   }` 
+   : '**DO NOT** include a ## REFERENCES section in this chapter. Only in-text citations are needed. The complete reference list will appear in the final chapter only.'}
 
 5. New references should be realistic Nigerian sources for ${faculty}
 
-6. For ${referenceStyle === 'ieee' ? 'IEEE style, continue numbering from existing references (e.g., if 5 exist, start new ones at [6])' : referenceStyle === 'apa' ? 'APA style, maintain alphabetical order' : 'Harvard style, maintain alphabetical order'}
+6. For ${referenceStyle === 'ieee' ? 'IEEE style, continue numbering from existing references' : referenceStyle === 'apa' ? 'APA style, maintain alphabetical order' : 'Harvard style, maintain alphabetical order'}
 
 7. CRITICAL: ${isLastChapter ? 'This final chapter MUST include the complete reference list from all chapters.' : 'NO REFERENCES section in this chapter - only in-text citations.'}
 `;
@@ -147,9 +143,7 @@ function getSIWESPrompt(partNumber, data) {
   const isLastPart = partNumber === totalParts;
   
   // Get reference instructions
-  const referenceInstructions = referenceStyle === 'none' 
-    ? 'DO NOT include any references or citations.' 
-    : getReferenceInstructions(referenceStyle, 'Industrial Training', isLastPart, existingReferences); // ✅ Pass existing refs
+   const referenceInstructions = 'DO NOT include any references or in-text citations. SIWES/Industrial Training reports focus on personal work experience, not academic citations.';
 
   const prompt = `You are an expert writer specializing in SIWES (Student Industrial Work Experience Scheme) and industrial training reports for Nigerian universities.
 
@@ -193,6 +187,7 @@ CRITICAL RULES:
 2. ONLY output actual content starting with ## heading
 3. Be honest and realistic about industrial training
 4. Focus on learning outcomes and practical skills
+5. DO NOT include any references or citations (SIWES reports are experience-based, not research-based)
 
 SPECIFIC GUIDANCE FOR ${partInfo.title.toUpperCase()}:
 ${getSIWESPartGuidance(partNumber, partInfo.title, companyName, department)}

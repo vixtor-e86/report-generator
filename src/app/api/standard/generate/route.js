@@ -190,6 +190,42 @@ export async function POST(request) {
       );
     }
 
+    // 11.5 ✅ NEW: Extract and store references from generated content
+    if (project.reference_style && project.reference_style !== 'none') {
+      try {
+        const { extractFullReferences, storeReferences, compileAllReferences } = await import('@/lib/referenceExtractor');
+        
+        // Extract references from this chapter
+        const extractedRefs = extractFullReferences(
+          aiResult.content, 
+          project.reference_style,
+          chapterNumber
+        );
+        
+        // Store them in database
+        if (extractedRefs.length > 0) {
+          const storeResult = await storeReferences(
+            supabase,
+            projectId,
+            extractedRefs,
+            chapterNumber
+          );
+          
+          console.log(`References stored: ${storeResult.stored}, skipped: ${storeResult.skipped}`);
+        }
+        
+        // If this is the LAST chapter, compile all references with proper ordering
+        const totalChapters = template.structure?.chapters?.length || 5;
+        if (chapterNumber === totalChapters) {
+          console.log('Final chapter - compiling all references...');
+          await compileAllReferences(supabase, projectId, project.reference_style);
+        }
+      } catch (refError) {
+        console.error('Error processing references:', refError);
+        // Don't fail the whole generation if reference extraction fails
+      }
+    }
+
     // 12. Update project tokens_used
     const newTokensUsed = project.tokens_used + aiResult.tokensUsed.total;
     await supabase
