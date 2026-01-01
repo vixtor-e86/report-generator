@@ -622,3 +622,8 @@ function getFacultyChapterGuidance(chapterNum, chapterTitle, faculty, components
   // Default for other chapters
   return `Write this chapter with depth, professionalism, and ${faculty}-specific terminology. Connect everything to ${componentsList} and ${department} principles.`;
 }
+
+export {
+  getFacultySpecificPrompt as getStandardPrompt,
+  getSIWESPrompt
+};
