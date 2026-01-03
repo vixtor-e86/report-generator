@@ -2,6 +2,11 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+const PRICING = {
+  STANDARD: Number(process.env.NEXT_PUBLIC_PRICE_STANDARD) || 10000,
+  PREMIUM: Number(process.env.NEXT_PUBLIC_PRICE_PREMIUM) || 20000,
+};
+
 export default function FeaturesPage() {
   const router = useRouter();
 
@@ -98,7 +103,7 @@ export default function FeaturesPage() {
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 text-center relative">
               <div className="absolute top-2 right-2 bg-white text-indigo-600 text-xs font-bold px-2 py-1 rounded-full">POPULAR</div>
               <h3 className="text-xl font-bold mb-1">Standard</h3>
-              <div className="text-3xl font-extrabold">₦10,000</div>
+              <div className="text-3xl font-extrabold">₦{PRICING.STANDARD.toLocaleString()}</div>
             </div>
             <div className="p-4 space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -148,7 +153,7 @@ export default function FeaturesPage() {
           <div className="bg-white rounded-xl shadow-lg border border-purple-200 overflow-hidden">
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 text-center">
               <h3 className="text-xl font-bold mb-1">Premium</h3>
-              <div className="text-3xl font-extrabold">₦20,000</div>
+              <div className="text-3xl font-extrabold">₦{PRICING.PREMIUM.toLocaleString()}</div>
             </div>
             <div className="p-4 space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -208,12 +213,12 @@ export default function FeaturesPage() {
                   </th>
                   <th className="px-6 py-4 text-center text-white font-bold text-lg border-l border-indigo-400 bg-indigo-700">
                     <div className="mb-2">Standard</div>
-                    <div className="text-2xl font-extrabold">₦10,000</div>
+                    <div className="text-2xl font-extrabold">₦{PRICING.STANDARD.toLocaleString()}</div>
                     <div className="text-xs font-normal mt-1 opacity-90">MOST POPULAR</div>
                   </th>
                   <th className="px-6 py-4 text-center text-white font-bold text-lg border-l border-indigo-400">
                     <div className="mb-2">Premium</div>
-                    <div className="text-2xl font-extrabold">₦20,000</div>
+                    <div className="text-2xl font-extrabold">₦{PRICING.PREMIUM.toLocaleString()}</div>
                   </th>
                 </tr>
               </thead>
@@ -244,11 +249,11 @@ export default function FeaturesPage() {
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
                     <span className="text-green-600 font-bold">Unlimited</span>
-                    <div className="text-xs text-indigo-700 mt-1">₦10k per project</div>
+                    <div className="text-xs text-indigo-700 mt-1">₦{Math.round(PRICING.STANDARD / 1000)}k per project</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
                     <span className="text-green-600 font-bold">Unlimited</span>
-                    <div className="text-xs text-purple-700 mt-1">₦20k per project</div>
+                    <div className="text-xs text-purple-700 mt-1">₦{Math.round(PRICING.PREMIUM / 1000)}k per project</div>
                   </td>
                 </tr>
 

@@ -3,6 +3,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import GoogleAuthButton from '@/components/GoogleAuthButton';
 
+const PRICING = {
+  STANDARD: Number(process.env.NEXT_PUBLIC_PRICE_STANDARD) || 10000,
+  PREMIUM: Number(process.env.NEXT_PUBLIC_PRICE_PREMIUM) || 20000,
+};
+
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -129,7 +134,7 @@ export default function Home() {
               <div className="absolute top-0 right-0 bg-indigo-600 text-white px-4 py-1 rounded-bl-lg rounded-tr-xl text-sm font-bold">POPULAR</div>
               <div className="text-center mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Standard</h3>
-                <div className="text-5xl font-extrabold text-indigo-600 mb-2">₦10,000</div>
+                <div className="text-5xl font-extrabold text-indigo-600 mb-2">₦{PRICING.STANDARD.toLocaleString()}</div>
                 <p className="text-gray-500">Per report</p>
               </div>
               <ul className="space-y-4 mb-8">
@@ -148,7 +153,7 @@ export default function Home() {
             <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 hover:border-indigo-300 transition">
               <div className="text-center mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium</h3>
-                <div className="text-5xl font-extrabold text-gray-900 mb-2">₦20,000</div>
+                <div className="text-5xl font-extrabold text-gray-900 mb-2">₦{PRICING.PREMIUM.toLocaleString()}</div>
                 <p className="text-gray-500">Per report</p>
               </div>
               <ul className="space-y-4 mb-8">
@@ -165,7 +170,7 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-12">
-            <p className="text-gray-600 text-lg">💡 <span className="font-semibold">Compare this:</span> Hiring someone costs ₦50,000-70,000. Our Premium tier saves you ₦30,000+ and 40 hours of work!</p>
+            <p className="text-gray-600 text-lg">💡 <span className="font-semibold">Compare this:</span> Hiring someone costs ₦50,000-70,000. Our Premium tier saves you ₦{(50000 - PRICING.PREMIUM).toLocaleString()}+ and 40 hours of work!</p>
           </div>
         </div>
       </div>

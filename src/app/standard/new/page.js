@@ -18,6 +18,7 @@ function NewProjectContent() {
   const [template, setTemplate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState(null);
 
   const [faculty, setFaculty] = useState('');
   const [department, setDepartment] = useState('');
@@ -78,6 +79,24 @@ function NewProjectContent() {
         router.push('/template-select');
         return;
       }
+
+      // ✅ NEW: Check for unused payment
+      const { data: unusedPayments } = await supabase
+        .from('payment_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'paid')
+        .is('project_id', null)
+        .order('paid_at', { ascending: false })
+        .limit(1);
+
+      if (!unusedPayments || unusedPayments.length === 0) {
+        alert('No valid payment found. Please make a payment first.');
+        router.push('/dashboard');
+        return;
+      }
+
+      setPendingPayment(unusedPayments[0]);
 
       // ✅ FIX: Handle the new Object structure
       const res = await fetch('/api/departments');
@@ -182,6 +201,12 @@ function NewProjectContent() {
       }
     }
 
+    if (!pendingPayment) {
+      alert('No valid payment found. Please go back and make a payment.');
+      router.push('/dashboard');
+      return;
+    }
+
     setCreating(true);
 
     try {
@@ -190,8 +215,8 @@ function NewProjectContent() {
         template_id: templateId,
         tier: 'standard',
         payment_status: 'paid',
-        payment_verified_at: new Date().toISOString(),
-        amount_paid: 10000.00,
+        payment_verified_at: pendingPayment.verified_at,
+        amount_paid: pendingPayment.amount,
         tokens_used: 0,
         tokens_limit: 120000,
         status: 'in_progress',
@@ -219,6 +244,17 @@ function NewProjectContent() {
         .single();
 
       if (projectError) throw projectError;
+
+      // ✅ NEW: Link payment to project
+      const { error: paymentLinkError } = await supabase
+        .from('payment_transactions')
+        .update({ project_id: project.id, updated_at: new Date().toISOString() })
+        .eq('id', pendingPayment.id);
+
+      if (paymentLinkError) {
+        console.error('Payment link error:', paymentLinkError);
+        // Don't fail the whole flow, just log it
+      }
 
       const structure = template.structure || { chapters: [] };
       const chaptersToCreate = structure.chapters.map((ch, i) => ({
@@ -308,6 +344,21 @@ function NewProjectContent() {
             }
           </p>
         </div>
+
+        {/* Payment Info Banner */}
+        {pendingPayment && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-sm">
+                <p className="font-semibold text-green-900">Payment Verified</p>
+                <p className="text-green-700">₦{pendingPayment.amount.toLocaleString()} • Paid on {new Date(pendingPayment.paid_at).toLocaleDateString()}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Form Container - Mobile Optimized */}
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">

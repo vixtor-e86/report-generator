@@ -4,6 +4,11 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
+const PRICING = {
+  STANDARD: Number(process.env.NEXT_PUBLIC_PRICE_STANDARD) || 10000,
+  PREMIUM: Number(process.env.NEXT_PUBLIC_PRICE_PREMIUM) || 20000,
+};
+
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -11,9 +16,9 @@ export default function Dashboard() {
   const [standardProjects, setStandardProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showSkipPaymentModal, setShowSkipPaymentModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [creatingPayment, setCreatingPayment] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,6 +53,20 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
+      // Check for unused payments
+      const { data: unusedPayments } = await supabase
+        .from('payment_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'paid')
+        .is('project_id', null)
+        .order('paid_at', { ascending: false })
+        .limit(1);
+
+      if (unusedPayments && unusedPayments.length > 0) {
+        setPendingPayment(unusedPayments[0]);
+      }
+
       setUser(user);
       setProfile(profile);
       setProjects(userProjects || []);
@@ -71,32 +90,40 @@ export default function Dashboard() {
     router.push('/project/new');
   };
 
-  const handleCreateStandard = () => {
-    setShowSkipPaymentModal(true);
-  };
+  const handleCreateStandard = async () => {
+    // Check if user has pending payment
+    if (pendingPayment) {
+      if (confirm('You have an unused Standard payment. Continue with existing payment?')) {
+        router.push('/template-select');
+        return;
+      }
+    }
 
-  const handleSkipPayment = async () => {
     setCreatingPayment(true);
     try {
-      const { data: payment, error } = await supabase
-        .from('payment_transactions')
-        .insert({
-          user_id: user.id,
-          amount: 10000.00,
-          currency: 'NGN',
+      const response = await fetch('/api/paystack/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          email: user.email,
           tier: 'standard',
-          paystack_reference: `MOCK_${Date.now()}`,
-          status: 'paid',
-          verified_at: new Date().toISOString()
+          amount: PRICING.STANDARD
         })
-        .select()
-        .single();
+      });
 
-      if (error) throw error;
-      router.push('/template-select');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Payment initialization failed');
+      }
+
+      // Redirect to Paystack payment page
+      window.location.href = data.authorization_url;
+
     } catch (error) {
-      console.error('Error creating mock payment:', error);
-      alert('Failed to proceed. Please try again.');
+      console.error('Payment error:', error);
+      alert(error.message || 'Failed to initialize payment. Please try again.');
     } finally {
       setCreatingPayment(false);
     }
@@ -199,6 +226,38 @@ export default function Dashboard() {
           </p>
         </div>
 
+        {pendingPayment && (
+          <div className="mb-8 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500 rounded-xl p-6 shadow-lg">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  Payment Received! 🎉
+                </h3>
+                <p className="text-gray-700 mb-4">
+                  Your Standard tier payment of <strong>₦{pendingPayment.amount.toLocaleString()}</strong> was successful. 
+                  Complete your project setup to start creating.
+                </p>
+                <button
+                  onClick={() => router.push('/template-select')}
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition flex items-center gap-2"
+                >
+                  Continue Project Setup
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mb-8 sm:mb-12">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Create New Project</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
@@ -252,7 +311,7 @@ export default function Dashboard() {
               <div className="absolute top-0 right-0 bg-indigo-600 text-white px-3 py-1 rounded-bl-lg rounded-tr-xl text-xs sm:text-sm font-bold">POPULAR</div>
               <div className="text-center mb-4 sm:mb-6">
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Standard</h3>
-                <div className="text-3xl sm:text-4xl font-extrabold text-indigo-600 mb-2">₦10,000</div>
+                <div className="text-3xl sm:text-4xl font-extrabold text-indigo-600 mb-2">₦{PRICING.STANDARD.toLocaleString()}</div>
                 <p className="text-xs sm:text-sm text-gray-500">Best value</p>
               </div>
               <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8 text-sm sm:text-base flex-1">
@@ -295,7 +354,7 @@ export default function Dashboard() {
             <div className="bg-white border-2 border-purple-200 rounded-xl sm:rounded-2xl p-6 sm:p-8 hover:border-purple-500 hover:shadow-lg transition flex flex-col">
               <div className="text-center mb-4 sm:mb-6">
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Premium</h3>
-                <div className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">₦20,000</div>
+                <div className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">₦{PRICING.PREMIUM.toLocaleString()}</div>
                 <p className="text-xs sm:text-sm text-gray-500">Best quality</p>
               </div>
               <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8 text-sm sm:text-base flex-1">
@@ -439,37 +498,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {showSkipPaymentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
-            <div className="text-center">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Payment Coming Soon</h3>
-              <p className="text-gray-600 text-sm sm:text-base mb-2 leading-relaxed">Paystack integration is currently in development.</p>
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
-                <p className="text-indigo-900 font-semibold text-lg mb-1">Standard Tier</p>
-                <p className="text-indigo-700 text-2xl font-bold">₦10,000</p>
-              </div>
-              <p className="text-gray-600 text-sm mb-6">For now, you can skip payment to test all Standard tier features.</p>
-              <div className="flex gap-3">
-                <button onClick={() => setShowSkipPaymentModal(false)} className="flex-1 bg-gray-100 text-gray-700 py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-gray-200 transition text-sm sm:text-base">Cancel</button>
-                <button onClick={handleSkipPayment} disabled={creatingPayment} className="flex-1 bg-indigo-600 text-white py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 text-sm sm:text-base flex items-center justify-center gap-2">
-                  {creatingPayment ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      Processing...
-                    </>
-                  ) : 'Skip Payment & Proceed'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {showPremiumModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

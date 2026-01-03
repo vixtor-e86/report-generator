@@ -1,14 +1,20 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
 export default function TemplateSelect() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [templates, setTemplates] = useState([]);
+  
+  // Payment verification state
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [paymentVerified, setPaymentVerified] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState(null);
   
   // Two-tier selection state
   const [step, setStep] = useState(1); // 1 = Template Type, 2 = Faculty Selection
@@ -42,6 +48,62 @@ export default function TemplateSelect() {
 
     loadData();
   }, [router]);
+
+  useEffect(() => {
+    async function verifyPaymentIfNeeded() {
+      const paymentRef = searchParams.get('payment_ref');
+      
+      if (paymentRef) {
+        setVerifyingPayment(true);
+        try {
+          const response = await fetch(`/api/paystack/verify?reference=${paymentRef}`);
+          const data = await response.json();
+  
+          if (data.verified) {
+            setPaymentVerified(true);
+            setPendingPayment(data.transaction);
+            
+            // Remove payment_ref from URL
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('payment_ref');
+            window.history.replaceState({}, '', newUrl);
+          } else {
+            alert('Payment verification failed. Please contact support if you were charged.');
+            router.push('/dashboard');
+          }
+        } catch (error) {
+          console.error('Verification error:', error);
+          alert('Failed to verify payment. Please contact support.');
+          router.push('/dashboard');
+        } finally {
+          setVerifyingPayment(false);
+        }
+      } else {
+        // Check for existing unused payment
+        const { data: unusedPayments } = await supabase
+          .from('payment_transactions')
+          .select('*')
+          .eq('user_id', user?.id)
+          .eq('status', 'paid')
+          .is('project_id', null)
+          .order('paid_at', { ascending: false })
+          .limit(1);
+  
+        if (unusedPayments && unusedPayments.length > 0) {
+          setPendingPayment(unusedPayments[0]);
+          setPaymentVerified(true);
+        } else if (user) {
+          // No payment found, redirect back to dashboard
+          alert('No valid payment found. Please make a payment first.');
+          router.push('/dashboard');
+        }
+      }
+    }
+  
+    if (user) {
+      verifyPaymentIfNeeded();
+    }
+  }, [user, searchParams, router]);
 
   // Get template types with their counts
   const getTemplateTypes = () => {
@@ -138,6 +200,18 @@ export default function TemplateSelect() {
     setAvailableFaculties([]);
   };
 
+  if (verifyingPayment) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 font-semibold">Verifying your payment...</p>
+          <p className="text-sm text-gray-500 mt-2">Please wait, do not refresh the page</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -187,6 +261,21 @@ export default function TemplateSelect() {
           </div>
         </div>
       </nav>
+
+      {/* Payment Success Banner */}
+      {paymentVerified && pendingPayment && (
+        <div className="bg-green-50 border-b-2 border-green-500 py-3">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center gap-2 text-green-800">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-semibold">Payment Verified! ₦{pendingPayment.amount.toLocaleString()}</span>
+              <span className="text-sm">- Now select your template</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8 lg:py-12">
