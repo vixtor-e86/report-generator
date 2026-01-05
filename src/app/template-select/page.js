@@ -10,12 +10,13 @@ function TemplateSelectContent() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [templates, setTemplates] = useState([]);
-  
+
   // Payment verification state
+  const [noPaymentFound, setNoPaymentFound] = useState(false);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [pendingPayment, setPendingPayment] = useState(null);
-  
+
   // Two-tier selection state
   const [step, setStep] = useState(1); // 1 = Template Type, 2 = Faculty Selection
   const [selectedType, setSelectedType] = useState(null); // '5-chapter', '6-chapter-thesis', 'siwes'
@@ -49,20 +50,25 @@ function TemplateSelectContent() {
     loadData();
   }, [router]);
 
+
   useEffect(() => {
     async function verifyPaymentIfNeeded() {
+      // Don't proceed if no user
+      if (!user) return;
+
       const paymentRef = searchParams.get('payment_ref');
-      
+
       if (paymentRef) {
+        // User came back from Paystack with a reference
         setVerifyingPayment(true);
         try {
           const response = await fetch(`/api/paystack/verify?reference=${paymentRef}`);
           const data = await response.json();
-  
+
           if (data.verified) {
             setPaymentVerified(true);
             setPendingPayment(data.transaction);
-            
+
             // Remove payment_ref from URL
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.delete('payment_ref');
@@ -79,27 +85,27 @@ function TemplateSelectContent() {
           setVerifyingPayment(false);
         }
       } else {
-        // Check for existing unused payment
+        // No payment reference in URL - check for existing unused payment
         const { data: unusedPayments } = await supabase
           .from('payment_transactions')
           .select('*')
-          .eq('user_id', user?.id)
+          .eq('user_id', user.id)
           .eq('status', 'paid')
           .is('project_id', null)
           .order('paid_at', { ascending: false })
           .limit(1);
-  
+
         if (unusedPayments && unusedPayments.length > 0) {
+          // Found existing payment - allow them to proceed
           setPendingPayment(unusedPayments[0]);
           setPaymentVerified(true);
-        } else if (user) {
-          // No payment found, redirect back to dashboard
-          alert('No valid payment found. Please make a payment first.');
-          router.push('/dashboard');
+        } else {
+          // ✅ NO PAYMENT - Show blocking screen
+          setNoPaymentFound(true);
         }
       }
     }
-  
+
     if (user) {
       verifyPaymentIfNeeded();
     }
@@ -139,10 +145,10 @@ function TemplateSelectContent() {
   // Get faculties for selected type
   const getFacultiesForType = (type) => {
     if (type === 'siwes') return []; // SIWES doesn't need faculty selection
-    
+
     const facultyTemplates = templates.filter(t => t.template_type === type && t.faculty);
     const faculties = [...new Set(facultyTemplates.map(t => t.faculty))];
-    
+
     return faculties.map(faculty => {
       const template = facultyTemplates.find(t => t.faculty === faculty);
       return {
@@ -171,7 +177,7 @@ function TemplateSelectContent() {
 
   const handleTypeSelect = (typeId) => {
     setSelectedType(typeId);
-    
+
     if (typeId === 'siwes') {
       // SIWES goes directly to project creation
       const siwesTemplate = templates.find(t => t.template_type === 'siwes');
@@ -220,6 +226,32 @@ function TemplateSelectContent() {
     );
   }
 
+  if (noPaymentFound) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Payment Required</h2>
+          <p className="text-gray-600 mb-6">
+            You need to complete payment before accessing templates. Please return to the dashboard and click "Create Standard" to make a payment.
+          </p>
+
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const templateTypes = getTemplateTypes();
 
   return (
@@ -230,8 +262,8 @@ function TemplateSelectContent() {
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Back Button */}
             {step === 1 ? (
-              <Link 
-                href="/dashboard" 
+              <Link
+                href="/dashboard"
                 className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 transition text-sm sm:text-base"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,7 +284,7 @@ function TemplateSelectContent() {
                 <span className="sm:hidden">Back</span>
               </button>
             )}
-            
+
             {/* Logo - Responsive sizing */}
             <div className="flex items-center gap-2">
               <img src="/favicon.ico" alt="W3 WriteLab" className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -291,10 +323,10 @@ function TemplateSelectContent() {
               </div>
               <span className="font-semibold text-xs sm:text-sm hidden xs:inline">Template</span>
             </div>
-            
+
             {/* Connector */}
             <div className={`h-0.5 w-8 sm:w-12 md:w-24 ${step >= 2 ? 'bg-indigo-600' : 'bg-gray-300'}`}></div>
-            
+
             {/* Step 2 */}
             <div className={`flex items-center gap-1 sm:gap-2 ${step >= 2 ? 'text-indigo-600' : 'text-gray-400'}`}>
               <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-base ${
@@ -304,10 +336,10 @@ function TemplateSelectContent() {
               </div>
               <span className="font-semibold text-xs sm:text-sm hidden xs:inline">Faculty</span>
             </div>
-            
+
             {/* Connector */}
             <div className={`h-0.5 w-8 sm:w-12 md:w-24 ${step >= 3 ? 'bg-indigo-600' : 'bg-gray-300'}`}></div>
-            
+
             {/* Step 3 */}
             <div className={`flex items-center gap-1 sm:gap-2 ${step >= 3 ? 'text-indigo-600' : 'text-gray-400'}`}>
               <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-base ${
@@ -481,8 +513,8 @@ function TemplateSelectContent() {
                 <div className="text-xs sm:text-sm text-gray-700">
                   <p className="font-semibold text-gray-900 mb-1">Faculty-Specific Templates</p>
                   <p>
-                    Each faculty has a customized structure with section names, terminology, and requirements 
-                    specific to your field of study. This ensures your report meets the exact standards expected 
+                    Each faculty has a customized structure with section names, terminology, and requirements
+                    specific to your field of study. This ensures your report meets the exact standards expected
                     in your discipline.
                   </p>
                 </div>

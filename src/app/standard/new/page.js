@@ -80,8 +80,8 @@ function NewProjectContent() {
         return;
       }
 
-      // ✅ NEW: Check for unused payment
-      const { data: unusedPayments } = await supabase
+      // ✅ NEW: Check for unused payment with better handling
+      const { data: unusedPayments, error: paymentError } = await supabase
         .from('payment_transactions')
         .select('*')
         .eq('user_id', user.id)
@@ -90,8 +90,25 @@ function NewProjectContent() {
         .order('paid_at', { ascending: false })
         .limit(1);
 
+      if (paymentError) {
+        console.error('Payment check error:', paymentError);
+        alert('Error checking payment status. Please try again.');
+        router.push('/dashboard');
+        return;
+      }
+
       if (!unusedPayments || unusedPayments.length === 0) {
         alert('No valid payment found. Please make a payment first.');
+        router.push('/dashboard');
+        return;
+      }
+
+      // Check if payment is expired (older than 24 hours as safety measure)
+      const paymentDate = new Date(unusedPayments[0].paid_at || unusedPayments[0].created_at);
+      const hoursSincePayment = (Date.now() - paymentDate.getTime()) / (1000 * 60 * 60);
+
+      if (hoursSincePayment > 24) {
+        alert('This payment session has expired. Please make a new payment.');
         router.push('/dashboard');
         return;
       }
