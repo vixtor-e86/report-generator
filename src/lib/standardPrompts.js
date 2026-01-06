@@ -172,7 +172,7 @@ FORMATTING REQUIREMENTS:
 7. Keep paragraphs well-spaced
 
 CONTENT REQUIREMENTS:
-1. Write 2000-2500 words for this part
+1. Write 1000-2000 words for this part
 2. Use professional Nigerian academic tone
 3. Focus on ACTUAL work experience, not theoretical knowledge
 4. Be specific about tasks, skills, equipment, people, challenges
