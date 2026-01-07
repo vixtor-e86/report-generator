@@ -105,10 +105,10 @@ export async function POST(request) {
       .eq('id', userId)
       .single();
 
-    // 6.5 ✅ NEW: Fetch template to get faculty
+    // 6.5 ✅ NEW: Fetch template to get faculty and type
     const { data: template } = await supabase
       .from('templates')
-      .select('faculty')
+      .select('faculty, template_type, name')
       .eq('id', project.template_id)
       .single();
 
@@ -123,7 +123,8 @@ export async function POST(request) {
       const abstractPrompt = getAbstractPrompt(
         project, 
         chapters, 
-        template?.faculty || 'Engineering'
+        template?.faculty || 'Engineering',
+        template?.template_type
       );
       
       const aiResult = await callAI(abstractPrompt, {

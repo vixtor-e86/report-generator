@@ -1,6 +1,6 @@
 // /src/lib/standardPrompts.js
 // Faculty-Aware Dynamic Standard Tier AI Prompts
-// Supports: Regular Projects (all faculties), SIWES/Industrial Training
+// UPDATED: Social Sciences & SIWES optimizations
 
 function getReferenceInstructions(referenceStyle, faculty, isLastChapter, existingReferences = []) {
   if (referenceStyle === 'none') {
@@ -27,7 +27,6 @@ function getReferenceInstructions(referenceStyle, faculty, isLastChapter, existi
 
   const style = styleInstructions[referenceStyle] || styleInstructions['apa'];
   
-  // Build existing references list
   let existingRefsText = '';
   if (existingReferences && existingReferences.length > 0) {
     existingRefsText = `\n\n=== EXISTING REFERENCES FROM PREVIOUS CHAPTERS ===\n`;
@@ -36,6 +35,13 @@ function getReferenceInstructions(referenceStyle, faculty, isLastChapter, existi
     });
     existingRefsText += `\nIMPORTANT: REUSE these references where applicable instead of creating new ones. Only create NEW references for topics not covered by existing references.\n`;
   }
+
+  const introSectionRule = faculty === 'Social Sciences' 
+    ? `\n\n**CRITICAL: NO CITATIONS IN INTRODUCTION SECTIONS**
+- Sections like "2.1 Introduction", "3.1 Introduction", "4.1 Introduction" should contain NO in-text citations
+- These are transitional paragraphs only - keep them brief and citation-free
+- Only add citations in substantive sections (e.g., 2.2, 2.3, 3.2, etc.)\n`
+    : '';
 
   return `
 REFERENCES AND CITATIONS (${referenceStyle.toUpperCase()} Style):
@@ -52,6 +58,7 @@ REFERENCES AND CITATIONS (${referenceStyle.toUpperCase()} Style):
    ${style.example}
 
 ${existingRefsText}
+${introSectionRule}
 
 4. ${isLastChapter ? `**IMPORTANT - FINAL CHAPTER REFERENCES**: 
    
@@ -79,9 +86,6 @@ ${existingRefsText}
 `;
 }
 
-// =====================================================
-// SIWES/Industrial Training Prompt (Unchanged)
-// =====================================================
 function getSIWESPrompt(partNumber, data) {
   const {
     projectTitle,
@@ -93,7 +97,7 @@ function getSIWESPrompt(partNumber, data) {
     customInstruction = '',
     templateStructure,
     referenceStyle = 'apa',
-    existingReferences = [] // ✅ NEW
+    existingReferences = []
   } = data;
 
   const companyName = components[0] || 'the organization';
@@ -123,7 +127,6 @@ function getSIWESPrompt(partNumber, data) {
   } else {
     imagesContext = '\n\n=== NO IMAGES AVAILABLE FOR THIS PART ===\n';
     imagesContext += `IMPORTANT: Do NOT reference any images or figures in this part.\n`;
-    imagesContext += `Previous parts may have had images, but this part has none assigned.\n`;
   }
 
   let contextSection = '';
@@ -136,14 +139,18 @@ function getSIWESPrompt(partNumber, data) {
     customSection = `\n\n=== ADDITIONAL INSTRUCTION ===\n${customInstruction}\n`;
   }
 
-  const sectionsText = partInfo.sections.map(section => `${section}`).join('\n');
+  const sectionsText = partInfo.sections
+    .filter(section => {
+      if (partNumber === 1) return true;
+      return !section.includes('Introduction');
+    })
+    .map(section => `${section}`)
+    .join('\n');
   
-  // Determine if this is the last part
   const totalParts = templateStructure?.chapters?.length || 4;
   const isLastPart = partNumber === totalParts;
   
-  // Get reference instructions
-   const referenceInstructions = 'DO NOT include any references or in-text citations. SIWES/Industrial Training reports focus on personal work experience, not academic citations.';
+  const referenceInstructions = 'DO NOT include any references or in-text citations. SIWES/Industrial Training reports focus on personal work experience, not academic citations.';
 
   const prompt = `You are an expert writer specializing in SIWES (Student Industrial Work Experience Scheme) and industrial training reports for Nigerian universities.
 
@@ -165,20 +172,22 @@ ${sectionsText}
 FORMATTING REQUIREMENTS:
 1. Use Markdown format ONLY
 2. Start with: ## PART ${partNumber.toString().toUpperCase()}: ${partInfo.title.toUpperCase()}
-3. For main sections use: ### ${partNumber}.1 Section Name
-4. For subsections use: #### ${partNumber}.1.1 Subsection Name
+3. For main sections use: ### ${partNumber}.X Section Name
+4. For subsections use: #### ${partNumber}.X.X Subsection Name
 5. Use **bold** for emphasis
 6. Use bullet points with - for lists
 7. Keep paragraphs well-spaced
+8. ${partNumber > 1 ? '**NO INTRODUCTION SECTION** - Start directly with substantive content (e.g., ### 2.2, ### 3.2, ### 4.2)' : ''}
 
 CONTENT REQUIREMENTS:
-1. Write 1000-2000 words for this part
+1. Write 1200-1500 words for this part (CONCISE and focused)
 2. Use professional Nigerian academic tone
 3. Focus on ACTUAL work experience, not theoretical knowledge
 4. Be specific about tasks, skills, equipment, people, challenges
 5. Use first-person perspective ("I was assigned...", "I learned...")
 6. Include practical examples from experience
 7. Reference ${department} department work specifically
+8. ${partNumber === 1 ? 'For 1.2 Company Profile - be brief but informative (2-3 paragraphs total for history, structure, products)' : ''}
 
 ${referenceInstructions}
 
@@ -187,7 +196,9 @@ CRITICAL RULES:
 2. ONLY output actual content starting with ## heading
 3. Be honest and realistic about industrial training
 4. Focus on learning outcomes and practical skills
-5. DO NOT include any references or citations (SIWES reports are experience-based, not research-based)
+5. DO NOT include any references or citations
+6. ${partNumber > 1 ? 'DO NOT write introduction sections - go straight to substantive content' : ''}
+7. Keep it concise - quality over quantity
 
 SPECIFIC GUIDANCE FOR ${partInfo.title.toUpperCase()}:
 ${getSIWESPartGuidance(partNumber, partInfo.title, companyName, department)}
@@ -199,48 +210,49 @@ Now write the complete part following ALL requirements above.`;
 
 function getSIWESPartGuidance(partNumber, partTitle, companyName, department) {
   if (partNumber === 1) {
-    return `This is the INTRODUCTION part. Set the stage:
-- Background of SIWES: Explain SIWES objectives in Nigerian universities
-- Company Profile: Detailed info about ${companyName} (history, structure, products/services)
-- SIWES Objectives: List 4-6 specific objectives
-- Duration and Scope: State when training started/ended and departments covered`;
+    return `This is the INTRODUCTION part. Set the stage concisely:
+- Background of SIWES: VERY BRIEF (1 short paragraph only) - state what SIWES is and its purpose in Nigerian universities. Do NOT write lengthy history.
+- Company Profile: Brief info about ${companyName} (2-3 paragraphs: history, structure, products/services)
+- SIWES Objectives: List 4-5 specific objectives for YOUR training (bullet points)
+- Duration and Scope: State when training started/ended and department(s) covered
+Keep this part focused and under 1500 words total.`;
   }
 
   if (partNumber === 2) {
     return `This is the WORK EXPERIENCE part (CORE of report):
-- Department Overview: Describe ${department} structure/functions
-- Daily Activities: Detail typical day (be specific!)
-- Responsibilities: List assigned tasks
-- Technical Skills: New skills acquired (software, tools, procedures)
-- Equipment/Tools: Describe equipment used
-Be VERY specific with concrete examples!`;
+- Department Structure: Brief overview of ${department} (1 paragraph)
+- Daily Activities: Detail typical day with specifics (2-3 paragraphs)
+- Responsibilities: List assigned tasks with examples (bullet points + explanation)
+- Technical Skills: New skills acquired - be specific (2 paragraphs)
+- Equipment/Tools: Describe equipment used with details (1-2 paragraphs)
+NO introduction - start directly with ### 2.2 Department Structure
+Be VERY specific with concrete examples! Keep under 1500 words.`;
   }
 
   if (partNumber === 3) {
     return `This is the ANALYSIS part:
-- Technical Analysis: Discuss specific projects/tasks in detail
-- Challenges: Problems encountered
-- Solutions: How you/team solved challenges
-- Theory vs Practice: How classroom knowledge applied
-Show critical thinking and reflection.`;
+- Technical Analysis: Discuss 2-3 specific projects/tasks in detail
+- Challenges: Main problems encountered (be specific)
+- Solutions: How you/team solved them
+- Theory vs Practice: How classroom knowledge applied (give examples)
+NO introduction - start directly with ### 3.2 Technical Analysis
+Show critical thinking and reflection. Keep under 1500 words.`;
   }
 
   if (partNumber === 4) {
     return `This is the CONCLUSION part:
-- Summary: Recap key aspects of training
-- Personal Development: How you grew professionally
-- Recommendations for ${companyName}: Suggest improvements
-- Recommendations for Institution: Suggest SIWES improvements
-- Conclusion: Final thoughts on training value
-Be constructive and show maturity.`;
+- Summary: Recap key aspects briefly (1-2 paragraphs)
+- Personal Development: How you grew professionally (1-2 paragraphs)
+- Recommendations for ${companyName}: 4-5 constructive suggestions
+- Recommendations for Institution: 3-4 suggestions for SIWES improvement
+- Conclusion: Final thoughts on training value (1 paragraph)
+NO introduction - start directly with ### 4.2 Summary
+Be constructive and mature. Keep under 1500 words.`;
   }
 
   return `Write with depth and specificity. Connect to actual experience at ${companyName} in ${department}.`;
 }
 
-// =====================================================
-// FACULTY-SPECIFIC PROMPT GENERATOR
-// =====================================================
 function getFacultySpecificPrompt(chapterNumber, data) {
   const {
     projectTitle,
@@ -253,7 +265,7 @@ function getFacultySpecificPrompt(chapterNumber, data) {
     templateStructure,
     faculty,
     referenceStyle = 'apa',
-    existingReferences = [] // ✅ NEW
+    existingReferences = []
   } = data;
 
   const chapterInfo = templateStructure?.chapters?.find(ch => ch.number === chapterNumber);
@@ -262,8 +274,6 @@ function getFacultySpecificPrompt(chapterNumber, data) {
     throw new Error(`Chapter ${chapterNumber} not found in template structure`);
   }
 
-  // Build images context
-  // Build images context
   let imagesContext = '';
   if (images && images.length > 0) {
     imagesContext = '\n\n=== IMAGES AVAILABLE FOR THIS CHAPTER ===\n';
@@ -273,13 +283,12 @@ function getFacultySpecificPrompt(chapterNumber, data) {
     imagesContext += `\n**CRITICAL IMAGE RULES:**\n`;
     imagesContext += `1. You have ${images.length} image(s) available for THIS chapter (Chapter ${chapterNumber})\n`;
     imagesContext += `2. ONLY reference images listed above using: {{figure${chapterNumber}.1}}, {{figure${chapterNumber}.2}}, etc.\n`;
-    imagesContext += `3. DO NOT reference images from other chapters (e.g., figure${chapterNumber - 1}.X or figure${chapterNumber + 1}.X)\n`;
+    imagesContext += `3. DO NOT reference images from other chapters\n`;
     imagesContext += `4. If no relevant image is available from the list above, DO NOT add any figure reference\n`;
     imagesContext += `5. Place figure references naturally in the text where images would be helpful\n`;
   } else {
     imagesContext = '\n\n=== NO IMAGES AVAILABLE FOR THIS CHAPTER ===\n';
     imagesContext += `IMPORTANT: Do NOT reference any images or figures in this chapter.\n`;
-    imagesContext += `Previous chapters may have had images, but this chapter has none assigned.\n`;
   }
 
   let contextSection = '';
@@ -292,19 +301,32 @@ function getFacultySpecificPrompt(chapterNumber, data) {
     customSection = `\n\n=== ADDITIONAL INSTRUCTION ===\n${customInstruction}\n`;
   }
 
-  const sectionsText = chapterInfo.sections.map(section => `${section}`).join('\n');
+  const sectionsText = chapterInfo.sections
+    .filter(section => {
+      if (faculty === 'Social Sciences' && section.includes('Organization of the Study')) {
+        return false;
+      }
+      return true;
+    })
+    .map(section => `${section}`)
+    .join('\n');
 
-  // Get faculty-specific tone and terminology
   const facultyContext = getFacultyContext(faculty);
-  
-  // Determine if this is the last chapter
   const totalChapters = templateStructure?.chapters?.length || 5;
   const isLastChapter = chapterNumber === totalChapters;
   
-  // Get reference instructions
   const referenceInstructions = referenceStyle === 'none' 
     ? 'DO NOT include any references or citations.' 
-    : getReferenceInstructions(referenceStyle, faculty, isLastChapter, existingReferences); // ✅ Pass existing refs
+    : getReferenceInstructions(referenceStyle, faculty, isLastChapter, existingReferences);
+
+  const socialSciencesIntroRule = faculty === 'Social Sciences' 
+    ? `\n\n**SOCIAL SCIENCES SPECIFIC RULES:**
+- Section introductions (2.1, 3.1, 4.1, 5.1) must be VERY SHORT (1-2 sentences max)
+- NO citations in introduction sections
+- For section 1.3 Research Questions: State MAXIMUM 5 research questions (do not exceed 5)
+- Keep Chapter 1 concise - avoid lengthy explanations
+- "Organization of the Study" section has been removed from template\n`
+    : '';
 
   const prompt = `You are an expert academic writer specializing in ${faculty} ${chapterInfo.title === 'Introduction' ? 'project reports' : 'research'} for Nigerian universities.
 
@@ -320,6 +342,7 @@ ${customSection}
 
 FACULTY-SPECIFIC CONTEXT:
 ${facultyContext}
+${socialSciencesIntroRule}
 
 REFERENCE EXAMPLES FOR YOUR FACULTY:
 ${getFacultyReferenceExamples(faculty)}
@@ -340,17 +363,19 @@ FORMATTING REQUIREMENTS:
 7. Use numbered lists for procedures
 8. Use proper Markdown tables
 9. Keep paragraphs well-spaced
+10. ${chapterNumber > 1 ? '**IMPORTANT: Section introductions (e.g., 2.1, 3.1, 4.1) must be VERY BRIEF (1-2 sentences only)**' : ''}
 
 CONTENT REQUIREMENTS:
 1. Write 2000-2500 words for this chapter
 2. Use professional Nigerian academic tone
 3. Be SPECIFIC to: ${components.join(', ')}
 4. Include ${faculty}-appropriate technical details
-5. Each section: 2-4 substantial paragraphs minimum
+5. Each section: 2-4 substantial paragraphs minimum (except introduction sections which should be brief)
 6. Use correct terminology for ${faculty}
 7. Use Nigerian English spelling
 8. ${faculty === 'Management Sciences' || faculty === 'Law' ? 'Include relevant Nigerian context/examples' : ''}
 9. ${faculty === 'Sciences' || faculty === 'Agricultural Sciences' || faculty === 'Basic Medical Sciences' ? 'Include experimental/methodological details' : ''}
+10. ${faculty === 'Social Sciences' ? 'CRITICAL: State MAXIMUM 5 research questions in section 1.3 (not more than 5)' : ''}
 
 ${referenceInstructions}
 
@@ -360,6 +385,7 @@ CRITICAL RULES:
 3. NO introductory text before ## heading
 4. ONLY output actual chapter content starting with ##
 5. If images available, reference using {{figureX.Y}} placeholders
+6. ${chapterNumber > 1 ? 'Keep section introductions (X.1) very short - 1-2 sentences only' : ''}
 
 FACULTY-SPECIFIC GUIDANCE FOR ${chapterInfo.title.toUpperCase()}:
 ${getFacultyChapterGuidance(chapterNumber, chapterInfo.title, faculty, components, department)}
@@ -369,38 +395,23 @@ Now write the complete chapter following ALL requirements above.`;
   return prompt;
 }
 
-// =====================================================
-// FACULTY CONTEXT DEFINITIONS
-// =====================================================
 function getFacultyContext(faculty) {
   const contexts = {
     'Engineering': `Focus on technical specifications, circuit/system design, implementation details, and practical engineering applications. Use engineering terminology and include hardware/software specifics.`,
-    
     'Sciences': `Emphasize experimental methodology, scientific rigor, hypothesis testing, and data analysis. Use scientific terminology and focus on reproducibility and validity.`,
-    
     'Management Sciences': `Focus on organizational context, business implications, management theories, and practical applications in Nigerian business environment. Include case studies where appropriate.`,
-    
-    'Social Sciences': `Emphasize social theories, qualitative/quantitative research methods, demographic analysis, and societal implications. Use social science terminology and frameworks.`,
-    
+    'Social Sciences': `Emphasize social theories, qualitative/quantitative research methods, demographic analysis, and societal implications. Use social science terminology and frameworks. Keep introductions concise.`,
     'Arts & Humanities': `Focus on literary/cultural analysis, historical context, theoretical frameworks, and critical interpretation. Use humanities terminology and analytical approaches.`,
-    
     'Law': `Emphasize legal principles, statutory provisions, case law analysis, and jurisprudential issues. Use proper legal terminology and cite relevant Nigerian laws where appropriate.`,
-    
     'Education': `Focus on pedagogical theories, curriculum development, teaching methodologies, and educational implications. Use education terminology and reference learning theories.`,
-    
     'Agricultural Sciences': `Emphasize agronomic principles, field methodology, crop/animal management, and practical agricultural applications. Use agricultural terminology and farming practices.`,
-    
     'Environmental Science': `Focus on environmental assessment, ecological principles, sustainability, and policy implications. Use environmental science terminology and Nigerian environmental context.`,
-    
     'Basic Medical Sciences': `Emphasize anatomical/physiological principles, clinical relevance, experimental procedures, and medical implications. Use medical terminology appropriately.`
   };
 
   return contexts[faculty] || contexts['Engineering'];
 }
 
-// =====================================================
-// FACULTY-SPECIFIC REFERENCE EXAMPLES
-// =====================================================
 function getFacultyReferenceExamples(faculty) {
   const examples = {
     'Engineering': `
@@ -409,21 +420,18 @@ Example References:
 - Okafor, C. N. & Bello, S. M. (2022). Microcontroller Applications in Embedded Systems. Journal of Nigerian Engineering, 15(3), 45-62.
 - Ahmed, K. (2020). Power Supply Design and Analysis. Abuja: Engineering Press.
 `,
-    
     'Sciences': `
 Example References:
 - Okonkwo, I. F. (2022). Experimental Methods in Natural Sciences. Ibadan: Science Publications.
 - Eze, P. N. & Adeleke, R. O. (2021). Analytical Chemistry: Theory and Practice. Nigerian Journal of Pure Sciences, 12(2), 78-95.
 - Musa, A. B. (2023). Laboratory Techniques and Safety. Lagos: Academic Publishers.
 `,
-    
     'Management Sciences': `
 Example References:
 - Adebayo, O. S. (2021). Strategic Management in Nigerian Organizations. Lagos: Business Press.
 - Okafor, J. I. & Nwosu, P. C. (2022). Organizational Behavior and Performance. African Journal of Management Studies, 8(4), 112-128.
 - Yusuf, M. A. (2020). Marketing Strategies for Emerging Markets. Abuja: MBA Publishers.
 `,
-    
     'Law': `
 Example References:
 - Akinola, S. R. (2022). Nigerian Constitutional Law: Principles and Practice. Lagos: Legal Publications.
@@ -431,42 +439,36 @@ Example References:
 - Balogun, F. A. (2023). Administrative Law in Nigeria. Abuja: Justice Press.
 Note: Do NOT cite specific case names like "Ransome-Kuti v. AG Federation" - just reference legal principles and authors.
 `,
-    
     'Social Sciences': `
 Example References:
 - Okoro, N. P. (2021). Social Research Methods. Lagos: Social Science Publishers.
 - Ibrahim, A. K. & Chukwu, E. O. (2022). Contemporary Nigerian Society: Issues and Perspectives. Journal of Social Studies, 14(3), 89-104.
 - Adeola, G. L. (2020). Sociology of Development. Ibadan: Academic Press.
 `,
-    
     'Arts & Humanities': `
 Example References:
 - Achebe, N. C. (2021). Literary Criticism and African Literature. Lagos: Humanities Publishers.
 - Ogunyemi, T. O. (2022). Cultural Identity in Nigerian Prose. African Literature Review, 16(2), 45-67.
 - Babatunde, S. A. (2020). Philosophy and the Nigerian Experience. Ibadan: Philosophy Press.
 `,
-    
     'Education': `
 Example References:
 - Oluwole, D. A. (2021). Curriculum Development in Nigerian Schools. Lagos: Education Publishers.
 - Akintunde, E. O. & Ogundele, M. B. (2022). Pedagogical Approaches in Science Education. Journal of Educational Research, 11(4), 78-94.
 - Yusuf, H. O. (2023). Learning Theories and Classroom Practice. Abuja: Teachers' Press.
 `,
-    
     'Agricultural Sciences': `
 Example References:
 - Adekunle, V. A. (2022). Crop Production and Management in Nigeria. Ibadan: Agricultural Publishers.
 - Bello, O. S. & Oladipo, F. O. (2021). Soil Science and Fertility Management. Nigerian Journal of Agriculture, 18(3), 56-73.
 - Mohammed, A. B. (2020). Sustainable Farming Practices. Kano: Agro Press.
 `,
-    
     'Environmental Science': `
 Example References:
 - Ojo, E. O. (2021). Environmental Management in Nigeria. Lagos: Environmental Publishers.
 - Chukwu, K. E. & Adebanjo, A. A. (2022). Climate Change and Adaptation Strategies. Nigerian Environmental Journal, 13(2), 89-106.
 - Ajayi, S. O. (2023). Environmental Impact Assessment Procedures. Abuja: Green Publishers.
 `,
-    
     'Basic Medical Sciences': `
 Example References:
 - Adeyemo, W. L. (2021). Human Anatomy and Physiology. Lagos: Medical Publishers.
@@ -478,148 +480,89 @@ Example References:
   return examples[faculty] || examples['Engineering'];
 }
 
-// =====================================================
-// FACULTY-SPECIFIC CHAPTER GUIDANCE
-// =====================================================
 function getFacultyChapterGuidance(chapterNum, chapterTitle, faculty, components, department) {
   const componentsList = components.join(', ');
 
-  // Chapter 1: Introduction
   if (chapterNum === 1) {
     const introGuidance = {
       'Engineering': `Explain ${department} field and how ${componentsList} fit into modern applications. Identify a specific technical problem these components solve. Write ONE clear aim ("To design and implement..."). List 4-6 SMART objectives. Justify why THIS project matters in Nigeria now.`,
-      
       'Sciences': `Explain scientific background of ${componentsList}. State research questions clearly. Define hypotheses if applicable. Explain significance of findings to scientific community. Justify why this research is timely and relevant.`,
-      
       'Management Sciences': `Explain organizational/business context. State the management problem clearly. Define research questions tied to Nigerian business environment. Justify practical relevance to organizations in Nigeria.`,
-      
-      'Social Sciences': `Explain social phenomenon being studied. State research questions about societal issues. Define theoretical framework guiding the study. Justify social relevance and potential policy implications.`,
-      
+      'Social Sciences': `**KEEP IT CONCISE**: Explain social phenomenon being studied (1.1 Background - 2 paragraphs). State the problem clearly (1.2 - 1-2 paragraphs). List research questions (1.3 - MAXIMUM 5 questions). Define objectives matching the questions (1.4). State hypotheses if applicable (1.5 - can be brief). Explain significance (1.6 - 2 paragraphs). Define scope/delimitation clearly (1.7 - 1 paragraph). Define key terms briefly (1.8 - 1 sentence per term). NO "Organization of Study" section. Keep entire chapter under 2500 words.`,
       'Arts & Humanities': `Provide historical/cultural context. State research questions about literary/cultural phenomena. Explain theoretical perspectives to be used. Justify contribution to humanities scholarship.`,
-      
       'Law': `Explain legal context and relevant laws. State legal research questions. Define scope within Nigerian legal framework. Justify legal significance and potential impact on jurisprudence.`,
-      
       'Education': `Explain educational context and pedagogical issues. State research questions about teaching/learning. Define theoretical framework (learning theories). Justify educational implications for Nigerian schools.`,
-      
       'Agricultural Sciences': `Explain agronomic background. State research questions about crop/animal/soil management. Define hypotheses if applicable. Justify agricultural/economic importance to Nigerian farming.`,
-      
       'Environmental Science': `Explain environmental issue/context. State research questions about environmental problems. Justify environmental significance and policy implications for Nigeria.`,
-      
       'Basic Medical Sciences': `Explain anatomical/physiological background. State research questions about medical phenomena. Define hypotheses if applicable. Justify clinical/medical relevance to healthcare.`
     };
-
     return introGuidance[faculty] || introGuidance['Engineering'];
   }
 
-  // Chapter 2: Literature Review
   if (chapterNum === 2) {
     const litReviewGuidance = {
       'Engineering': `Review theoretical principles behind ${componentsList}. Discuss 3-5 similar projects. For each component, explain: what it is, how it works, specifications, why chosen. Synthesize and lead to methodology.`,
-      
       'Sciences': `Review scientific theories relevant to ${componentsList}. Discuss previous experimental studies. Analyze methodologies used by others. Identify research gaps your study will fill.`,
-      
       'Management Sciences': `Review management theories and frameworks. Discuss empirical studies from Nigerian and international contexts. Analyze organizational practices. Identify gaps in management literature.`,
-      
-      'Social Sciences': `Review social theories and concepts. Discuss empirical studies on the phenomenon. Analyze research methodologies used. Identify gaps in understanding social issues.`,
-      
+      'Social Sciences': `**2.1 Introduction: 1-2 sentences ONLY** (e.g., "This chapter reviews literature on [topic]. It is organized into conceptual, theoretical, and empirical sections."). Then proceed: 2.2 Conceptual Clarification (define key concepts - 2-3 paragraphs), 2.3 Theoretical Framework (choose 1-2 theories and explain - 3-4 paragraphs), 2.4 Empirical Review (discuss 5-7 previous studies grouped thematically - majority of chapter), 2.5 Summary and Research Gap (identify what's missing - 2 paragraphs), 2.6 Conceptual Model (if applicable - diagram + explanation).`,
       'Arts & Humanities': `Review theoretical perspectives and critical approaches. Discuss relevant literary/cultural works. Analyze scholarly interpretations. Identify new analytical angles.`,
-      
       'Law': `Review legal framework (constitutional, statutory, case law). Analyze judicial pronouncements. Discuss legal principles. Identify gaps or inconsistencies in law.`,
-      
       'Education': `Review educational theories (learning theories, pedagogical approaches). Discuss empirical studies in education. Analyze teaching methodologies. Identify gaps in educational research.`,
-      
       'Agricultural Sciences': `Review agronomic principles and theories. Discuss previous field/lab studies. Analyze agricultural practices. Identify gaps in agricultural knowledge.`,
-      
       'Environmental Science': `Review environmental theories and policies. Discuss previous environmental studies. Analyze assessment methodologies. Identify environmental research gaps.`,
-      
       'Basic Medical Sciences': `Review anatomical/physiological theories. Discuss previous medical studies. Analyze clinical methodologies. Identify gaps in medical knowledge.`
     };
-
     return litReviewGuidance[faculty] || litReviewGuidance['Engineering'];
   }
 
-  // Chapter 3: Methodology
   if (chapterNum === 3) {
     const methodologyGuidance = {
       'Engineering': `Explain system architecture of ${componentsList}. Provide detailed circuit/block diagrams. Analyze each component (specs, pins, interfaces). Give step-by-step implementation. Include BEME with realistic Nigerian prices (₦). Explain testing procedures.`,
-      
       'Sciences': `Describe experimental design clearly. List all materials/reagents/equipment. Provide detailed procedures (reproducible). Explain data collection methods. Describe statistical analysis techniques. Address validity and reliability.`,
-      
       'Management Sciences': `Describe research design (survey, case study, etc.). Define population and sampling. Explain data collection instruments (questionnaire, interview). Describe data analysis methods (statistical, thematic). Address validity and reliability.`,
-      
-      'Social Sciences': `Describe research design and approach. Define study area/population. Explain sampling technique. Describe data collection methods. Explain analysis techniques (quantitative/qualitative). Address ethical considerations.`,
-      
+      'Social Sciences': `**3.1 Introduction: 1-2 sentences ONLY**. Then: 3.2 Research Design (state design type - 1 paragraph), 3.3 Study Area (describe location - 1-2 paragraphs), 3.4 Population (state and justify - 1 paragraph), 3.5 Sample and Sampling (state sample size, sampling technique with formula - 2 paragraphs), 3.6 Instruments (describe questionnaire/interview guide structure - 2 paragraphs), 3.7 Validation (explain how validated - 1 paragraph), 3.8 Reliability (state Cronbach's alpha or test-retest - 1 paragraph), 3.9 Data Collection Method (explain procedure - 1 paragraph), 3.10 Data Analysis (state statistical/thematic methods - 1 paragraph).`,
       'Arts & Humanities': `Describe research approach (textual analysis, historical, etc.). Identify primary and secondary sources. Explain method of data collection. Describe analytical framework to be used. Explain interpretive approach.`,
-      
       'Law': `Describe doctrinal/non-doctrinal research approach. Identify sources (primary legal texts, case law, secondary literature). Explain method of legal analysis. Describe interpretive framework. Address scope of legal research.`,
-      
       'Education': `Describe research design (experimental, quasi-experimental, descriptive). Define study area and population (schools, students). Explain sampling technique. Describe instruments (tests, questionnaires). Explain data analysis methods. Address validity/reliability.`,
-      
       'Agricultural Sciences': `Describe experimental site and design (layout, treatments). List all materials and equipment. Provide detailed field/lab procedures. Explain data collection methods. Describe statistical analysis (ANOVA, etc.). Address experimental controls.`,
-      
       'Environmental Science': `Describe study area with details (location, characteristics). Explain sampling design/techniques. Describe data collection methods (field, lab). Explain analysis techniques. Address quality control and limitations.`,
-      
       'Basic Medical Sciences': `Describe study design (experimental, observational, clinical). Define study population/sample. List all materials/reagents/equipment. Provide detailed procedures. Explain data collection and statistical analysis. Address ethical considerations.`
     };
-
     return methodologyGuidance[faculty] || methodologyGuidance['Engineering'];
   }
 
-  // Chapter 4: Results/Data Presentation
   if (chapterNum === 4) {
     const resultsGuidance = {
       'Engineering': `Describe 3-5 tests conducted (unit, integration, system, performance). For EACH test: purpose, procedure, expected result, actual result. Present data in tables. Reference test images. Analyze whether objectives from Chapter 1 were met. Be honest about successes and limitations.`,
-      
       'Sciences': `Present experimental results clearly with tables/graphs. Provide statistical analysis (p-values, significance). Interpret data objectively. Compare with expected theoretical values. Be transparent about anomalies or limitations.`,
-      
       'Management Sciences': `Present demographic data of respondents. Analyze research questions with appropriate statistics. Test hypotheses (if applicable). Present findings in tables/charts. Discuss findings in relation to management theories from Chapter 2.`,
-      
-      'Social Sciences': `Present demographic characteristics of participants. Analyze research questions systematically. Test hypotheses (if applicable). Present findings with tables/charts. Discuss in relation to social theories from Chapter 2.`,
-      
+      'Social Sciences': `**4.1 Introduction: 1-2 sentences ONLY**. Then: 4.2 Demographic Characteristics (present in table with brief description - 1-2 paragraphs), 4.3 Analysis of Research Questions (analyze each of the 5 questions systematically with tables/charts - major section), 4.4 Testing of Hypotheses (if applicable - use appropriate statistical tests with tables), 4.5 Discussion of Findings (relate findings to theories from Chapter 2 and empirical studies - substantial section), 4.6 Summary of Major Findings (bullet points of key findings - 1 paragraph).`,
       'Arts & Humanities': `Present textual/content analysis findings. Discuss thematic patterns identified. Provide critical interpretation with examples. Analyze in relation to theoretical framework from Chapter 2.`,
-      
       'Law': `Present key legal findings from analysis. Discuss case law examination results. Analyze statutory interpretations. Present jurisprudential issues identified. Discuss legal implications.`,
-      
       'Education': `Present analysis of research questions with appropriate statistics. Test hypotheses (if applicable). Present findings with tables/charts. Discuss findings in relation to educational theories. Explain pedagogical implications.`,
-      
       'Agricultural Sciences': `Present experimental results with tables/graphs. Provide statistical analysis (ANOVA, LSD, etc.). Compare treatment effects. Discuss in relation to agronomic principles. Compare with previous studies.`,
-      
       'Environmental Science': `Present environmental data with tables/charts/maps. Provide statistical/spatial analysis. Interpret environmental conditions. Discuss environmental implications. Compare with standards/previous studies.`,
-      
       'Basic Medical Sciences': `Present experimental/clinical results clearly. Provide statistical analysis. Discuss clinical implications. Compare with physiological/anatomical principles. Relate to previous medical studies.`
     };
-
     return resultsGuidance[faculty] || resultsGuidance['Engineering'];
   }
 
-  // Chapter 5/6: Conclusion
   if (chapterNum === 5 || chapterNum === 6) {
     const conclusionGuidance = {
       'Engineering': `Recap entire project journey. Highlight KEY results. Assess which objectives were achieved. Evaluate strengths and weaknesses honestly. Recommend 5-7 improvements (additional features, scaling, commercial viability, future research). End with strong closing about project value.`,
-      
       'Sciences': `Summarize study and findings. State conclusion based on results. Explain contributions to scientific knowledge. Acknowledge limitations. Recommend future research directions.`,
-      
       'Management Sciences': `Summarize research and findings. State conclusions. Explain contributions to management knowledge. Provide managerial/organizational recommendations. Acknowledge limitations. Suggest future research.`,
-      
-      'Social Sciences': `Summarize research and findings. State conclusions. Explain social implications. Provide policy recommendations. Acknowledge limitations. Suggest future research.`,
-      
+      'Social Sciences': `**5.1 Summary: Brief recap of entire study (1-2 paragraphs)**. 5.2 Conclusion: State conclusions based on findings (2-3 paragraphs). 5.3 Recommendations: Provide 5-7 actionable recommendations based on findings (bullet points with brief explanations). 5.4 Limitations: Acknowledge study limitations honestly (1 paragraph). 5.5 Suggestions for Further Research: Suggest 3-4 areas for future studies (bullet points with brief rationale).`,
       'Arts & Humanities': `Summarize analysis and findings. State conclusions. Explain contributions to humanities scholarship. Acknowledge limitations of interpretation. Suggest areas for further study.`,
-      
       'Law': `Summarize research. State legal conclusions. Provide legislative, judicial, and policy recommendations. Explain contributions to legal scholarship. Acknowledge limitations. Suggest areas for further legal research.`,
-      
       'Education': `Summarize research and findings. State educational conclusions. Explain pedagogical implications for teachers/schools. Provide educational recommendations. Acknowledge limitations. Suggest further educational research.`,
-      
       'Agricultural Sciences': `Summarize study and findings. State agronomic conclusions. Explain practical implications for farmers. Provide agricultural recommendations. Acknowledge limitations. Suggest further research.`,
-      
       'Environmental Science': `Summarize study and findings. State environmental conclusions. Provide policy and management recommendations. Explain environmental implications. Acknowledge limitations. Suggest further environmental research.`,
-      
       'Basic Medical Sciences': `Summarize study and findings. State medical/clinical conclusions. Explain clinical implications for healthcare. Provide research/clinical recommendations. Acknowledge limitations. Suggest further medical research.`
     };
-
     return conclusionGuidance[faculty] || conclusionGuidance['Engineering'];
   }
 
-  // Default for other chapters
   return `Write this chapter with depth, professionalism, and ${faculty}-specific terminology. Connect everything to ${componentsList} and ${department} principles.`;
 }
 
