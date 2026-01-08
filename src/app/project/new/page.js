@@ -1,18 +1,28 @@
+// src/app/project/new/page.js - UPDATED VERSION
 "use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
-export default function NewProject() {
+function NewProjectContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const templateId = searchParams.get('template');
+
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [template, setTemplate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [projectTitle, setProjectTitle] = useState('');
+
+  const [faculty, setFaculty] = useState('');
   const [department, setDepartment] = useState('');
+  const [universityData, setUniversityData] = useState({});
+  const [facultiesList, setFacultiesList] = useState([]);
   const [departmentsList, setDepartmentsList] = useState([]);
+
+  const [projectTitle, setProjectTitle] = useState('');
   const [components, setComponents] = useState([]);
   const [componentInput, setComponentInput] = useState('');
   const [description, setDescription] = useState('');
@@ -49,28 +59,68 @@ export default function NewProject() {
         return;
       }
 
+      // Fetch template if templateId provided
+      if (!templateId) {
+        router.push('/project/template-select');
+        return;
+      }
+
+      const { data: templateData, error: templateError } = await supabase
+        .from('templates')
+        .select('*')
+        .eq('id', templateId)
+        .single();
+
+      if (templateError || !templateData) {
+        alert('Template not found');
+        router.push('/project/template-select');
+        return;
+      }
+
+      // Fetch departments
       const res = await fetch('/api/departments');
       const data = await res.json();
       
-      // Handle the case where data is an object (Faculties -> Departments)
-      let allDepartments = [];
-      if (Array.isArray(data)) {
-        allDepartments = data;
-      } else {
-        // Flatten values from { "Engineering": [...], "Science": [...] }
-        allDepartments = Object.values(data).flat();
+      setUniversityData(data);
+      setFacultiesList(Object.keys(data));
+
+      // Pre-fill faculty and department from template/profile
+      if (templateData.faculty) {
+        setFaculty(templateData.faculty);
+        if (Array.isArray(data[templateData.faculty])) {
+          setDepartmentsList(data[templateData.faculty]);
+        }
+      } else if (profile.faculty) {
+        setFaculty(profile.faculty);
+        if (Array.isArray(data[profile.faculty])) {
+          setDepartmentsList(data[profile.faculty]);
+        }
       }
-      
-      // Sort alphabetically
-      allDepartments.sort();
-      setDepartmentsList(allDepartments);
+
+      if (profile.department) {
+        setDepartment(profile.department);
+      }
+
       setUser(user);
       setProfile(profile);
-      setDepartment(profile.department || '');
+      setTemplate(templateData);
       setLoading(false);
     }
+
     loadData();
-  }, [router]);
+  }, [router, templateId]);
+
+  const handleFacultyChange = (e) => {
+    const selectedFaculty = e.target.value;
+    setFaculty(selectedFaculty);
+    setDepartment('');
+
+    if (selectedFaculty && Array.isArray(universityData[selectedFaculty])) {
+      setDepartmentsList(universityData[selectedFaculty]);
+    } else {
+      setDepartmentsList([]);
+    }
+  };
 
   const addComponent = () => {
     if (componentInput.trim() && !components.includes(componentInput.trim())) {
@@ -89,31 +139,38 @@ export default function NewProject() {
 
     setCreating(true);
     try {
+      // Create project
       const { data: project, error: projectError } = await supabase
         .from('projects')
         .insert({
           user_id: user.id,
+          template_id: templateId,
           title: projectTitle,
           department,
+          faculty: faculty,
           components,
           description,
           tier: 'free',
           status: 'in_progress',
-          current_chapter: 1
+          current_chapter: 1,
+          reference_style: 'apa' // Hardcoded APA for free tier
         })
         .select()
         .single();
 
       if (projectError) throw new Error(projectError.message || 'Failed to create project');
 
-      const chapters = [
-        { project_id: project.id, chapter_number: 1, title: 'Introduction', status: 'not_generated' },
-        { project_id: project.id, chapter_number: 2, title: 'Literature Review', status: 'not_generated' },
-        { project_id: project.id, chapter_number: 3, title: 'Methodology', status: 'not_generated' },
-        { project_id: project.id, chapter_number: 4, title: 'Results & Analysis', status: 'not_generated' },
-        { project_id: project.id, chapter_number: 5, title: 'Conclusion', status: 'not_generated' }
-      ];
-      await supabase.from('chapters').insert(chapters);
+      // Create chapters based on template structure
+      const structure = template.structure || { chapters: [] };
+      const chaptersToCreate = structure.chapters.map((ch, i) => ({
+        project_id: project.id,
+        chapter_number: i + 1,
+        title: ch.title,
+        status: 'not_generated'
+      }));
+
+      await supabase.from('chapters').insert(chaptersToCreate);
+
       router.push(`/project/${project.id}`);
     } catch (error) {
       alert(`Failed to create project: ${error.message}`);
@@ -136,11 +193,11 @@ export default function NewProject() {
       <nav className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition">
+            <Link href="/project/template-select" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition">
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
               </svg>
-              <span className="text-sm sm:text-base">Back to Dashboard</span>
+              <span className="text-sm sm:text-base">Change Faculty</span>
             </Link>
             <div className="flex items-center gap-2">
               <img src="/favicon.ico" alt="W3 WriteLab" className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -156,16 +213,16 @@ export default function NewProject() {
         <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Free Tier
+            {template.name}
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
             Create Your Free Project
           </h1>
           <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
-            Fill in the details below to generate your complete 5-chapter engineering report. 
-            This is your <strong>one free project</strong> &mdash; make it count!
+            Fill in the details below to generate your complete {template.structure?.chapters?.length || 5}-chapter report. 
+            This is your <strong>one free project</strong> — make it count!
           </p>
         </div>
 
@@ -185,31 +242,59 @@ export default function NewProject() {
             />
           </div>
 
-          {/* Department */}
+          {/* Faculty + Department */}
           <div>
             <label className="block text-sm font-bold text-gray-900 mb-2">
-              Department *
+              Faculty *
             </label>
             <select
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              value={faculty}
+              onChange={handleFacultyChange}
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition mb-4"
             >
-              <option value="">Select Department</option>
-              {departmentsList.map((dept, i) => (
-                <option key={i} value={dept}>
-                  {dept}
+              <option value="">Select Faculty</option>
+              {facultiesList.map((fac, i) => (
+                <option key={i} value={fac}>
+                  {fac}
                 </option>
               ))}
               <option value="Other">Other</option>
             </select>
+
+            <label className="block text-sm font-bold text-gray-900 mb-2">
+              Department *
+            </label>
+            {faculty === 'Other' ? (
+              <input
+                type="text"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                placeholder="Enter your department name"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              />
+            ) : (
+              <select
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                disabled={!faculty}
+                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition disabled:bg-gray-50 disabled:text-gray-400 ${department ? 'text-gray-900' : 'text-gray-500'}`}
+              >
+                <option value="">Select Department</option>
+                {Array.isArray(departmentsList) && departmentsList.map((dept, i) => (
+                  <option key={i} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+                <option value="Other">Other</option>
+              </select>
+            )}
             <p className="text-xs text-gray-500 mt-1">Pre-filled from your profile</p>
           </div>
 
           {/* Components */}
           <div>
             <label className="block text-sm font-bold text-gray-900 mb-2">
-              Components/Tools Used *
+              Components/Tools/Materials *
             </label>
 
             {components.length > 0 && (
@@ -244,7 +329,7 @@ export default function NewProject() {
                     addComponent();
                   }
                 }}
-                placeholder="e.g., Arduino Uno, DHT11 Sensor, Raspberry Pi..."
+                placeholder="e.g., Arduino Uno, Survey Tools, Lab Equipment..."
                 className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
               />
               <button
@@ -287,10 +372,11 @@ export default function NewProject() {
               <div className="text-sm text-gray-700">
                 <p className="font-semibold text-gray-900 mb-1">What's included in Free Tier:</p>
                 <ul className="space-y-1 text-xs sm:text-sm">
-                  <li>✓ Complete 5-chapter report</li>
+                  <li>✓ Complete {template.structure?.chapters?.length || 5}-chapter report</li>
                   <li>✓ 2 images with captions (added in workspace)</li>
                   <li>✓ PDF export</li>
-                  <li>✓ Basic AI quality (Gemini 1.5 Flash)</li>
+                  <li>✓ APA reference style</li>
+                  <li>✓ Faculty-specific template ({faculty || 'Select faculty'})</li>
                 </ul>
               </div>
             </div>
@@ -299,10 +385,10 @@ export default function NewProject() {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/project/template-select')}
               className="flex-1 bg-gray-100 text-gray-700 py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-gray-200 transition text-sm sm:text-base"
             >
-              Cancel
+              Back
             </button>
             <button
               onClick={handleCreateProject}
@@ -325,24 +411,22 @@ export default function NewProject() {
             </button>
           </div>
         </div>
-
-        {/* Want More Section */}
-        <div className="mt-8 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-6 text-center">
-          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Need more features?</h3>
-          <p className="text-sm sm:text-base text-gray-600 mb-4">
-            Upgrade to <strong>Standard</strong> for editing, regeneration, 10 images, and DOCX export!
-          </p>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm sm:text-base"
-          >
-            View Pricing
-            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </Link>
-        </div>
       </div>
     </div>
+  );
+}
+
+export default function NewProject() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <NewProjectContent />
+    </Suspense>
   );
 }

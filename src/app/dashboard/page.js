@@ -87,7 +87,7 @@ export default function Dashboard() {
       alert('You have already used your 1 free project. Upgrade to Standard or Premium to create more.');
       return;
     }
-    router.push('/project/new');
+    router.push('/project/template-select');
   };
 
   const handleCreateStandard = async () => {
