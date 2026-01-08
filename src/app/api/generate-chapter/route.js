@@ -79,7 +79,7 @@ export async function POST(request) {
       chapterTitle: chapterInfo.title,
       sections: sectionsText,
       projectTitle: project.title,
-      faculty: project.faculty || 'Engineering',
+      faculty: template?.faculty || 'Engineering',
       department: project.department,
       components: project.components.join(', '),
       description: project.description,

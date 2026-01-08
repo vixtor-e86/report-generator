@@ -57,7 +57,7 @@ export default function FeaturesPage() {
             <div className="p-4 space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">AI Model</span>
-                <span className="text-sm text-gray-900">Basic Quaaality</span>
+                <span className="text-sm text-gray-900">Basic Quality</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">Projects</span>
@@ -69,11 +69,11 @@ export default function FeaturesPage() {
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">Faculties</span>
-                <span className="text-sm text-red-600">Engineering only</span>
+                <span className="text-sm text-green-600">✓ All 10 Faculties</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">References</span>
-                <span className="text-sm text-red-600">✗ No</span>
+                <span className="text-sm text-green-600">✓ APA Style</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm font-medium text-gray-700">Edit Content</span>
@@ -281,7 +281,7 @@ export default function FeaturesPage() {
                     <div className="text-xs text-gray-500 font-normal mt-1">Customized for your field</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
-                    <span className="text-red-600">✗ Engineering only</span>
+                    <span className="text-green-600">✓ All 10 Faculties</span>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
                     <span className="text-green-600">✓ All 10 Faculties</span>
@@ -300,7 +300,7 @@ export default function FeaturesPage() {
                     <div className="text-xs text-gray-500 font-normal mt-1">APA, IEEE, Harvard citation styles</div>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200">
-                    <span className="text-red-600">✗ No</span>
+                    <span className="text-green-600">✓ APA Style</span>
                   </td>
                   <td className="px-6 py-4 text-center border-l border-gray-200 bg-indigo-50">
                     <span className="text-green-600">✓ 3 Citation Styles</span>
