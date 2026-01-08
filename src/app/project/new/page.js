@@ -147,13 +147,11 @@ function NewProjectContent() {
           template_id: templateId,
           title: projectTitle,
           department,
-          faculty: faculty,
           components,
           description,
           tier: 'free',
           status: 'in_progress',
-          current_chapter: 1,
-          reference_style: 'apa' // Hardcoded APA for free tier
+          current_chapter: 1
         })
         .select()
         .single();
