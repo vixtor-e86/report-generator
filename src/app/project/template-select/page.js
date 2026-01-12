@@ -196,7 +196,7 @@ export default function FreeTemplateSelect() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-indigo-600 font-bold flex-shrink-0">✓</span>
-                  <span>Basic AI quality (Gemini 1.5 Flash)</span>
+                  <span>Basic AI quality</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-indigo-600 font-bold flex-shrink-0">✓</span>

@@ -510,7 +510,7 @@ export default function Dashboard() {
                 </svg>
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Premium Tier Coming Soon!</h3>
-              <p className="text-gray-600 text-sm sm:text-base mb-5 sm:mb-6 leading-relaxed">Premium tier with Claude AI, unlimited images, and custom templates is currently in development.<br /><br />Try the <span className="font-bold text-indigo-600">Standard tier</span> to experience enhanced AI quality and editing features!</p>
+              <p className="text-gray-600 text-sm sm:text-base mb-5 sm:mb-6 leading-relaxed">Premium tier with advanced AI, unlimited images, and custom templates is currently in development.<br /><br />Try the <span className="font-bold text-indigo-600">Standard tier</span> to experience enhanced AI quality and editing features!</p>
               <button onClick={() => setShowPremiumModal(false)} className="w-full bg-purple-600 text-white py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-purple-700 transition text-sm sm:text-base">Got it!</button>
             </div>
           </div>

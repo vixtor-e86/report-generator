@@ -213,7 +213,7 @@ function NewProjectContent() {
       }
     } else {
       if (!projectTitle || !department || !description) {
-        alert('Please fill in all required fields and add at least one component');
+        alert('Please fill in all mandatory fields (Title, Department, and Description)');
         return;
       }
     }

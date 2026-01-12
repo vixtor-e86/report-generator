@@ -132,8 +132,8 @@ function NewProjectContent() {
   const removeComponent = (index) => setComponents(components.filter((_, i) => i !== index));
 
   const handleCreateProject = async () => {
-    if (!projectTitle || !department || components.length === 0 || !description) {
-      alert('Please fill in all fields and add at least one component');
+    if (!projectTitle || !department || !description) {
+      alert('Please fill in all mandatory fields (Title, Department, and Description)');
       return;
     }
 
@@ -292,7 +292,7 @@ function NewProjectContent() {
           {/* Components */}
           <div>
             <label className="block text-sm font-bold text-gray-900 mb-2">
-              Components/Tools/Materials *
+              Components/Tools/Materials (Optional)
             </label>
 
             {components.length > 0 && (
