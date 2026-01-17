@@ -13,26 +13,41 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     async function checkAdmin() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error || !user) {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error || !user) {
+          console.log('No user found, redirecting to home');
+          router.push('/');
+          return;
+        }
+
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('role, username')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Profile error:', profileError);
+          router.push('/');
+          return;
+        }
+
+        console.log('User role:', profile?.role);
+
+        if (profile?.role !== 'admin') {
+          console.log('Not an admin, redirecting to dashboard');
+          router.push('/dashboard');
+          return;
+        }
+
+        setUser({ ...user, username: profile.username });
+        setLoading(false);
+      } catch (error) {
+        console.error('Check admin error:', error);
         router.push('/');
-        return;
       }
-
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role, username')
-        .eq('id', user.id)
-        .single();
-
-      if (profile?.role !== 'admin') {
-        router.push('/dashboard');
-        return;
-      }
-
-      setUser({ ...user, username: profile.username });
-      setLoading(false);
     }
 
     checkAdmin();
