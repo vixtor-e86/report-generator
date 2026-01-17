@@ -8,6 +8,11 @@ import Link from 'next/link';
 import { CldUploadWidget } from 'next-cloudinary';
 import Image from 'next/image';
 
+const PRICING = {
+  STANDARD: Number(process.env.NEXT_PUBLIC_PRICE_STANDARD) || 10000,
+  PREMIUM: Number(process.env.NEXT_PUBLIC_PRICE_PREMIUM) || 20000,
+};
+
 function NewProjectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -15,6 +20,7 @@ function NewProjectContent() {
 
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [template, setTemplate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -63,6 +69,10 @@ function NewProjectContent() {
         return;
       }
 
+      // ✅ NEW: Check admin status
+      const adminStatus = profile.role === 'admin';
+      setIsAdmin(adminStatus);
+
       if (!templateId) {
         router.push('/template-select');
         return;
@@ -80,40 +90,42 @@ function NewProjectContent() {
         return;
       }
 
-      // ✅ NEW: Check for unused payment with better handling
-      const { data: unusedPayments, error: paymentError } = await supabase
-        .from('payment_transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'paid')
-        .is('project_id', null)
-        .order('paid_at', { ascending: false })
-        .limit(1);
+      // ✅ NEW: Skip payment check if admin
+      if (!adminStatus) {
+        const { data: unusedPayments, error: paymentError } = await supabase
+          .from('payment_transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'paid')
+          .is('project_id', null)
+          .order('paid_at', { ascending: false })
+          .limit(1);
 
-      if (paymentError) {
-        console.error('Payment check error:', paymentError);
-        alert('Error checking payment status. Please try again.');
-        router.push('/dashboard');
-        return;
+        if (paymentError) {
+          console.error('Payment check error:', paymentError);
+          alert('Error checking payment status. Please try again.');
+          router.push('/dashboard');
+          return;
+        }
+
+        if (!unusedPayments || unusedPayments.length === 0) {
+          alert('No valid payment found. Please make a payment first.');
+          router.push('/dashboard');
+          return;
+        }
+
+        // Check if payment is expired (older than 24 hours as safety measure)
+        const paymentDate = new Date(unusedPayments[0].paid_at || unusedPayments[0].created_at);
+        const hoursSincePayment = (Date.now() - paymentDate.getTime()) / (1000 * 60 * 60);
+
+        if (hoursSincePayment > 24) {
+          alert('This payment session has expired. Please make a new payment.');
+          router.push('/dashboard');
+          return;
+        }
+
+        setPendingPayment(unusedPayments[0]);
       }
-
-      if (!unusedPayments || unusedPayments.length === 0) {
-        alert('No valid payment found. Please make a payment first.');
-        router.push('/dashboard');
-        return;
-      }
-
-      // Check if payment is expired (older than 24 hours as safety measure)
-      const paymentDate = new Date(unusedPayments[0].paid_at || unusedPayments[0].created_at);
-      const hoursSincePayment = (Date.now() - paymentDate.getTime()) / (1000 * 60 * 60);
-
-      if (hoursSincePayment > 24) {
-        alert('This payment session has expired. Please make a new payment.');
-        router.push('/dashboard');
-        return;
-      }
-
-      setPendingPayment(unusedPayments[0]);
 
       // ✅ FIX: Handle the new Object structure
       const res = await fetch('/api/departments');
@@ -218,7 +230,7 @@ function NewProjectContent() {
       }
     }
 
-    if (!pendingPayment) {
+    if (!isAdmin && !pendingPayment) {
       alert('No valid payment found. Please go back and make a payment.');
       router.push('/dashboard');
       return;
@@ -231,9 +243,9 @@ function NewProjectContent() {
         user_id: user.id,
         template_id: templateId,
         tier: 'standard',
-        payment_status: 'paid',
-        payment_verified_at: pendingPayment.verified_at,
-        amount_paid: pendingPayment.amount,
+        payment_status: isAdmin ? 'admin_bypass' : 'paid',
+        payment_verified_at: isAdmin ? new Date().toISOString() : pendingPayment.verified_at,
+        amount_paid: isAdmin ? 0 : pendingPayment.amount,
         tokens_used: 0,
         tokens_limit: 120000,
         status: 'in_progress',
@@ -262,15 +274,30 @@ function NewProjectContent() {
 
       if (projectError) throw projectError;
 
-      // ✅ NEW: Link payment to project
-      const { error: paymentLinkError } = await supabase
-        .from('payment_transactions')
-        .update({ project_id: project.id, updated_at: new Date().toISOString() })
-        .eq('id', pendingPayment.id);
+      // ✅ NEW: Log admin action if admin
+      if (isAdmin) {
+        await supabase.from('admin_logs').insert({
+          admin_id: user.id,
+          action: 'create_standard_project_bypass',
+          details: {
+            project_id: project.id,
+            title: projectData.title,
+            template: template.name
+          }
+        });
+      }
 
-      if (paymentLinkError) {
-        console.error('Payment link error:', paymentLinkError);
-        // Don't fail the whole flow, just log it
+      // ✅ NEW: Link payment to project
+      if (!isAdmin && pendingPayment) {
+        const { error: paymentLinkError } = await supabase
+          .from('payment_transactions')
+          .update({ project_id: project.id, updated_at: new Date().toISOString() })
+          .eq('id', pendingPayment.id);
+
+        if (paymentLinkError) {
+          console.error('Payment link error:', paymentLinkError);
+          // Don't fail the whole flow, just log it
+        }
       }
 
       const structure = template.structure || { chapters: [] };
