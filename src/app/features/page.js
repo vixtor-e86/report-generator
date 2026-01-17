@@ -1,11 +1,7 @@
 "use client";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-const PRICING = {
-  STANDARD: Number(process.env.NEXT_PUBLIC_PRICE_STANDARD) || 10000,
-  PREMIUM: Number(process.env.NEXT_PUBLIC_PRICE_PREMIUM) || 20000,
-};
+import { PRICING, PRICING_FORMATTED } from '@/lib/pricing';
 
 export default function FeaturesPage() {
   const router = useRouter();
@@ -52,7 +48,7 @@ export default function FeaturesPage() {
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-gray-600 to-gray-700 text-white p-4 text-center">
               <h3 className="text-xl font-bold mb-1">Free</h3>
-              <div className="text-3xl font-extrabold">₦0</div>
+              <div className="text-3xl font-extrabold">{PRICING_FORMATTED.FREE}</div>
             </div>
             <div className="p-4 space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -103,7 +99,7 @@ export default function FeaturesPage() {
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 text-center relative">
               <div className="absolute top-2 right-2 bg-white text-indigo-600 text-xs font-bold px-2 py-1 rounded-full">POPULAR</div>
               <h3 className="text-xl font-bold mb-1">Standard</h3>
-              <div className="text-3xl font-extrabold">₦{PRICING.STANDARD.toLocaleString()}</div>
+              <div className="text-3xl font-extrabold">{PRICING_FORMATTED.STANDARD}</div>
             </div>
             <div className="p-4 space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -153,7 +149,7 @@ export default function FeaturesPage() {
           <div className="bg-white rounded-xl shadow-lg border border-purple-200 overflow-hidden">
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 text-center">
               <h3 className="text-xl font-bold mb-1">Premium</h3>
-              <div className="text-3xl font-extrabold">₦{PRICING.PREMIUM.toLocaleString()}</div>
+              <div className="text-3xl font-extrabold">{PRICING_FORMATTED.PREMIUM}</div>
             </div>
             <div className="p-4 space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -209,19 +205,22 @@ export default function FeaturesPage() {
                   <th className="px-6 py-4 text-left text-white font-bold text-lg">Feature</th>
                   <th className="px-6 py-4 text-center text-white font-bold text-lg border-l border-indigo-400">
                     <div className="mb-2">Free</div>
-                    <div className="text-2xl font-extrabold">₦0</div>
+                    <div className="text-2xl font-extrabold">{PRICING_FORMATTED.FREE}</div>
                   </th>
-                  <th className="px-6 py-4 text-center text-white font-bold text-lg border-l border-indigo-400 bg-indigo-700">
-                    <div className="mb-2">Standard</div>
-                    <div className="text-2xl font-extrabold">₦{PRICING.STANDARD.toLocaleString()}</div>
-                    <div className="text-xs font-normal mt-1 opacity-90">MOST POPULAR</div>
-                  </th>
-                  <th className="px-6 py-4 text-center text-white font-bold text-lg border-l border-indigo-400">
-                    <div className="mb-2">Premium</div>
-                    <div className="text-2xl font-extrabold">₦{PRICING.PREMIUM.toLocaleString()}</div>
-                  </th>
-                </tr>
-              </thead>
+                  <th className="px-6 py-8 text-left bg-indigo-50">
+                    <div className="text-gray-500 text-sm font-semibold uppercase tracking-wider mb-2">Standard</div>
+                  <div className="text-3xl font-extrabold">
+                    {PRICING_FORMATTED.STANDARD}
+                  </div>
+                </th>
+                <th className="px-6 py-8 text-left bg-purple-50 rounded-tr-2xl">
+                  <div className="text-purple-600 text-sm font-semibold uppercase tracking-wider mb-2">Premium</div>
+                  <div className="text-3xl font-extrabold">
+                    {PRICING_FORMATTED.PREMIUM}
+                  </div>
+                </th>
+              </tr>
+            </thead>
               <tbody className="divide-y divide-gray-200">
                 {/* AI Quality */}
                 <tr className="hover:bg-gray-50 transition">

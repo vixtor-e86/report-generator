@@ -2,11 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import GoogleAuthButton from '@/components/GoogleAuthButton';
-
-const PRICING = {
-  STANDARD: Number(process.env.NEXT_PUBLIC_PRICE_STANDARD) || 10000,
-  PREMIUM: Number(process.env.NEXT_PUBLIC_PRICE_PREMIUM) || 20000,
-};
+import { PRICING, PRICING_FORMATTED } from '@/lib/pricing';
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -133,9 +129,9 @@ export default function Home() {
             <div className="bg-gradient-to-br from-indigo-50 to-white border-2 border-indigo-500 rounded-2xl p-8 relative transform hover:scale-105 transition shadow-xl">
               <div className="absolute top-0 right-0 bg-indigo-600 text-white px-4 py-1 rounded-bl-lg rounded-tr-xl text-sm font-bold">POPULAR</div>
               <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Standard</h3>
-                <div className="text-5xl font-extrabold text-indigo-600 mb-2">₦{PRICING.STANDARD.toLocaleString()}</div>
-                <p className="text-gray-500">Per report</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Standard</h3>
+                <div className="text-5xl font-extrabold text-indigo-600 mb-2">{PRICING_FORMATTED.STANDARD}</div>
+                <p className="text-gray-500 mb-8">Perfect for final year students</p>
               </div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start gap-3"><svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span className="text-gray-700 font-semibold">Everything in Free, plus:</span></li>
@@ -152,9 +148,9 @@ export default function Home() {
             {/* PREMIUM */}
             <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 hover:border-indigo-300 transition">
               <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium</h3>
-                <div className="text-5xl font-extrabold text-gray-900 mb-2">₦{PRICING.PREMIUM.toLocaleString()}</div>
-                <p className="text-gray-500">Per report</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Premium</h3>
+                <div className="text-5xl font-extrabold text-gray-900 mb-2">{PRICING_FORMATTED.PREMIUM}</div>
+                <p className="text-gray-500 mb-8">For maximum quality & speed</p>
               </div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start gap-3"><svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg><span className="text-gray-700 font-semibold">Everything in Standard, plus:</span></li>

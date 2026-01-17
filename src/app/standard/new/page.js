@@ -7,11 +7,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { CldUploadWidget } from 'next-cloudinary';
 import Image from 'next/image';
-
-const PRICING = {
-  STANDARD: Number(process.env.NEXT_PUBLIC_PRICE_STANDARD) || 10000,
-  PREMIUM: Number(process.env.NEXT_PUBLIC_PRICE_PREMIUM) || 20000,
-};
+import { PRICING } from '@/lib/pricing';
 
 function NewProjectContent() {
   const router = useRouter();
