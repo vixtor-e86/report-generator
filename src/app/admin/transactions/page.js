@@ -18,7 +18,7 @@ export default function TransactionsPage() {
         .from('payment_transactions')
         .select(`
           *,
-          user_profiles!payment_transactions_user_id_fkey(username, email)
+          user_profiles(username, email)
         `)
         .eq('status', 'paid')
         .order('created_at', { ascending: false });

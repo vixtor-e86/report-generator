@@ -17,7 +17,7 @@ export default function AdminLogsPage() {
         .from('admin_logs')
         .select(`
           *,
-          user_profiles!admin_logs_admin_id_fkey(username, email)
+          user_profiles(username, email)
         `)
         .order('created_at', { ascending: false })
         .limit(100);

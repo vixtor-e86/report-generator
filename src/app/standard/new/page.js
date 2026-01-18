@@ -241,7 +241,7 @@ function NewProjectContent() {
         tier: 'standard',
         payment_status: isAdmin ? 'admin_bypass' : 'paid',
         payment_verified_at: isAdmin ? new Date().toISOString() : pendingPayment.verified_at,
-        amount_paid: isAdmin ? 0 : pendingPayment.amount,
+        amount_paid: isAdmin ? 0 : PRICING.STANDARD,
         tokens_used: 0,
         tokens_limit: 120000,
         status: 'in_progress',
