@@ -109,6 +109,10 @@ export default function Dashboard() {
       }
     }
 
+    // ✅ MAINTENANCE BLOCK: Temporarily disable new payments
+    alert('Payment services are under maintenance and should come back in next 24 hrs');
+    return;
+
     setCreatingPayment(true);
     try {
       const response = await fetch('/api/paystack/initialize', {
