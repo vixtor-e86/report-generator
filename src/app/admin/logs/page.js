@@ -13,16 +13,12 @@ export default function AdminLogsPage() {
 
   const fetchLogs = async () => {
     try {
-      const { data, error } = await supabase
-        .from('admin_logs')
-        .select(`
-          *,
-          user_profiles(username, email)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(100);
+      const response = await fetch('/api/admin/logs');
+      const data = await response.json();
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch logs');
+      }
       setLogs(data || []);
     } catch (error) {
       console.error('Error fetching logs:', error);
@@ -78,17 +74,17 @@ export default function AdminLogsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Activity Logs</h1>
-        <p className="text-gray-600 mt-2">Track all administrative actions and system events</p>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Activity Logs</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-2">Track all administrative actions and system events</p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg font-semibold transition ${
               filter === 'all'
                 ? 'bg-red-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -100,7 +96,7 @@ export default function AdminLogsPage() {
             <button
               key={actionType}
               onClick={() => setFilter(actionType)}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg font-semibold transition ${
                 filter === actionType
                   ? 'bg-red-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -115,46 +111,52 @@ export default function AdminLogsPage() {
       {/* Logs List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {filteredLogs.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">
-            <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="p-8 sm:p-12 text-center text-gray-500">
+            <svg className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <p className="font-medium">No activity logs yet</p>
-            <p className="text-sm mt-1">Admin actions will be tracked here</p>
+            <p className="font-medium text-sm sm:text-base">No activity logs yet</p>
+            <p className="text-xs sm:text-sm mt-1">Admin actions will be tracked here</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
             {filteredLogs.map((log) => (
-              <div key={log.id} className="p-6 hover:bg-gray-50 transition">
-                <div className="flex items-start gap-4">
-                  <div className={`p-2 rounded-lg ${getActionColor(log.action)}`}>
+              <div key={log.id} className="p-4 sm:p-6 hover:bg-gray-50 transition">
+                <div className="flex flex-col sm:flex-row items-start gap-4">
+                  {/* Icon */}
+                  <div className={`p-2 rounded-lg ${getActionColor(log.action)} hidden sm:block`}>
                     {getActionIcon(log.action)}
                   </div>
                   
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 w-full">
                     <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="text-sm font-bold text-gray-900">
-                          {log.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </h3>
-                        <p className="text-xs text-gray-500">
-                          by {log.user_profiles?.username || log.user_profiles?.email || 'Unknown Admin'}
-                        </p>
+                      <div className="flex items-center gap-2 sm:gap-0">
+                         {/* Mobile Icon */}
+                        <div className={`p-1.5 rounded-md ${getActionColor(log.action)} sm:hidden`}>
+                          {getActionIcon(log.action)}
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-gray-900 break-words">
+                            {log.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            by {log.user_profiles?.username || log.user_profiles?.email || 'Unknown Admin'}
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                      <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
                         {new Date(log.created_at).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
                         })}
+                        <span className="hidden sm:inline">, {new Date(log.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                       </span>
                     </div>
                     
                     {log.details && (
-                      <div className="bg-gray-50 rounded-lg p-3 mt-2">
-                        <pre className="text-xs text-gray-700 overflow-x-auto">
+                      <div className="bg-gray-50 rounded-lg p-3 mt-2 border border-gray-100">
+                        <pre className="text-xs text-gray-700 overflow-x-auto whitespace-pre-wrap break-all">
                           {JSON.stringify(log.details, null, 2)}
                         </pre>
                       </div>
