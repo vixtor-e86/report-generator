@@ -98,12 +98,14 @@ function TemplateSelectContent() {
             newUrl.searchParams.delete('payment_ref');
             window.history.replaceState({}, '', newUrl);
           } else {
-            alert('Payment verification failed. Please contact support if you were charged.');
+            // ✅ Show actual error from server
+            const errorMessage = data.message || data.error || 'Payment verification failed.';
+            alert(`${errorMessage} Please contact support if you were charged.`);
             router.push('/dashboard');
           }
         } catch (error) {
           console.error('Verification error:', error);
-          alert('Failed to verify payment. Please contact support.');
+          alert('Failed to verify payment (Network/System Error). Please contact support.');
           router.push('/dashboard');
         } finally {
           setVerifyingPayment(false);

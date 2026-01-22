@@ -45,12 +45,14 @@ export async function GET(request) {
       .single();
 
     if (fetchError || !existingTx) {
-      return NextResponse.json({ error: 'Transaction not found in system' }, { status: 404 });
+      console.error('Transaction lookup failed for ref:', tx_ref, fetchError);
+      return NextResponse.json({ error: 'Transaction record not found. Please contact support.' }, { status: 404 });
     }
 
     // Verify amount
     if (amount < existingTx.amount) {
-      return NextResponse.json({ verified: false, message: 'Amount mismatch' });
+      console.error(`Amount mismatch: Paid ${amount}, Expected ${existingTx.amount}`);
+      return NextResponse.json({ verified: false, message: 'Payment amount mismatch' });
     }
 
     // Update transaction status
