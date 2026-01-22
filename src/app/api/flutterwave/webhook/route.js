@@ -31,7 +31,8 @@ export async function POST(request) {
             .update({
               status: 'paid',
               paid_at: new Date().toISOString(),
-              metadata: { ...existingTx.metadata, webhook_processed: true }
+              verified_at: new Date().toISOString(),
+              verification_response: payload.data
             })
             .eq('id', existingTx.id);
         }

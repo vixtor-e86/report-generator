@@ -61,9 +61,8 @@ export async function GET(request) {
       .update({
         status: 'paid',
         paid_at: new Date().toISOString(),
-        // Store the actual transaction ID in metadata or reused column if needed
-        // For now, we just mark it paid.
-        metadata: { ...existingTx.metadata, flutterwave_id: transactionId }
+        verified_at: new Date().toISOString(), // Match Paystack schema
+        verification_response: flwData.data // Store full response like Paystack
       })
       .eq('id', existingTx.id)
       .select()
