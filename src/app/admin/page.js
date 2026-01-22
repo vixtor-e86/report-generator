@@ -15,44 +15,37 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        // Total Users
-        const { count: usersCount } = await supabase
+        // First, verify the user is an admin from the client-side
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoading(false);
+          // Optional: redirect or show error
+          return; 
+        }
+
+        const { data: profile } = await supabase
           .from('user_profiles')
-          .select('*', { count: 'exact', head: true });
+          .select('role')
+          .eq('id', user.id)
+          .single();
 
-        // Total Revenue
-        const { data: payments } = await supabase
-          .from('payment_transactions')
-          .select('amount')
-          .eq('status', 'paid');
+        if (profile?.role !== 'admin') {
+          setLoading(false);
+          // Optional: redirect or show error
+          alert('You are not authorized to view this page.');
+          return;
+        }
 
-        const totalRevenue = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+        // Now, fetch the protected stats from our API route
+        const response = await fetch('/api/admin/stats');
+        const statsData = await response.json();
 
-        // Projects Created Today
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const { count: projectsToday } = await supabase
-          .from('standard_projects')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', today.toISOString());
+        if (response.ok) {
+          setStats(statsData);
+        } else {
+          throw new Error(statsData.error || 'Failed to fetch stats');
+        }
 
-        // Recent Transactions (last 5)
-        const { data: recentTransactions } = await supabase
-          .from('payment_transactions')
-          .select(`
-            *,
-            user_profiles(username, email)
-          `)
-          .eq('status', 'paid')
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        setStats({
-          totalUsers: usersCount || 0,
-          totalRevenue,
-          projectsToday: projectsToday || 0,
-          recentTransactions: recentTransactions || []
-        });
       } catch (error) {
         console.error('Error fetching stats:', error);
       } finally {

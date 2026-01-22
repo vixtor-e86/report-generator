@@ -14,16 +14,13 @@ export default function TransactionsPage() {
 
   const fetchTransactions = async () => {
     try {
-      const { data, error } = await supabase
-        .from('payment_transactions')
-        .select(`
-          *,
-          user_profiles(username, email)
-        `)
-        .eq('status', 'paid')
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/admin/transactions');
+      const data = await response.json();
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch transactions');
+      }
+      
       setTransactions(data || []);
     } catch (error) {
       console.error('Error fetching transactions:', error);
