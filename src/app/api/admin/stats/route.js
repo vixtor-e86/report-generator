@@ -67,7 +67,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Admin stats error:', error);
-    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
+    console.error('Admin stats error FULL DETAILS:', error);
+    return NextResponse.json({ error: error.message || 'Failed to fetch stats' }, { status: 500 });
   }
 }

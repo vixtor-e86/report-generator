@@ -20,7 +20,7 @@ export async function GET(request) {
     return NextResponse.json(data || []);
 
   } catch (error) {
-    console.error('Error fetching transactions:', error);
-    return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 });
+    console.error('Admin transactions error FULL DETAILS:', error);
+    return NextResponse.json({ error: error.message || 'Failed to fetch transactions' }, { status: 500 });
   }
 }
