@@ -109,13 +109,9 @@ export default function Dashboard() {
       }
     }
 
-    // ✅ MAINTENANCE BLOCK: Temporarily disable new payments
-    alert('Payment services are under maintenance and should come back in next 24 hrs');
-    return;
-
     setCreatingPayment(true);
     try {
-      const response = await fetch('/api/paystack/initialize', {
+      const response = await fetch('/api/flutterwave/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -132,7 +128,7 @@ export default function Dashboard() {
         throw new Error(data.error || 'Payment initialization failed');
       }
 
-      // Redirect to Paystack payment page
+      // Redirect to Flutterwave payment page
       window.location.href = data.authorization_url;
 
     } catch (error) {
@@ -141,6 +137,7 @@ export default function Dashboard() {
     } finally {
       setCreatingPayment(false);
     }
+
   };
 
   const handleCreatePremium = () => {

@@ -68,21 +68,33 @@ function TemplateSelectContent() {
         return;
       }
 
-      const paymentRef = searchParams.get('payment_ref');
+      // Check for Flutterwave or Paystack params
+      const transactionId = searchParams.get('transaction_id');
+      const txRef = searchParams.get('tx_ref');
+      const paymentRef = searchParams.get('payment_ref'); // Keep for backward compatibility
 
-      if (paymentRef) {
-        // User came back from Paystack with a reference
+      if (transactionId || txRef || paymentRef) {
+        // User came back from payment provider
         setVerifyingPayment(true);
         try {
-          const response = await fetch(`/api/paystack/verify?reference=${paymentRef}`);
+          // Construct verification URL
+          let verifyUrl = '/api/flutterwave/verify?';
+          if (transactionId) verifyUrl += `transaction_id=${transactionId}`;
+          else if (txRef) verifyUrl += `tx_ref=${txRef}`;
+          else if (paymentRef) verifyUrl += `tx_ref=${paymentRef}`; // Fallback
+
+          const response = await fetch(verifyUrl);
           const data = await response.json();
 
           if (data.verified) {
             setPaymentVerified(true);
             setPendingPayment(data.transaction);
 
-            // Remove payment_ref from URL
+            // Clean URL
             const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('transaction_id');
+            newUrl.searchParams.delete('tx_ref');
+            newUrl.searchParams.delete('status');
             newUrl.searchParams.delete('payment_ref');
             window.history.replaceState({}, '', newUrl);
           } else {

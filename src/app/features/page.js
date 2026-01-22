@@ -695,8 +695,8 @@ export default function FeaturesPage() {
             <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
               What payment methods do you accept?
             </h3>
-            <p className="text-sm sm:text-base text-gray-700">
-              We accept all major payment methods via Paystack: Cards, Bank Transfer, USSD. Payments are secure and instant.
+            <p className="text-gray-600">
+              We accept all major payment methods via Flutterwave: Cards, Bank Transfer, USSD. Payments are secure and instant.
             </p>
           </div>
         </div>
