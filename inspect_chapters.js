@@ -10,7 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 async function inspect() {
   // List all tables to find chapter related ones
   // Since I can't list tables easily via API without SQL, I'll guess common names
-  const tables = ['standard_projects', 'standard_chapters', 'projects', 'chapters', 'standard_generation_history'];
+  const tables = ['standard_projects', 'standard_chapters', 'standard_chapter_versions', 'projects', 'chapters'];
   
   for (const table of tables) {
     console.log(`\n--- Checking table: ${table} ---`);
