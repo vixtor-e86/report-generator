@@ -37,18 +37,32 @@ export async function GET(request) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const { data: todaysProjects, error: projectsError } = await supabaseAdmin
+    // 1. Count Standard/Premium from standard_projects
+    const { data: stdProjectsToday, error: stdError } = await supabaseAdmin
       .from('standard_projects')
       .select('tier')
       .gte('created_at', today.toISOString());
 
-    if (projectsError) throw projectsError;
+    if (stdError) throw stdError;
 
-    const projectsToday = todaysProjects?.length || 0;
+    // 2. Count Free from projects (free tier table)
+    const { count: freeProjectsToday, error: freeError } = await supabaseAdmin
+      .from('projects')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today.toISOString());
+
+    if (freeError) throw freeError;
+
+    const stdCount = stdProjectsToday?.filter(p => p.tier === 'standard').length || 0;
+    const premCount = stdProjectsToday?.filter(p => p.tier === 'premium').length || 0;
+    const freeCount = (freeProjectsToday || 0) + (stdProjectsToday?.filter(p => p.tier === 'free').length || 0); // Just in case
+
+    const totalProjectsToday = (stdProjectsToday?.length || 0) + (freeProjectsToday || 0);
+
     const breakdown = {
-      free: todaysProjects?.filter(p => !p.tier || p.tier === 'free').length || 0,
-      standard: todaysProjects?.filter(p => p.tier === 'standard').length || 0,
-      premium: todaysProjects?.filter(p => p.tier === 'premium').length || 0
+      free: freeCount,
+      standard: stdCount,
+      premium: premCount
     };
 
     // Recent Transactions (last 5) - Fetch separately to avoid relationship errors

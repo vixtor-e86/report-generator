@@ -6,16 +6,50 @@ export async function GET(request, { params }) {
   try {
     const { id } = params;
 
-    // 1. Fetch Project Details
-    const { data: project, error: projectError } = await supabaseAdmin
+    let project = null;
+    let chapters = [];
+    let isStandard = false;
+
+    // 1. Try finding in Standard Projects
+    const { data: stdProject } = await supabaseAdmin
       .from('standard_projects')
       .select('*')
       .eq('id', id)
       .single();
 
-    if (projectError) throw projectError;
+    if (stdProject) {
+      project = stdProject;
+      isStandard = true;
+      // Fetch Standard Chapters
+      const { data: stdChapters } = await supabaseAdmin
+        .from('standard_chapters')
+        .select('*')
+        .eq('project_id', id)
+        .order('chapter_number', { ascending: true });
+      chapters = stdChapters || [];
+    } else {
+      // 2. If not found, try Free Projects
+      const { data: freeProject, error: freeError } = await supabaseAdmin
+        .from('projects')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (freeProject) {
+        project = freeProject;
+        // Fetch Free Chapters
+        const { data: freeChapters } = await supabaseAdmin
+          .from('chapters')
+          .select('*')
+          .eq('project_id', id)
+          .order('chapter_number', { ascending: true });
+        chapters = freeChapters || [];
+      } else {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      }
+    }
 
-    // 2. Fetch User Profile
+    // 3. Fetch User Profile
     let userProfile = { username: 'Unknown', email: 'N/A' };
     if (project.user_id) {
       const { data: user, error: userError } = await supabaseAdmin
@@ -29,19 +63,11 @@ export async function GET(request, { params }) {
       }
     }
 
-    // 3. Fetch Chapters
-    const { data: chapters, error: chaptersError } = await supabaseAdmin
-      .from('chapters')
-      .select('*')
-      .eq('project_id', id)
-      .order('chapter_number', { ascending: true });
-
-    if (chaptersError) throw chaptersError;
-
     return NextResponse.json({
       ...project,
+      tier: project.tier || (isStandard ? 'standard' : 'free'),
       user_profiles: userProfile,
-      chapters: chapters || []
+      chapters: chapters
     });
 
   } catch (error) {
