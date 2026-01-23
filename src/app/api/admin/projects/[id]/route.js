@@ -5,99 +5,90 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 export async function GET(request, { params }) {
   try {
     const { id } = params;
-    console.log(`[AdminAPI] Fetching project detail for ID: ${id}`);
+    console.log(`[AdminAPI] Looking up project: ${id}`);
 
     let project = null;
     let chapters = [];
     let isStandard = false;
 
-    // 1. Try finding in Standard Projects
-    const { data: stdProject, error: stdError } = await supabaseAdmin
+    // 1. Attempt Standard Project Lookup
+    let { data: stdProject, error: stdError } = await supabaseAdmin
       .from('standard_projects')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle(); // Use maybeSingle() to avoid error on 0 rows
+
+    if (stdError) console.warn('[AdminAPI] Std Lookup Error:', stdError.message);
 
     if (stdProject) {
-      console.log(`[AdminAPI] Found in standard_projects: ${stdProject.title}`);
+      console.log(`[AdminAPI] Found Standard Project: ${stdProject.id}`);
       project = stdProject;
       isStandard = true;
+
       // Fetch Standard Chapters
-      const { data: stdChapters, error: stdChapError } = await supabaseAdmin
+      const { data: stdChapters } = await supabaseAdmin
         .from('standard_chapters')
         .select('*')
         .eq('project_id', id)
         .order('chapter_number', { ascending: true });
-      
-      if (stdChapError) console.error('[AdminAPI] Error fetching standard chapters:', stdChapError);
-      
-      // Fetch Content from Versions for Standard Chapters
+
       if (stdChapters && stdChapters.length > 0) {
+        // Fetch Content from Versions
         const chapterIds = stdChapters.map(c => c.id);
-        const { data: versions, error: verError } = await supabaseAdmin
+        const { data: versions } = await supabaseAdmin
           .from('standard_chapter_versions')
           .select('chapter_id, content, version_number')
           .in('chapter_id', chapterIds)
-          .order('version_number', { ascending: false }); // Get latest first
+          .order('version_number', { ascending: false });
 
-        if (!verError && versions) {
-          // Attach content to chapters (taking the latest version for each)
-          chapters = stdChapters.map(chapter => {
-            const latestVersion = versions.find(v => v.chapter_id === chapter.id);
-            return {
-              ...chapter,
-              content: latestVersion?.content || chapter.content || null // Fallback to chapter.content if version missing
-            };
-          });
-        } else {
-          chapters = stdChapters;
-        }
-      } else {
-        chapters = [];
+        chapters = stdChapters.map(chapter => {
+          // Find latest version for this chapter
+          const ver = versions?.find(v => v.chapter_id === chapter.id);
+          return { ...chapter, content: ver?.content || chapter.content || null };
+        });
       }
-      
-      console.log(`[AdminAPI] Found ${chapters.length} standard chapters.`);
-    } else {
-      console.log(`[AdminAPI] Not found in standard_projects. Checking 'projects'...`);
-      // 2. If not found, try Free Projects
-      const { data: freeProject, error: freeError } = await supabaseAdmin
+    } 
+    
+    // 2. If NOT Standard, Attempt Free Project Lookup
+    if (!project) {
+      let { data: freeProject, error: freeError } = await supabaseAdmin
         .from('projects')
         .select('*')
         .eq('id', id)
-        .single();
-      
+        .maybeSingle();
+
+      if (freeError) console.warn('[AdminAPI] Free Lookup Error:', freeError.message);
+
       if (freeProject) {
-        console.log(`[AdminAPI] Found in projects (Free): ${freeProject.title}`);
+        console.log(`[AdminAPI] Found Free Project: ${freeProject.id}`);
         project = freeProject;
+        
         // Fetch Free Chapters
-        const { data: freeChapters, error: freeChapError } = await supabaseAdmin
+        const { data: freeChapters } = await supabaseAdmin
           .from('chapters')
           .select('*')
           .eq('project_id', id)
           .order('chapter_number', { ascending: true });
-
-        if (freeChapError) console.error('[AdminAPI] Error fetching free chapters:', freeChapError);
-
+          
         chapters = freeChapters || [];
-        console.log(`[AdminAPI] Found ${chapters.length} free chapters.`);
-      } else {
-        console.log(`[AdminAPI] Project not found in either table.`);
-        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
       }
+    }
+
+    if (!project) {
+      console.error(`[AdminAPI] Project ${id} not found in any table.`);
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
     // 3. Fetch User Profile
     let userProfile = { username: 'Unknown', email: 'N/A' };
     if (project.user_id) {
-      const { data: user, error: userError } = await supabaseAdmin
+      const { data: user } = await supabaseAdmin
         .from('user_profiles')
         .select('username, email')
         .eq('id', project.user_id)
-        .single();
+        .maybeSingle();
       
-      if (!userError && user) {
-        userProfile = user;
-      }
+      if (user) userProfile = user;
     }
 
     return NextResponse.json({
