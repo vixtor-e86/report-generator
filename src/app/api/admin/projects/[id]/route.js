@@ -2,8 +2,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
   try {
+    const params = await props.params;
     const { id } = params;
     console.log(`[AdminAPI] Looking up project: ${id}`);
 
