@@ -130,9 +130,24 @@ export default function ProjectDetailPage() {
             </div>
             
             <div className="p-6 overflow-y-auto flex-1 bg-white">
-              <div className="prose prose-slate max-w-none">
-                <ReactMarkdown>{selectedChapter.content}</ReactMarkdown>
-              </div>
+              {selectedChapter.content ? (
+                <>
+                  <div className="prose prose-slate max-w-none">
+                    <ReactMarkdown>{selectedChapter.content}</ReactMarkdown>
+                  </div>
+                  {/* Fallback for debugging */}
+                  <details className="mt-8 border-t pt-4">
+                    <summary className="text-xs text-slate-400 cursor-pointer">View Raw Content (Debug)</summary>
+                    <pre className="text-xs bg-slate-50 p-2 mt-2 overflow-auto max-h-40">
+                      {selectedChapter.content.substring(0, 500)}...
+                    </pre>
+                  </details>
+                </>
+              ) : (
+                <div className="text-center text-slate-500 py-12 italic">
+                  Content is empty or null.
+                </div>
+              )}
             </div>
             
             <div className="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex justify-end">

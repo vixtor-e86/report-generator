@@ -71,6 +71,11 @@ export async function GET(request, props) {
           .eq('project_id', id)
           .order('chapter_number', { ascending: true });
           
+        if (freeChapters) {
+             console.log(`[AdminAPI] Free Chapters Content Check:`);
+             freeChapters.forEach(c => console.log(` - Ch ${c.chapter_number}: ${c.content ? c.content.length : 0} chars`));
+        }
+
         chapters = freeChapters || [];
       }
     }
