@@ -17,27 +17,17 @@ export default function AdminLayout({ children }) {
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error || !user) {
-          console.log('No user found, redirecting to home');
           router.push('/');
           return;
         }
 
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('user_profiles')
           .select('role, username')
           .eq('id', user.id)
           .single();
 
-        if (profileError) {
-          console.error('Profile error:', profileError);
-          router.push('/');
-          return;
-        }
-
-        console.log('User role:', profile?.role);
-
         if (profile?.role !== 'admin') {
-          console.log('Not an admin, redirecting to dashboard');
           router.push('/dashboard');
           return;
         }
@@ -67,89 +57,59 @@ export default function AdminLayout({ children }) {
   }
 
   const navItems = [
-    { name: 'Dashboard', path: '/admin', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-    { name: 'Transactions', path: '/admin/transactions', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+    { name: 'Dashboard', path: '/admin', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+    { name: 'Transactions', path: '/admin/transactions', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
     { name: 'User Management', path: '/admin/users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
     { name: 'Templates', path: '/admin/templates', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
     { name: 'Activity Logs', path: '/admin/logs', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <nav className="bg-gradient-to-r from-red-600 to-red-700 border-b border-red-800 sticky top-0 z-50 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo & Admin Badge */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-white hover:text-red-200"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <Link href="/admin" className="flex items-center gap-3">
-                <img src="/favicon.ico" alt="W3 WriteLab" className="w-10 h-10" />
-                <div>
-                  <span className="text-2xl font-bold text-white">W3 WriteLab</span>
-                  <span className="block text-xs text-red-200 font-semibold">ADMIN PANEL</span>
-                </div>
-              </Link>
-            </div>
+    <div className="min-h-screen bg-gray-100 font-sans">
+      {/* Mobile Header */}
+      <div className="lg:hidden bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+           <img src="/favicon.ico" alt="Logo" className="w-8 h-8" />
+           <span className="font-bold text-lg">W3 Admin</span>
+        </div>
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
 
-            {/* User Info & Actions */}
-            <div className="flex items-center gap-4">
-              <Link
-                href="/dashboard"
-                className="hidden sm:flex items-center gap-2 text-white hover:text-red-200 text-sm font-medium transition"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                User Dashboard
-              </Link>
-              <div className="h-8 w-px bg-red-500 hidden sm:block"></div>
-              <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                  <p className="text-sm font-semibold text-white">{user?.username || 'Admin'}</p>
-                  <span className="text-xs bg-yellow-400 text-red-900 px-2 py-0.5 rounded-full font-bold">ADMIN</span>
-                </div>
-                <div className="h-10 w-10 bg-yellow-400 rounded-full flex items-center justify-center text-red-900 font-bold border-2 border-red-300 shadow-md">
-                  {(user?.username || user?.email)?.[0]?.toUpperCase()}
-                </div>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="text-white hover:text-red-200 transition ml-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
+      <div className="flex h-screen overflow-hidden">
+        {/* Sidebar - Desktop & Mobile Drawer */}
+        <aside className={`
+          fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto flex flex-col
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
+          {/* Logo Area */}
+          <div className="h-16 flex items-center gap-3 px-6 border-b border-slate-800 bg-slate-950">
+            <img src="/favicon.ico" alt="Logo" className="w-8 h-8" />
+            <div>
+              <h1 className="text-white font-bold text-lg tracking-tight">W3 WriteLab</h1>
+              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Admin Console</p>
             </div>
           </div>
-        </div>
-      </nav>
 
-      <div className="flex">
-        {/* Sidebar - Desktop */}
-        <aside className="hidden lg:block w-64 bg-white border-r border-gray-200 min-h-screen sticky top-16">
-          <nav className="p-4 space-y-2">
+          {/* Navigation */}
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   href={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition ${
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? 'bg-red-100 text-red-700 shadow-sm'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'hover:bg-slate-800 hover:text-white'
                   }`}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
                   </svg>
                   {item.name}
@@ -157,51 +117,43 @@ export default function AdminLayout({ children }) {
               );
             })}
           </nav>
+
+          {/* User Profile in Sidebar (Bottom) */}
+          <div className="p-4 border-t border-slate-800 bg-slate-950">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-sm">
+                {(user?.username?.[0] || 'A').toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">{user?.username || 'Admin'}</p>
+                <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+              </div>
+              <button 
+                onClick={handleLogout}
+                className="text-slate-400 hover:text-white transition"
+                title="Sign Out"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </aside>
 
-        {/* Mobile Sidebar Overlay */}
+        {/* Overlay for mobile sidebar */}
         {sidebarOpen && (
-          <div className="lg:hidden fixed inset-0 z-40 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)}>
-            <aside className="absolute left-0 top-0 bottom-0 w-64 bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900">Menu</h2>
-                  <button onClick={() => setSidebarOpen(false)} className="text-gray-500 hover:text-gray-700">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <nav className="p-4 space-y-2">
-                {navItems.map((item) => {
-                  const isActive = pathname === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      href={item.path}
-                      onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition ${
-                        isActive
-                          ? 'bg-red-100 text-red-700 shadow-sm'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
-                      </svg>
-                      {item.name}
-                    </Link>
-                  );
-                })}
-              </nav>
-            </aside>
-          </div>
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          ></div>
         )}
 
-        {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8">
-          {children}
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto bg-gray-50/50">
+          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+            {children}
+          </div>
         </main>
       </div>
     </div>

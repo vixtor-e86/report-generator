@@ -51,41 +51,41 @@ export default function TransactionsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">All Transactions</h1>
-        <p className="text-gray-600 mt-2">Complete history of successful payments</p>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">All Transactions</h1>
+        <p className="text-sm sm:text-base text-slate-500 mt-2">Complete history of successful payments</p>
       </div>
 
       {/* Filters & Search */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-6">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
+              className={`px-4 py-2 text-sm font-medium rounded-full transition ${
                 filter === 'all'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               All ({transactions.length})
             </button>
             <button
               onClick={() => setFilter('standard')}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
+              className={`px-4 py-2 text-sm font-medium rounded-full transition ${
                 filter === 'standard'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
               }`}
             >
               Standard ({transactions.filter(t => t.tier === 'standard').length})
             </button>
             <button
               onClick={() => setFilter('premium')}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
+              className={`px-4 py-2 text-sm font-medium rounded-full transition ${
                 filter === 'premium'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
               }`}
             >
               Premium ({transactions.filter(t => t.tier === 'premium').length})
@@ -97,29 +97,29 @@ export default function TransactionsPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by email, username, or reference..."
-              className="w-full md:w-80 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              placeholder="Search transactions..."
+              className="w-full md:w-72 pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 placeholder-slate-400 text-sm"
             />
-            <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
         </div>
 
         {/* Revenue Summary */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-slate-100">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Total Revenue ({filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)})</span>
-            <span className="text-2xl font-bold text-gray-900">₦{totalRevenue.toLocaleString()}</span>
+            <span className="text-sm font-medium text-slate-500">Total Revenue ({filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)})</span>
+            <span className="text-2xl font-bold text-slate-900">₦{totalRevenue.toLocaleString()}</span>
           </div>
         </div>
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {filteredTransactions.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">
-            <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="p-12 text-center text-slate-500">
+            <svg className="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             <p className="font-medium">No transactions found</p>
@@ -129,55 +129,55 @@ export default function TransactionsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tier</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Transaction Reference
+                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">User</th>
+                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Tier</th>
+                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">
+                    Reference
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {filteredTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-gray-50 transition">
+                  <tr key={tx.id} className="hover:bg-slate-50 transition">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{tx.user_profiles?.username || 'Unknown'}</p>
-                        <p className="text-xs text-gray-500">{tx.user_profiles?.email}</p>
+                        <p className="font-medium text-slate-900">{tx.user_profiles?.username || 'Unknown'}</p>
+                        <p className="text-xs text-slate-500">{tx.user_profiles?.email}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-bold text-gray-900">₦{tx.amount?.toLocaleString()}</span>
-                      <p className="text-xs text-gray-500">{tx.currency}</p>
+                      <span className="font-bold text-slate-900">₦{tx.amount?.toLocaleString()}</span>
+                      <p className="text-xs text-slate-500">{tx.currency}</p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        tx.tier === 'standard' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                      <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
+                        tx.tier === 'standard' ? 'bg-indigo-100 text-indigo-700' : 'bg-purple-100 text-purple-700'
                       }`}>
                         {tx.tier?.charAt(0).toUpperCase() + tx.tier?.slice(1)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-500 font-mono">{tx.paystack_reference}</span>
+                      <span className="text-slate-500 font-mono text-xs bg-slate-100 px-2 py-1 rounded">{tx.paystack_reference}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <p className="text-sm text-gray-900">{new Date(tx.created_at).toLocaleDateString('en-US', {
+                      <p className="text-slate-900">{new Date(tx.created_at).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric'
                       })}</p>
-                      <p className="text-xs text-gray-500">{new Date(tx.created_at).toLocaleTimeString('en-US', {
+                      <p className="text-xs text-slate-500">{new Date(tx.created_at).toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}</p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         Paid
                       </span>
                     </td>
