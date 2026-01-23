@@ -33,15 +33,23 @@ export async function GET(request) {
 
     const totalRevenue = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
 
-    // Projects Created Today
+    // Projects Created Today Breakdown
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const { count: projectsToday, error: projectsError } = await supabaseAdmin
+    
+    const { data: todaysProjects, error: projectsError } = await supabaseAdmin
       .from('standard_projects')
-      .select('*', { count: 'exact', head: true })
+      .select('tier')
       .gte('created_at', today.toISOString());
 
     if (projectsError) throw projectsError;
+
+    const projectsToday = todaysProjects?.length || 0;
+    const breakdown = {
+      free: todaysProjects?.filter(p => !p.tier || p.tier === 'free').length || 0,
+      standard: todaysProjects?.filter(p => p.tier === 'standard').length || 0,
+      premium: todaysProjects?.filter(p => p.tier === 'premium').length || 0
+    };
 
     // Recent Transactions (last 5) - Fetch separately to avoid relationship errors
     const { data: recentTransactions, error: txError } = await supabaseAdmin
@@ -76,7 +84,8 @@ export async function GET(request) {
     return NextResponse.json({
       totalUsers: usersCount || 0,
       totalRevenue,
-      projectsToday: projectsToday || 0,
+      projectsToday,
+      projectsBreakdown: breakdown,
       recentTransactions: transactionsWithUsers || []
     });
 

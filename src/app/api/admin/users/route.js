@@ -12,7 +12,12 @@ export async function GET(request) {
 
     if (profilesError) throw profilesError;
 
-    // 2. Fetch Auth Users (Email, Last Sign In)
+    // 2. Fetch Universities
+    const { data: universities } = await supabaseAdmin
+      .from('universities')
+      .select('id, name');
+
+    // 3. Fetch Auth Users (Email, Last Sign In)
     // Supabase Admin API to list users. Note: This handles pagination (default 50).
     // We might need to loop if > 50 users, but for now we'll fetch a larger page.
     const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers({
@@ -21,14 +26,17 @@ export async function GET(request) {
 
     if (authError) throw authError;
 
-    // 3. Merge Data
+    // 4. Merge Data
     const mergedUsers = profiles.map(profile => {
       const authUser = authUsers.find(u => u.id === profile.id);
+      const university = universities?.find(u => u.id === profile.university_id);
+      
       return {
         ...profile,
         email: authUser?.email || 'N/A',
         last_sign_in_at: authUser?.last_sign_in_at || null,
-        created_at: authUser?.created_at || profile.created_at // Auth creation is often more accurate
+        created_at: authUser?.created_at || profile.created_at, // Auth creation is often more accurate
+        institution_name: university?.name || profile.custom_institution || 'Other'
       };
     });
 

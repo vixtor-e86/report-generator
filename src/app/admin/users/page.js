@@ -92,7 +92,7 @@ export default function UsersPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-slate-900">{user.custom_institution || 'Other'}</div>
+                    <div className="text-sm text-slate-900">{user.institution_name}</div>
                     <div className="text-xs text-slate-500">{user.department}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">

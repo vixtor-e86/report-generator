@@ -116,7 +116,11 @@ export default function AdminDashboard() {
             </div>
           </div>
           <p className="text-3xl font-bold text-slate-900">{stats.projectsToday.toLocaleString()}</p>
-          <div className="mt-2 text-xs text-slate-500">New creations</div>
+          <div className="mt-2 text-xs flex gap-2">
+            <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">Free: {stats.projectsBreakdown?.free || 0}</span>
+            <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded">Std: {stats.projectsBreakdown?.standard || 0}</span>
+            <span className="px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded">Prem: {stats.projectsBreakdown?.premium || 0}</span>
+          </div>
         </div>
 
         {/* Quick Action */}
