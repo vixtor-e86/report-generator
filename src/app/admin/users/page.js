@@ -70,6 +70,7 @@ export default function UsersPage() {
                 <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Institution</th>
                 <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Joined</th>
                 <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Last Login</th>
+                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -106,6 +107,17 @@ export default function UsersPage() {
                     ) : (
                       <span className="text-slate-400 italic">Never</span>
                     )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                    <a
+                      href={`/admin/email?recipient=${user.email}`}
+                      className="text-indigo-600 hover:text-indigo-900 font-medium flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Email
+                    </a>
                   </td>
                 </tr>
               ))}

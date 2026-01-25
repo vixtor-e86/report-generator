@@ -130,6 +130,15 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Generation error:', error);
+    
+    // Check for Quota/Rate Limit Errors
+    if (error.message?.includes('429') || error.message?.includes('quota') || error.status === 429) {
+      return NextResponse.json(
+        { error: 'Limit for free project reached for today, come back tomorrow or pay to create a standard project.' },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json(
       { error: error.message || 'Generation failed' },
       { status: 500 }

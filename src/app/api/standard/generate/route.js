@@ -268,6 +268,14 @@ export async function POST(request) {
   } catch (error) {
     console.error('Generation error:', error);
 
+    // Check for Quota/Rate Limit Errors
+    if (error.message?.includes('429') || error.message?.includes('quota') || error.status === 429) {
+      return NextResponse.json(
+        { error: 'AI model under maintenance, should be resolved within 24 hrs.' },
+        { status: 503 } // 503 Service Unavailable matches "Maintenance"
+      );
+    }
+
     // Update chapter status to failed
     try {
       const { projectId, chapterNumber } = await request.json();

@@ -1,8 +1,26 @@
 "use client";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function EmailPage() {
+  const searchParams = useSearchParams();
   const [recipients, setRecipients] = useState([]);
+  
+  // ... (existing state)
+
+  useEffect(() => {
+    const recipientParam = searchParams.get('recipient');
+    if (recipientParam && recipientParam.includes('@')) {
+      if (!recipients.includes(recipientParam)) {
+        setRecipients((prev) => {
+            // Check again to avoid strict mode double-mount duplicates
+            if (prev.includes(recipientParam)) return prev;
+            return [...prev, recipientParam];
+        });
+      }
+    }
+  }, [searchParams]);
+
   const [newEmail, setNewEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
