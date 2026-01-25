@@ -19,17 +19,26 @@ export default function FreeTemplateSelect() {
         return;
       }
 
-      // Check if user already has a free project
-      const { data: existingProjects } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('tier', 'free');
+      // Fetch profile to check role
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-      if (existingProjects && existingProjects.length > 0) {
-        alert('You have already used your 1 free project. Upgrade to Standard or Premium to create more.');
-        router.push('/dashboard');
-        return;
+      // Check if user already has a free project (Skip if admin)
+      if (profile?.role !== 'admin') {
+        const { data: existingProjects } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('tier', 'free');
+
+        if (existingProjects && existingProjects.length > 0) {
+          alert('You have already used your 1 free project. Upgrade to Standard or Premium to create more.');
+          router.push('/dashboard');
+          return;
+        }
       }
 
       // Fetch ONLY 5-chapter templates (exclude SIWES and 6-chapter thesis)
