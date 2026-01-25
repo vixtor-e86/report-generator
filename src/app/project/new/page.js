@@ -46,17 +46,19 @@ function NewProjectContent() {
         return;
       }
 
-      // Check if user already has a free project
-      const { data: existingProjects } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('tier', 'free');
+      // Check if user already has a free project (Skip if admin)
+      if (profile.role !== 'admin') {
+        const { data: existingProjects } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('tier', 'free');
 
-      if (existingProjects && existingProjects.length > 0) {
-        alert('You have already used your 1 free project. Upgrade to Standard or Premium to create more.');
-        router.push('/dashboard');
-        return;
+        if (existingProjects && existingProjects.length > 0) {
+          alert('You have already used your 1 free project. Upgrade to Standard or Premium to create more.');
+          router.push('/dashboard');
+          return;
+        }
       }
 
       // Fetch template if templateId provided
