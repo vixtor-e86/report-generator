@@ -1,15 +1,19 @@
 // src/app/auth/callback/page.js - FIXED VERSION
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 export default function AuthCallback() {
   const router = useRouter();
   const [error, setError] = useState(null);
+  const ranEffect = useRef(false);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      if (ranEffect.current) return;
+      ranEffect.current = true;
+
       try {
         // Get URL parameters
         const hashParams = new URLSearchParams(window.location.hash.substring(1));

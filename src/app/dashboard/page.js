@@ -15,7 +15,7 @@ export default function Dashboard() {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [creatingPayment, setCreatingPayment] = useState(false);
   const [pendingPayment, setPendingPayment] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false); // ✅ NEW: Admin check
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -38,7 +38,6 @@ export default function Dashboard() {
         return;
       }
 
-      // ✅ NEW: Check if user is admin
       const adminStatus = profile.role === 'admin';
       setIsAdmin(adminStatus);
 
@@ -54,7 +53,6 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      // Check for unused payments
       const { data: unusedPayments } = await supabase
         .from('payment_transactions')
         .select('*')
@@ -83,7 +81,6 @@ export default function Dashboard() {
   };
 
   const handleCreateFree = () => {
-    // ✅ MODIFIED: Skip limit check for admins
     if (!isAdmin) {
       const freeProjects = projects.filter(p => p.tier === 'free');
       if (freeProjects.length >= 1) {
@@ -95,13 +92,11 @@ export default function Dashboard() {
   };
 
   const handleCreateStandard = async () => {
-    // ✅ MODIFIED: Admins skip payment entirely
     if (isAdmin) {
       router.push('/template-select');
       return;
     }
 
-    // Regular user flow - check for pending payment
     if (pendingPayment) {
       if (confirm('You have an unused Standard payment. Continue with existing payment?')) {
         router.push('/template-select');
@@ -128,7 +123,6 @@ export default function Dashboard() {
         throw new Error(data.error || 'Payment initialization failed');
       }
 
-      // Redirect to Flutterwave payment page
       window.location.href = data.authorization_url;
 
     } catch (error) {
@@ -137,7 +131,6 @@ export default function Dashboard() {
     } finally {
       setCreatingPayment(false);
     }
-
   };
 
   const handleCreatePremium = () => {
@@ -152,429 +145,256 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-indigo-100 rounded-full border-t-indigo-600 animate-spin"></div>
+          <p className="text-slate-500 text-sm font-medium">Loading workspace...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+      
+      {/* Navigation */}
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/dashboard" className="flex items-center gap-2 group">
-              <img src="/favicon.ico" alt="W3 WriteLab" className="w-8 h-8 sm:w-10 sm:h-10" />
-              <span className="text-xl sm:text-2xl font-bold text-indigo-600 group-hover:text-indigo-700 transition">
-                W3 WriteLab
-              </span>
+              <img src="/favicon.ico" alt="W3 WriteLab" className="w-8 h-8" />
+              <span className="text-xl font-bold text-slate-900 tracking-tight">W3 WriteLab</span>
             </Link>
             
             <div className="hidden md:flex items-center gap-6">
-              {/* ✅ NEW: Admin Panel Link */}
               {isAdmin && (
-                <>
-                  <Link
-                    href="/admin"
-                    className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition text-sm"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Admin Panel
-                  </Link>
-                  <div className="h-8 w-px bg-gray-200"></div>
-                </>
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  Admin Panel
+                </Link>
               )}
+              
+              <div className="h-6 w-px bg-slate-200"></div>
+
               <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900">{profile.username || 'Student'}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">{user.email}</span>
-                    {/* ✅ MODIFIED: Show admin badge if admin */}
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      isAdmin ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                    }`}>
-                      {isAdmin ? 'Admin' : 'Free'}
-                    </span>
-                  </div>
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-semibold text-slate-900">{profile.username || 'Student'}</p>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                    isAdmin ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {isAdmin ? 'Administrator' : 'Free Account'}
+                  </span>
                 </div>
-                <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold border-2 border-indigo-200 shadow-md">
-                  {(profile.username || user.email)[0].toUpperCase()}
+                <div className="h-9 w-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">
+                  {(profile.username || user.email || 'U')[0].toUpperCase()}
                 </div>
               </div>
-              <div className="h-8 w-px bg-gray-200"></div>
-              <button onClick={handleLogout} className="text-gray-600 hover:text-red-600 text-sm font-medium transition flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Sign Out
+
+              <button onClick={handleLogout} className="text-slate-500 hover:text-red-600 transition-colors p-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
               </button>
             </div>
 
-            <div className="md:hidden flex items-center">
-              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-700 hover:text-indigo-600 focus:outline-none p-2">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {isMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
+            <div className="md:hidden">
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-slate-600 hover:text-indigo-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
               </button>
             </div>
           </div>
         </div>
 
+        {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-200 p-4">
-            {/* ✅ NEW: Admin panel link in mobile menu */}
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="block w-full bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition mb-3 flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Admin Panel
-              </Link>
-            )}
-            <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
-              <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-                {(profile.username || user.email)[0].toUpperCase()}
+          <div className="md:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-4">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+              <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
+                {(profile.username || user.email || 'U')[0].toUpperCase()}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">{profile.username}</p>
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              <div>
+                <p className="font-semibold text-slate-900">{profile.username}</p>
+                <p className="text-sm text-slate-500">{user.email}</p>
               </div>
-              {/* ✅ MODIFIED: Show admin badge in mobile */}
-              <span className={`text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${
-                isAdmin ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-              }`}>
-                {isAdmin ? 'Admin' : 'Free'}
-              </span>
             </div>
-            <button onClick={handleLogout} className="w-full text-left text-red-600 px-3 py-2 rounded-md text-sm font-medium hover:bg-red-50 transition flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Sign Out
-            </button>
+            {isAdmin && (
+              <Link href="/admin" className="block text-slate-600 font-medium hover:text-indigo-600">Admin Panel</Link>
+            )}
+            <button onClick={handleLogout} className="block w-full text-left text-red-600 font-medium">Sign Out</button>
           </div>
         )}
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            Welcome back, {profile.username || 'Student'}! 👋
-            {/* ✅ NEW: Admin indicator */}
-            {isAdmin && <span className="ml-3 text-red-600 text-xl">🔑</span>}
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
-            {profile.department && profile.department !== 'Other' ? <span>{profile.department} • </span> : null}
-            {totalReports === 0 ? 'Ready to create your first report?' : `${totalReports} ${totalReports === 1 ? 'project' : 'projects'} created`}
-            {/* ✅ NEW: Admin unlimited notice */}
-            {isAdmin && <span className="ml-2 text-red-600 font-semibold">• Unlimited Access</span>}
-          </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Header */}
+        <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+            <p className="text-slate-600 mt-1">Manage your reports and create new projects.</p>
+          </div>
+          {isAdmin && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-sm font-medium">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              </span>
+              Admin Mode Active
+            </span>
+          )}
         </div>
 
+        {/* Payment Success Alert */}
         {pendingPayment && !isAdmin && (
-          <div className="mb-8 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500 rounded-xl p-6 shadow-lg">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  Payment Received! 🎉
-                </h3>
-                <p className="text-gray-700 mb-4">
-                  Your Standard tier payment of <strong>₦{pendingPayment.amount.toLocaleString()}</strong> was successful. 
-                  Complete your project setup to start creating.
-                </p>
-                <button
-                  onClick={() => router.push('/template-select')}
-                  className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition flex items-center gap-2"
-                >
-                  Continue Project Setup
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </button>
-              </div>
+          <div className="mb-8 rounded-xl border border-emerald-200 bg-emerald-50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-2">
+            <div className="p-3 bg-emerald-100 rounded-full text-emerald-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
             </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-emerald-900">Payment Successful!</h3>
+              <p className="text-emerald-700 text-sm mt-1">Your Standard tier payment of <strong>₦{pendingPayment.amount.toLocaleString()}</strong> has been confirmed.</p>
+            </div>
+            <button onClick={() => router.push('/template-select')} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">
+              Continue Setup →
+            </button>
           </div>
         )}
 
-        <div className="mb-8 sm:mb-12">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Create New Project</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            
-            {/* FREE TIER */}
-            <div className="bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl p-6 sm:p-8 hover:border-gray-400 hover:shadow-lg transition flex flex-col">
-              <div className="text-center mb-4 sm:mb-6">
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Free</h3>
-                <div className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">₦0</div>
-                <p className="text-xs sm:text-sm text-gray-500">Try it out</p>
+        {/* Project Creation Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          
+          {/* FREE TIER */}
+          <div className="group relative bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg hover:border-slate-300 transition-all duration-200">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="font-bold text-slate-900 text-lg">Starter</h3>
+                <p className="text-slate-500 text-sm">Essential features</p>
               </div>
-              <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8 text-sm sm:text-base flex-1">
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Basic AI quality
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  2 images (end only)
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  PDF export only
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  No editing
-                </li>
-              </ul>
-              <div className="mt-auto">
-                <Link href="/features" className="block text-center text-sm text-gray-600 hover:text-indigo-600 font-medium mb-3 transition">
-                  Learn more about features →
-                </Link>
-                {/* ✅ MODIFIED: No disabled state for admins */}
-                <button 
-                  onClick={handleCreateFree} 
-                  disabled={!isAdmin && hasFreeProject} 
-                  className="w-full bg-gray-900 text-white py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-                >
-                  {!isAdmin && hasFreeProject ? 'Limit Reached' : 'Create Free'}
-                </button>
-                {/* ✅ MODIFIED: Show different message for admins */}
-                {!isAdmin && hasFreeProject && <p className="text-xs text-red-600 text-center mt-2">1 free project used</p>}
-                {isAdmin && <p className="text-xs text-green-600 text-center mt-2">✨ Unlimited for admins</p>}
-              </div>
+              <span className="text-2xl font-bold text-slate-900">₦0</span>
             </div>
+            <ul className="space-y-3 mb-8">
+              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> 1 Project Limit</li>
+              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Basic AI Model</li>
+              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> PDF Export Only</li>
+            </ul>
+            <button 
+              onClick={handleCreateFree}
+              disabled={!isAdmin && hasFreeProject}
+              className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {!isAdmin && hasFreeProject ? 'Limit Reached' : 'Create Free Project'}
+            </button>
+          </div>
 
-            {/* STANDARD TIER */}
-            <div className="bg-gradient-to-br from-indigo-50 to-white border-2 border-indigo-500 rounded-xl sm:rounded-2xl p-6 sm:p-8 relative hover:shadow-2xl transition transform hover:scale-105 flex flex-col">
-              <div className="absolute top-0 right-0 bg-indigo-600 text-white px-3 py-1 rounded-bl-lg rounded-tr-xl text-xs sm:text-sm font-bold">POPULAR</div>
-              <div className="text-center mb-4 sm:mb-6">
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Standard</h3>
-                <div className="text-3xl sm:text-4xl font-extrabold mb-2">
-                  {/* ✅ NEW: Show "FREE" for admins */}
-                  {isAdmin ? (
-                    <span className="text-green-600">FREE</span>
-                  ) : (
-                    <span className="text-indigo-600">₦{PRICING.STANDARD.toLocaleString()}</span>
-                  )}
-                </div>
-                <p className="text-xs sm:text-sm text-gray-500">{isAdmin ? 'Admin access' : 'Best value'}</p>
+          {/* STANDARD TIER */}
+          <div className="relative bg-slate-900 rounded-xl border border-indigo-500 p-6 shadow-xl hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1">
+            <div className="absolute top-0 right-0 -mt-3 mr-3 px-3 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">POPULAR</div>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="font-bold text-white text-lg">Standard</h3>
+                <p className="text-indigo-200 text-sm">Professional grade</p>
               </div>
-              <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8 text-sm sm:text-base flex-1">
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Good AI quality
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  10 images (anywhere)
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  PDF + DOCX export
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Edit & regenerate
-                </li>
-              </ul>
-              <div className="mt-auto">
-                <Link href="/features" className="block text-center text-sm text-indigo-600 hover:text-indigo-700 font-medium mb-3 transition">
-                  See what's included →
-                </Link>
-                <button 
-                  onClick={handleCreateStandard} 
-                  disabled={creatingPayment}
-                  className="w-full bg-indigo-600 text-white py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm sm:text-base disabled:opacity-50"
-                >
-                  {creatingPayment ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      Processing...
-                    </span>
-                  ) : (
-                    /* ✅ NEW: Different text for admins */
-                    isAdmin ? 'Create Standard (Free)' : 'Create Standard'
-                  )}
-                </button>
-              </div>
+              <span className="text-2xl font-bold text-white">{isAdmin ? 'Free' : `₦${PRICING.STANDARD.toLocaleString()}`}</span>
             </div>
+            <ul className="space-y-3 mb-8">
+              <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Unlimited Projects</li>
+              <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> DOCX + PDF Export</li>
+              <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Advanced Editing</li>
+            </ul>
+            <button 
+              onClick={handleCreateStandard}
+              disabled={creatingPayment}
+              className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-70"
+            >
+              {creatingPayment ? 'Processing...' : (isAdmin ? 'Create Standard' : 'Select Standard')}
+            </button>
+          </div>
 
-            {/* PREMIUM TIER */}
-            <div className="bg-white border-2 border-purple-200 rounded-xl sm:rounded-2xl p-6 sm:p-8 hover:border-purple-500 hover:shadow-lg transition flex flex-col">
-              <div className="text-center mb-4 sm:mb-6">
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Premium</h3>
-                <div className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">₦{PRICING.PREMIUM.toLocaleString()}</div>
-                <p className="text-xs sm:text-sm text-gray-500">Best quality</p>
+          {/* PREMIUM TIER */}
+          <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg hover:border-slate-300 transition-all duration-200">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="font-bold text-slate-900 text-lg">Premium</h3>
+                <p className="text-slate-500 text-sm">Maximum power</p>
               </div>
-              <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8 text-sm sm:text-base flex-1">
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Best AI model
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Unlimited images
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Custom templates
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Priority support
-                </li>
-              </ul>
-              <div className="mt-auto">
-                <Link href="/features" className="block text-center text-sm text-purple-600 hover:text-purple-700 font-medium mb-3 transition">
-                  Explore premium features →
-                </Link>
-                <button onClick={handleCreatePremium} className="w-full bg-purple-600 text-white py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-purple-700 transition text-sm sm:text-base">
-                  Create Premium
-                </button>
-              </div>
+              <span className="text-2xl font-bold text-slate-900">₦{PRICING.PREMIUM.toLocaleString()}</span>
             </div>
+            <ul className="space-y-3 mb-8">
+              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> GPT-4 Class AI</li>
+              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Custom Templates</li>
+              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Priority Support</li>
+            </ul>
+            <button onClick={handleCreatePremium} className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors bg-slate-900 text-white hover:bg-slate-800">
+              Select Premium
+            </button>
           </div>
         </div>
 
-        {/* STATS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 sm:p-6 rounded-xl shadow-sm border border-green-200">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-gray-700 text-xs sm:text-sm font-medium uppercase tracking-wider">Current Plan</h3>
-              <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">ACTIVE</span>
-            </div>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-2xl sm:text-3xl font-bold text-gray-900">{isAdmin ? 'Admin' : 'Free'}</span>
-            </div>
-            <p className="text-xs sm:text-sm text-gray-600">
-              {isAdmin ? '∞ Unlimited access' : (hasFreeProject ? '0 free reports available' : '1 free report available')}
+        {/* Stats Overview */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <p className="text-xs text-slate-500 font-medium uppercase mb-1">Total Reports</p>
+            <p className="text-2xl font-bold text-slate-900">{totalReports}</p>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <p className="text-xs text-slate-500 font-medium uppercase mb-1">In Progress</p>
+            <p className="text-2xl font-bold text-slate-900">{inProgressReports}</p>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <p className="text-xs text-slate-500 font-medium uppercase mb-1">Completed</p>
+            <p className="text-2xl font-bold text-slate-900">{completedReports}</p>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <p className="text-xs text-slate-500 font-medium uppercase mb-1">Plan Status</p>
+            <p className={`text-lg font-bold ${isAdmin ? 'text-indigo-600' : 'text-slate-900'}`}>
+              {isAdmin ? 'Admin' : hasFreeProject ? 'Active' : 'New'}
             </p>
           </div>
-
-          <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-gray-500 text-xs sm:text-sm font-medium uppercase tracking-wider">Total Projects</h3>
-              <div className="p-2 bg-indigo-50 rounded-lg">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-2xl sm:text-3xl font-bold text-gray-900">{totalReports}</span>
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500">{totalReports === 0 ? 'No projects yet' : `${completedReports} completed, ${inProgressReports} in progress`}</p>
-          </div>
-
-          <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-gray-500 text-xs sm:text-sm font-medium uppercase tracking-wider">Completed</h3>
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-2xl sm:text-3xl font-bold text-gray-900">{completedReports}</span>
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500">Reports ready to export</p>
-          </div>
-
-          <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-gray-500 text-xs sm:text-sm font-medium uppercase tracking-wider">Images Quota</h3>
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-2xl sm:text-3xl font-bold text-gray-900">{isAdmin ? '∞' : '2'}</span>
-              {!isAdmin && <span className="text-xs sm:text-sm text-gray-500">images/project</span>}
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500">{isAdmin ? 'Unlimited for admins' : 'Free tier limit'}</p>
-          </div>
         </div>
 
+        {/* Recent Projects List */}
         <div>
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Recent Projects</h2>
-            {totalReports > 0 && <button className="text-xs sm:text-sm text-indigo-600 hover:text-indigo-700 font-medium">View All →</button>}
-          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-6">Your Projects</h2>
           
           {totalReports === 0 ? (
-            <div className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-8 sm:p-12 text-center hover:border-indigo-400 transition group">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition shadow-md">
-                <svg className="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
+            <div className="text-center py-20 bg-white rounded-xl border-2 border-dashed border-slate-200">
+              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
               </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">Create your first report</h3>
-              <p className="text-sm sm:text-base text-gray-500 max-w-md mx-auto mb-6 sm:mb-8 leading-relaxed">
-                Choose a tier above to get started. {isAdmin ? 'As an admin, you have unlimited access to all tiers.' : 'Free tier includes 1 complete project with basic AI quality.'}
-              </p>
+              <h3 className="text-slate-900 font-medium mb-1">No projects yet</h3>
+              <p className="text-slate-500 text-sm">Select a plan above to create your first report.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {allProjects.map((project) => (
-                <Link key={project.id} href={project.tier === 'free' ? `/project/${project.id}` : `/standard/${project.id}`} className="bg-white rounded-xl p-5 sm:p-6 border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition group">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0 mr-2">
-                      <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1 group-hover:text-indigo-600 transition line-clamp-2">{project.title}</h3>
-                      <p className="text-xs sm:text-sm text-gray-500 truncate">{project.department}</p>
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${project.status === 'completed' ? 'bg-green-100 text-green-700' : project.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>
-                      {project.status === 'completed' ? 'Done' : project.status === 'in_progress' ? 'Progress' : 'Draft'}
+                <Link 
+                  key={project.id} 
+                  href={project.tier === 'free' ? `/project/${project.id}` : `/standard/${project.id}`}
+                  className="group block bg-white rounded-xl border border-slate-200 p-5 hover:border-indigo-400 hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${
+                      project.tier === 'free' ? 'bg-slate-100 text-slate-600' : 
+                      project.tier === 'standard' ? 'bg-indigo-50 text-indigo-600' : 'bg-purple-50 text-purple-600'
+                    }`}>
+                      {project.tier}
+                    </span>
+                    <span className={`flex items-center gap-1.5 text-xs font-medium ${
+                      project.status === 'completed' ? 'text-emerald-600' : 'text-amber-600'
+                    }`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${
+                        project.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'
+                      }`}></span>
+                      {project.status === 'completed' ? 'Completed' : 'In Progress'}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-4">{project.description}</p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span className={`px-2 py-1 rounded-full ${project.tier === 'free' ? 'bg-gray-100' : project.tier === 'standard' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                      {project.tier.charAt(0).toUpperCase() + project.tier.slice(1)}
-                    </span>
+                  
+                  <h3 className="font-bold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors line-clamp-1">{project.title}</h3>
+                  <p className="text-sm text-slate-500 mb-4 line-clamp-2 min-h-[40px]">{project.description}</p>
+                  
+                  <div className="flex items-center justify-between text-xs text-slate-400 pt-4 border-t border-slate-100">
+                    <span>{new Date(project.created_at).toLocaleDateString()}</span>
                     <span>Chapter {project.current_chapter || 1}/5</span>
                   </div>
                 </Link>
@@ -584,19 +404,16 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Premium Modal */}
       {showPremiumModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
-            <div className="text-center">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Premium Tier Coming Soon!</h3>
-              <p className="text-gray-600 text-sm sm:text-base mb-5 sm:mb-6 leading-relaxed">Premium tier with advanced AI, unlimited images, and custom templates is currently in development.<br /><br />Try the <span className="font-bold text-indigo-600">Standard tier</span> to experience enhanced AI quality and editing features!</p>
-              <button onClick={() => setShowPremiumModal(false)} className="w-full bg-purple-600 text-white py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-purple-700 transition text-sm sm:text-base">Got it!</button>
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 mx-auto text-purple-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
+            <h3 className="text-xl font-bold text-center text-slate-900 mb-2">Premium Coming Soon</h3>
+            <p className="text-center text-slate-600 mb-6 text-sm">We are fine-tuning our most powerful AI models. Please try the <strong className="text-indigo-600">Standard</strong> plan for professional results today.</p>
+            <button onClick={() => setShowPremiumModal(false)} className="w-full py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition">Close</button>
           </div>
         </div>
       )}
