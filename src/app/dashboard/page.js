@@ -277,17 +277,19 @@ export default function Dashboard() {
               <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> 1 Project Limit</li>
               <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Basic AI Model</li>
               <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> PDF Export Only</li>
-                          </ul>
-                          <div className="mt-auto">
-                            <Link href="/features" className="block text-center text-sm text-gray-600 hover:text-indigo-600 font-medium mb-3 transition">
-                              Learn more about features →
-                            </Link>
-                            <button 
-                              onClick={handleCreateFree}              disabled={!isAdmin && hasFreeProject}
-              className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {!isAdmin && hasFreeProject ? 'Limit Reached' : 'Create Free Project'}
-            </button>
+            </ul>
+            <div className="mt-auto">
+              <Link href="/features" className="block text-center text-sm text-gray-600 hover:text-indigo-600 font-medium mb-3 transition">
+                Learn more about features →
+              </Link>
+              <button 
+                onClick={handleCreateFree}
+                disabled={!isAdmin && hasFreeProject}
+                className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {!isAdmin && hasFreeProject ? 'Limit Reached' : 'Create Free Project'}
+              </button>
+            </div>
           </div>
 
           {/* STANDARD TIER */}
@@ -304,17 +306,19 @@ export default function Dashboard() {
               <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Unlimited Projects</li>
               <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> DOCX + PDF Export</li>
               <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Advanced Editing</li>
-                          </ul>
-                          <div className="mt-auto">
-                            <Link href="/features" className="block text-center text-sm text-indigo-200 hover:text-white font-medium mb-3 transition">
-                              See what&apos;s included →
-                            </Link>
-                            <button 
-                              onClick={handleCreateStandard}              disabled={creatingPayment}
-              className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-70"
-            >
-              {creatingPayment ? 'Processing...' : (isAdmin ? 'Create Standard' : 'Select Standard')}
-            </button>
+            </ul>
+            <div className="mt-auto">
+              <Link href="/features" className="block text-center text-sm text-indigo-200 hover:text-white font-medium mb-3 transition">
+                See what&apos;s included →
+              </Link>
+              <button 
+                onClick={handleCreateStandard}
+                disabled={creatingPayment}
+                className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-70"
+              >
+                {creatingPayment ? 'Processing...' : (isAdmin ? 'Create Standard' : 'Select Standard')}
+              </button>
+            </div>
           </div>
 
           {/* PREMIUM TIER */}
