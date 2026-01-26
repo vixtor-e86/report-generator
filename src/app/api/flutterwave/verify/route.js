@@ -73,6 +73,23 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Failed to update transaction' }, { status: 500 });
     }
 
+    // ✅ NEW: Unlock project if applicable
+    if (updatedTx.project_id) {
+      const { error: unlockError } = await supabaseAdmin
+        .from('projects')
+        .update({ is_unlocked: true })
+        .eq('id', updatedTx.project_id);
+
+      if (unlockError) {
+        console.error('Failed to unlock project:', unlockError);
+        // We don't fail the request here because payment was successful, 
+        // but we should probably alert/log it. 
+        // The user might need to contact support if not unlocked.
+      } else {
+        console.log(`Project ${updatedTx.project_id} unlocked successfully.`);
+      }
+    }
+
     return NextResponse.json({
       verified: true,
       transaction: updatedTx

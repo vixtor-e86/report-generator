@@ -26,7 +26,7 @@ export async function POST(request) {
       if (existingTx && existingTx.status !== 'paid') {
         // Verify amount matches
         if (amount >= existingTx.amount) {
-          await supabaseAdmin
+          const { data: updatedTx } = await supabaseAdmin
             .from('payment_transactions')
             .update({
               status: 'paid',
@@ -34,7 +34,17 @@ export async function POST(request) {
               verified_at: new Date().toISOString(),
               verification_response: payload.data
             })
-            .eq('id', existingTx.id);
+            .eq('id', existingTx.id)
+            .select()
+            .single();
+
+          // ✅ NEW: Unlock project if applicable
+          if (updatedTx?.project_id) {
+            await supabaseAdmin
+              .from('projects')
+              .update({ is_unlocked: true })
+              .eq('id', updatedTx.project_id);
+          }
         }
       }
     }

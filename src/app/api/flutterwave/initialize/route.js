@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(request) {
   try {
-    const { userId, email, tier, amount } = await request.json();
+    const { userId, email, tier, amount, projectId } = await request.json();
 
     // Validate inputs
     if (!userId || !email || !tier || !amount) {
@@ -28,7 +28,7 @@ export async function POST(request) {
         tx_ref,
         amount,
         currency: 'NGN',
-        redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/template-select`,
+        redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/template-select`, // Note: For project unlock, we might want to redirect back to the project page?
         customer: {
           email: email,
           name: email.split('@')[0], // Fallback name
@@ -36,6 +36,7 @@ export async function POST(request) {
         meta: {
           userId,
           tier,
+          projectId // Add projectId to meta
         },
         customizations: {
           title: "W3 WriteLab Payment",
@@ -61,6 +62,7 @@ export async function POST(request) {
       .from('payment_transactions')
       .insert({
         user_id: userId,
+        project_id: projectId || null, // Store projectId if present
         amount,
         currency: 'NGN',
         tier,
