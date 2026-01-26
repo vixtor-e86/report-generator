@@ -1,7 +1,7 @@
 // src/app/api/generate-chapter/route.js - UPDATED VERSION
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callAI } from '@/lib/aiProvider';
 
 export async function POST(request) {
   try {
@@ -87,21 +87,14 @@ export async function POST(request) {
       referenceStyle: project.reference_style || 'apa'
     });
 
-    // Generate using Gemini (use env variable for model)
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest';
-    
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      generationConfig: {
-        maxOutputTokens: 6000,
-        temperature: 0.7,
-      }
+    // Generate using DeepSeek (via callAI which defaults to DeepSeek)
+    const result = await callAI(prompt, {
+      maxTokens: 6000,
+      temperature: 0.7,
+      provider: 'deepseek' // Explicitly set DeepSeek for free projects as requested
     });
 
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const content = response.text();
+    const content = result.content;
 
     // Update chapter in database
     const { error: updateError } = await supabaseAdmin
@@ -125,7 +118,7 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       content,
-      tokensUsed: response.usageMetadata?.totalTokenCount || 0
+      tokensUsed: result.tokensUsed?.total || 0
     });
 
   } catch (error) {
