@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import GoogleAuthButton from '@/components/GoogleAuthButton';
+import FeedbackWidget from '@/components/FeedbackWidget';
 import { PRICING, PRICING_FORMATTED } from '@/lib/pricing';
 import { supabase } from '@/lib/supabase';
 import bgImage from './bg.jpg';
@@ -124,7 +125,7 @@ export default function Home() {
           </h1>
           
           <p className="text-xl md:text-2xl text-slate-600 mb-10 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200">
-            Eliminate the stress of documentation. Generate complete 5-chapter reports with accurate citations for Engineering, Sciences, Arts, and more.
+            Eliminate the stress of documentation. Generate complete 5 chapter reports with accurate citations for Engineering, Sciences, Arts, and more.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-300">
@@ -276,7 +277,7 @@ export default function Home() {
               <p className="text-slate-600 text-sm mb-6">Maximum power and priority support.</p>
               <button onClick={handleLogin} className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-900 font-semibold rounded-xl transition-colors mb-8">Choose Premium</button>
               <ul className="space-y-4 text-sm text-slate-700">
-                <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Superior AI Model (GPT-4 Class)</li>
+                <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Superior AI Model</li>
                 <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Custom Templates & Styles</li>
                 <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Priority Processing</li>
                 <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Unlimited Images</li>
@@ -356,10 +357,14 @@ export default function Home() {
             </div>
             
             <div>
-              <h4 className="text-white font-semibold mb-4">Resources</h4>
+              <h4 className="text-white font-semibold mb-4">Support</h4>
               <ul className="space-y-3 text-sm">
+                <li>
+                  <FeedbackWidget 
+                    customTrigger={<span className="hover:text-white transition-colors cursor-pointer">Contact Us</span>} 
+                  />
+                </li>
                 <li><a href="#" className="hover:text-white transition-colors">Citation Guide</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Project Ideas</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
               </ul>
             </div>
@@ -375,7 +380,7 @@ export default function Home() {
           
           <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
             <p>&copy; {new Date().getFullYear()} W3 WriteLab. All rights reserved.</p>
-            <p className="flex items-center gap-1">Made with <span className="text-red-500">♥</span> for Students</p>
+            <p className="flex items-center gap-1">Developed by <span className="text-white font-semibold">W3 Hub</span></p>
           </div>
         </div>
       </footer>
