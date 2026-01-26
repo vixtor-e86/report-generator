@@ -24,21 +24,163 @@ export default function Workspace({ params }) {
   const [tempImageData, setTempImageData] = useState(null);
   const [imageCaption, setImageCaption] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false); // ✅ NEW
-  const [paymentProcessing, setPaymentProcessing] = useState(false); // ✅ NEW
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
   const currentChapterRef = useRef();
   const fullReportRef = useRef();
 
-  // ... (Load Project Data effect remains the same)
+  // Load Project Data
+  useEffect(() => {
+    async function loadWorkspace() {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
+        router.push('/');
+        return;
+      }
+      setUser(currentUser);
 
-  // ... (Image functions remain the same)
+      // Load user profile
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('*, universities(name)')
+        .eq('id', currentUser.id)
+        .single();
+      
+      setUserProfile(profileData);
 
-  // ... (Generate Chapter Logic remains the same)
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .single();
 
-  // ✅ NEW: Payment Handler
+      if (projectError || !projectData) {
+        console.error('Project error:', projectError);
+        router.push('/dashboard');
+        return;
+      }
+
+      const { data: chaptersData } = await supabase
+        .from('chapters')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('chapter_number', { ascending: true });
+
+      const { data: imagesData } = await supabase
+        .from('project_images')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: true });
+
+      setProject(projectData);
+      setChapters(chaptersData || []);
+      setImages(imagesData || []);
+      setLoading(false);
+    }
+
+    if (projectId) {
+      loadWorkspace();
+    }
+  }, [projectId, router]);
+
+  // Image Upload Logic
+  const handleImageUpload = async (result) => {
+    if (!project) return;
+    setTempImageData({
+      url: result.info.secure_url,
+      publicId: result.info.public_id,
+    });
+    setShowCaptionModal(true);
+  };
+
+  const saveImageWithCaption = async () => {
+    if (!imageCaption.trim()) {
+      alert('Please enter a caption for the image');
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('project_images')
+      .insert({
+        project_id: project.id,
+        cloudinary_url: tempImageData.url,
+        cloudinary_public_id: tempImageData.publicId,
+        caption: imageCaption.trim(),
+        order_number: images.length + 1,
+      })
+      .select()
+      .single();
+
+    if (!error && data) {
+      setImages([...images, data]);
+      setShowCaptionModal(false);
+      setImageCaption('');
+      setTempImageData(null);
+    } else {
+      alert('Failed to save image');
+    }
+  };
+
+  const handleDeleteImage = async (imageId) => {
+    if (!confirm('Delete this image?')) return;
+    const { error } = await supabase
+      .from('project_images')
+      .delete()
+      .eq('id', imageId);
+
+    if (!error) {
+      setImages(images.filter(img => img.id !== imageId));
+    } else {
+      alert('Failed to delete image');
+    }
+  };
+
+  // Generate Chapter Logic
+  const handleGenerateChapter = async () => {
+    if (!user || !currentChapter) {
+      alert('User not loaded yet. Please wait.');
+      return;
+    }
+
+    setGenerating(true);
+
+    try {
+      const response = await fetch('/api/generate-chapter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: project.id,
+          chapterNumber: currentChapter.chapter_number,
+          userId: user.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Generation failed');
+      }
+
+      setChapters(chapters.map(ch => 
+        ch.id === currentChapter.id 
+          ? { ...ch, content: data.content, status: 'draft' }
+          : ch
+      ));
+
+      alert('Chapter generated successfully!');
+
+    } catch (error) {
+      console.error('Generation error:', error);
+      alert(error.message || 'Failed to generate chapter');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // Payment Handler
   const handleUnlockPayment = async () => {
     setPaymentProcessing(true);
     try {
@@ -48,7 +190,7 @@ export default function Workspace({ params }) {
         body: JSON.stringify({
           userId: user.id,
           email: user.email,
-          tier: 'free_unlock', // Special tier for unlocking
+          tier: 'free_unlock',
           amount: 2000,
           projectId: project.id
         })
@@ -60,7 +202,6 @@ export default function Workspace({ params }) {
         throw new Error(data.error || 'Payment initialization failed');
       }
 
-      // Redirect to Flutterwave
       window.location.href = data.authorization_url;
 
     } catch (error) {
@@ -70,8 +211,14 @@ export default function Workspace({ params }) {
     }
   };
 
-  // ✅ NEW: Check Access Wrapper
+  // Check Access Wrapper
   const checkAccessAndPrint = (printFunction) => {
+    // Admin bypass
+    if (userProfile?.role === 'admin') {
+      printFunction();
+      return;
+    }
+
     if (project?.tier === 'free' && !project?.is_unlocked) {
       setShowPaymentModal(true);
     } else {
@@ -79,7 +226,7 @@ export default function Workspace({ params }) {
     }
   };
 
-  // Print Current Chapter (Wrapped)
+  // Print Current Chapter
   const handlePrintCurrentChapter = useReactToPrint({
     contentRef: currentChapterRef,
     documentTitle: `Chapter-${selectedChapter}-${project?.title || 'Report'}`,
@@ -91,7 +238,8 @@ export default function Workspace({ params }) {
       }
     `,
     onBeforeGetContent: () => {
-      if (project?.tier === 'free' && !project?.is_unlocked) return Promise.reject("Locked"); // Prevent if locked (double check)
+      // Allow if admin or if unlocked
+      if (userProfile?.role !== 'admin' && project?.tier === 'free' && !project?.is_unlocked) return Promise.reject("Locked");
       const fullReportDiv = fullReportRef.current?.parentElement;
       if (fullReportDiv) fullReportDiv.style.display = 'none';
     },
@@ -101,7 +249,7 @@ export default function Workspace({ params }) {
     }
   });
 
-  // Print Full Report (Wrapped)
+  // Print Full Report
   const handlePrintFullReport = useReactToPrint({
     contentRef: fullReportRef,
     documentTitle: `${project?.title || 'Full-Report'}`,
@@ -113,7 +261,8 @@ export default function Workspace({ params }) {
       }
     `,
     onBeforeGetContent: () => {
-      if (project?.tier === 'free' && !project?.is_unlocked) return Promise.reject("Locked");
+      // Allow if admin or if unlocked
+      if (userProfile?.role !== 'admin' && project?.tier === 'free' && !project?.is_unlocked) return Promise.reject("Locked");
       const fullReportDiv = fullReportRef.current?.parentElement;
       const currentChapterDiv = currentChapterRef.current;
       if (fullReportDiv) fullReportDiv.style.display = 'block';
@@ -136,7 +285,7 @@ export default function Workspace({ params }) {
   }
 
   const currentChapter = chapters.find(ch => ch.chapter_number === selectedChapter);
-  const maxImages = 2; // Free tier fixed at 2 images
+  const maxImages = 2;
   const allChaptersGenerated = chapters.every(ch => ch.status === 'draft' || ch.status === 'approved');
 
   return (
@@ -577,3 +726,6 @@ export default function Workspace({ params }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
