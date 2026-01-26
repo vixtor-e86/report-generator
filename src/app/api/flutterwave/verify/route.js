@@ -74,19 +74,28 @@ export async function GET(request) {
     }
 
     // ✅ NEW: Unlock project if applicable
-    if (updatedTx.project_id) {
+    // We check the reference string for the project ID (embedded as W3WL_UNLOCK_UUID_TIMESTAMP)
+    let projectIdToUnlock = null;
+    
+    if (updatedTx.paystack_reference && updatedTx.paystack_reference.startsWith('W3WL_UNLOCK_')) {
+      const parts = updatedTx.paystack_reference.split('_');
+      // Format: W3WL_UNLOCK_<UUID>_<TIMESTAMP>
+      // UUID is at index 2
+      if (parts.length >= 3) {
+        projectIdToUnlock = parts[2];
+      }
+    }
+
+    if (projectIdToUnlock) {
       const { error: unlockError } = await supabaseAdmin
         .from('projects')
         .update({ is_unlocked: true })
-        .eq('id', updatedTx.project_id);
+        .eq('id', projectIdToUnlock);
 
       if (unlockError) {
         console.error('Failed to unlock project:', unlockError);
-        // We don't fail the request here because payment was successful, 
-        // but we should probably alert/log it. 
-        // The user might need to contact support if not unlocked.
       } else {
-        console.log(`Project ${updatedTx.project_id} unlocked successfully.`);
+        console.log(`Project ${projectIdToUnlock} unlocked successfully.`);
       }
     }
 

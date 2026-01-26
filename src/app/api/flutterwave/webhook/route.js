@@ -39,11 +39,16 @@ export async function POST(request) {
             .single();
 
           // ✅ NEW: Unlock project if applicable
-          if (updatedTx?.project_id) {
-            await supabaseAdmin
-              .from('projects')
-              .update({ is_unlocked: true })
-              .eq('id', updatedTx.project_id);
+          if (tx_ref && tx_ref.startsWith('W3WL_UNLOCK_')) {
+            const parts = tx_ref.split('_');
+            const projectIdToUnlock = parts[2];
+            
+            if (projectIdToUnlock) {
+              await supabaseAdmin
+                .from('projects')
+                .update({ is_unlocked: true })
+                .eq('id', projectIdToUnlock);
+            }
           }
         }
       }

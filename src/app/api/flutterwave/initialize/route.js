@@ -15,7 +15,13 @@ export async function POST(request) {
     }
 
     // Generate unique reference (tx_ref)
-    const tx_ref = `W3WL_${tier.toUpperCase()}_${Date.now()}_${userId.slice(0, 8)}`;
+    // If unlocking a project, embed the projectId in the reference
+    let tx_ref;
+    if (projectId) {
+      tx_ref = `W3WL_UNLOCK_${projectId}_${Date.now()}`;
+    } else {
+      tx_ref = `W3WL_${tier.toUpperCase()}_${Date.now()}_${userId.slice(0, 8)}`;
+    }
 
     // Initialize Flutterwave payment
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
@@ -62,7 +68,7 @@ export async function POST(request) {
       .from('payment_transactions')
       .insert({
         user_id: userId,
-        project_id: projectId || null, // Store projectId if present
+        project_id: null, // Avoid FK constraint (standard_projects), we store projectId in tx_ref
         amount,
         currency: 'NGN',
         tier,
