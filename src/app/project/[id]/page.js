@@ -190,7 +190,7 @@ export default function Workspace({ params }) {
         body: JSON.stringify({
           userId: user.id,
           email: user.email,
-          tier: 'free_unlock',
+          tier: 'standard', // Changed to 'standard' to satisfy DB constraint
           amount: 2000,
           projectId: project.id
         })
