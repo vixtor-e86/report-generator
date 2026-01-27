@@ -26,7 +26,32 @@ function TemplateSelectContent() {
 
   useEffect(() => {
     async function loadData() {
-// ... (rest of loadData)
+      try {
+        // Get user session
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        if (authError || !session) {
+          router.push('/auth/callback');
+          return;
+        }
+
+        setUser(session.user);
+
+        // Fetch templates
+        const { data: templatesData } = await supabase
+          .from('templates')
+          .select('*');
+        
+        if (templatesData) {
+          setTemplates(templatesData);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
   }, [router]);
 
 
@@ -125,6 +150,74 @@ function TemplateSelectContent() {
       verifyPaymentIfNeeded();
     }
   }, [user, searchParams, router]);
+
+  // Template Types Configuration
+  const getTemplateTypes = () => [
+    {
+      id: '5-chapter',
+      name: '5-Chapter Report',
+      description: 'Standard undergraduate final year project report',
+      icon: '📋',
+      popular: true,
+      count: templates.filter(t => t.type === '5-chapter').length,
+      chapters: 5
+    },
+    {
+      id: '6-chapter-thesis',
+      name: '6-Chapter Thesis',
+      description: 'Comprehensive postgraduate thesis structure',
+      icon: '📚',
+      popular: false,
+      count: templates.filter(t => t.type === '6-chapter-thesis').length,
+      chapters: 6
+    },
+    {
+      id: 'siwes',
+      name: 'SIWES/Industrial Training',
+      description: 'Industrial training and internship documentation',
+      icon: '🏭',
+      popular: false,
+      count: 0,
+      chapters: 4
+    }
+  ];
+
+  // Handle template type selection
+  const handleTypeSelect = (typeId) => {
+    setSelectedType(typeId);
+    if (typeId === 'siwes') {
+      // For SIWES, skip faculty selection and proceed directly
+      router.push(`/standard/new?type=${typeId}&faculty=general`);
+    } else {
+      // Load available faculties for this type
+      const selectedFaculties = templates
+        .filter(t => t.type === typeId)
+        .map(t => ({
+          name: t.faculty,
+          icon: t.icon || '📍',
+          template: t
+        }));
+      setAvailableFaculties(selectedFaculties);
+      setStep(2);
+    }
+  };
+
+  // Handle faculty selection
+  const handleFacultySelect = (faculty) => {
+    setSelectedFaculty(faculty.name);
+    // Proceed to project creation with selected template
+    const template = faculty.template;
+    router.push(`/standard/new?type=${selectedType}&faculty=${faculty.name}&template_id=${template.id}`);
+  };
+
+  // Handle back button
+  const handleBack = () => {
+    if (step === 2) {
+      setStep(1);
+      setSelectedFaculty(null);
+      setAvailableFaculties([]);
+    }
+  };
 
   // ... (rest of component functions)
 
