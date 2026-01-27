@@ -120,7 +120,7 @@ export default function Home() {
           
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 max-w-5xl mx-auto leading-tight animate-in fade-in slide-in-from-bottom-5 duration-700 delay-100" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
             Write Complex Projects <br className="hidden md:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-violet-300">In Minutes, Not Weeks</span>
+            <span className="text-indigo-600">In Minutes, Not Weeks</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-white mb-10 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
