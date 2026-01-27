@@ -100,7 +100,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
-        {/* Background Image with Overlay */}
+        {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <Image 
             src={bgImage} 
@@ -110,7 +110,6 @@ export default function Home() {
             priority
             placeholder="blur"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-50/90 via-slate-50/80 to-slate-50"></div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
