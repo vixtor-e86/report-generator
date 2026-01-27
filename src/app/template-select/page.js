@@ -13,6 +13,7 @@ function TemplateSelectContent() {
 
   // Payment verification state
   const [noPaymentFound, setNoPaymentFound] = useState(false);
+  const [paymentExpired, setPaymentExpired] = useState(false); // ✅ NEW
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [pendingPayment, setPendingPayment] = useState(null);
@@ -25,29 +26,7 @@ function TemplateSelectContent() {
 
   useEffect(() => {
     async function loadData() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        router.push('/');
-        return;
-      }
-
-      // Fetch all templates from database
-      const { data: templatesData, error: templatesError } = await supabase
-        .from('templates')
-        .select('*')
-        .eq('is_public', true)
-        .order('created_at', { ascending: true });
-
-      if (templatesError) {
-        console.error('Templates error:', templatesError);
-      }
-
-      setUser(user);
-      setTemplates(templatesData || []);
-      setLoading(false);
-    }
-
-    loadData();
+// ... (rest of loadData)
   }, [router]);
 
 
@@ -122,9 +101,19 @@ function TemplateSelectContent() {
           .limit(1);
 
         if (unusedPayments && unusedPayments.length > 0) {
-          // Found existing payment - allow them to proceed
-          setPendingPayment(unusedPayments[0]);
-          setPaymentVerified(true);
+          const payment = unusedPayments[0];
+          // ✅ NEW: Check 7-day expiry
+          const paymentDate = new Date(payment.paid_at);
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+          if (paymentDate < sevenDaysAgo) {
+            setPaymentExpired(true);
+          } else {
+            // Found valid existing payment - allow them to proceed
+            setPendingPayment(payment);
+            setPaymentVerified(true);
+          }
         } else {
           // ✅ NO PAYMENT - Show blocking screen
           setNoPaymentFound(true);
@@ -137,100 +126,7 @@ function TemplateSelectContent() {
     }
   }, [user, searchParams, router]);
 
-  // Get template types with their counts
-  const getTemplateTypes = () => {
-    const types = [
-      {
-        id: '5-chapter',
-        name: '5-Chapter Report',
-        icon: '📄',
-        description: 'Standard format for undergraduate final year projects and design work',
-        popular: true,
-        count: templates.filter(t => t.template_type === '5-chapter').length
-      },
-      {
-        id: '6-chapter-thesis',
-        name: '6-Chapter Thesis',
-        icon: '🎓',
-        description: 'Extended format for postgraduate research, masters, and in-depth studies',
-        popular: false,
-        count: templates.filter(t => t.template_type === '6-chapter-thesis').length
-      },
-      {
-        id: 'siwes',
-        name: 'SIWES/Industrial Training',
-        icon: '🏭',
-        description: 'For Student Industrial Work Experience Scheme and internship reports',
-        popular: false,
-        count: templates.filter(t => t.template_type === 'siwes').length
-      }
-    ];
-    return types;
-  };
-
-  // Get faculties for selected type
-  const getFacultiesForType = (type) => {
-    if (type === 'siwes') return []; // SIWES doesn't need faculty selection
-
-    const facultyTemplates = templates.filter(t => t.template_type === type && t.faculty);
-    const faculties = [...new Set(facultyTemplates.map(t => t.faculty))];
-
-    return faculties.map(faculty => {
-      const template = facultyTemplates.find(t => t.faculty === faculty);
-      return {
-        name: faculty,
-        template: template,
-        icon: getFacultyIcon(faculty)
-      };
-    });
-  };
-
-  const getFacultyIcon = (faculty) => {
-    const icons = {
-      'Engineering': '⚙️',
-      'Sciences': '🔬',
-      'Management Sciences': '💼',
-      'Social Sciences': '👥',
-      'Arts & Humanities': '🎨',
-      'Law': '⚖️',
-      'Education': '📚',
-      'Agricultural Sciences': '🌾',
-      'Environmental Science': '🌍',
-      'Basic Medical Sciences': '🩺'
-    };
-    return icons[faculty] || '📖';
-  };
-
-  const handleTypeSelect = (typeId) => {
-    setSelectedType(typeId);
-
-    if (typeId === 'siwes') {
-      // SIWES goes directly to project creation
-      const siwesTemplate = templates.find(t => t.template_type === 'siwes');
-      if (siwesTemplate) {
-        router.push(`/standard/new?template=${siwesTemplate.id}`);
-      }
-    } else {
-      // Show faculty selection
-      const faculties = getFacultiesForType(typeId);
-      setAvailableFaculties(faculties);
-      setStep(2);
-    }
-  };
-
-  const handleFacultySelect = (faculty) => {
-    const template = faculty.template;
-    if (template) {
-      router.push(`/standard/new?template=${template.id}`);
-    }
-  };
-
-  const handleBack = () => {
-    setStep(1);
-    setSelectedType(null);
-    setSelectedFaculty(null);
-    setAvailableFaculties([]);
-  };
+  // ... (rest of component functions)
 
   if (verifyingPayment) {
     return (
@@ -248,6 +144,39 @@ function TemplateSelectContent() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (paymentExpired) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border-2 border-red-100">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Payment Expired</h2>
+          <p className="text-gray-600 mb-6">
+            Your previous payment has expired (valid for 7 days). You need to make a new payment to create a standard project.
+          </p>
+
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition mb-3"
+          >
+            Make New Payment
+          </button>
+          
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="text-gray-500 text-sm hover:text-gray-700"
+          >
+            Return to Dashboard
+          </button>
+        </div>
       </div>
     );
   }
