@@ -405,6 +405,14 @@ export default function Dashboard() {
                   
                   <div className="flex items-center justify-between text-xs text-slate-400 pt-4 border-t border-slate-100">
                     <span>{new Date(project.created_at).toLocaleDateString()}</span>
+                    
+                    {/* Expiration Warning for Free Projects */}
+                    {project.tier === 'free' && (
+                      <span className="text-orange-600 font-medium bg-orange-50 px-2 py-0.5 rounded">
+                        Expires in {Math.max(0, 30 - Math.floor((Date.now() - new Date(project.created_at).getTime()) / (1000 * 60 * 60 * 24)))} days
+                      </span>
+                    )}
+
                     <span>Chapter {project.current_chapter || 1}/5</span>
                   </div>
                 </Link>
