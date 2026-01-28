@@ -132,7 +132,7 @@ export default function Home() {
             <a href="#how-it-works" className="w-full sm:w-auto px-8 py-3 rounded-lg bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 hover:border-slate-400 transition shadow-sm text-center flex items-center justify-center">
               See How It Works
             </a>
-            <Link href="/features" className="w-full sm:w-auto px-8 py-3 rounded-lg bg-indigo-600/10 border border-indigo-600/20 text-white font-semibold hover:bg-indigo-600/20 transition shadow-sm text-center flex items-center justify-center backdrop-blur-sm">
+            <Link href="/features" className="w-full sm:w-auto px-8 py-3 rounded-lg bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 hover:border-slate-400 transition shadow-sm text-center flex items-center justify-center">
               View Full Features
             </Link>
           </div>
