@@ -30,7 +30,7 @@ function TemplateSelectContent() {
         // Get user session
         const { data: { session }, error: authError } = await supabase.auth.getSession();
         if (authError || !session) {
-          router.push('/auth/callback');
+          router.push('/'); // Redirect to landing page if not signed in
           return;
         }
 
@@ -152,6 +152,22 @@ function TemplateSelectContent() {
   }, [user, searchParams, router]);
 
   // Template Types Configuration
+  const getFacultyIcon = (faculty) => {
+    const icons = {
+      'Engineering': '⚙️',
+      'Sciences': '🔬',
+      'Management Sciences': '💼',
+      'Social Sciences': '👥',
+      'Arts & Humanities': '🎨',
+      'Law': '⚖️',
+      'Education': '📚',
+      'Agricultural Sciences': '🌾',
+      'Environmental Science': '🌍',
+      'Basic Medical Sciences': '🩺'
+    };
+    return icons[faculty] || '📖';
+  };
+
   const getTemplateTypes = () => [
     {
       id: '5-chapter',
@@ -177,7 +193,7 @@ function TemplateSelectContent() {
       description: 'Industrial training and internship documentation',
       icon: '🏭',
       popular: false,
-      count: 0,
+      count: templates.filter(t => t.template_type === 'siwes').length,
       chapters: 4
     }
   ];
@@ -187,33 +203,32 @@ function TemplateSelectContent() {
     setSelectedType(typeId);
     if (typeId === 'siwes') {
       // For SIWES, skip faculty selection and proceed directly
-      router.push(`/standard/new?type=${typeId}&faculty=general`);
+      const siwesTemplate = templates.find(t => t.template_type === 'siwes');
+      if (siwesTemplate) {
+        router.push(`/standard/new?template=${siwesTemplate.id}`);
+      } else {
+        router.push(`/standard/new?type=${typeId}&faculty=general`);
+      }
     } else {
-      // Load available faculties for this type
-      const filteredTemplates = templates.filter(t => t.template_type === typeId);
-      
-      // Deduplicate faculties - take the first template found for each faculty
-      const uniqueFaculties = Array.from(new Set(filteredTemplates.map(t => t.faculty)))
-        .map(faculty => {
-          const template = filteredTemplates.find(t => t.faculty === faculty);
-          return {
-            name: faculty,
-            icon: template.icon || getFacultyIcon(faculty) || '📍', // Fallback to helper if template has no icon
-            template: template
-          };
-        });
-
-      setAvailableFaculties(uniqueFaculties);
+      // Load ALL available templates for this type
+      const selectedTemplates = templates
+        .filter(t => t.template_type === typeId)
+        .map(t => ({
+          id: t.id,
+          name: t.name,
+          faculty: t.faculty,
+          icon: t.icon || getFacultyIcon(t.faculty) || '📍',
+          template: t
+        }));
+      setAvailableFaculties(selectedTemplates);
       setStep(2);
     }
   };
 
-  // Handle faculty selection
-  const handleFacultySelect = (faculty) => {
-    setSelectedFaculty(faculty.name);
-    // Proceed to project creation with selected template
-    const template = faculty.template;
-    router.push(`/standard/new?type=${selectedType}&faculty=${faculty.name}&template_id=${template.id}`);
+  // Handle template selection
+  const handleFacultySelect = (item) => {
+    // Proceed to project creation with selected template ID
+    router.push(`/standard/new?template=${item.id}`);
   };
 
   // Handle back button
@@ -532,22 +547,22 @@ function TemplateSelectContent() {
               </p>
             </div>
 
-            {/* Faculty Cards Grid - Mobile Responsive */}
+            {/* Faculty/Template Cards Grid - Mobile Responsive */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 mb-8 sm:mb-12">
-              {availableFaculties.map((faculty) => (
+              {availableFaculties.map((item) => (
                 <div
-                  key={faculty.name}
-                  onClick={() => handleFacultySelect(faculty)}
+                  key={item.id}
+                  onClick={() => handleFacultySelect(item)}
                   className="bg-white rounded-xl shadow-md border-2 border-gray-200 hover:border-indigo-500 hover:shadow-xl transition-all duration-300 cursor-pointer p-4 sm:p-5 lg:p-6"
                 >
                   <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="text-3xl sm:text-4xl lg:text-5xl flex-shrink-0">{faculty.icon}</div>
+                    <div className="text-3xl sm:text-4xl lg:text-5xl flex-shrink-0">{item.icon}</div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mb-1 truncate">
-                        {faculty.name}
+                      <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mb-1 line-clamp-2">
+                        {item.name}
                       </h3>
-                      <p className="text-xs sm:text-sm text-gray-600">
-                        {faculty.template?.structure?.chapters?.length || 0} Chapters
+                      <p className="text-xs sm:text-sm text-indigo-600 font-medium uppercase tracking-wide">
+                        {item.faculty}
                       </p>
                     </div>
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
