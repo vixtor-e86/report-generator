@@ -159,7 +159,7 @@ function TemplateSelectContent() {
       description: 'Standard undergraduate final year project report',
       icon: '📋',
       popular: true,
-      count: templates.filter(t => t.type === '5-chapter').length,
+      count: templates.filter(t => t.template_type === '5-chapter').length,
       chapters: 5
     },
     {
@@ -168,7 +168,7 @@ function TemplateSelectContent() {
       description: 'Comprehensive postgraduate thesis structure',
       icon: '📚',
       popular: false,
-      count: templates.filter(t => t.type === '6-chapter-thesis').length,
+      count: templates.filter(t => t.template_type === '6-chapter-thesis').length,
       chapters: 6
     },
     {
@@ -190,14 +190,20 @@ function TemplateSelectContent() {
       router.push(`/standard/new?type=${typeId}&faculty=general`);
     } else {
       // Load available faculties for this type
-      const selectedFaculties = templates
-        .filter(t => t.type === typeId)
-        .map(t => ({
-          name: t.faculty,
-          icon: t.icon || '📍',
-          template: t
-        }));
-      setAvailableFaculties(selectedFaculties);
+      const filteredTemplates = templates.filter(t => t.template_type === typeId);
+      
+      // Deduplicate faculties - take the first template found for each faculty
+      const uniqueFaculties = Array.from(new Set(filteredTemplates.map(t => t.faculty)))
+        .map(faculty => {
+          const template = filteredTemplates.find(t => t.faculty === faculty);
+          return {
+            name: faculty,
+            icon: template.icon || getFacultyIcon(faculty) || '📍', // Fallback to helper if template has no icon
+            template: template
+          };
+        });
+
+      setAvailableFaculties(uniqueFaculties);
       setStep(2);
     }
   };
