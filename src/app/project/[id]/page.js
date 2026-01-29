@@ -498,7 +498,12 @@ export default function Workspace({ params }) {
               <p className="text-gray-600 text-sm sm:text-base">Click &quot;Generate Chapter&quot; to begin.</p>
             </div>
           ) : (
-            <div ref={currentChapterRef} className="print:p-8"> 
+            <div 
+              ref={currentChapterRef} 
+              className={`print:p-8 ${
+                project?.tier === 'free' && !project?.is_unlocked ? 'no-select' : ''
+              }`}
+            > 
               <div className="max-w-4xl mx-auto bg-white p-4 sm:p-8 lg:p-12 shadow-sm border border-gray-200 min-h-[600px] sm:min-h-[800px] print:shadow-none print:border-none print:p-0">
                 
                 <div className="prose prose-sm sm:prose-lg max-w-none 
