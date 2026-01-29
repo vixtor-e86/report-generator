@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { getReferenceStyleOptions } from '@/lib/referenceStyles';
+import ReferenceInfoModal from '@/components/ReferenceInfoModal';
 
 function NewProjectContent() {
   const router = useRouter();
@@ -26,6 +28,8 @@ function NewProjectContent() {
   const [components, setComponents] = useState([]);
   const [componentInput, setComponentInput] = useState('');
   const [description, setDescription] = useState('');
+  const [referenceStyle, setReferenceStyle] = useState('apa');
+  const [showReferenceInfo, setShowReferenceInfo] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -151,6 +155,7 @@ function NewProjectContent() {
           department,
           components,
           description,
+          reference_style: referenceStyle, // ✅ Added reference style
           tier: 'free',
           status: 'in_progress',
           current_chapter: 1
@@ -238,7 +243,7 @@ function NewProjectContent() {
               value={projectTitle}
               onChange={(e) => setProjectTitle(e.target.value)}
               placeholder="e.g., Smart Home Automation System Using IoT"
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
             />
           </div>
 
@@ -270,7 +275,7 @@ function NewProjectContent() {
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
                 placeholder="Enter your department name"
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
               />
             ) : (
               <select
@@ -330,7 +335,7 @@ function NewProjectContent() {
                   }
                 }}
                 placeholder="e.g., Arduino Uno, Survey Tools, Lab Equipment..."
-                className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
               />
               <button
                 onClick={addComponent}
@@ -345,6 +350,37 @@ function NewProjectContent() {
             <p className="text-xs text-gray-500 mt-1">Press Enter or click Add to include a component</p>
           </div>
 
+          {/* Reference Style Selection (Admin Only) */}
+          {profile?.role === 'admin' && (
+            <div className="border-t border-gray-200 pt-6">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs sm:text-sm font-bold text-gray-900">
+                  Reference Style (Admin)
+                </label>
+                <button
+                  onClick={() => setShowReferenceInfo(true)}
+                  className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  View Examples
+                </button>
+              </div>
+              <select
+                value={referenceStyle}
+                onChange={(e) => setReferenceStyle(e.target.value)}
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              >
+                {getReferenceStyleOptions().map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.icon} {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Description */}
           <div>
             <label className="block text-sm font-bold text-gray-900 mb-2">
@@ -355,7 +391,7 @@ function NewProjectContent() {
               onChange={(e) => setDescription(e.target.value)}
               rows="6"
               placeholder="Describe what your project does, its objectives, and key features..."
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none"
             />
             <div className="flex justify-between items-center mt-1">
               <p className="text-xs text-gray-500">Provide a clear overview of your project</p>
@@ -412,6 +448,11 @@ function NewProjectContent() {
           </div>
         </div>
       </div>
+      <ReferenceInfoModal 
+        isOpen={showReferenceInfo}
+        onClose={() => setShowReferenceInfo(false)}
+        selectedStyle={referenceStyle}
+      />
     </div>
   );
 }

@@ -91,7 +91,7 @@ export default function UniversitySelector({ onSelect }) {
       <div className="relative">
         <input
           type="text"
-          className="appearance-none block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-base sm:text-sm"
+          className="appearance-none block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-base sm:text-sm placeholder-gray-600"
           placeholder={loading ? "Loading..." : "Search University or Poly..."}
           value={searchTerm}
           onChange={(e) => {
