@@ -153,6 +153,16 @@ function createFreePrompt(data) {
     referenceStyle
   } = data;
 
+  const styleGuide = referenceStyle.toLowerCase() === 'ieee' 
+    ? `CITATION STYLE (IEEE - STRICTLY ENFORCED):
+       - In-text: Use numbers in square brackets, e.g., "The algorithm uses BFS [1]." NOT (Author, Year).
+       - References List: Numbered list [1], [2] ordered by appearance in the text.
+       - Format: [1] A. B. Author, "Title," Publisher, Year.`
+    : `CITATION STYLE (APA - STRICTLY ENFORCED):
+       - In-text: Use author-date format, e.g., "The algorithm uses BFS (Okonkwo, 2023)." NOT [1].
+       - References List: Alphabetical order by author surname.
+       - Format: Author, A. A. (Year). Title. Publisher.`;
+
   return `You are an expert academic writer for Nigerian universities. Write a complete chapter for a ${faculty} student project report.
 
 **PROJECT DETAILS:**
@@ -189,13 +199,14 @@ ${sections}
 6. Use correct terminology for ${faculty}
 7. Use Nigerian English spelling
 
-**REFERENCES (${referenceStyle.toUpperCase()} Style):**
+**${styleGuide}**
+
+**REFERENCES INSTRUCTIONS:**
 ${chapterNumber === 5 || chapterNumber === 6 ? 
-  `- Include 10-15 in-text citations throughout
-   - Add a ## REFERENCES section at the END with 10-15 realistic Nigerian academic sources
-   - Use proper ${referenceStyle.toUpperCase()} format` :
-  `- Include 10-15 in-text citations throughout
-   - Do NOT include a References section (only in final chapter)`
+  `- Include 10-15 in-text citations throughout following the ${referenceStyle.toUpperCase()} style guide above exactly.
+   - Add a ## REFERENCES section at the END with 10-15 realistic Nigerian academic sources formatted in ${referenceStyle.toUpperCase()}.` :
+  `- Include 10-15 in-text citations throughout following the ${referenceStyle.toUpperCase()} style guide above exactly.
+   - Do NOT include a References section (only in final chapter).`
 }
 
 **CRITICAL RULES:**
@@ -204,6 +215,7 @@ ${chapterNumber === 5 || chapterNumber === 6 ?
 3. ONLY output the chapter content starting with ##
 4. Be specific and technical
 5. Write like a real ${faculty} student would
+6. STRICTLY follow the ${referenceStyle.toUpperCase()} citation format defined above.
 
 Now write the complete Chapter ${chapterNumber} following ALL requirements above.`;
 }
