@@ -134,7 +134,11 @@ export default function Dashboard() {
   };
 
   const handleCreatePremium = () => {
-    setShowPremiumModal(true);
+    if (isAdmin) {
+      router.push('/premium/template-selection');
+    } else {
+      setShowPremiumModal(true);
+    }
   };
 
   const allProjects = [...projects, ...standardProjects];
@@ -328,7 +332,7 @@ export default function Dashboard() {
                 <h3 className="font-bold text-slate-900 text-lg">Premium</h3>
                 <p className="text-slate-500 text-sm">Maximum power</p>
               </div>
-              <span className="text-2xl font-bold text-slate-900">₦{PRICING.PREMIUM.toLocaleString()}</span>
+              <span className="text-2xl font-bold text-slate-900">{isAdmin ? 'Free' : `₦${PRICING.PREMIUM.toLocaleString()}`}</span>
             </div>
             <ul className="space-y-3 mb-8">
               <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Superior AI Model</li>
@@ -336,7 +340,7 @@ export default function Dashboard() {
               <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Priority Support</li>
             </ul>
             <button onClick={handleCreatePremium} className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors bg-slate-900 text-white hover:bg-slate-800">
-              Select Premium
+              {isAdmin ? 'Create Premium' : 'Select Premium'}
             </button>
           </div>
         </div>
