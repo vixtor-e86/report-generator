@@ -46,8 +46,14 @@ export default function AuthCallback() {
 
           if (data?.session) {
             console.log('✅ Session established successfully');
-            // Redirect to dashboard (will handle onboarding check)
-            router.push('/dashboard');
+            
+            // Handle 'next' param for redirects (e.g., password reset)
+            const next = searchParams.get('next') || hashParams.get('next');
+            if (next) {
+              router.push(next);
+            } else {
+              router.push('/dashboard');
+            }
             return;
           }
         }
@@ -64,7 +70,13 @@ export default function AuthCallback() {
 
         if (session) {
           console.log('✅ Session found');
-          router.push('/dashboard');
+          // Handle 'next' param for redirects
+          const next = searchParams.get('next') || hashParams.get('next');
+          if (next) {
+            router.push(next);
+          } else {
+            router.push('/dashboard');
+          }
         } else {
           // No code, no session - something went wrong
           console.error('No authorization code or session found');

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import GoogleAuthButton from '@/components/GoogleAuthButton';
+import AuthModal from '@/components/AuthModal';
 import FeedbackWidget from '@/components/FeedbackWidget';
 import { PRICING, PRICING_FORMATTED } from '@/lib/pricing';
 import { supabase } from '@/lib/supabase';
@@ -14,6 +14,7 @@ export default function Home() {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -31,20 +32,7 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        flowType: 'pkce',
-      },
-    });
-
-    if (error) {
-      console.error('Login failed:', error.message);
-      alert('Login failed. Please try again.');
-    }
-  };
+  const openAuth = () => setShowAuthModal(true);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
@@ -69,7 +57,12 @@ export default function Home() {
             </div>
 
             <div className="hidden md:flex items-center gap-4">
-               <div className="w-fit"><GoogleAuthButton /></div>
+               <button 
+                 onClick={openAuth}
+                 className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition shadow-sm shadow-indigo-200"
+               >
+                 Sign In
+               </button>
             </div>
 
             <div className="md:hidden">
@@ -92,7 +85,17 @@ export default function Home() {
               <a href="#features" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>Features</a>
               <a href="#pricing" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>Pricing</a>
               <a href="#how-it-works" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>How it Works</a>
-              <div className="pt-2"><GoogleAuthButton /></div>
+              <div className="pt-2">
+                <button 
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    openAuth();
+                  }}
+                  className="w-full px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
+                >
+                  Sign In
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -128,7 +131,12 @@ export default function Home() {
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-300">
-            <div className="w-full sm:w-auto"><GoogleAuthButton /></div>
+            <button 
+              onClick={openAuth}
+              className="w-full sm:w-auto px-8 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30 flex items-center justify-center"
+            >
+              Get Started
+            </button>
             <a href="#how-it-works" className="w-full sm:w-auto px-8 py-3 rounded-lg bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 hover:border-slate-400 transition shadow-sm text-center flex items-center justify-center">
               See How It Works
             </a>
@@ -242,7 +250,7 @@ export default function Home() {
                 <span className="text-slate-500">/ forever</span>
               </div>
               <p className="text-slate-600 text-sm mb-6">Perfect for testing the capabilities.</p>
-              <button onClick={handleLogin} className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-900 font-semibold rounded-xl transition-colors mb-8">Get Started Free</button>
+              <button onClick={openAuth} className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-900 font-semibold rounded-xl transition-colors mb-8">Get Started Free</button>
               <ul className="space-y-4 text-sm text-slate-700">
                 <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> 1 Complete Report</li>
                 <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> All 10 Faculties</li>
@@ -261,7 +269,7 @@ export default function Home() {
                 <span className="text-indigo-200">/ report</span>
               </div>
               <p className="text-indigo-100 text-sm mb-6">For final year students who need quality.</p>
-              <button onClick={handleLogin} className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors mb-8 shadow-lg shadow-indigo-900/50">Choose Standard</button>
+              <button onClick={openAuth} className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors mb-8 shadow-lg shadow-indigo-900/50">Choose Standard</button>
               <ul className="space-y-4 text-sm text-indigo-50">
                 <li className="flex gap-3"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Editable Word (DOCX) + PDF</li>
                 <li className="flex gap-3"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> All 10 Faculties + SIWES</li>
@@ -278,7 +286,7 @@ export default function Home() {
                 <span className="text-slate-500">/ report</span>
               </div>
               <p className="text-slate-600 text-sm mb-6">Maximum power and priority support.</p>
-              <button onClick={handleLogin} className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-900 font-semibold rounded-xl transition-colors mb-8">Choose Premium</button>
+              <button onClick={openAuth} className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-900 font-semibold rounded-xl transition-colors mb-8">Choose Premium</button>
               <ul className="space-y-4 text-sm text-slate-700">
                 <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Superior AI Model</li>
                 <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Custom Templates & Styles</li>
@@ -330,7 +338,12 @@ export default function Home() {
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">Stop Writing, Start Creating</h2>
           <p className="text-xl text-slate-600 mb-10">Join thousands of students who have already generated their project reports.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <div className="w-full sm:w-auto"><GoogleAuthButton /></div>
+            <button 
+              onClick={openAuth}
+              className="w-full sm:w-auto px-8 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30"
+            >
+              Get Started Now
+            </button>
           </div>
         </div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-50/50 rounded-full blur-3xl -z-0"></div>
@@ -387,6 +400,11 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
     </div>
   );
 }
