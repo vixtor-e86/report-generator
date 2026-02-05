@@ -47,6 +47,8 @@ export default function AuthModal({ isOpen, onClose }) {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
+        console.log('Sign up result:', { user: data.user, session: data.session, error });
+        
         if (error) throw error;
         if (data.user && !data.session) {
           setMessage('Please check your email to verify your account.');
