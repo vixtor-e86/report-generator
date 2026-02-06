@@ -23,7 +23,8 @@ export default function ContentArea({
   activeView, 
   projectData, 
   chapters, 
-  onUpdateChapter 
+  onUpdateChapter,
+  images = []
 }) {
   const [editingChapterId, setEditingChapterId] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
@@ -32,6 +33,46 @@ export default function ContentArea({
   const activeChapter = activeView.startsWith('chapter-') 
     ? chapters.find(ch => `chapter-${ch.id}` === activeView)
     : null;
+
+  // Determine if we are viewing an image
+  const activeImage = activeView.startsWith('image-')
+    ? images.find(img => `image-${img.id}` === activeView)
+    : null;
+
+  if (activeImage) {
+    return (
+      <div className="content-area">
+        <div className="content-layout-wrapper">
+          <div style={{ marginBottom: '40px', width: '100%' }}>
+            <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
+              {activeImage.original_name}
+            </h1>
+            <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>
+              Asset in {projectData.title}
+            </p>
+          </div>
+
+          <div style={{ 
+            background: 'white', 
+            borderRadius: '16px', 
+            border: '1px solid #e5e7eb', 
+            overflow: 'hidden', 
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '40px'
+          }}>
+            <img 
+              src={activeImage.file_url} 
+              alt={activeImage.original_name}
+              style={{ maxWidth: '100%', maxHeight: '600px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (activeChapter) {
     const isEditing = editingChapterId === activeChapter.id;

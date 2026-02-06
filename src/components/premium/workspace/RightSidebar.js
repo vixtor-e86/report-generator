@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useFileUpload } from '@/hooks/useFileUpload';
+import { supabase } from '@/lib/supabase';
 
 // Simple SVG Icons
 const Icons = {
@@ -12,11 +14,59 @@ const Icons = {
   Shield: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>,
   Image: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>,
   Languages: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg>,
-  X: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  X: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+  Upload: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
 };
 
-export default function RightSidebar({ onClose }) {
+export default function RightSidebar({ onClose, projectId }) {
   const [activeTab, setActiveTab] = useState('tools');
+  const [files, setFiles] = useState([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+  
+  const { uploadFile, uploading, error: uploadError } = useFileUpload(projectId);
+
+  // Fetch files when tab changes to 'files'
+  useEffect(() => {
+    if (activeTab === 'files') {
+      fetchFiles();
+    }
+  }, [activeTab, projectId]);
+
+  const fetchFiles = async () => {
+    setLoadingFiles(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let query = supabase
+        .from('premium_assets')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (projectId) {
+        query = query.eq('project_id', projectId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setFiles(data || []);
+    } catch (err) {
+      console.error('Error loading files:', err);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
+  const handleQuickUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const asset = await uploadFile(file, 'sidebar_upload');
+    if (asset) {
+      setFiles([asset, ...files]);
+    }
+  };
 
   return (
     <motion.div 
@@ -119,9 +169,61 @@ export default function RightSidebar({ onClose }) {
 
           </div>
         ) : (
-          <div className="tool-placeholder">
-            <span className="placeholder-icon">📂</span>
-            <p>No files uploaded yet.</p>
+          <div className="files-panel p-4">
+            <div className="mb-4">
+              <label className="flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition">
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  onChange={handleQuickUpload}
+                  disabled={uploading}
+                />
+                <div className="text-center">
+                  <div className="text-indigo-600 mb-1">
+                    {uploading ? 'Uploading...' : <Icons.Upload />}
+                  </div>
+                  <span className="text-xs font-medium text-gray-600">
+                    {uploading ? 'Please wait' : 'Click to Upload File'}
+                  </span>
+                </div>
+              </label>
+              {uploadError && <p className="text-xs text-red-500 mt-2 text-center">{uploadError}</p>}
+            </div>
+
+            <div className="files-list space-y-3">
+              {loadingFiles ? (
+                <p className="text-center text-xs text-gray-500 py-4">Loading files...</p>
+              ) : files.length > 0 ? (
+                files.map((file) => (
+                  <div key={file.id} className="file-item flex items-start gap-3 p-3 bg-white border border-gray-100 rounded-lg hover:shadow-sm transition">
+                    <span className="text-xl">
+                      {file.file_type?.includes('image') ? '🖼️' : '📄'}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate" title={file.original_name}>
+                        {file.original_name}
+                      </p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-[10px] text-gray-500">{(file.size_bytes / 1024).toFixed(1)} KB</span>
+                        <a 
+                          href={file.file_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-indigo-600 hover:underline font-medium"
+                        >
+                          View
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="tool-placeholder text-center py-8">
+                  <span className="placeholder-icon text-4xl block mb-2">📂</span>
+                  <p className="text-sm text-gray-500">No files uploaded yet.</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

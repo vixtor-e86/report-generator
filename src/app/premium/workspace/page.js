@@ -30,6 +30,7 @@ export default function Workspace() {
   
   // Mock project data (replace with real data from previous pages)
   const projectData = {
+    id: 'mock-project-123', // Added mock ID for R2 storage testing
     title: 'AI-Powered Academic Writing Assistant',
     isPremium: true,
     faculty: 'Engineering',
@@ -61,14 +62,8 @@ export default function Workspace() {
     // TODO: Toggle edit mode
   };
 
-  const handleAddImage = (imageFile) => {
-    const newImage = {
-      id: Date.now(),
-      name: imageFile.name,
-      url: URL.createObjectURL(imageFile),
-      addedAt: new Date().toISOString()
-    };
-    setImages([...images, newImage]);
+  const handleAddImage = (asset) => {
+    setImages([...images, asset]);
   };
 
   const handleRemoveImage = (imageId) => {
@@ -104,6 +99,7 @@ export default function Workspace() {
             activeView={activeView}
             projectData={projectData}
             chapters={chapters}
+            images={images}
             onUpdateChapter={(chapterId, content) => {
               setChapters(chapters.map(ch => 
                 ch.id === chapterId ? { ...ch, content } : ch
@@ -131,7 +127,10 @@ export default function Workspace() {
                     display: 'none'
                   }}
                 />
-                <RightSidebar onClose={() => setIsRightSidebarOpen(false)} />
+                <RightSidebar 
+                  onClose={() => setIsRightSidebarOpen(false)} 
+                  projectId={projectData.id}
+                />
               </>
             )}
           </AnimatePresence>

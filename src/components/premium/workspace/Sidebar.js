@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useFileUpload } from '@/hooks/useFileUpload';
 
 // Simple SVG Icons
 const Icons = {
@@ -29,11 +30,15 @@ export default function Sidebar({
   onClose
 }) {
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(true);
+  const { uploadFile, uploading } = useFileUpload(projectData?.id);
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      onAddImage(file);
+      const asset = await uploadFile(file, 'project_image');
+      if (asset) {
+        onAddImage(asset);
+      }
     }
   };
 
@@ -103,16 +108,32 @@ export default function Sidebar({
                   Chapter {chapter.id}
                 </button>
               ))}
+              
               <div className="sub-nav-header">Assets</div>
-               <label htmlFor="image-upload" className="sub-nav-item upload-item">
+              
+              {/* List Uploaded Images */}
+              {images.map((img) => (
+                <button
+                  key={img.id}
+                  className={`sub-nav-item ${activeView === `image-${img.id}` ? 'active' : ''}`}
+                  onClick={() => onViewChange(`image-${img.id}`)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <span style={{ fontSize: '14px' }}>🖼️</span>
+                  <span className="truncate" style={{ maxWidth: '120px' }}>{img.original_name || 'Image'}</span>
+                </button>
+              ))}
+
+               <label htmlFor="image-upload" className={`sub-nav-item upload-item ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
                 <input
                   id="image-upload"
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
                   style={{ display: 'none' }}
+                  disabled={uploading}
                 />
-                <Icons.Image /> Add Image
+                <Icons.Image /> {uploading ? 'Uploading...' : 'Add Image'}
               </label>
             </motion.div>
           )}

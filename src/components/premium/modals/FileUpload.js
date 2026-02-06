@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useFileUpload } from '@/hooks/useFileUpload';
 
-export default function FileUpload({ onBack, onProceed }) {
+export default function FileUpload({ onBack, onProceed, projectId }) {
   const [uploadedFile, setUploadedFile] = useState(null);
+  const { uploadFile, uploading, error } = useFileUpload(projectId);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -14,6 +16,17 @@ export default function FileUpload({ onBack, onProceed }) {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) setUploadedFile(file);
+  };
+
+  const handleProcess = async () => {
+    if (!uploadedFile) return;
+    
+    // Upload to R2
+    const asset = await uploadFile(uploadedFile, 'document_upload');
+    
+    if (asset) {
+      onProceed({ type: 'upload', file: uploadedFile, asset });
+    }
   };
 
   return (
@@ -51,16 +64,19 @@ export default function FileUpload({ onBack, onProceed }) {
           </div>
         )}
       </div>
+      
+      {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>}
+
       <div className="modal-actions">
-        <button onClick={onBack} className="btn-secondary">
+        <button onClick={onBack} className="btn-secondary" disabled={uploading}>
           Back
         </button>
         <button 
-          onClick={() => onProceed({ type: 'upload', file: uploadedFile })}
-          disabled={!uploadedFile}
+          onClick={handleProcess}
+          disabled={!uploadedFile || uploading}
           className="btn-primary"
         >
-          Process & Continue
+          {uploading ? 'Uploading...' : 'Process & Continue'}
         </button>
       </div>
     </div>
