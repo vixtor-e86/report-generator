@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 import LoadingModal from '@/components/premium/modals/LoadingModal';
 import '@/styles/project-description.css';
 
@@ -16,29 +17,43 @@ export default function ProjectDescription() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  
+  // Data for dropdowns
+  const [universityData, setUniversityData] = useState({});
+  const [facultiesList, setFacultiesList] = useState([]);
+  const [departmentsList, setDepartmentsList] = useState([]);
 
-  const faculties = [
-    { id: 1, name: 'Engineering' },
-    { id: 2, name: 'Sciences' },
-    { id: 3, name: 'Arts' },
-    { id: 4, name: 'Social Sciences' },
-    { id: 5, name: 'Medicine' },
-    { id: 6, name: 'Law' },
-    { id: 7, name: 'Education' },
-    { id: 8, name: 'Business' },
-  ];
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/departments');
+        const data = await res.json();
+        setUniversityData(data);
+        setFacultiesList(Object.keys(data));
+      } catch (error) {
+        console.error('Failed to load departments:', error);
+      }
+    }
+    fetchData();
+  }, []);
 
-  const departments = [
-    { id: 1, name: 'Computer Science', facultyId: 1 },
-    { id: 2, name: 'Electrical Engineering', facultyId: 1 },
-    { id: 3, name: 'Mechanical Engineering', facultyId: 1 },
-    { id: 4, name: 'Physics', facultyId: 2 },
-    { id: 5, name: 'Chemistry', facultyId: 2 },
-    { id: 6, name: 'Biology', facultyId: 2 },
-    { id: 7, name: 'English', facultyId: 3 },
-    { id: 8, name: 'History', facultyId: 3 },
-    { id: 9, name: 'Philosophy', facultyId: 3 },
-  ];
+  const handleFacultyChange = (e) => {
+    const selectedFaculty = e.target.value;
+    setFormData(prev => ({ 
+      ...prev, 
+      faculty: selectedFaculty, 
+      department: '' // Reset department when faculty changes
+    }));
+    
+    if (errors.faculty) setErrors(prev => ({ ...prev, faculty: '' }));
+
+    // Update department list
+    if (selectedFaculty && Array.isArray(universityData[selectedFaculty])) {
+      setDepartmentsList(universityData[selectedFaculty]);
+    } else {
+      setDepartmentsList([]);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -73,16 +88,36 @@ export default function ProjectDescription() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
     if (validateForm()) {
       setIsLoading(true);
-      console.log('Creating project with:', formData);
       
-      // Simulate loading for 3 seconds then navigate to workspace
-      setTimeout(() => {
-        setIsLoading(false);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const { error } = await supabase
+          .from('premium_projects')
+          .insert({
+            user_id: user.id,
+            title: formData.projectTitle,
+            description: formData.description,
+            faculty: formData.faculty,
+            department: formData.department,
+            status: 'in_progress',
+            tier: 'premium',
+            current_chapter: 1
+          });
+
+        if (error) throw error;
+
+        // Navigate to workspace
         router.push('/premium/workspace');
-      }, 3000);
+      } catch (err) {
+        console.error('Error creating project:', err);
+        alert('Failed to create project. Please try again.');
+        setIsLoading(false);
+      }
     }
   };
 
@@ -163,13 +198,13 @@ export default function ProjectDescription() {
               <select
                 id="faculty"
                 value={formData.faculty}
-                onChange={(e) => handleInputChange('faculty', e.target.value)}
+                onChange={handleFacultyChange}
                 className={`form-select ${errors.faculty ? 'error' : ''}`}
               >
                 <option value="">Select Faculty</option>
-                {faculties.map(faculty => (
-                  <option key={faculty.id} value={faculty.name}>
-                    {faculty.name}
+                {facultiesList.map((fac, index) => (
+                  <option key={index} value={fac}>
+                    {fac}
                   </option>
                 ))}
               </select>
@@ -186,12 +221,13 @@ export default function ProjectDescription() {
                 id="department"
                 value={formData.department}
                 onChange={(e) => handleInputChange('department', e.target.value)}
-                className={`form-select ${errors.department ? 'error' : ''}`}
+                disabled={!formData.faculty}
+                className={`form-select ${errors.department ? 'error' : ''} ${!formData.faculty ? 'disabled' : ''}`}
               >
                 <option value="">Select Department</option>
-                {departments.map(dept => (
-                  <option key={dept.id} value={dept.name}>
-                    {dept.name}
+                {departmentsList.map((dept, index) => (
+                  <option key={index} value={dept}>
+                    {dept}
                   </option>
                 ))}
               </select>

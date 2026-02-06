@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState(null);
   const [projects, setProjects] = useState([]);
   const [standardProjects, setStandardProjects] = useState([]);
+  const [premiumProjects, setPremiumProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -53,6 +54,12 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
+      const { data: userPremiumProjects } = await supabase
+        .from('premium_projects')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
       const { data: unusedPayments } = await supabase
         .from('payment_transactions')
         .select('*')
@@ -70,6 +77,7 @@ export default function Dashboard() {
       setProfile(profile);
       setProjects((userProjects || []).map(p => ({ ...p, tier: p.tier || 'free' })));
       setStandardProjects(userStandardProjects || []);
+      setPremiumProjects(userPremiumProjects || []);
       setLoading(false);
     }
     loadData();
@@ -141,7 +149,7 @@ export default function Dashboard() {
     }
   };
 
-  const allProjects = [...projects, ...standardProjects];
+  const allProjects = [...projects, ...standardProjects, ...premiumProjects];
   const totalReports = allProjects.length;
   const completedReports = allProjects.filter(p => p.status === 'completed').length;
   const inProgressReports = allProjects.filter(p => p.status === 'in_progress').length;
@@ -384,7 +392,11 @@ export default function Dashboard() {
               {allProjects.map((project) => (
                 <Link 
                   key={project.id} 
-                  href={project.tier === 'free' ? `/project/${project.id}` : `/standard/${project.id}`}
+                  href={
+                    project.tier === 'free' ? `/project/${project.id}` : 
+                    project.tier === 'standard' ? `/standard/${project.id}` :
+                    `/premium/workspace?id=${project.id}`
+                  }
                   className="group block bg-white rounded-xl border border-slate-200 p-5 hover:border-indigo-400 hover:shadow-md transition-all duration-200"
                 >
                   <div className="flex justify-between items-start mb-3">
