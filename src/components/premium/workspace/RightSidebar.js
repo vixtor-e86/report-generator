@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useFileUpload } from '@/hooks/useFileUpload';
-import { supabase } from '@/lib/supabase';
 
 // Simple SVG Icons
 const Icons = {
@@ -18,54 +16,31 @@ const Icons = {
   Upload: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
 };
 
-export default function RightSidebar({ onClose, projectId }) {
+export default function RightSidebar({ onClose, files = [], onUpload, uploading, onFileClick, onError }) {
   const [activeTab, setActiveTab] = useState('tools');
-  const [files, setFiles] = useState([]);
-  const [loadingFiles, setLoadingFiles] = useState(false);
-  
-  const { uploadFile, uploading, error: uploadError } = useFileUpload(projectId);
 
-  // Fetch files when tab changes to 'files'
-  useEffect(() => {
-    if (activeTab === 'files') {
-      fetchFiles();
-    }
-  }, [activeTab, projectId]);
-
-  const fetchFiles = async () => {
-    setLoadingFiles(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      let query = supabase
-        .from('premium_assets')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (projectId) {
-        query = query.eq('project_id', projectId);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setFiles(data || []);
-    } catch (err) {
-      console.error('Error loading files:', err);
-    } finally {
-      setLoadingFiles(false);
-    }
-  };
-
-  const handleQuickUpload = async (e) => {
+  const handleQuickUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const asset = await uploadFile(file, 'sidebar_upload');
-    if (asset) {
-      setFiles([asset, ...files]);
+    // Validation
+    const validTypes = [
+      'application/pdf', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+      'text/plain',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' // xlsx
+    ];
+    
+    // Check if type is valid OR if extension matches (sometimes MIME types vary)
+    const validExtensions = ['.pdf', '.docx', '.txt', '.xlsx'];
+    const extension = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!validTypes.includes(file.type) && !validExtensions.includes(extension)) {
+      onError('Only PDF, DOCX, XLSX, and TXT files are allowed.');
+      return;
     }
+
+    onUpload(file);
   };
 
   return (
@@ -171,31 +146,33 @@ export default function RightSidebar({ onClose, projectId }) {
         ) : (
           <div className="files-panel p-4">
             <div className="mb-4">
-              <label className="flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition">
+              <label className={`flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
                 <input 
                   type="file" 
                   className="hidden" 
                   onChange={handleQuickUpload}
                   disabled={uploading}
+                  accept=".pdf,.docx,.txt,.xlsx"
                 />
                 <div className="text-center">
                   <div className="text-indigo-600 mb-1">
                     {uploading ? 'Uploading...' : <Icons.Upload />}
                   </div>
                   <span className="text-xs font-medium text-gray-600">
-                    {uploading ? 'Please wait' : 'Click to Upload File'}
+                    {uploading ? 'Please wait' : 'Click to Upload Document'}
                   </span>
                 </div>
               </label>
-              {uploadError && <p className="text-xs text-red-500 mt-2 text-center">{uploadError}</p>}
             </div>
 
             <div className="files-list space-y-3">
-              {loadingFiles ? (
-                <p className="text-center text-xs text-gray-500 py-4">Loading files...</p>
-              ) : files.length > 0 ? (
+              {files.length > 0 ? (
                 files.map((file) => (
-                  <div key={file.id} className="file-item flex items-start gap-3 p-3 bg-white border border-gray-100 rounded-lg hover:shadow-sm transition">
+                  <div 
+                    key={file.id} 
+                    className="file-item flex items-start gap-3 p-3 bg-white border border-gray-100 rounded-lg hover:shadow-sm transition cursor-pointer"
+                    onClick={() => onFileClick(file)}
+                  >
                     <span className="text-xl">
                       {file.file_type?.includes('image') ? '🖼️' : '📄'}
                     </span>
@@ -205,14 +182,7 @@ export default function RightSidebar({ onClose, projectId }) {
                       </p>
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-[10px] text-gray-500">{(file.size_bytes / 1024).toFixed(1)} KB</span>
-                        <a 
-                          href={file.file_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-[10px] text-indigo-600 hover:underline font-medium"
-                        >
-                          View
-                        </a>
+                        <span className="text-[10px] text-indigo-600 hover:underline font-medium">View</span>
                       </div>
                     </div>
                   </div>

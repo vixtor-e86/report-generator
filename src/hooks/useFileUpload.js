@@ -5,7 +5,7 @@ export function useFileUpload(projectId = null) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
 
-  const uploadFile = async (file, purpose = 'general') => {
+  const uploadFile = async (file, purpose = 'general', folderOverride = null) => {
     setUploading(true);
     setError(null);
 
@@ -17,7 +17,7 @@ export function useFileUpload(projectId = null) {
         body: JSON.stringify({
           filename: file.name,
           contentType: file.type,
-          folder: `projects/${projectId || 'temp'}/${purpose}`
+          folder: folderOverride || `projects/${projectId || 'temp'}/${purpose}`
         })
       });
 

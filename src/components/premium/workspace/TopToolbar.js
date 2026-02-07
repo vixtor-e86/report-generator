@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import GenerationModal from '../modals/GenerationModal';
 
 // Simple SVG Icons
 const Icons = {
@@ -16,22 +15,9 @@ const Icons = {
   export default function TopToolbar({
     onToggleRightSidebar,
     isRightSidebarOpen,
-    onToggleLeftSidebar
+    onToggleLeftSidebar,
+    onGenerate
   }) {
-    const [isGenerationModalOpen, setIsGenerationModalOpen] = useState(false);
-
-    // Sample data - in a real app, these would come from props or context
-    const uploadedImages = [
-      { id: 1, name: 'chart-1.png', src: '/api/placeholder?w=120&h=120' },
-      { id: 2, name: 'graph-2.jpg', src: '/api/placeholder?w=120&h=120' },
-      { id: 3, name: 'diagram-3.png', src: '/api/placeholder?w=120&h=120' },
-    ];
-
-    const researchPapers = [
-      { id: 1, title: 'Deep Learning in Medical Imaging', author: 'Smith et al.', year: '2023', journal: 'Nature Medicine' },
-      { id: 2, title: 'AI Ethics and Healthcare', author: 'Johnson et al.', year: '2023', journal: 'The Lancet' },
-      { id: 3, title: 'Clinical Decision Support Systems', author: 'Williams et al.', year: '2022', journal: 'JAMA' },
-    ];
     return (
       <>
         <div className="top-toolbar">
@@ -47,7 +33,7 @@ const Icons = {
           <div className="toolbar-actions">
             <button 
               className="btn-black"
-              onClick={() => setIsGenerationModalOpen(true)}
+              onClick={onGenerate}
             >
               <Icons.Zap />
               <span>Generate</span>
@@ -78,13 +64,6 @@ const Icons = {
             </button>
           </div>
         </div>
-
-        <GenerationModal 
-          isOpen={isGenerationModalOpen}
-          onClose={() => setIsGenerationModalOpen(false)}
-          uploadedImages={uploadedImages}
-          researchPapers={researchPapers}
-        />
       </>
     );
   }

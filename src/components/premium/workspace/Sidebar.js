@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useFileUpload } from '@/hooks/useFileUpload';
 
 // Simple SVG Icons
 const Icons = {
@@ -24,22 +23,26 @@ export default function Sidebar({
   images, 
   activeView, 
   onViewChange,
-  onAddImage,
-  onRemoveImage,
+  onUpload, // Replaces onAddImage/internal upload
+  uploading,
+  onError,
   isOpen,
   onClose
 }) {
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(true);
-  const { uploadFile, uploading } = useFileUpload(projectData?.id);
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const asset = await uploadFile(file, 'project_image');
-      if (asset) {
-        onAddImage(asset);
-      }
+    if (!file) return;
+
+    // Validation: PNG, JPEG
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      onError('Only PNG and JPEG images are allowed.');
+      return;
     }
+
+    onUpload(file);
   };
 
   return (
@@ -128,7 +131,7 @@ export default function Sidebar({
                 <input
                   id="image-upload"
                   type="file"
-                  accept="image/*"
+                  accept="image/png, image/jpeg"
                   onChange={handleImageUpload}
                   style={{ display: 'none' }}
                   disabled={uploading}

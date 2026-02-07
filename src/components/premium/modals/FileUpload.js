@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useFileUpload } from '@/hooks/useFileUpload';
 
-export default function FileUpload({ onBack, onProceed, projectId }) {
+export default function FileUpload({ onBack, onProceed, projectId, purpose = 'document_upload', folder = null }) {
   const [uploadedFile, setUploadedFile] = useState(null);
   const { uploadFile, uploading, error } = useFileUpload(projectId);
 
@@ -22,7 +22,7 @@ export default function FileUpload({ onBack, onProceed, projectId }) {
     if (!uploadedFile) return;
     
     // Upload to R2
-    const asset = await uploadFile(uploadedFile, 'document_upload');
+    const asset = await uploadFile(uploadedFile, purpose, folder);
     
     if (asset) {
       onProceed({ type: 'upload', file: uploadedFile, asset });

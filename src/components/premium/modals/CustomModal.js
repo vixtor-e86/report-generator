@@ -60,7 +60,7 @@ export default function CustomModal({ isOpen, onClose, onProceed }) {
                 </motion.button>
               </div>
             ) : customType === 'upload' ? (
-              <FileUpload onBack={handleReset} onProceed={onProceed} />
+              <FileUpload onBack={handleReset} onProceed={onProceed} purpose="template" folder="templates" />
             ) : (
               <ManualBuilder onBack={handleReset} onProceed={onProceed} />
             )}

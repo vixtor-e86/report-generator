@@ -2,16 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import Sidebar from '@/components/premium/workspace/Sidebar';
 import TopToolbar from '@/components/premium/workspace/TopToolbar';
 import RightSidebar from '@/components/premium/workspace/RightSidebar';
 import ContentArea from '@/components/premium/workspace/ContentArea';
+import ErrorModal from '@/components/premium/modals/ErrorModal';
+import FilePreviewModal from '@/components/premium/modals/FilePreviewModal';
+import GenerationModal from '@/components/premium/modals/GenerationModal';
 import '@/styles/workspace.css';
 
 export default function Workspace() {
   const [activeView, setActiveView] = useState('dashboard');
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
+  
+  // Data State
   const [chapters, setChapters] = useState([
     { id: 1, title: 'Chapter 1', content: '' },
     { id: 2, title: 'Chapter 2', content: '' },
@@ -20,17 +27,17 @@ export default function Workspace() {
     { id: 5, title: 'Chapter 5', content: '' },
   ]);
   const [images, setImages] = useState([]);
+  const [files, setFiles] = useState([]);
 
-  // Open tools panel by default only on desktop
-  useEffect(() => {
-    if (window.innerWidth >= 1024) {
-      setIsRightSidebarOpen(true);
-    }
-  }, []);
-  
-  // Mock project data (replace with real data from previous pages)
+  // Modal States
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isGenerationModalOpen, setIsGenerationModalOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+
+  // Mock project data (replace with real data later)
   const projectData = {
-    id: 'mock-project-123', // Added mock ID for R2 storage testing
+    id: 'mock-project-123',
     title: 'AI-Powered Academic Writing Assistant',
     isPremium: true,
     faculty: 'Engineering',
@@ -47,27 +54,62 @@ export default function Workspace() {
     }
   };
 
-  const handleGenerate = () => {
-    console.log('Generate content for:', activeView);
-    // TODO: API call to generate content
+  const { uploadFile, uploading } = useFileUpload(projectData.id);
+
+  // Fetch Assets on Load
+  useEffect(() => {
+    async function fetchAssets() {
+      if (!projectData.id) return;
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('premium_assets')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('project_id', projectData.id)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        // Split into images and files
+        const loadedImages = data.filter(asset => asset.file_type.startsWith('image/'));
+        const loadedFiles = data.filter(asset => !asset.file_type.startsWith('image/'));
+        
+        // Map to format expected by components if needed (currently looks compatible)
+        // Ensure 'src' property exists for images if used by legacy components, 
+        // though we updated Sidebar to use asset properties directly.
+        // Let's add 'src' alias to file_url just in case.
+        const processAssets = (assets) => assets.map(a => ({ ...a, src: a.file_url, name: a.original_name }));
+
+        setImages(processAssets(loadedImages));
+        setFiles(processAssets(loadedFiles));
+      }
+    }
+
+    fetchAssets();
+    
+    // Open tools panel by default on desktop
+    if (window.innerWidth >= 1024) {
+      setIsRightSidebarOpen(true);
+    }
+  }, []); // Run once on mount
+
+  const handleUpload = async (file, purpose = 'general') => {
+    const asset = await uploadFile(file, purpose);
+    if (asset) {
+      const processedAsset = { ...asset, src: asset.file_url, name: asset.original_name };
+      if (asset.file_type.startsWith('image/')) {
+        setImages(prev => [processedAsset, ...prev]);
+      } else {
+        setFiles(prev => [processedAsset, ...prev]);
+      }
+    }
   };
 
-  const handleRegenerate = () => {
-    console.log('Regenerate content for:', activeView);
-    // TODO: API call to regenerate content
-  };
-
-  const handleEdit = () => {
-    console.log('Toggle edit mode');
-    // TODO: Toggle edit mode
-  };
-
-  const handleAddImage = (asset) => {
-    setImages([...images, asset]);
-  };
-
-  const handleRemoveImage = (imageId) => {
-    setImages(images.filter(img => img.id !== imageId));
+  const handleError = (message) => {
+    setErrorMessage(message);
+    setIsErrorModalOpen(true);
   };
 
   return (
@@ -79,10 +121,11 @@ export default function Workspace() {
         activeView={activeView}
         onViewChange={(view) => {
           setActiveView(view);
-          setIsLeftSidebarOpen(false); // Close sidebar on mobile when nav item clicked
+          setIsLeftSidebarOpen(false);
         }}
-        onAddImage={handleAddImage}
-        onRemoveImage={handleRemoveImage}
+        onUpload={(file) => handleUpload(file, 'project_image')}
+        uploading={uploading}
+        onError={handleError}
         isOpen={isLeftSidebarOpen}
         onClose={() => setIsLeftSidebarOpen(false)}
       />
@@ -92,6 +135,7 @@ export default function Workspace() {
           onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
           isRightSidebarOpen={isRightSidebarOpen}
           onToggleLeftSidebar={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
+          onGenerate={() => setIsGenerationModalOpen(true)}
         />
 
         <div className="workspace-content">
@@ -129,13 +173,37 @@ export default function Workspace() {
                 />
                 <RightSidebar 
                   onClose={() => setIsRightSidebarOpen(false)} 
-                  projectId={projectData.id}
+                  files={files}
+                  onUpload={(file) => handleUpload(file, 'sidebar_upload')}
+                  uploading={uploading}
+                  onFileClick={setPreviewFile}
+                  onError={handleError}
                 />
               </>
             )}
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Modals */}
+      <ErrorModal 
+        isOpen={isErrorModalOpen} 
+        onClose={() => setIsErrorModalOpen(false)} 
+        message={errorMessage} 
+      />
+      
+      <FilePreviewModal 
+        isOpen={!!previewFile} 
+        onClose={() => setPreviewFile(null)} 
+        file={previewFile} 
+      />
+
+      <GenerationModal 
+        isOpen={isGenerationModalOpen}
+        onClose={() => setIsGenerationModalOpen(false)}
+        uploadedImages={images}
+        researchPapers={files} // Passing uploaded files as research context
+      />
     </div>
   );
 }
