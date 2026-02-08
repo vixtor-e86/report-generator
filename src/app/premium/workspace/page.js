@@ -54,7 +54,7 @@ export default function Workspace() {
     }
   };
 
-  const { uploadFile, uploading } = useFileUpload(projectData.id);
+  const { uploadFile, uploading, deleteFile, deleting } = useFileUpload(projectData.id);
 
   // Fetch Assets on Load
   useEffect(() => {
@@ -107,6 +107,19 @@ export default function Workspace() {
     }
   };
 
+  const handleDelete = async (file) => {
+    if (!confirm('Are you sure you want to delete this file?')) return;
+
+    const success = await deleteFile(file.file_key, file.id);
+    if (success) {
+      if (file.file_type.startsWith('image/')) {
+        setImages(prev => prev.filter(img => img.id !== file.id));
+      } else {
+        setFiles(prev => prev.filter(f => f.id !== file.id));
+      }
+    }
+  };
+
   const handleError = (message) => {
     setErrorMessage(message);
     setIsErrorModalOpen(true);
@@ -125,6 +138,8 @@ export default function Workspace() {
         }}
         onUpload={(file) => handleUpload(file, 'project_image')}
         uploading={uploading}
+        onDelete={handleDelete}
+        deleting={deleting}
         onError={handleError}
         isOpen={isLeftSidebarOpen}
         onClose={() => setIsLeftSidebarOpen(false)}
@@ -176,6 +191,8 @@ export default function Workspace() {
                   files={files}
                   onUpload={(file) => handleUpload(file, 'sidebar_upload')}
                   uploading={uploading}
+                  onDelete={handleDelete}
+                  deleting={deleting}
                   onFileClick={setPreviewFile}
                   onError={handleError}
                 />

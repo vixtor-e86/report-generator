@@ -116,15 +116,24 @@ export default function Sidebar({
               
               {/* List Uploaded Images */}
               {images.map((img) => (
-                <button
-                  key={img.id}
-                  className={`sub-nav-item ${activeView === `image-${img.id}` ? 'active' : ''}`}
-                  onClick={() => onViewChange(`image-${img.id}`)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                  <span style={{ fontSize: '14px' }}>🖼️</span>
-                  <span className="truncate" style={{ maxWidth: '120px' }}>{img.original_name || 'Image'}</span>
-                </button>
+                <div key={img.id} className={`sub-nav-item ${activeView === `image-${img.id}` ? 'active' : ''}`} style={{ paddingRight: '8px' }}>
+                  <button
+                    onClick={() => onViewChange(`image-${img.id}`)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left' }}
+                  >
+                    <span style={{ fontSize: '14px' }}>🖼️</span>
+                    <span className="truncate" style={{ maxWidth: '100px' }}>{img.original_name || 'Image'}</span>
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onDelete(img); }}
+                    disabled={deleting}
+                    className="text-gray-400 hover:text-red-500 transition disabled:opacity-50"
+                    title="Delete Image"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                  >
+                    <Icons.Trash />
+                  </button>
+                </div>
               ))}
 
                <label htmlFor="image-upload" className={`sub-nav-item upload-item ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>

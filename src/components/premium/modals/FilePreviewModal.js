@@ -72,7 +72,7 @@ export default function FilePreviewModal({ isOpen, onClose, file }) {
           </a>
           <button 
             onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.8 }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.8, padding: '8px' }}
           >
             <Icons.X />
           </button>

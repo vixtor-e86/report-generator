@@ -3,7 +3,32 @@ import { supabase } from '@/lib/supabase';
 
 export function useFileUpload(projectId = null) {
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
+
+  const deleteFile = async (fileKey, assetId) => {
+    setDeleting(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/upload/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileKey, assetId })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete file');
+      }
+      return true;
+    } catch (err) {
+      console.error('Delete error:', err);
+      setError(err.message);
+      return false;
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const uploadFile = async (file, purpose = 'general', folderOverride = null) => {
     setUploading(true);
@@ -64,5 +89,5 @@ export function useFileUpload(projectId = null) {
     }
   };
 
-  return { uploadFile, uploading, error };
+  return { uploadFile, deleteFile, uploading, deleting, error };
 }

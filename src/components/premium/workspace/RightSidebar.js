@@ -13,10 +13,11 @@ const Icons = {
   Image: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>,
   Languages: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg>,
   X: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
-  Upload: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+  Upload: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>,
+  Trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
 };
 
-export default function RightSidebar({ onClose, files = [], onUpload, uploading, onFileClick, onError }) {
+export default function RightSidebar({ onClose, files = [], onUpload, uploading, onDelete, deleting, onFileClick, onError }) {
   const [activeTab, setActiveTab] = useState('tools');
 
   const handleQuickUpload = (e) => {
@@ -182,7 +183,17 @@ export default function RightSidebar({ onClose, files = [], onUpload, uploading,
                       </p>
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-[10px] text-gray-500">{(file.size_bytes / 1024).toFixed(1)} KB</span>
-                        <span className="text-[10px] text-indigo-600 hover:underline font-medium">View</span>
+                        <div className="flex gap-2">
+                          <span className="text-[10px] text-indigo-600 hover:underline font-medium">View</span>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onDelete(file); }}
+                            disabled={deleting}
+                            className="text-red-500 hover:text-red-700 disabled:opacity-50"
+                            title="Delete File"
+                          >
+                            <Icons.Trash />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
