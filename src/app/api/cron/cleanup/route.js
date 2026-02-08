@@ -13,10 +13,13 @@ export async function GET(request) {
     console.log(`[Cron] Starting cleanup of free projects created before ${cutoffDate}`);
 
     // 2. Fetch IDs of expired free projects
+    // CRITICAL FIX: We must exclude projects that have been unlocked/paid for.
+    // Standard projects that were upgraded from free stay in this table but have is_unlocked = true.
     const { data: expiredProjects, error: fetchError } = await supabaseAdmin
       .from('projects')
       .select('id, title')
       .eq('tier', 'free')
+      .or('is_unlocked.is.null,is_unlocked.eq.false') // Protect paid/unlocked projects
       .lt('created_at', cutoffDate);
 
     if (fetchError) {

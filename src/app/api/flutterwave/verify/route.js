@@ -89,7 +89,10 @@ export async function GET(request) {
     if (projectIdToUnlock) {
       const { error: unlockError } = await supabaseAdmin
         .from('projects')
-        .update({ is_unlocked: true })
+        .update({ 
+          is_unlocked: true,
+          tier: 'standard' // Change tier to standard upon payment
+        })
         .eq('id', projectIdToUnlock);
 
       if (unlockError) {
