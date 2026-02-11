@@ -517,11 +517,17 @@ export default function GenerationModal({ isOpen, onClose, uploadedImages, resea
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600', color: '#111827' }}>
-                          {paper.title}
+                          {paper.title || paper.name || paper.original_name}
                         </h4>
-                        <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#6b7280' }}>
-                          {paper.author}
-                        </p>
+                        {paper.author ? (
+                          <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#6b7280' }}>
+                            {paper.author}
+                          </p>
+                        ) : (
+                          <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#9ca3af' }}>
+                            Uploaded Document ({(paper.size_bytes / 1024).toFixed(1)} KB)
+                          </p>
+                        )}
                         {paper.year && (
                           <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af' }}>
                             {paper.year} • {paper.journal}

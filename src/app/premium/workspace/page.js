@@ -28,6 +28,7 @@ export default function Workspace() {
   ]);
   const [images, setImages] = useState([]);
   const [files, setFiles] = useState([]);
+  const [projectDocs, setProjectDocs] = useState([]);
 
   // Modal States
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -72,18 +73,16 @@ export default function Workspace() {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        // Split into images and files
+        // Split into categories
         const loadedImages = data.filter(asset => asset.file_type.startsWith('image/'));
-        const loadedFiles = data.filter(asset => !asset.file_type.startsWith('image/'));
+        const loadedProjectDocs = data.filter(asset => asset.purpose === 'project_component');
+        const loadedResearchFiles = data.filter(asset => !asset.file_type.startsWith('image/') && asset.purpose !== 'project_component');
         
-        // Map to format expected by components if needed (currently looks compatible)
-        // Ensure 'src' property exists for images if used by legacy components, 
-        // though we updated Sidebar to use asset properties directly.
-        // Let's add 'src' alias to file_url just in case.
         const processAssets = (assets) => assets.map(a => ({ ...a, src: a.file_url, name: a.original_name }));
 
         setImages(processAssets(loadedImages));
-        setFiles(processAssets(loadedFiles));
+        setProjectDocs(processAssets(loadedProjectDocs));
+        setFiles(processAssets(loadedResearchFiles));
       }
     }
 
@@ -101,6 +100,8 @@ export default function Workspace() {
       const processedAsset = { ...asset, src: asset.file_url, name: asset.original_name };
       if (asset.file_type.startsWith('image/')) {
         setImages(prev => [processedAsset, ...prev]);
+      } else if (purpose === 'project_component') {
+        setProjectDocs(prev => [processedAsset, ...prev]);
       } else {
         setFiles(prev => [processedAsset, ...prev]);
       }
@@ -114,6 +115,8 @@ export default function Workspace() {
     if (success) {
       if (file.file_type.startsWith('image/')) {
         setImages(prev => prev.filter(img => img.id !== file.id));
+      } else if (file.purpose === 'project_component') {
+        setProjectDocs(prev => prev.filter(f => f.id !== file.id));
       } else {
         setFiles(prev => prev.filter(f => f.id !== file.id));
       }
@@ -131,15 +134,17 @@ export default function Workspace() {
         projectData={projectData}
         chapters={chapters}
         images={images}
+        projectDocs={projectDocs}
         activeView={activeView}
         onViewChange={(view) => {
           setActiveView(view);
           setIsLeftSidebarOpen(false);
         }}
-        onUpload={(file) => handleUpload(file, 'project_image')}
+        onUpload={(file, purpose) => handleUpload(file, purpose || 'project_image')}
         uploading={uploading}
         onDelete={handleDelete}
         deleting={deleting}
+        onFileClick={setPreviewFile}
         onError={handleError}
         isOpen={isLeftSidebarOpen}
         onClose={() => setIsLeftSidebarOpen(false)}
