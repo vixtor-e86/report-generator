@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useFileUpload } from '@/hooks/useFileUpload';
@@ -13,91 +14,90 @@ import FilePreviewModal from '@/components/premium/modals/FilePreviewModal';
 import GenerationModal from '@/components/premium/modals/GenerationModal';
 import '@/styles/workspace.css';
 
-export default function Workspace() {
+function WorkspaceContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get('id');
+
   const [activeView, setActiveView] = useState('dashboard');
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
   
   // Data State
-  const [chapters, setChapters] = useState([
-    { id: 1, title: 'Chapter 1', content: '' },
-    { id: 2, title: 'Chapter 2', content: '' },
-    { id: 3, title: 'Chapter 3', content: '' },
-    { id: 4, title: 'Chapter 4', content: '' },
-    { id: 5, title: 'Chapter 5', content: '' },
-  ]);
-  const [images, setImages] = useState([]);
-  const [files, setFiles] = useState([]);
-  const [projectDocs, setProjectDocs] = useState([]);
-  const [projectStorageUsed, setProjectStorageUsed] = useState(0);
-
-  // Modal States
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [isGenerationModalOpen, setIsGenerationModalOpen] = useState(false);
-  const [previewFile, setPreviewFile] = useState(null);
-
-  // Mock project data (replace with real data later)
-  const projectData = {
-    id: 'mock-project-123',
-    title: 'AI-Powered Academic Writing Assistant',
+  const [projectData, setProjectData] = useState({
+    id: projectId,
+    title: 'Loading Project...',
     isPremium: true,
-    faculty: 'Engineering',
-    department: 'Computer Science',
-    template: {
-      type: '5-chapter',
-      structure: [
-        { chapter: 1, title: 'Introduction', sections: ['1.1 Background', '1.2 Problem Statement', '1.3 Objectives'] },
-        { chapter: 2, title: 'Literature Review', sections: ['2.1 Overview', '2.2 Related Work'] },
-        { chapter: 3, title: 'Methodology', sections: ['3.1 Research Design', '3.2 Data Collection'] },
-        { chapter: 4, title: 'Results', sections: ['4.1 Findings', '4.2 Analysis'] },
-        { chapter: 5, title: 'Conclusion', sections: ['5.1 Summary', '5.2 Recommendations'] },
-      ]
-    }
-  };
+    template: { structure: { chapters: [] } }
+  });
+
+  const [chapters, setChapters] = useState([]);
 
   const { uploadFile, uploading, deleteFile, deleting } = useFileUpload(projectData.id);
 
-  // Fetch Assets on Load
+  // Fetch Project & Assets on Load
   useEffect(() => {
-    async function fetchAssets() {
-      if (!projectData.id) return;
+    async function loadWorkspaceData() {
+      if (!projectId) {
+        router.push('/dashboard');
+        return;
+      }
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // 1. Fetch Project Details for Storage Usage
-      const { data: project } = await supabase
+      // 1. Fetch Project Details (including Template)
+      const { data: project, error: pError } = await supabase
         .from('premium_projects')
-        .select('storage_used')
-        .eq('id', projectData.id)
+        .select('*, custom_templates(*)')
+        .eq('id', projectId)
         .single();
       
-      if (project) setProjectStorageUsed(project.storage_used || 0);
+      if (pError || !project) {
+        console.error('Project not found');
+        router.push('/dashboard');
+        return;
+      }
+
+      setProjectData({
+        ...project,
+        template: project.custom_templates // Map the joined template data
+      });
+      setProjectStorageUsed(project.storage_used || 0);
+
+      // Initialize chapters from template structure if empty
+      if (project.custom_templates?.structure?.chapters) {
+        // In a real app, you'd fetch saved chapter content from a 'premium_chapters' table
+        // For now, we'll map the structure to the UI state
+        setChapters(project.custom_templates.structure.chapters.map(ch => ({
+          id: ch.number,
+          title: ch.title,
+          content: '' // This will be filled by AI generation or DB fetch later
+        })));
+      }
 
       // 2. Fetch Project Assets
-      const { data, error } = await supabase
+      const { data: assets, error: aError } = await supabase
         .from('premium_assets')
         .select('*')
         .eq('user_id', user.id)
-        .eq('project_id', projectData.id)
+        .eq('project_id', projectId)
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        // Split into categories
-        const loadedImages = data.filter(asset => asset.file_type.startsWith('image/'));
-        const loadedProjectDocs = data.filter(asset => asset.purpose === 'project_component');
-        const loadedResearchFiles = data.filter(asset => !asset.file_type.startsWith('image/') && asset.purpose !== 'project_component');
+      if (!aError && assets) {
+        const loadedImages = assets.filter(a => a.file_type.startsWith('image/'));
+        const loadedProjectDocs = assets.filter(a => a.purpose === 'project_component');
+        const loadedResearchFiles = assets.filter(a => !a.file_type.startsWith('image/') && a.purpose !== 'project_component');
         
-        const processAssets = (assets) => assets.map(a => ({ ...a, src: a.file_url, name: a.original_name }));
+        const process = (items) => items.map(a => ({ ...a, src: a.file_url, name: a.original_name }));
 
-        setImages(processAssets(loadedImages));
-        setProjectDocs(processAssets(loadedProjectDocs));
-        setFiles(processAssets(loadedResearchFiles));
+        setImages(process(loadedImages));
+        setProjectDocs(process(loadedProjectDocs));
+        setFiles(process(loadedResearchFiles));
       }
     }
 
-    fetchAssets();
+    loadWorkspaceData();
     
     // Open tools panel by default on desktop
     if (window.innerWidth >= 1024) {
@@ -241,5 +241,13 @@ export default function Workspace() {
         researchPapers={files} // Passing uploaded files as research context
       />
     </div>
+  );
+}
+
+export default function Workspace() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading Workspace...</div>}>
+      <WorkspaceContent />
+    </Suspense>
   );
 }
