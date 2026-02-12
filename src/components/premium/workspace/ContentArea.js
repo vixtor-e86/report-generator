@@ -153,8 +153,8 @@ export default function ContentArea({
 
           {/* Template Chapters */}
           <div style={{ maxWidth: '800px', width: '100%' }}>
-          {projectData.template.structure.map((chapter) => (
-            <div key={chapter.chapter} style={{ 
+          {projectData.template?.structure?.chapters?.map((chapter) => (
+            <div key={chapter.chapter || chapter.number} style={{ 
               background: 'white', 
               padding: '24px', 
               borderRadius: '12px', 
@@ -165,10 +165,10 @@ export default function ContentArea({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <div>
                   <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600', color: '#111827' }}>
-                    Chapter {chapter.chapter}: {chapter.title}
+                    Chapter {chapter.chapter || chapter.number}: {chapter.title}
                   </h3>
                   <p style={{ margin: 0, fontSize: '13px', color: '#6b7280' }}>
-                    {chapter.sections.length} section{chapter.sections.length !== 1 ? 's' : ''}
+                    {chapter.sections?.length || 0} section{chapter.sections?.length !== 1 ? 's' : ''}
                   </p>
                 </div>
                 <button 
