@@ -29,6 +29,7 @@ export default function Workspace() {
   const [images, setImages] = useState([]);
   const [files, setFiles] = useState([]);
   const [projectDocs, setProjectDocs] = useState([]);
+  const [projectStorageUsed, setProjectStorageUsed] = useState(0);
 
   // Modal States
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -65,6 +66,16 @@ export default function Workspace() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // 1. Fetch Project Details for Storage Usage
+      const { data: project } = await supabase
+        .from('premium_projects')
+        .select('storage_used')
+        .eq('id', projectData.id)
+        .single();
+      
+      if (project) setProjectStorageUsed(project.storage_used || 0);
+
+      // 2. Fetch Project Assets
       const { data, error } = await supabase
         .from('premium_assets')
         .select('*')
@@ -97,6 +108,7 @@ export default function Workspace() {
   const handleUpload = async (file, purpose = 'general') => {
     const asset = await uploadFile(file, purpose);
     if (asset) {
+      setProjectStorageUsed(prev => prev + (asset.size_bytes || 0));
       const processedAsset = { ...asset, src: asset.file_url, name: asset.original_name };
       if (asset.file_type.startsWith('image/')) {
         setImages(prev => [processedAsset, ...prev]);
@@ -113,6 +125,7 @@ export default function Workspace() {
 
     const success = await deleteFile(file.file_key, file.id);
     if (success) {
+      setProjectStorageUsed(prev => Math.max(0, prev - (file.size_bytes || 0)));
       if (file.file_type.startsWith('image/')) {
         setImages(prev => prev.filter(img => img.id !== file.id));
       } else if (file.purpose === 'project_component') {
@@ -146,6 +159,7 @@ export default function Workspace() {
         deleting={deleting}
         onFileClick={setPreviewFile}
         onError={handleError}
+        storageUsed={projectStorageUsed}
         isOpen={isLeftSidebarOpen}
         onClose={() => setIsLeftSidebarOpen(false)}
       />

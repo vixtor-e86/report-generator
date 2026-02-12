@@ -1,19 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import LoadingModal from '@/components/premium/modals/LoadingModal';
 import '@/styles/project-description.css';
 
-export default function ProjectDescription() {
+function ProjectDescriptionContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [formData, setFormData] = useState({
     projectTitle: '',
     description: '',
-    faculty: '',
-    department: ''
+    faculty: searchParams.get('faculty') || '',
+    department: searchParams.get('department') || '',
+    templateType: searchParams.get('type') || '5-chapter'
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -96,7 +99,49 @@ export default function ProjectDescription() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
 
-        const { error } = await supabase
+        // 1. Find Source Template (if applicable)
+        let sourceTemplate = null;
+        if (formData.templateType !== 'custom') {
+          // Try to find a specific template for this faculty/type
+          const { data: templates } = await supabase
+            .from('templates')
+            .select('*')
+            .eq('template_type', formData.templateType)
+            .ilike('faculty', `%${formData.faculty}%`) // Fuzzy match faculty
+            .limit(1);
+          
+          if (templates && templates.length > 0) {
+            sourceTemplate = templates[0];
+          } else {
+            // Fallback to generic if no faculty specific one
+            const { data: generic } = await supabase
+              .from('templates')
+              .select('*')
+              .eq('template_type', formData.templateType)
+              .limit(1);
+            if (generic) sourceTemplate = generic[0];
+          }
+        }
+
+        // 2. Create Custom Template (Clone)
+        const customTemplateData = {
+          user_id: user.id,
+          name: sourceTemplate ? sourceTemplate.name : 'Custom Template',
+          description: sourceTemplate ? sourceTemplate.description : 'Custom project structure',
+          structure: sourceTemplate ? sourceTemplate.structure : { chapters: [] }, // Default or Cloned
+          source_template_id: sourceTemplate?.id || null
+        };
+
+        const { data: newCustomTemplate, error: templateError } = await supabase
+          .from('custom_templates')
+          .insert(customTemplateData)
+          .select()
+          .single();
+
+        if (templateError) throw new Error('Failed to create project template: ' + templateError.message);
+
+        // 3. Create Premium Project
+        const { data: newProject, error: projectError } = await supabase
           .from('premium_projects')
           .insert({
             user_id: user.id,
@@ -106,16 +151,23 @@ export default function ProjectDescription() {
             department: formData.department,
             status: 'in_progress',
             tier: 'premium',
-            current_chapter: 1
-          });
+            current_chapter: 1,
+            tokens_limit: 500000,
+            tokens_used: 0,
+            payment_status: 'paid',
+            amount_paid: 20000,
+            template_id: newCustomTemplate.id // Link to the NEW custom template
+          })
+          .select()
+          .single();
 
-        if (error) throw error;
+        if (projectError) throw new Error(projectError.message);
 
-        // Navigate to workspace
-        router.push('/premium/workspace');
+        // Navigate to workspace with ID
+        router.push(`/premium/workspace?id=${newProject.id}`);
       } catch (err) {
         console.error('Error creating project:', err);
-        alert('Failed to create project. Please try again.');
+        alert(err.message || 'Failed to create project. Please try again.');
         setIsLoading(false);
       }
     }
@@ -288,5 +340,13 @@ export default function ProjectDescription() {
         loadingText="Setting up your workspace..." 
       />
     </div>
+  );
+}
+
+export default function ProjectDescription() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
+      <ProjectDescriptionContent />
+    </Suspense>
   );
 }

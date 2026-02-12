@@ -72,8 +72,14 @@ export default function TemplateSelection() {
     setLoadingText('Optimizing project assets...');
     await wait(1000);
     
-    // Navigate without closing modal (smoother transition)
-    router.push('/premium/page-description');
+    // Build query params
+    const params = new URLSearchParams();
+    if (templateType) params.set('type', templateType);
+    if (additionalData.faculty) params.set('faculty', additionalData.faculty.name || additionalData.faculty);
+    if (additionalData.department) params.set('department', additionalData.department.name || additionalData.department);
+    
+    // Navigate
+    router.push(`/premium/page-description?${params.toString()}`);
   };
 
   return (
