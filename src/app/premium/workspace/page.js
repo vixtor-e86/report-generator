@@ -32,14 +32,24 @@ function WorkspaceContent() {
   });
 
   const [chapters, setChapters] = useState([]);
+  const [images, setImages] = useState([]);
+  const [files, setFiles] = useState([]);
+  const [projectDocs, setProjectDocs] = useState([]);
+  const [projectStorageUsed, setProjectStorageUsed] = useState(0);
 
-  const { uploadFile, uploading, deleteFile, deleting } = useFileUpload(projectData.id);
+  // Modal States
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isGenerationModalOpen, setIsGenerationModalOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+
+  const { uploadFile, uploading, deleteFile, deleting } = useFileUpload(projectId);
 
   // Fetch Project & Assets on Load
   useEffect(() => {
     async function loadWorkspaceData() {
       if (!projectId) {
-        router.push('/dashboard');
+        console.warn('No project ID found in URL');
         return;
       }
       
@@ -54,8 +64,8 @@ function WorkspaceContent() {
         .single();
       
       if (pError || !project) {
-        console.error('Project not found');
-        router.push('/dashboard');
+        console.error('Project fetch error:', pError);
+        // router.push('/dashboard');
         return;
       }
 
@@ -65,14 +75,12 @@ function WorkspaceContent() {
       });
       setProjectStorageUsed(project.storage_used || 0);
 
-      // Initialize chapters from template structure if empty
+      // Initialize chapters from template structure
       if (project.custom_templates?.structure?.chapters) {
-        // In a real app, you'd fetch saved chapter content from a 'premium_chapters' table
-        // For now, we'll map the structure to the UI state
         setChapters(project.custom_templates.structure.chapters.map(ch => ({
           id: ch.number,
           title: ch.title,
-          content: '' // This will be filled by AI generation or DB fetch later
+          content: '' 
         })));
       }
 
@@ -103,7 +111,7 @@ function WorkspaceContent() {
     if (window.innerWidth >= 1024) {
       setIsRightSidebarOpen(true);
     }
-  }, []); // Run once on mount
+  }, [projectId]); // Depend on projectId
 
   const handleUpload = async (file, purpose = 'general') => {
     const asset = await uploadFile(file, purpose);
@@ -238,7 +246,7 @@ function WorkspaceContent() {
         isOpen={isGenerationModalOpen}
         onClose={() => setIsGenerationModalOpen(false)}
         uploadedImages={images}
-        researchPapers={files} // Passing uploaded files as research context
+        researchPapers={files} 
       />
     </div>
   );
