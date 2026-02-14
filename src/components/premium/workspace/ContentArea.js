@@ -406,7 +406,7 @@ export default function ContentArea({
               🎨 AI-Powered Technical Visuals
             </h3>
             <p style={{ color: '#4b5563', lineHeight: '1.6' }}>
-              Visualize complex systems and concepts instantly. Our <strong>Diagram Studio</strong> uses Gemini to architect Mermaid.js flowcharts, while our <strong>Flux.1</strong> integration generates high-fidelity conceptual illustrations. Whether it's a system architecture or a 3D product concept, W3 Writelab brings your ideas to life.
+              Visualize complex systems and concepts instantly. Our <strong>Diagram Studio</strong> uses AI to architect Mermaid.js flowcharts, while our <strong>Flux.1</strong> integration generates high-fidelity conceptual illustrations. Whether it's a system architecture or a 3D product concept, W3 Writelab brings your ideas to life.
             </p>
           </div>
 

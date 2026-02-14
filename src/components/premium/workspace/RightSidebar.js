@@ -82,9 +82,12 @@ export default function RightSidebar({
         {activeTab === 'tools' ? (
           <div className="tools-list">
             
-            {/* Visual Generation */}
+            {/* Available Tools */}
             <div className="tool-section">
-              <h4 className="tool-group-title">Visual Generation</h4>
+              <h4 className="tool-group-title" style={{ color: '#059669', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '8px', height: '8px', background: '#059669', borderRadius: '50%' }}></span>
+                Available Tools
+              </h4>
               <ToolItem 
                 icon={<Icons.Image style={{ color: '#6366f1' }} />} 
                 title="Diagram & Image Studio" 
@@ -92,11 +95,6 @@ export default function RightSidebar({
                 action="Use"
                 onClick={onVisualToolsClick}
               />
-            </div>
-
-            {/* Research & Citation */}
-            <div className="tool-section">
-              <h4 className="tool-group-title">Research & Citation</h4>
               <ToolItem 
                 icon={<Icons.Search />} 
                 title="Semantic Scholar" 
@@ -104,22 +102,12 @@ export default function RightSidebar({
                 action="Use"
                 onClick={onSearchClick}
               />
-            </div>
-
-            {/* Writing & Grammar */}
-            <div className="tool-section">
-              <h4 className="tool-group-title">Writing & Grammar</h4>
               <ToolItem 
                 icon={<Icons.Edit3 />} 
                 title="LanguageTool" 
                 desc="Grammar, spelling, and style checking."
                 action="Use"
               />
-            </div>
-
-            {/* Formatting */}
-            <div className="tool-section">
-              <h4 className="tool-group-title">Formatting</h4>
               <ToolItem 
                 icon={<Icons.FileText />} 
                 title="Pandoc" 
@@ -128,36 +116,29 @@ export default function RightSidebar({
               />
             </div>
 
-            {/* Data & Statistics */}
-            <div className="tool-section">
-              <h4 className="tool-group-title">Data & Statistics</h4>
+            {/* Coming Soon */}
+            <div className="tool-section" style={{ borderTop: '1px solid #f1f5f9', marginTop: '8px', paddingTop: '16px' }}>
+              <h4 className="tool-group-title" style={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '8px', height: '8px', background: '#94a3b8', borderRadius: '50%' }}></span>
+                Coming Soon
+              </h4>
               <ToolItem 
                 icon={<Icons.BarChart2 />} 
                 title="Wolfram Alpha" 
                 desc="Computational knowledge and data analysis."
-                action="Use"
+                disabled
               />
-            </div>
-
-            {/* Plagiarism & Quality */}
-            <div className="tool-section">
-              <h4 className="tool-group-title">Plagiarism & Quality</h4>
               <ToolItem 
                 icon={<Icons.Shield />} 
                 title="Copyscape" 
                 desc="Check content originality."
-                action="Use"
+                disabled
               />
-            </div>
-
-            {/* Utility Tools */}
-            <div className="tool-section">
-              <h4 className="tool-group-title">Utility Tools</h4>
               <ToolItem 
                 icon={<Icons.Languages />} 
                 title="Translation" 
                 desc="DeepL multi-language support."
-                action="Use"
+                disabled
               />
             </div>
 
@@ -230,9 +211,9 @@ export default function RightSidebar({
   );
 }
 
-function ToolItem({ icon, title, desc, action, onClick }) {
+function ToolItem({ icon, title, desc, action, onClick, disabled }) {
   return (
-    <div className="tool-item">
+    <div className={`tool-item ${disabled ? 'opacity-50' : ''}`}>
       <div className="tool-icon-wrapper" style={{ 
         color: '#111827',
         marginTop: '2px' 
@@ -244,19 +225,20 @@ function ToolItem({ icon, title, desc, action, onClick }) {
         <span className="tool-desc">{desc}</span>
       </div>
       <button 
-        onClick={onClick}
+        onClick={disabled ? null : onClick}
+        disabled={disabled}
         className="tool-action-btn" style={{
         padding: '6px 12px',
         fontSize: '12px',
         fontWeight: '500',
-        color: '#111827',
-        background: '#f3f4f6',
+        color: disabled ? '#94a3b8' : '#111827',
+        background: disabled ? '#f9fafb' : '#f3f4f6',
         border: '1px solid #e5e7eb',
         borderRadius: '6px',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.2s'
       }}>
-        {action}
+        {disabled ? 'Soon' : action}
       </button>
     </div>
   );
