@@ -13,6 +13,7 @@ import ErrorModal from '@/components/premium/modals/ErrorModal';
 import FilePreviewModal from '@/components/premium/modals/FilePreviewModal';
 import GenerationModal from '@/components/premium/modals/GenerationModal';
 import ResearchSearchModal from '@/components/premium/modals/ResearchSearchModal';
+import VisualToolsModal from '@/components/premium/modals/VisualToolsModal';
 import '@/styles/workspace.css';
 
 function WorkspaceContent() {
@@ -45,6 +46,7 @@ function WorkspaceContent() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isGenerationModalOpen, setIsGenerationModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isVisualToolsModalOpen, setIsVisualToolsModalOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
 
   const { uploadFile, uploading, deleteFile, deleting } = useFileUpload(projectId);
@@ -126,6 +128,32 @@ function WorkspaceContent() {
   useEffect(() => {
     loadWorkspaceData();
     if (window.innerWidth >= 1024) setIsRightSidebarOpen(true);
+
+    // ✅ Real-time subscription for premium project updates (Tokens, etc.)
+    const channel = supabase
+      .channel(`premium-project-updates-${projectId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'premium_projects',
+          filter: `id=eq.${projectId}`
+        },
+        (payload) => {
+          console.log('Real-time premium project update:', payload.new);
+          setProjectData(prev => ({
+            ...prev,
+            ...payload.new
+          }));
+          setProjectStorageUsed(payload.new.storage_used || 0);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [projectId]);
 
   const handleUpload = async (file, purpose = 'general') => {
@@ -248,6 +276,7 @@ function WorkspaceContent() {
               ));
             }}
             onUpdateTemplate={handleUpdateTemplate}
+            onVisualToolsClick={() => setIsVisualToolsModalOpen(true)}
           />
 
           <AnimatePresence>
@@ -305,6 +334,14 @@ function WorkspaceContent() {
         onClose={() => setIsSearchModalOpen(false)}
         projectId={projectId}
         onPaperSaved={loadWorkspaceData}
+      />
+
+      <VisualToolsModal
+        isOpen={isVisualToolsModalOpen}
+        onClose={() => setIsVisualToolsModalOpen(false)}
+        projectId={projectId}
+        userId={userProfile?.id}
+        onImageSaved={loadWorkspaceData}
       />
 
       <GenerationModal 

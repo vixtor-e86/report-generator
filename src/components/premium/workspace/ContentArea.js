@@ -25,6 +25,7 @@ export default function ContentArea({
   chapters, 
   onUpdateChapter,
   onUpdateTemplate,
+  onVisualToolsClick,
   images = []
 }) {
   const [editingChapterId, setEditingChapterId] = useState(null);
@@ -365,6 +366,27 @@ export default function ContentArea({
           <p className="welcome-subtitle">Your AI-Powered Academic Writing Assistant</p>
           
           <div className="quick-actions-grid">
+          <div onClick={onVisualToolsClick} style={{ cursor: 'pointer', position: 'relative' }}>
+            <ActionCard 
+              icon={<Icons.Image style={{ color: '#6366f1' }} />} 
+              title="Diagram & Image Generation" 
+              desc="Create flowcharts, concepts & technical diagrams with AI." 
+            />
+            <span style={{
+              position: 'absolute',
+              top: '-8px',
+              right: '-8px',
+              background: '#ef4444',
+              color: 'white',
+              fontSize: '10px',
+              fontWeight: '800',
+              padding: '4px 8px',
+              borderRadius: '8px',
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+            }}>
+              NEW
+            </span>
+          </div>
           <ActionCard 
             icon={<Icons.Search />} 
             title="Citation & References" 
@@ -400,6 +422,15 @@ export default function ContentArea({
         <div className="how-it-works-section" style={{ marginTop: '48px', textAlign: 'left', maxWidth: '100%' }}>
           <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '24px', color: '#111827' }}>How W3 Writelab Empowers Your Research</h2>
           
+          <div className="feature-explanation" style={{ marginBottom: '32px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              🎨 AI-Powered Technical Visuals
+            </h3>
+            <p style={{ color: '#4b5563', lineHeight: '1.6' }}>
+              Visualize complex systems and concepts instantly. Our <strong>Diagram Studio</strong> uses Gemini to architect Mermaid.js flowcharts, while our <strong>Flux.1</strong> integration generates high-fidelity conceptual illustrations. Whether it's a system architecture or a 3D product concept, W3 Writelab brings your ideas to life.
+            </p>
+          </div>
+
           <div className="feature-explanation" style={{ marginBottom: '32px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               📚 Smart Citation Management
