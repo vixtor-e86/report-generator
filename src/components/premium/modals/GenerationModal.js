@@ -19,7 +19,9 @@ export default function GenerationModal({ isOpen, onClose, uploadedImages, resea
     researchBooks: '',
     selectedImages: [],
     selectedPapers: [],
-    referenceFormat: 'APA'
+    referenceFormat: 'APA',
+    yearStart: '2018',
+    yearEnd: new Date().getFullYear().toString()
   });
 
   const [activeTab, setActiveTab] = useState('details'); // 'details', 'images', 'papers'
@@ -327,53 +329,82 @@ export default function GenerationModal({ isOpen, onClose, uploadedImages, resea
                 />
               </div>
 
-              {/* Reference Format */}
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
-                  Reference Format
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value={formData.referenceFormat}
-                    onChange={(e) => handleInputChange('referenceFormat', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontFamily: 'inherit',
-                      outline: 'none',
-                      appearance: 'none',
-                      background: 'white',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      paddingRight: '36px'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  >
-                    {referenceFormats.map((format) => (
-                      <option key={format} value={format}>
-                        {format}
-                      </option>
-                    ))}
-                  </select>
-                  <div style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    pointerEvents: 'none',
-                    color: '#6b7280'
-                  }}>
-                    <Icons.ChevronDown />
+              {/* Reference & Year Range */}
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+                    Reference Format
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      value={formData.referenceFormat}
+                      onChange={(e) => handleInputChange('referenceFormat', e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit',
+                        outline: 'none',
+                        appearance: 'none',
+                        background: 'white',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        paddingRight: '36px'
+                      }}
+                    >
+                      {referenceFormats.map((format) => (
+                        <option key={format} value={format}>
+                          {format}
+                        </option>
+                      ))}
+                    </select>
+                    <div style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      pointerEvents: 'none',
+                      color: '#6b7280'
+                    }}>
+                      <Icons.ChevronDown />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+                    Reference Year Range
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="number"
+                      value={formData.yearStart}
+                      onChange={(e) => handleInputChange('yearStart', e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                    <span style={{ color: '#9ca3af' }}>to</span>
+                    <input
+                      type="number"
+                      value={formData.yearEnd}
+                      onChange={(e) => handleInputChange('yearEnd', e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
                   </div>
                 </div>
               </div>

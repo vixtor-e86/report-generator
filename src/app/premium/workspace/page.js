@@ -12,6 +12,7 @@ import ContentArea from '@/components/premium/workspace/ContentArea';
 import ErrorModal from '@/components/premium/modals/ErrorModal';
 import FilePreviewModal from '@/components/premium/modals/FilePreviewModal';
 import GenerationModal from '@/components/premium/modals/GenerationModal';
+import ResearchSearchModal from '@/components/premium/modals/ResearchSearchModal';
 import '@/styles/workspace.css';
 
 function WorkspaceContent() {
@@ -35,6 +36,7 @@ function WorkspaceContent() {
   const [images, setImages] = useState([]);
   const [files, setFiles] = useState([]);
   const [projectDocs, setProjectDocs] = useState([]);
+  const [researchPapers, setResearchPapers] = useState([]);
   const [projectStorageUsed, setProjectStorageUsed] = useState(0);
   const [userProfile, setUserProfile] = useState(null);
 
@@ -42,86 +44,89 @@ function WorkspaceContent() {
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isGenerationModalOpen, setIsGenerationModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
 
   const { uploadFile, uploading, deleteFile, deleting } = useFileUpload(projectId);
 
   // Fetch Project & Assets on Load
-  useEffect(() => {
-    async function loadWorkspaceData() {
-      if (!projectId) {
-        console.warn('No project ID found in URL');
-        return;
-      }
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // 1. Fetch Project Details (including Template)
-      const { data: project, error: pError } = await supabase
-        .from('premium_projects')
-        .select('*, custom_templates(*)')
-        .eq('id', projectId)
-        .single();
-      
-      if (pError || !project) {
-        console.error('Project fetch error:', pError);
-        // router.push('/dashboard');
-        return;
-      }
-
-      setProjectData({
-        ...project,
-        template: project.custom_templates // Map the joined template data
-      });
-      
-      // Fetch User Profile for Storage Usage & Info
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      if (profile) setUserProfile(profile);
-      setProjectStorageUsed(project.storage_used || 0);
-
-      // Initialize chapters from template structure
-      if (project.custom_templates?.structure?.chapters) {
-        setChapters(project.custom_templates.structure.chapters.map(ch => ({
-          id: ch.number,
-          title: ch.title,
-          content: '' 
-        })));
-      }
-
-      // 2. Fetch Project Assets
-      const { data: assets, error: aError } = await supabase
-        .from('premium_assets')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false });
-
-      if (!aError && assets) {
-        const loadedImages = assets.filter(a => a.file_type.startsWith('image/'));
-        const loadedProjectDocs = assets.filter(a => a.purpose === 'project_component');
-        const loadedResearchFiles = assets.filter(a => !a.file_type.startsWith('image/') && a.purpose !== 'project_component');
-        
-        const process = (items) => items.map(a => ({ ...a, src: a.file_url, name: a.original_name }));
-
-        setImages(process(loadedImages));
-        setProjectDocs(process(loadedProjectDocs));
-        setFiles(process(loadedResearchFiles));
-      }
+  const loadWorkspaceData = async () => {
+    if (!projectId) {
+      console.warn('No project ID found in URL');
+      return;
     }
-
-    loadWorkspaceData();
     
-    // Open tools panel by default on desktop
-    if (window.innerWidth >= 1024) {
-      setIsRightSidebarOpen(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // 1. Fetch Project Details (including Template)
+    const { data: project, error: pError } = await supabase
+      .from('premium_projects')
+      .select('*, custom_templates(*)')
+      .eq('id', projectId)
+      .single();
+    
+    if (pError || !project) {
+      console.error('Project fetch error:', pError);
+      return;
     }
-  }, [projectId]); // Depend on projectId
+
+    setProjectData({
+      ...project,
+      template: project.custom_templates
+    });
+    
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
+    if (profile) setUserProfile(profile);
+    setProjectStorageUsed(project.storage_used || 0);
+
+    if (project.custom_templates?.structure?.chapters) {
+      setChapters(project.custom_templates.structure.chapters.map(ch => ({
+        id: ch.number,
+        title: ch.title,
+        content: '' 
+      })));
+    }
+
+    // 2. Fetch Project Assets
+    const { data: assets } = await supabase
+      .from('premium_assets')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+
+    if (assets) {
+      const loadedImages = assets.filter(a => a.file_type.startsWith('image/'));
+      const loadedProjectDocs = assets.filter(a => a.purpose === 'project_component');
+      const loadedResearchFiles = assets.filter(a => !a.file_type.startsWith('image/') && a.purpose !== 'project_component');
+      
+      const process = (items) => items.map(a => ({ ...a, src: a.file_url, name: a.original_name }));
+
+      setImages(process(loadedImages));
+      setProjectDocs(process(loadedProjectDocs));
+      setFiles(process(loadedResearchFiles));
+    }
+
+    // 3. Fetch Research Papers
+    const { data: papers } = await supabase
+      .from('premium_research_papers')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+    
+    if (papers) setResearchPapers(papers);
+  };
+
+  useEffect(() => {
+    loadWorkspaceData();
+    if (window.innerWidth >= 1024) setIsRightSidebarOpen(true);
+  }, [projectId]);
 
   const handleUpload = async (file, purpose = 'general') => {
     const asset = await uploadFile(file, purpose);
@@ -274,6 +279,7 @@ function WorkspaceContent() {
                   deleting={deleting}
                   onFileClick={setPreviewFile}
                   onError={handleError}
+                  onSearchClick={() => setIsSearchModalOpen(true)}
                 />
               </>
             )}
@@ -294,11 +300,18 @@ function WorkspaceContent() {
         file={previewFile} 
       />
 
+      <ResearchSearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        projectId={projectId}
+        onPaperSaved={loadWorkspaceData}
+      />
+
       <GenerationModal 
         isOpen={isGenerationModalOpen}
         onClose={() => setIsGenerationModalOpen(false)}
         uploadedImages={images}
-        researchPapers={files} 
+        researchPapers={[...files, ...researchPapers]} 
       />
     </div>
   );

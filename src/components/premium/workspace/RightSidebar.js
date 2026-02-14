@@ -17,7 +17,7 @@ const Icons = {
   Trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
 };
 
-export default function RightSidebar({ onClose, files = [], onUpload, uploading, onDelete, deleting, onFileClick, onError }) {
+export default function RightSidebar({ onClose, files = [], onUpload, uploading, onDelete, deleting, onFileClick, onError, onSearchClick }) {
   const [activeTab, setActiveTab] = useState('tools');
 
   const handleQuickUpload = (e) => {
@@ -79,6 +79,7 @@ export default function RightSidebar({ onClose, files = [], onUpload, uploading,
                 title="Semantic Scholar" 
                 desc="Find relevant papers and metadata."
                 action="Use"
+                onClick={onSearchClick}
               />
             </div>
 
@@ -212,7 +213,7 @@ export default function RightSidebar({ onClose, files = [], onUpload, uploading,
   );
 }
 
-function ToolItem({ icon, title, desc, action }) {
+function ToolItem({ icon, title, desc, action, onClick }) {
   return (
     <div className="tool-item">
       <div className="tool-icon-wrapper" style={{ 
@@ -225,7 +226,9 @@ function ToolItem({ icon, title, desc, action }) {
         <span className="tool-name">{title}</span>
         <span className="tool-desc">{desc}</span>
       </div>
-      <button className="tool-action-btn" style={{
+      <button 
+        onClick={onClick}
+        className="tool-action-btn" style={{
         padding: '6px 12px',
         fontSize: '12px',
         fontWeight: '500',
