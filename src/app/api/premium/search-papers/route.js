@@ -13,7 +13,7 @@ export async function GET(request) {
     
     url.searchParams.set('query', query);
     if (yearRange) url.searchParams.set('year', yearRange);
-    url.searchParams.set('limit', '10');
+    url.searchParams.set('limit', '50');
     url.searchParams.set('fields', 'title,authors,year,abstract,url,venue');
 
     const response = await fetch(url.toString(), {

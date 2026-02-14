@@ -40,6 +40,15 @@ function ProjectDescriptionContent() {
     fetchData();
   }, []);
 
+  // Sync department list whenever data or selected faculty changes
+  useEffect(() => {
+    if (formData.faculty && universityData[formData.faculty]) {
+      setDepartmentsList(universityData[formData.faculty]);
+    } else {
+      setDepartmentsList([]);
+    }
+  }, [formData.faculty, universityData]);
+
   const handleFacultyChange = (e) => {
     const selectedFaculty = e.target.value;
     setFormData(prev => ({ 
