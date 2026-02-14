@@ -9,7 +9,6 @@ import Link from 'next/link';
 
 const Icons = {
   ArrowLeft: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>,
-  Star: ({ filled }) => <svg width="24" height="24" viewBox="0 0 24 24" fill={filled ? "#fbbf24" : "none"} stroke={filled ? "#fbbf24" : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>,
   Paperclip: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>,
   Check: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>,
   Send: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -22,7 +21,6 @@ function FeedbackContent() {
 
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [attachments, setAttachments] = useState([]);
@@ -58,7 +56,7 @@ function FeedbackContent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (rating === 0) return alert('Please select a rating');
+    if (!comment.trim()) return alert('Please enter a message');
     
     setIsSubmitting(true);
     try {
@@ -70,7 +68,6 @@ function FeedbackContent() {
           username: profile.username,
           userEmail: user.email,
           contactEmail,
-          rating,
           comment,
           attachments: attachments.map(a => ({ name: a.original_name, url: a.file_url })),
           projectId,
@@ -78,10 +75,12 @@ function FeedbackContent() {
         })
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         setSubmitted(true);
       } else {
-        throw new Error('Failed to send feedback');
+        throw new Error(data.error || 'Failed to send feedback');
       }
     } catch (err) {
       alert(err.message);
@@ -96,7 +95,7 @@ function FeedbackContent() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border border-slate-100"
+          className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-slate-100"
         >
           <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <Icons.Check />
@@ -135,28 +134,10 @@ function FeedbackContent() {
               <h1 className="text-3xl font-bold tracking-tight">Support & Feedback</h1>
               <p className="text-slate-400 mt-2 text-lg">Your insights drive our engineering.</p>
             </div>
-            {/* Abstract Background Decoration */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
           </div>
 
           <form onSubmit={handleSubmit} className="p-10 space-y-10">
-            {/* Rating */}
-            <div>
-              <label className="block text-xs font-black text-slate-400 mb-4 uppercase tracking-[0.2em]">Overall Rating</label>
-              <div className="flex gap-5">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setRating(star)}
-                    className="transform transition hover:scale-125 focus:outline-none"
-                  >
-                    <Icons.Star filled={star <= rating} />
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Comment */}
             <div>
               <label className="block text-xs font-black text-slate-400 mb-3 uppercase tracking-[0.2em]">Your Message</label>
@@ -205,7 +186,7 @@ function FeedbackContent() {
 
             <button
               type="submit"
-              disabled={isSubmitting || rating === 0}
+              disabled={isSubmitting}
               className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold text-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-slate-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
