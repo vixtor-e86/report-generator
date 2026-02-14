@@ -154,16 +154,17 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
           </button>
         </div>
 
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div className="modal-body-layout" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* Left Panel: Controls */}
-          <div style={{
+          <div className="modal-controls-panel" style={{
             width: '350px',
             padding: '32px',
             borderRight: '1px solid #f1f5f9',
             display: 'flex',
             flexDirection: 'column',
             gap: '24px',
-            background: '#f8fafc'
+            background: '#f8fafc',
+            flexShrink: 0
           }}>
             {/* Tool Selector */}
             <div style={{
@@ -410,6 +411,29 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
       <style jsx>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+          .modal-container {
+            height: 95vh !important;
+            max-height: 95vh !important;
+          }
+          
+          .modal-body-layout {
+            flex-direction: column !important;
+            overflow-y: auto !important;
+          }
+
+          .modal-controls-panel {
+            width: 100% !important;
+            border-right: none !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            padding: 20px !important;
+          }
+
+          .modal-controls-panel textarea {
+            min-height: 100px !important;
+          }
         }
       `}</style>
     </div>
