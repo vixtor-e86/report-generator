@@ -315,7 +315,7 @@ export default function Dashboard() {
               <span className="text-2xl font-bold text-white">{isAdmin ? 'Free' : `₦${PRICING.STANDARD.toLocaleString()}`}</span>
             </div>
             <ul className="space-y-3 mb-8">
-              <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Unlimited Projects</li>
+              <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Smart Suggestions & Modifications</li>
               <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> DOCX + PDF Export</li>
               <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Advanced Editing</li>
             </ul>

@@ -101,7 +101,14 @@ function ProjectDescriptionContent() {
 
         // 1. Find Source Template (if applicable)
         let sourceTemplate = null;
-        if (formData.templateType !== 'custom') {
+        let finalStructure = { chapters: [] };
+
+        if (formData.templateType === 'custom') {
+          const stored = sessionStorage.getItem('custom_template_structure');
+          if (stored) {
+            finalStructure = JSON.parse(stored);
+          }
+        } else {
           // Try to find a specific template for this faculty/type
           const { data: templates } = await supabase
             .from('templates')
@@ -121,14 +128,17 @@ function ProjectDescriptionContent() {
               .limit(1);
             if (generic) sourceTemplate = generic[0];
           }
+          if (sourceTemplate) {
+            finalStructure = sourceTemplate.structure;
+          }
         }
 
-        // 2. Create Custom Template (Clone)
+        // 2. Create Custom Template (Clone or New)
         const customTemplateData = {
           user_id: user.id,
           name: sourceTemplate ? sourceTemplate.name : 'Custom Template',
           description: sourceTemplate ? sourceTemplate.description : 'Custom project structure',
-          structure: sourceTemplate ? sourceTemplate.structure : { chapters: [] }, // Default or Cloned
+          structure: finalStructure,
           source_template_id: sourceTemplate?.id || null
         };
 
@@ -139,6 +149,9 @@ function ProjectDescriptionContent() {
           .single();
 
         if (templateError) throw new Error('Failed to create project template: ' + templateError.message);
+
+        // Clear temporary storage
+        sessionStorage.removeItem('custom_template_structure');
 
         // 3. Create Premium Project
         const { data: newProject, error: projectError } = await supabase

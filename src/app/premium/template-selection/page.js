@@ -72,6 +72,13 @@ export default function TemplateSelection() {
     setLoadingText('Optimizing project assets...');
     await wait(1000);
     
+    // Store custom structure if present
+    if (templateType === 'custom' && additionalData.chapters) {
+      sessionStorage.setItem('custom_template_structure', JSON.stringify({ chapters: additionalData.chapters }));
+    } else {
+      sessionStorage.removeItem('custom_template_structure');
+    }
+
     // Build query params
     const params = new URLSearchParams();
     if (templateType) params.set('type', templateType);

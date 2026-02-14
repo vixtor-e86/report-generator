@@ -1,10 +1,45 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 const Icons = {
   X: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
 };
 
 export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) {
+  const [editedTitle, setEditedTitle] = useState('');
+  const [editedSections, setEditedSections] = useState([]);
+
+  useEffect(() => {
+    if (chapter) {
+      setEditedTitle(chapter.title);
+      setEditedSections([...(chapter.sections || [])]);
+    }
+  }, [chapter, isOpen]);
+
+  const handleAddSection = () => {
+    setEditedSections([...editedSections, '']);
+  };
+
+  const handleRemoveSection = (index) => {
+    setEditedSections(editedSections.filter((_, i) => i !== index));
+  };
+
+  const handleSectionChange = (index, value) => {
+    const updated = [...editedSections];
+    updated[index] = value;
+    setEditedSections(updated);
+  };
+
+  const handleSave = () => {
+    onSave({
+      ...chapter,
+      title: editedTitle,
+      sections: editedSections
+    });
+    onClose();
+  };
+
   if (!isOpen || !chapter) return null;
 
   return (
@@ -53,10 +88,10 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
         >
           <div>
             <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#111827' }}>
-              Edit Chapter {chapter.chapter}
+              Edit Chapter {chapter.chapter || chapter.number}
             </h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
-              {chapter.title}
+              Modify the structure of this chapter
             </p>
           </div>
           <button
@@ -73,14 +108,6 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
               borderRadius: '8px',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#f3f4f6';
-              e.currentTarget.style.color = '#111827';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'none';
-              e.currentTarget.style.color = '#6b7280';
-            }}
           >
             <Icons.X />
           </button>
@@ -95,7 +122,8 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
             </label>
             <input
               type="text"
-              defaultValue={chapter.title}
+              value={editedTitle}
+              onChange={(e) => setEditedTitle(e.target.value)}
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -107,14 +135,6 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
                 transition: 'all 0.2s',
                 boxSizing: 'border-box'
               }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#3b82f6';
-                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e5e7eb';
-                e.target.style.boxShadow = 'none';
-              }}
             />
           </div>
 
@@ -124,7 +144,7 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
               Sections
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {chapter.sections.map((section, idx) => (
+              {editedSections.map((section, idx) => (
                 <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{
                     fontSize: '13px',
@@ -132,11 +152,12 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
                     color: '#9ca3af',
                     minWidth: '32px'
                   }}>
-                    {chapter.chapter}.{idx + 1}
+                    {(chapter.chapter || chapter.number)}.{idx + 1}
                   </span>
                   <input
                     type="text"
-                    defaultValue={section}
+                    value={section}
+                    onChange={(e) => handleSectionChange(idx, e.target.value)}
                     placeholder="Section title"
                     style={{
                       flex: 1,
@@ -148,49 +169,30 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
                       outline: 'none',
                       transition: 'all 0.2s'
                     }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.boxShadow = 'none';
-                    }}
                   />
-                  {chapter.sections.length > 1 && (
-                    <button
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '6px',
-                        border: '1px solid #e5e7eb',
-                        background: 'white',
-                        color: '#9ca3af',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.2s',
-                        fontSize: '18px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#fef2f2';
-                        e.currentTarget.style.color = '#dc2626';
-                        e.currentTarget.style.borderColor = '#fecaca';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'white';
-                        e.currentTarget.style.color = '#9ca3af';
-                        e.currentTarget.style.borderColor = '#e5e7eb';
-                      }}
-                    >
-                      −
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleRemoveSection(idx)}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '6px',
+                      border: '1px solid #e5e7eb',
+                      background: 'white',
+                      color: '#ef4444',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '18px'
+                    }}
+                  >
+                    −
+                  </button>
                 </div>
               ))}
             </div>
             <button
+              onClick={handleAddSection}
               style={{
                 marginTop: '12px',
                 padding: '10px 16px',
@@ -201,16 +203,7 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
                 fontSize: '14px',
                 fontWeight: '500',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
                 width: '100%'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#eff6ff';
-                e.currentTarget.style.borderColor = '#93c5fd';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.borderColor = '#e5e7eb';
               }}
             >
               + Add Section
@@ -226,8 +219,7 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '12px',
-            background: '#f9fafb',
-            flexWrap: 'wrap'
+            background: '#f9fafb'
           }}
         >
           <button
@@ -240,25 +232,13 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
               color: '#111827',
               fontSize: '14px',
               fontWeight: '500',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#f3f4f6';
-              e.currentTarget.style.borderColor = '#d1d5db';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.borderColor = '#e5e7eb';
+              cursor: 'pointer'
             }}
           >
             Cancel
           </button>
           <button
-            onClick={() => {
-              onSave();
-              onClose();
-            }}
+            onClick={handleSave}
             style={{
               padding: '10px 24px',
               border: 'none',
@@ -267,19 +247,10 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
               color: 'white',
               fontSize: '14px',
               fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#1f2937';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#111827';
-              e.currentTarget.style.transform = 'translateY(0)';
+              cursor: 'pointer'
             }}
           >
-            Save Changes
+            Update Chapter
           </button>
         </div>
       </div>

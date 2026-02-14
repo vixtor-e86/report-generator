@@ -24,10 +24,28 @@ export default function ContentArea({
   projectData, 
   chapters, 
   onUpdateChapter,
+  onUpdateTemplate,
   images = []
 }) {
   const [editingChapterId, setEditingChapterId] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
+
+  // Local state for the structure during editing
+  const handleSaveChapterTemplate = (updatedChapter) => {
+    const currentStructure = projectData.template?.structure || { chapters: [] };
+    const newChapters = currentStructure.chapters.map(ch => 
+      (ch.chapter || ch.number) === (updatedChapter.chapter || updatedChapter.number) ? updatedChapter : ch
+    );
+    
+    onUpdateTemplate({
+      ...currentStructure,
+      chapters: newChapters
+    });
+  };
+
+  const handleSaveFullTemplate = () => {
+    onUpdateTemplate(projectData.template?.structure);
+  };
 
   // Determine if we are viewing a specific chapter
   const activeChapter = activeView.startsWith('chapter-') 
@@ -210,37 +228,38 @@ export default function ContentArea({
               </div>
             </div>
           ))}
-          <button style={{
-            background: '#111827',
-            color: 'white',
-            padding: '12px 24px',
-            borderRadius: '8px',
-            border: 'none',
-            fontWeight: '600',
-            cursor: 'pointer',
-            marginTop: '16px',
-            fontSize: '14px',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = '#1f2937';
-            e.target.style.transform = 'translateY(-1px)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = '#111827';
-            e.target.style.transform = 'translateY(0)';
-          }}
-          >Save Changes</button>
+          <button 
+            onClick={handleSaveFullTemplate}
+            style={{
+              background: '#111827',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              border: 'none',
+              fontWeight: '600',
+              cursor: 'pointer',
+              marginTop: '16px',
+              fontSize: '14px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#1f2937';
+              e.target.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#111827';
+              e.target.style.transform = 'translateY(0)';
+            }}
+          >
+            Save All Changes
+          </button>
         </div>
 
           <EditTemplateModal
             chapter={editingTemplate}
             isOpen={!!editingTemplate}
             onClose={() => setEditingTemplate(null)}
-            onSave={() => {
-              // Handle save logic here
-              console.log('Template changes saved');
-            }}
+            onSave={handleSaveChapterTemplate}
           />
         </div>
       </div>

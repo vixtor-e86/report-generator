@@ -36,6 +36,7 @@ function WorkspaceContent() {
   const [files, setFiles] = useState([]);
   const [projectDocs, setProjectDocs] = useState([]);
   const [projectStorageUsed, setProjectStorageUsed] = useState(0);
+  const [userProfile, setUserProfile] = useState(null);
 
   // Modal States
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -73,6 +74,15 @@ function WorkspaceContent() {
         ...project,
         template: project.custom_templates // Map the joined template data
       });
+      
+      // Fetch User Profile for Storage Usage & Info
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile) setUserProfile(profile);
       setProjectStorageUsed(project.storage_used || 0);
 
       // Initialize chapters from template structure
@@ -144,6 +154,46 @@ function WorkspaceContent() {
     }
   };
 
+  const handleUpdateTemplate = async (newStructure) => {
+    try {
+      const templateId = projectData.template?.id;
+      if (!templateId) throw new Error('No template linked to this project');
+
+      const { error } = await supabase
+        .from('custom_templates')
+        .update({ 
+          structure: newStructure,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', templateId);
+
+      if (error) throw error;
+
+      // Update local state
+      setProjectData(prev => ({
+        ...prev,
+        template: {
+          ...prev.template,
+          structure: newStructure
+        }
+      }));
+
+      // Refresh chapters list in sidebar
+      if (newStructure.chapters) {
+        setChapters(newStructure.chapters.map(ch => ({
+          id: ch.number || ch.chapter,
+          title: ch.title,
+          content: chapters.find(existing => (existing.id === (ch.number || ch.chapter)))?.content || ''
+        })));
+      }
+
+      alert('Template updated successfully!');
+    } catch (err) {
+      console.error('Error updating template:', err);
+      alert('Failed to update template: ' + err.message);
+    }
+  };
+
   const handleError = (message) => {
     setErrorMessage(message);
     setIsErrorModalOpen(true);
@@ -156,6 +206,7 @@ function WorkspaceContent() {
         chapters={chapters}
         images={images}
         projectDocs={projectDocs}
+        userProfile={userProfile}
         activeView={activeView}
         onViewChange={(view) => {
           setActiveView(view);
@@ -191,6 +242,7 @@ function WorkspaceContent() {
                 ch.id === chapterId ? { ...ch, content } : ch
               ));
             }}
+            onUpdateTemplate={handleUpdateTemplate}
           />
 
           <AnimatePresence>
