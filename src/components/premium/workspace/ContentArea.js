@@ -366,27 +366,6 @@ export default function ContentArea({
           <p className="welcome-subtitle">Your AI-Powered Academic Writing Assistant</p>
           
           <div className="quick-actions-grid">
-          <div onClick={onVisualToolsClick} style={{ cursor: 'pointer', position: 'relative' }}>
-            <ActionCard 
-              icon={<Icons.Image style={{ color: '#6366f1' }} />} 
-              title="Diagram & Image Generation" 
-              desc="Create flowcharts, concepts & technical diagrams with AI." 
-            />
-            <span style={{
-              position: 'absolute',
-              top: '-8px',
-              right: '-8px',
-              background: '#ef4444',
-              color: 'white',
-              fontSize: '10px',
-              fontWeight: '800',
-              padding: '4px 8px',
-              borderRadius: '8px',
-              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
-            }}>
-              NEW
-            </span>
-          </div>
           <ActionCard 
             icon={<Icons.Search />} 
             title="Citation & References" 

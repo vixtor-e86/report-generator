@@ -309,6 +309,7 @@ function WorkspaceContent() {
                   onFileClick={setPreviewFile}
                   onError={handleError}
                   onSearchClick={() => setIsSearchModalOpen(true)}
+                  onVisualToolsClick={() => setIsVisualToolsModalOpen(true)}
                 />
               </>
             )}

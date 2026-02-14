@@ -17,7 +17,18 @@ const Icons = {
   Trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
 };
 
-export default function RightSidebar({ onClose, files = [], onUpload, uploading, onDelete, deleting, onFileClick, onError, onSearchClick }) {
+export default function RightSidebar({ 
+  onClose, 
+  files = [], 
+  onUpload, 
+  uploading, 
+  onDelete, 
+  deleting, 
+  onFileClick, 
+  onError, 
+  onSearchClick,
+  onVisualToolsClick
+}) {
   const [activeTab, setActiveTab] = useState('tools');
 
   const handleQuickUpload = (e) => {
@@ -71,6 +82,18 @@ export default function RightSidebar({ onClose, files = [], onUpload, uploading,
         {activeTab === 'tools' ? (
           <div className="tools-list">
             
+            {/* Visual Generation */}
+            <div className="tool-section">
+              <h4 className="tool-group-title">Visual Generation</h4>
+              <ToolItem 
+                icon={<Icons.Image style={{ color: '#6366f1' }} />} 
+                title="Diagram & Image Studio" 
+                desc="Create diagrams and illustrations with AI."
+                action="Use"
+                onClick={onVisualToolsClick}
+              />
+            </div>
+
             {/* Research & Citation */}
             <div className="tool-section">
               <h4 className="tool-group-title">Research & Citation</h4>
@@ -130,12 +153,6 @@ export default function RightSidebar({ onClose, files = [], onUpload, uploading,
             {/* Utility Tools */}
             <div className="tool-section">
               <h4 className="tool-group-title">Utility Tools</h4>
-              <ToolItem 
-                icon={<Icons.Image />} 
-                title="Image Generation" 
-                desc="Generate diagrams and illustrations."
-                action="Use"
-              />
               <ToolItem 
                 icon={<Icons.Languages />} 
                 title="Translation" 
