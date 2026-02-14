@@ -96,16 +96,16 @@ function FeedbackContent() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center"
+          className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border border-slate-100"
         >
-          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <Icons.Check />
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Feedback Received!</h2>
           <p className="text-slate-600 mb-8">Thank you for helping us improve W3 WriteLab. We'll get back to you at {contactEmail} if needed.</p>
           <button 
             onClick={() => router.back()}
-            className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition"
+            className="w-full py-3 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 transition shadow-lg"
           >
             Back to Workspace
           </button>
@@ -119,28 +119,37 @@ function FeedbackContent() {
       <div className="max-w-2xl mx-auto">
         <button 
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition mb-8 font-medium"
+          className="flex items-center gap-2 text-slate-500 hover:text-purple-600 transition mb-8 font-medium group"
         >
-          <Icons.ArrowLeft /> Back to Workspace
+          <span className="group-hover:-translate-x-1 transition-transform flex items-center"><Icons.ArrowLeft /></span>
+          Back to Workspace
         </button>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="bg-indigo-600 p-8 text-white">
-            <h1 className="text-2xl font-bold">Premium Support & Feedback</h1>
-            <p className="text-indigo-100 mt-2">How can we help you today? Your feedback goes directly to our engineering team.</p>
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="bg-slate-900 p-10 text-white relative overflow-hidden">
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-200 text-xs font-bold uppercase tracking-widest mb-4">
+                <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+                Premium Support
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight">Support & Feedback</h1>
+              <p className="text-slate-400 mt-2 text-lg">Your insights drive our engineering.</p>
+            </div>
+            {/* Abstract Background Decoration */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-8 space-y-8">
+          <form onSubmit={handleSubmit} className="p-10 space-y-10">
             {/* Rating */}
             <div>
-              <label className="block text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">Overall Rating</label>
-              <div className="flex gap-4">
+              <label className="block text-xs font-black text-slate-400 mb-4 uppercase tracking-[0.2em]">Overall Rating</label>
+              <div className="flex gap-5">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     type="button"
                     onClick={() => setRating(star)}
-                    className="transform transition hover:scale-110"
+                    className="transform transition hover:scale-125 focus:outline-none"
                   >
                     <Icons.Star filled={star <= rating} />
                   </button>
@@ -150,56 +159,60 @@ function FeedbackContent() {
 
             {/* Comment */}
             <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2 uppercase tracking-wider">What's on your mind?</label>
+              <label className="block text-xs font-black text-slate-400 mb-3 uppercase tracking-[0.2em]">Your Message</label>
               <textarea
                 required
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows="5"
                 placeholder="Describe your issue, suggestion, or experience..."
-                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition text-slate-900 placeholder-slate-400"
               />
             </div>
 
             {/* Response Email */}
             <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2 uppercase tracking-wider">Reply-to Email</label>
+              <label className="block text-xs font-black text-slate-400 mb-3 uppercase tracking-[0.2em]">Reply-to Email</label>
               <input
                 type="email"
                 required
                 value={contactEmail}
                 onChange={(e) => setContactEmail(e.target.value)}
                 placeholder="Where should we send our response?"
-                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition text-slate-900 placeholder-slate-400"
               />
             </div>
 
             {/* Attachments */}
             <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2 uppercase tracking-wider">Attachments (Optional)</label>
+              <label className="block text-xs font-black text-slate-400 mb-3 uppercase tracking-[0.2em]">Attachments</label>
               <div className="flex flex-wrap gap-3 mb-4">
                 {attachments.map((file, idx) => (
-                  <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm border border-indigo-100">
+                  <div key={idx} className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-xl text-sm border border-purple-100 font-medium">
                     <Icons.Paperclip />
                     <span className="max-w-[150px] truncate">{file.original_name}</span>
                   </div>
                 ))}
               </div>
-              <label className={`inline-flex items-center gap-2 px-4 py-2 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-slate-50 transition ${uploading ? 'opacity-50' : ''}`}>
+              <label className={`flex items-center justify-center gap-3 w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:bg-slate-50 hover:border-purple-300 transition-all ${uploading ? 'opacity-50' : ''}`}>
                 <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
-                <Icons.Paperclip />
-                <span className="text-sm font-medium text-slate-600">{uploading ? 'Uploading...' : 'Attach Image or Document'}</span>
+                <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
+                  <Icons.Paperclip />
+                </div>
+                <span className="text-sm font-bold text-slate-600">{uploading ? 'Uploading...' : 'Attach Image or Document'}</span>
               </label>
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting || rating === 0}
-              className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 transition flex items-center justify-center gap-3 shadow-lg shadow-slate-200"
+              className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold text-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-slate-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Sending...' : (
+              {isSubmitting ? (
+                <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+              ) : (
                 <>
-                  <Icons.Send /> Send Message
+                  <Icons.Send /> Send Feedback
                 </>
               )}
             </button>
