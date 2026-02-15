@@ -357,7 +357,7 @@ export default function ContentArea({
       <div className="content-layout-wrapper">
         <div className="welcome-container">
           <img 
-            src="/favicon.ico" 
+            src="/favicon2.ico" 
             alt="W3 Writelab Logo" 
             className="welcome-logo" 
             style={{ width: 80, height: 80, marginBottom: 24, display: 'block', margin: '0 auto 24px' }} 
