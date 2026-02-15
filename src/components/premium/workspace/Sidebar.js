@@ -91,7 +91,7 @@ export default function Sidebar({
         {/* Workspace Selector */}
         <div className="sidebar-header-new">
           <div className="workspace-selector" style={{ cursor: 'default' }}>
-            <img src="/favicon2.ico" alt="Logo" style={{ width: 24, height: 24 }} />
+            <img src="/premium_icon/favicon.ico" alt="Logo" style={{ width: 24, height: 24 }} />
             <div className="workspace-info">
               <span className="workspace-name">W3 Writelab</span>
               <span className="premium-label">Premium</span>

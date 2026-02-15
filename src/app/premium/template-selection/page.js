@@ -104,7 +104,7 @@ export default function TemplateSelection() {
             transition={{ type: 'spring', delay: 0.2 }}
             className="logo-container"
           >
-            <img src="/favicon2.ico" alt="W3 Writelab" className="logo-icon" />
+            <img src="/premium_icon/favicon.ico" alt="W3 Writelab" className="logo-icon" />
             <span className="premium-tag">PREMIUM</span>
           </motion.div>
           <h1>Choose Your Template</h1>

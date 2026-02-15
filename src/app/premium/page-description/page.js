@@ -211,7 +211,7 @@ function ProjectDescriptionContent() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', delay: 0.2 }}
-            src="/favicon2.ico"
+            src="/premium_icon/favicon.ico"
             alt="Logo"
             className="icon-badge"
           />
