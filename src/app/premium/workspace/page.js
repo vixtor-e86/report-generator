@@ -232,6 +232,10 @@ function WorkspaceContent() {
     setIsErrorModalOpen(true);
   };
 
+  const activeChapter = activeView.startsWith('chapter-') 
+    ? chapters.find(ch => `chapter-${ch.id}` === activeView || `chapter-${ch.number}` === activeView)
+    : null;
+
   return (
     <div className="workspace">
       <Sidebar
@@ -349,7 +353,14 @@ function WorkspaceContent() {
         isOpen={isGenerationModalOpen}
         onClose={() => setIsGenerationModalOpen(false)}
         uploadedImages={images}
-        researchPapers={[...files, ...researchPapers]} 
+        researchPapers={[...files, ...researchPapers]}
+        activeChapter={activeChapter}
+        projectId={projectId}
+        userId={userProfile?.id}
+        onGenerateSuccess={() => {
+          loadWorkspaceData(); // Refresh chapters/history
+          setIsGenerationModalOpen(false);
+        }}
       />
     </div>
   );

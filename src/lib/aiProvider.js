@@ -5,7 +5,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
  * Main function to call AI models
- * @param {string} prompt - The prompt to send
+ * @param {string|array} prompt - The prompt string or array of parts (for multimodal)
  * @param {object} options - Configuration options
  * @returns {Promise<object>} - Response with content, tokens, and model info
  */
@@ -15,10 +15,11 @@ export async function callAI(prompt, options = {}) {
     maxTokens = 4000,
     temperature = 0.7,
     stopSequences = null,
+    fileParts = null, // Support for Gemini multimodal
   } = options;
 
   if (provider === 'gemini') {
-    return await callGemini(prompt, maxTokens, temperature);
+    return await callGemini(prompt, maxTokens, temperature, fileParts);
   } else if (provider === 'claude') {
     return await callClaude(prompt, maxTokens, temperature, stopSequences);
   } else if (provider === 'deepseek') {
@@ -33,6 +34,11 @@ export async function callAI(prompt, options = {}) {
  */
 async function callDeepSeek(prompt, maxTokens, temperature) {
   try {
+    // If prompt is array, join it (DeepSeek is text-only for now)
+    const textPrompt = Array.isArray(prompt) 
+      ? prompt.filter(p => typeof p === 'string').join('\n')
+      : prompt;
+
     // Check if API key exists
     if (!process.env.DEEPSEEK_API_KEY) {
       throw new Error('DEEPSEEK_API_KEY not found in environment variables');
@@ -46,7 +52,7 @@ async function callDeepSeek(prompt, maxTokens, temperature) {
       },
       body: JSON.stringify({
         model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: textPrompt }],
         max_tokens: maxTokens,
         temperature: temperature,
         stream: false
@@ -81,7 +87,7 @@ async function callDeepSeek(prompt, maxTokens, temperature) {
 /**
  * Call Google Gemini API
  */
-async function callGemini(prompt, maxTokens, temperature) {
+async function callGemini(prompt, maxTokens, temperature, fileParts = null) {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
@@ -96,12 +102,25 @@ async function callGemini(prompt, maxTokens, temperature) {
       }
     });
 
-    const result = await model.generateContent(prompt);
+    // Prepare content parts
+    let contentParts = [];
+    if (Array.isArray(prompt)) {
+      contentParts = prompt;
+    } else {
+      contentParts.push(prompt);
+    }
+
+    // Add file parts if provided
+    if (fileParts && Array.isArray(fileParts)) {
+      contentParts = [...contentParts, ...fileParts];
+    }
+
+    const result = await model.generateContent(contentParts);
     const response = result.response;
     const text = response.text();
 
-    // Calculate tokens (Gemini doesn't always return token counts reliably)
-    const tokensInput = estimateTokens(prompt);
+    // Calculate tokens
+    const tokensInput = estimateTokens(JSON.stringify(contentParts));
     const tokensOutput = estimateTokens(text);
 
     return {

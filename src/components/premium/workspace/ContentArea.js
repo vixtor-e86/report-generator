@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import EditTemplateModal from '../modals/EditTemplateModal';
 
 // Simple SVG Icons
@@ -16,7 +17,9 @@ const Icons = {
   Mic: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>,
   Shield: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>,
   Check: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>,
-  X: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  X: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+  Save: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
+  Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
 };
 
 export default function ContentArea({ 
@@ -30,28 +33,72 @@ export default function ContentArea({
 }) {
   const [editingChapterId, setEditingChapterId] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  
+  // Workspace States
+  const [localContent, setLocalContent] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showImageSelector, setShowImageSelector] = useState(false);
 
-  // Local state for the structure during editing
-  const handleSaveChapterTemplate = (updatedChapter) => {
-    const currentStructure = projectData.template?.structure || { chapters: [] };
-    const newChapters = currentStructure.chapters.map(ch => 
-      (ch.chapter || ch.number) === (updatedChapter.chapter || updatedChapter.number) ? updatedChapter : ch
-    );
-    
-    onUpdateTemplate({
-      ...currentStructure,
-      chapters: newChapters
-    });
-  };
-
-  const handleSaveFullTemplate = () => {
-    onUpdateTemplate(projectData.template?.structure);
-  };
-
-  // Determine if we are viewing a specific chapter
+  // Sync local content when chapter changes
   const activeChapter = activeView.startsWith('chapter-') 
     ? chapters.find(ch => `chapter-${ch.id}` === activeView)
     : null;
+
+  useEffect(() => {
+    if (activeChapter) {
+      setLocalContent(activeChapter.content || '');
+      fetchHistory(activeChapter.id);
+    }
+  }, [activeChapter?.id]);
+
+  const fetchHistory = async (chapterId) => {
+    const { data } = await supabaseAdmin
+      .from('premium_chapter_history')
+      .select('*')
+      .eq('chapter_id', chapterId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (data) setHistory(data);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!activeChapter) return;
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/premium/save-edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chapterId: activeChapter.id,
+          content: localContent,
+          projectId: projectData.id,
+          userId: projectData.user_id
+        })
+      });
+      if (response.ok) {
+        onUpdateChapter(activeChapter.id, localContent);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const insertImageTag = (img) => {
+    const tag = `\n![${img.original_name}](${img.file_url})\n`;
+    setLocalContent(prev => prev + tag);
+    setShowImageSelector(false);
+  };
+
+  const restoreHistory = (version) => {
+    if (confirm('Replace current content with this version?')) {
+      setLocalContent(version.content);
+      setShowHistory(false);
+    }
+  };
 
   // Determine if we are viewing an image
   const activeImage = activeView.startsWith('image-')
@@ -94,63 +141,100 @@ export default function ContentArea({
   }
 
   if (activeChapter) {
-    const isEditing = editingChapterId === activeChapter.id;
-
     return (
       <div className="content-area">
         <div className="content-layout-wrapper">
-          {/* Header */}
-          <div style={{ marginBottom: '40px', width: '100%' }}>
-            <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
-              {activeChapter.title}
-            </h1>
-            <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>
-              Generated content for {projectData.title}
-            </p>
+          {/* Header & Toolbar */}
+          <div style={{ marginBottom: '24px', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
+                {activeChapter.title}
+              </h1>
+              <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>
+                Project Workspace • {projectData.title}
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div style={{ position: 'relative' }}>
+                <button 
+                  onClick={() => setShowHistory(!showHistory)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+                >
+                  <Icons.Activity /> History
+                </button>
+                {showHistory && (
+                  <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '300px', background: 'white', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', zIndex: 100, padding: '12px' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase' }}>Recent Generations</h4>
+                    {history.length > 0 ? history.map(v => (
+                      <div key={v.id} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #f3f4f6', marginBottom: '8px', cursor: 'pointer' }} onClick={() => restoreHistory(v)}>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#111827' }}>{new Date(v.created_at).toLocaleString()}</div>
+                        <div style={{ fontSize: '11px', color: '#6b7280' }}>Model: {v.model_used}</div>
+                      </div>
+                    )) : <p style={{ fontSize: '12px', color: '#9ca3af', textAlign: 'center', margin: '20px 0' }}>No history yet.</p>}
+                  </div>
+                )}
+              </div>
+
+              <button 
+                onClick={() => setShowImageSelector(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+              >
+                <Icons.Image /> Insert Image
+              </button>
+
+              <button 
+                onClick={handleSaveEdit}
+                disabled={isSaving}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: 'none', background: '#111827', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: isSaving ? 0.7 : 1 }}
+              >
+                {isSaving ? 'Saving...' : <><Icons.Save /> Save Changes</>}
+              </button>
+            </div>
           </div>
 
-          {/* Content Display/Editor */}
-          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%' }}>
-            {/* Content Area */}
-            {isEditing ? (
-              <textarea
-                className="chapter-editor"
-                value={activeChapter.content}
-                onChange={(e) => onUpdateChapter(activeChapter.id, e.target.value)}
-                placeholder={`Start writing ${activeChapter.title}...`}
-                style={{
-                  width: '100%',
-                  minHeight: '500px',
-                  border: 'none',
-                  outline: 'none',
-                  fontSize: '16px',
-                  lineHeight: '1.8',
-                  color: '#111827',
-                  padding: '24px',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
-                  resize: 'vertical'
-                }}
-              />
-            ) : (
-              <div style={{
-                padding: '24px',
+          {/* Editor Workspace */}
+          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
+            <textarea
+              className="chapter-editor"
+              value={localContent}
+              onChange={(e) => setLocalContent(e.target.value)}
+              placeholder={`Write your ${activeChapter.title} here...`}
+              style={{
+                width: '100%',
+                minHeight: '700px',
+                border: 'none',
+                outline: 'none',
                 fontSize: '16px',
                 lineHeight: '1.8',
                 color: '#111827',
-                minHeight: '500px',
-                whiteSpace: 'pre-wrap',
-                wordWrap: 'break-word'
-              }}>
-                {activeChapter.content || (
-                  <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>
-                    No content yet. Click the edit button to start writing.
-                  </span>
-                )}
-              </div>
-            )}
+                padding: '40px',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+                resize: 'vertical'
+              }}
+            />
           </div>
         </div>
+
+        {/* Image Selector Modal */}
+        {showImageSelector && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <h3 style={{ margin: 0 }}>Select Image to Insert</h3>
+                <button onClick={() => setShowImageSelector(false)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><Icons.X /></button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+                {images.length > 0 ? images.map(img => (
+                  <div key={img.id} onClick={() => insertImageTag(img)} style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+                    <img src={img.src} alt="thumb" style={{ width: '100%', height: '100px', objectFit: 'cover' }} />
+                  </div>
+                )) : <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#9ca3af' }}>No project assets found.</p>}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
