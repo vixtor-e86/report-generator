@@ -14,6 +14,7 @@ import FilePreviewModal from '@/components/premium/modals/FilePreviewModal';
 import GenerationModal from '@/components/premium/modals/GenerationModal';
 import ResearchSearchModal from '@/components/premium/modals/ResearchSearchModal';
 import VisualToolsModal from '@/components/premium/modals/VisualToolsModal';
+import ModifyModal from '@/components/premium/modals/ModifyModal';
 import '@/styles/workspace.css';
 
 function WorkspaceContent() {
@@ -45,11 +46,20 @@ function WorkspaceContent() {
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isGenerationModalOpen, setIsGenerationModalOpen] = useState(false);
+  const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isVisualToolsModalOpen, setIsVisualToolsModalOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
 
   const { uploadFile, uploading, deleteFile, deleting } = useFileUpload(projectId);
+
+  const handleGenerateClick = () => {
+    if (activeChapter?.content) {
+      setIsModifyModalOpen(true);
+    } else {
+      setIsGenerationModalOpen(true);
+    }
+  };
 
   // Fetch Project & Assets on Load
   const loadWorkspaceData = async () => {
@@ -303,7 +313,8 @@ function WorkspaceContent() {
           onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
           isRightSidebarOpen={isRightSidebarOpen}
           onToggleLeftSidebar={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
-          onGenerate={() => setIsGenerationModalOpen(true)}
+          onGenerate={handleGenerateClick}
+          activeChapter={activeChapter}
         />
 
         <div className="workspace-content">
@@ -387,6 +398,15 @@ function WorkspaceContent() {
         onImageSaved={loadWorkspaceData}
       />
 
+      <ModifyModal
+        isOpen={isModifyModalOpen}
+        onClose={() => setIsModifyModalOpen(false)}
+        activeChapter={activeChapter}
+        projectId={projectId}
+        userId={userProfile?.id}
+        onGenerateSuccess={loadWorkspaceData}
+      />
+
       <GenerationModal 
         isOpen={isGenerationModalOpen}
         onClose={() => setIsGenerationModalOpen(false)}
@@ -395,6 +415,7 @@ function WorkspaceContent() {
         activeChapter={activeChapter}
         projectId={projectId}
         userId={userProfile?.id}
+        projectData={projectData}
         onGenerateSuccess={() => {
           loadWorkspaceData(); // Refresh chapters/history
           setIsGenerationModalOpen(false);

@@ -42,8 +42,11 @@ export default function Sidebar({
   storageLimit = 300 * 1024 * 1024 // Default 300MB
 }) {
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(true);
+  const [showCaptionModal, setShowCaptionModal] = useState(false);
+  const [pendingFile, setPendingFile] = useState(null);
+  const [imageCaption, setImageCaption] = useState('');
 
-  const handleImageUpload = (e) => {
+  const handleImageUploadRequest = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -54,7 +57,19 @@ export default function Sidebar({
       return;
     }
 
-    onUpload(file, 'project_image');
+    setPendingFile(file);
+    setShowCaptionModal(true);
+  };
+
+  const handleSaveWithCaption = () => {
+    if (!imageCaption.trim()) {
+      alert('Please enter a caption for the image.');
+      return;
+    }
+    onUpload(pendingFile, 'project_image', null, imageCaption.trim());
+    setShowCaptionModal(false);
+    setPendingFile(null);
+    setImageCaption('');
   };
 
   const handleDocUpload = (e) => {
@@ -208,7 +223,7 @@ export default function Sidebar({
                   id="image-upload"
                   type="file"
                   accept="image/png, image/jpeg"
-                  onChange={handleImageUpload}
+                  onChange={handleImageUploadRequest}
                   style={{ display: 'none' }}
                   disabled={uploading}
                 />
@@ -318,6 +333,49 @@ export default function Sidebar({
           </Link>
         </div>
       </div>
+
+      {/* Caption Modal */}
+      {showCaptionModal && (
+        <div className="modal-overlay" style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000
+        }}>
+          <div className="modal-container" style={{
+            background: 'white', padding: '24px', borderRadius: '16px', 
+            width: '100%', maxWidth: '400px'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '700' }}>Add Image Caption</h3>
+            <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '16px' }}>
+              This caption will be used as the image reference in AI prompts.
+            </p>
+            <textarea
+              value={imageCaption}
+              onChange={(e) => setImageCaption(e.target.value)}
+              placeholder="e.g., Block diagram of the power supply unit"
+              style={{
+                width: '100%', height: '80px', padding: '12px', border: '1px solid #e5e7eb',
+                borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', resize: 'none',
+                boxSizing: 'border-box'
+              }}
+              autoFocus
+            />
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <button 
+                onClick={() => { setShowCaptionModal(false); setPendingFile(null); }}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #e5e7eb', background: 'white', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveWithCaption}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Save & Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );

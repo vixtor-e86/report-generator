@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import EditTemplateModal from '../modals/EditTemplateModal';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Simple SVG Icons
 const Icons = {
@@ -19,7 +21,8 @@ const Icons = {
   Check: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>,
   X: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
   Save: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
-  Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+  Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
+  Eye: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
 };
 
 export default function ContentArea({ 
@@ -31,7 +34,6 @@ export default function ContentArea({
   onVisualToolsClick,
   images = []
 }) {
-  const [editingChapterId, setEditingChapterId] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
   
   // Workspace States
@@ -40,10 +42,13 @@ export default function ContentArea({
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [showImageSelector, setShowImageSelector] = useState(false);
+  const [workspaceMode, setWorkspaceMode] = useState('editor'); // 'editor' or 'preview'
+  
+  const textareaRef = useRef(null);
 
   // Sync local content when chapter changes
   const activeChapter = activeView.startsWith('chapter-') 
-    ? chapters.find(ch => `chapter-${ch.id}` === activeView)
+    ? chapters.find(ch => `chapter-${ch.id}` === activeView || `chapter-${ch.number}` === activeView)
     : null;
 
   useEffect(() => {
@@ -87,9 +92,29 @@ export default function ContentArea({
     }
   };
 
+  // Cursor-based Image Insertion
   const insertImageTag = (img) => {
-    const tag = `\n![${img.original_name}](${img.file_url})\n`;
-    setLocalContent(prev => prev + tag);
+    const tag = `\n![${img.caption || img.original_name}](${img.file_url})\n`;
+    
+    if (textareaRef.current) {
+      const start = textareaRef.current.selectionStart;
+      const end = textareaRef.current.selectionEnd;
+      const text = textareaRef.current.value;
+      const before = text.substring(0, start);
+      const after = text.substring(end, text.length);
+      
+      const newText = before + tag + after;
+      setLocalContent(newText);
+      
+      // Update cursor position after state update
+      setTimeout(() => {
+        textareaRef.current.focus();
+        textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + tag.length;
+      }, 0);
+    } else {
+      setLocalContent(prev => prev + tag);
+    }
+    
     setShowImageSelector(false);
   };
 
@@ -167,9 +192,25 @@ export default function ContentArea({
               <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
                 {activeChapter.title}
               </h1>
-              <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>
-                Project Workspace • {projectData.title}
-              </p>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{ background: '#f3f4f6', padding: '4px', borderRadius: '8px', display: 'inline-flex' }}>
+                  <button 
+                    onClick={() => setWorkspaceMode('editor')}
+                    style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: workspaceMode === 'editor' ? 'white' : 'transparent', color: workspaceMode === 'editor' ? '#111827' : '#6b7280', fontSize: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: workspaceMode === 'editor' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
+                  >
+                    <Icons.Edit3 /> Editor
+                  </button>
+                  <button 
+                    onClick={() => setWorkspaceMode('preview')}
+                    style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: workspaceMode === 'preview' ? 'white' : 'transparent', color: workspaceMode === 'preview' ? '#111827' : '#6b7280', fontSize: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: workspaceMode === 'preview' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
+                  >
+                    <Icons.Eye /> Preview
+                  </button>
+                </div>
+                <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
+                  Workspace Mode
+                </p>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -211,26 +252,35 @@ export default function ContentArea({
           </div>
 
           {/* Editor Workspace */}
-          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
-            <textarea
-              className="chapter-editor"
-              value={localContent}
-              onChange={(e) => setLocalContent(e.target.value)}
-              placeholder={`Write your ${activeChapter.title} here...`}
-              style={{
-                width: '100%',
-                minHeight: '700px',
-                border: 'none',
-                outline: 'none',
-                fontSize: '16px',
-                lineHeight: '1.8',
-                color: '#111827',
-                padding: '40px',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box',
-                resize: 'vertical'
-              }}
-            />
+          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', minHeight: '700px' }}>
+            {workspaceMode === 'editor' ? (
+              <textarea
+                ref={textareaRef}
+                className="chapter-editor"
+                value={localContent}
+                onChange={(e) => setLocalContent(e.target.value)}
+                placeholder={`Write your ${activeChapter.title} here...`}
+                style={{
+                  width: '100%',
+                  minHeight: '700px',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '16px',
+                  lineHeight: '1.8',
+                  color: '#111827',
+                  padding: '40px',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                  resize: 'vertical'
+                }}
+              />
+            ) : (
+              <div className="markdown-preview" style={{ padding: '40px', fontSize: '16px', lineHeight: '1.8', color: '#111827' }}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {localContent || '*No content yet.*'}
+                </ReactMarkdown>
+              </div>
+            )}
           </div>
         </div>
 
@@ -242,10 +292,13 @@ export default function ContentArea({
                 <h3 style={{ margin: 0 }}>Select Image to Insert</h3>
                 <button onClick={() => setShowImageSelector(false)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><Icons.X /></button>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
                 {images.length > 0 ? images.map(img => (
-                  <div key={img.id} onClick={() => insertImageTag(img)} style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+                  <div key={img.id} onClick={() => insertImageTag(img)} style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5e7eb', position: 'relative' }}>
                     <img src={img.src} alt="thumb" style={{ width: '100%', height: '100px', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '10px', padding: '4px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {img.caption || img.original_name}
+                    </div>
                   </div>
                 )) : <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#9ca3af' }}>No project assets found.</p>}
               </div>

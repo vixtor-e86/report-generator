@@ -30,7 +30,7 @@ export function useFileUpload(projectId = null) {
     }
   };
 
-  const uploadFile = async (file, purpose = 'general', folderOverride = null) => {
+  const uploadFile = async (file, purpose = 'general', folderOverride = null, caption = null) => {
     setUploading(true);
     setError(null);
 
@@ -71,7 +71,8 @@ export function useFileUpload(projectId = null) {
           file_type: file.type,
           original_name: file.name,
           size_bytes: file.size,
-          purpose: purpose
+          purpose: purpose,
+          caption: caption // ✅ Added caption support
         })
         .select()
         .single();

@@ -16,8 +16,11 @@ const Icons = {
     onToggleRightSidebar,
     isRightSidebarOpen,
     onToggleLeftSidebar,
-    onGenerate
+    onGenerate,
+    activeChapter
   }) {
+    const hasContent = !!activeChapter?.content;
+
     return (
       <>
         <div className="top-toolbar">
@@ -32,11 +35,24 @@ const Icons = {
     
           <div className="toolbar-actions">
             <button 
-              className="btn-black"
+              className={hasContent ? "btn-white" : "btn-black"}
               onClick={onGenerate}
+              style={hasContent ? { 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                padding: '10px 20px', 
+                borderRadius: '10px', 
+                border: '1px solid #e5e7eb', 
+                background: 'white', 
+                color: '#111827', 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                cursor: 'pointer' 
+              } : {}}
             >
-              <Icons.Zap />
-              <span>Generate</span>
+              <Icons.Zap style={{ color: hasContent ? '#6366f1' : 'white' }} />
+              <span>{hasContent ? 'Modify' : 'Generate'}</span>
             </button>
             
             <button className="btn-icon-only" title="Edit Mode">

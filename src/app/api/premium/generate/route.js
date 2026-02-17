@@ -5,13 +5,31 @@ import { callAI } from '@/lib/aiProvider';
 
 export async function POST(request) {
   try {
-    const { projectId, chapterNumber, chapterTitle, userId, files = [], userPrompt } = await request.json();
+    const { 
+      projectId, 
+      chapterNumber, 
+      chapterTitle, 
+      userId, 
+      
+      // New Form Data
+      projectTitle,
+      projectDescription,
+      componentsUsed,
+      researchBooks,
+      userPrompt,
+      referenceStyle,
+      maxReferences,
+      
+      // Materials
+      selectedImages = [],
+      selectedPapers = []
+    } = await request.json();
 
     if (!projectId || !chapterNumber || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // 1. Fetch Project Details & Latest Template Structure
+    // 1. Fetch Latest Template Structure (for chapter sections)
     const { data: project, error: projectError } = await supabaseAdmin
       .from('premium_projects')
       .select('*, custom_templates(*)')
@@ -22,51 +40,82 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
+    // Update project context if full details were provided (usually on first chapter)
+    if (projectTitle || projectDescription || componentsUsed || researchBooks) {
+      await supabaseAdmin
+        .from('premium_projects')
+        .update({
+          title: projectTitle || project.title,
+          description: projectDescription || project.description,
+          components_used: componentsUsed || project.components_used,
+          research_papers_context: researchBooks || project.research_papers_context,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', projectId);
+    }
+
     const templateStructure = project.custom_templates?.structure;
     const currentChapterData = templateStructure?.chapters?.find(
       ch => (ch.number || ch.chapter) === chapterNumber
     );
 
-    // 2. Check Tokens (Approximate 5k limit per chapter generation)
-    if ((project.tokens_used || 0) + 5000 > (project.tokens_limit || 500000)) {
+    // 2. Check Tokens (Approximate 10k limit for high-quality premium chapters)
+    if ((project.tokens_used || 0) + 10000 > (project.tokens_limit || 500000)) {
       return NextResponse.json({ error: 'Insufficient tokens' }, { status: 403 });
     }
 
-    // 3. Prepare File Parts for Gemini (Multimodal)
-    const fileParts = [];
-    
-    // For now, we add text descriptions of files. 
-    // In a future step, we can use a text extractor API or direct R2 download.
-    for (const file of files) {
-      fileParts.push(`[Attached Context File: ${file.original_name} - Purpose: ${file.purpose}]`);
-    }
+    // 3. Prepare Context Strings (Fallback to project record if not passed in request)
+    const finalTitle = projectTitle || project.title;
+    const finalDescription = projectDescription || project.description;
+    const finalComponents = componentsUsed || project.components_used;
+    const finalResearch = researchBooks || project.research_papers_context;
 
-    // 4. Construct Prompt using the Latest Template Structure
-    const sectionContext = currentChapterData?.sections 
-      ? `\nFocus on these required sections:\n${currentChapterData.sections.map(s => `- ${s}`).join('\n')}`
+    const imageContext = selectedImages.length > 0
+      ? `\n\nIncluded Images (Mapping of Caption to URL - use these to insert images):
+${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", URL: ${img.file_url}`).join('\n')}`
       : '';
 
-    const systemPrompt = `You are an expert academic writer for ${project.faculty} (${project.department}).
-    Task: Write Chapter ${chapterNumber}: "${chapterTitle || currentChapterData?.title}" for the project titled "${project.title}".
-    
-    Project Context: ${project.description}
-    Full Document Structure: ${JSON.stringify(templateStructure)}
-    ${sectionContext}
-    
-    User Specific Instructions: ${userPrompt || 'Follow standard academic structure.'}
-    
-    Requirements:
-    - Academic tone, professional, objective.
-    - Use Markdown formatting (## Headings, **bold**, lists).
-    - Suggest image placements where relevant using [Insert Image: Description].
-    - Write approximately 1500-2000 words.`;
+    const paperContext = selectedPapers.length > 0
+      ? `\n\nSpecific References to use:\n${selectedPapers.map(p => `- ${p.title || p.original_name} (Source: ${p.journal || 'Internal'})`).join('\n')}`
+      : '';
 
-    // 5. Call AI (Gemini 1.5 Flash for Multimodal/File support)
+    const searchInstruction = (selectedPapers.length < maxReferences)
+      ? `\n\nIMPORTANT: Use your integrated web search capabilities to find and cite at least ${maxReferences - selectedPapers.length} additional REAL academic sources relevant to this topic. Ensure all citations follow the ${referenceStyle} style.`
+      : `\n\nEnsure all citations follow the ${referenceStyle} style.`;
+
+    const sectionContext = currentChapterData?.sections 
+      ? `\nFocus on these required sections from the template:\n${currentChapterData.sections.map(s => `- ${s}`).join('\n')}`
+      : '';
+
+    // 4. Construct Multi-Part Prompt for Gemini 1.5 Flash
+    const systemPrompt = `You are an elite academic researcher and engineer specialized in ${project.faculty} (${project.department}).
+    Task: Author Chapter ${chapterNumber}: "${chapterTitle || currentChapterData?.title}" for the project "${finalTitle}".
+    
+    Overall Project Objective: ${finalDescription}
+    
+    Contextual Details:
+    - Components/Tools: ${finalComponents || 'Standard engineering tools'}
+    - Research Focus: ${finalResearch || 'Latest industry standards'}
+    
+    ${sectionContext}
+    ${imageContext}
+    ${paperContext}
+    ${searchInstruction}
+    
+    User Specific Instructions: ${userPrompt || 'Deliver a high-quality, technically accurate academic chapter.'}
+    
+    Writing Requirements:
+    - Language: Formal, objective, technical English.
+    - Format: Markdown (## Headings, **bold**, bullet points).
+    - Length: Detailed and comprehensive (Target ~2000 words).
+    - Visuals: Whenever an image from the provided mapping is relevant, insert it using standard markdown: ![Caption](URL). Ensure the URL matches EXACTLY.
+    - References: You MUST provide a "References" section at the end of the chapter using ${referenceStyle} style.`;
+
+    // 5. Call AI (Gemini 1.5 Flash)
     const aiResponse = await callAI(systemPrompt, {
       provider: 'gemini',
-      maxTokens: 8000,
-      temperature: 0.7,
-      fileParts: fileParts.length > 0 ? fileParts : null
+      maxTokens: 12000, // Large context for detailed chapter
+      temperature: 0.6
     });
 
     // 6. Upsert Chapter Record
@@ -101,7 +150,7 @@ export async function POST(request) {
         .eq('id', chapter.id);
     }
 
-    // 7. Save to History (Manage limit of 5)
+    // 7. Save to History (limit 5)
     const { count } = await supabaseAdmin
       .from('premium_chapter_history')
       .select('*', { count: 'exact', head: true })
@@ -115,10 +164,7 @@ export async function POST(request) {
         .order('created_at', { ascending: true })
         .limit(1)
         .single();
-      
-      if (oldest) {
-        await supabaseAdmin.from('premium_chapter_history').delete().eq('id', oldest.id);
-      }
+      if (oldest) await supabaseAdmin.from('premium_chapter_history').delete().eq('id', oldest.id);
     }
 
     await supabaseAdmin
@@ -130,7 +176,7 @@ export async function POST(request) {
         model_used: aiResponse.model
       });
 
-    // 8. Deduct Tokens & Update Project
+    // 8. Update Tokens
     await supabaseAdmin
       .from('premium_projects')
       .update({
@@ -142,7 +188,7 @@ export async function POST(request) {
     return NextResponse.json({ success: true, content: aiResponse.content });
 
   } catch (error) {
-    console.error('Premium Generation Error:', error);
+    console.error('Generation Error:', error);
     return NextResponse.json({ error: error.message || 'Generation failed' }, { status: 500 });
   }
 }

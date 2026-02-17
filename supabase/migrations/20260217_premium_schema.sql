@@ -11,6 +11,14 @@ CREATE TABLE IF NOT EXISTS premium_chapters (
   UNIQUE(project_id, chapter_number)
 );
 
+-- Add caption to premium_assets if not exists
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'premium_assets' AND column_name = 'caption') THEN
+        ALTER TABLE premium_assets ADD COLUMN caption TEXT;
+    END IF;
+END $$;
+
 -- Create table for Premium Chapter History (Versioning)
 CREATE TABLE IF NOT EXISTS premium_chapter_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -45,3 +53,15 @@ CREATE POLICY "Users can view their own history" ON premium_chapter_history
       )
     )
   );
+
+-- Add context columns to premium_projects
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'premium_projects' AND column_name = 'components_used') THEN
+        ALTER TABLE premium_projects ADD COLUMN components_used TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'premium_projects' AND column_name = 'research_papers_context') THEN
+        ALTER TABLE premium_projects ADD COLUMN research_papers_context TEXT;
+    END IF;
+END $$;
+
