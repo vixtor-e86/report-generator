@@ -18,7 +18,7 @@ export default function GenerationModal({
   activeChapter, 
   projectId, 
   userId,
-  projectData, // Added to get initial data
+  projectData, 
   onGenerateSuccess 
 }) {
   const [formData, setFormData] = useState({
@@ -33,35 +33,35 @@ export default function GenerationModal({
     maxReferences: 10
   });
 
-  const isSubsequentChapter = (activeChapter?.number || activeChapter?.id) > 1;
-  const [activeTab, setActiveTab] = useState('details'); // 'details', 'materials'
-
-  useEffect(() => {
-    if (isSubsequentChapter) {
-      setActiveTab('materials'); // Start on materials/prompt for subsequent chapters
-    } else {
-      setActiveTab('details');
-    }
-  }, [isSubsequentChapter, isOpen]);
-
+  // Safe chapter checks
+  const currentChapterNumber = activeChapter?.number || activeChapter?.id || 0;
+  const isSubsequentChapter = currentChapterNumber > 1;
+  const [activeTab, setActiveTab] = useState('details');
   const [generating, setGenerating] = useState(false);
 
-  const referenceStyles = ['APA', 'MLA', 'Chicago', 'IEEE', 'Harvard'];
-
-  // Sync with projectData when opening
   useEffect(() => {
-    if (isOpen && projectData) {
-      setFormData(prev => ({
-        ...prev,
-        projectTitle: projectData.title || '',
-        projectDescription: projectData.description || '',
-        userPrompt: '',
-        selectedImages: [],
-        selectedPapers: []
-      }));
+    if (isOpen) {
+      if (isSubsequentChapter) {
+        setActiveTab('materials');
+      } else {
+        setActiveTab('details');
+      }
+      
+      if (projectData) {
+        setFormData(prev => ({
+          ...prev,
+          projectTitle: projectData.title || '',
+          projectDescription: projectData.description || '',
+          componentsUsed: projectData.components_used || '',
+          researchBooks: projectData.research_papers_context || '',
+          userPrompt: '',
+          selectedImages: [],
+          selectedPapers: []
+        }));
+      }
       setGenerating(false);
     }
-  }, [isOpen, projectData]);
+  }, [isOpen, projectData, isSubsequentChapter]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -86,6 +86,11 @@ export default function GenerationModal({
   };
 
   const handleGenerate = async () => {
+    if (!activeChapter) {
+      alert('Please select a chapter first.');
+      return;
+    }
+
     if (!formData.projectTitle.trim()) {
       alert('Please enter a project title');
       return;
@@ -94,7 +99,6 @@ export default function GenerationModal({
     setGenerating(true);
 
     try {
-      // Pass selected images (captions will be used in prompt on backend)
       const selectedImagesData = uploadedImages.filter(img => formData.selectedImages.includes(img.id));
       const selectedPapersData = researchPapers.filter(p => formData.selectedPapers.includes(p.id));
 
@@ -104,10 +108,9 @@ export default function GenerationModal({
         body: JSON.stringify({
           projectId,
           userId,
-          chapterNumber: activeChapter.number || activeChapter.id,
-          chapterTitle: activeChapter.title,
+          chapterNumber: currentChapterNumber,
+          chapterTitle: activeChapter?.title,
           
-          // Form data
           projectTitle: formData.projectTitle,
           projectDescription: formData.projectDescription,
           componentsUsed: formData.componentsUsed,
@@ -116,7 +119,6 @@ export default function GenerationModal({
           referenceStyle: formData.referenceStyle,
           maxReferences: formData.maxReferences,
           
-          // Materials
           selectedImages: selectedImagesData,
           selectedPapers: selectedPapersData
         })
@@ -136,6 +138,8 @@ export default function GenerationModal({
     }
   };
 
+  const referenceStyles = ['APA', 'MLA', 'Chicago', 'IEEE', 'Harvard'];
+
   if (!isOpen) return null;
 
   return (
@@ -151,115 +155,131 @@ export default function GenerationModal({
               {activeChapter ? `Generate ${activeChapter.title}` : 'Generate Chapter'}
             </h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
-              Configure content settings and research materials
+              {activeChapter ? 'Configure content settings and research materials' : 'Please select a chapter from the sidebar to begin.'}
             </p>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}><Icons.X /></button>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: '12px', padding: '0 24px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
-          <button onClick={() => setActiveTab('details')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'details' ? '#111827' : '#6b7280', borderBottom: activeTab === 'details' ? '2px solid #111827' : '2px solid transparent' }}>Details & Context</button>
-          <button onClick={() => setActiveTab('materials')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'materials' ? '#111827' : '#6b7280', borderBottom: activeTab === 'materials' ? '2px solid #111827' : '2px solid transparent' }}>Materials & References ({formData.selectedImages.length + formData.selectedPapers.length})</button>
-        </div>
+        {activeChapter ? (
+          <>
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: '12px', padding: '0 24px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
+              <button onClick={() => setActiveTab('details')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'details' ? '#111827' : '#6b7280', borderBottom: activeTab === 'details' ? '2px solid #111827' : '2px solid transparent' }}>Details & Context</button>
+              <button onClick={() => setActiveTab('materials')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'materials' ? '#111827' : '#6b7280', borderBottom: activeTab === 'materials' ? '2px solid #111827' : '2px solid transparent' }}>Materials & References ({formData.selectedImages.length + formData.selectedPapers.length})</button>
+            </div>
 
-        {/* Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-          {activeTab === 'details' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {!isSubsequentChapter ? (
-                <>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Title</label>
-                    <input type="text" value={formData.projectTitle} onChange={(e) => handleInputChange('projectTitle', e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }} />
-                  </div>
+            {/* Content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+              {activeTab === 'details' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {!isSubsequentChapter ? (
+                    <>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Title</label>
+                        <input type="text" value={formData.projectTitle} onChange={(e) => handleInputChange('projectTitle', e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }} />
+                      </div>
 
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Description</label>
-                    <textarea value={formData.projectDescription} onChange={(e) => handleInputChange('projectDescription', e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '100px', resize: 'vertical' }} />
-                  </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Description</label>
+                        <textarea value={formData.projectDescription} onChange={(e) => handleInputChange('projectDescription', e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '100px', resize: 'vertical' }} />
+                      </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Components Used (Optional)</label>
-                      <textarea placeholder="e.g. Arduino, React, Tensile Tester" value={formData.componentsUsed} onChange={(e) => handleInputChange('componentsUsed', e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '80px' }} />
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Components Used (Optional)</label>
+                          <textarea placeholder="e.g. Arduino, React, Tensile Tester" value={formData.componentsUsed} onChange={(e) => handleInputChange('componentsUsed', e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '80px' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Research Papers/Journals (Optional)</label>
+                          <textarea placeholder="e.g. IEEE Journal, Nature, Specific Author Work" value={formData.researchBooks} onChange={(e) => handleInputChange('researchBooks', e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '80px' }} />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ padding: '16px', background: '#eff6ff', borderRadius: '12px', border: '1px solid #dbeafe', marginBottom: '8px' }}>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#1e40af', fontWeight: '600' }}>
+                        Context Inherited from Project
+                      </p>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#3b82f6' }}>
+                        Using details from your first generation. You can still add custom instructions below.
+                      </p>
                     </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Research Papers/Journals (Optional)</label>
-                      <textarea placeholder="e.g. IEEE Journal, Nature, Specific Author Work" value={formData.researchBooks} onChange={(e) => handleInputChange('researchBooks', e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '80px' }} />
-                    </div>
+                  )}
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Custom Instructions (Optional)</label>
+                    <textarea placeholder="e.g. Focus more on the methodology. Use technical terms. Make it very detailed." value={formData.userPrompt} onChange={(e) => handleInputChange('userPrompt', e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '120px' }} />
                   </div>
-                </>
-              ) : (
-                <div style={{ padding: '16px', background: '#eff6ff', borderRadius: '12px', border: '1px solid #dbeafe', marginBottom: '8px' }}>
-                  <p style={{ margin: 0, fontSize: '14px', color: '#1e40af', fontWeight: '600' }}>
-                    Context Inherited from Project
-                  </p>
-                  <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#3b82f6' }}>
-                    Using details from your first generation. You can still add custom instructions below.
-                  </p>
                 </div>
               )}
 
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Custom Instructions (Optional)</label>
-                <textarea placeholder="e.g. Focus more on the methodology. Use technical terms. Make it very detailed." value={formData.userPrompt} onChange={(e) => handleInputChange('userPrompt', e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '120px' }} />
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'materials' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Reference Style</label>
-                  <select value={formData.referenceStyle} onChange={(e) => handleInputChange('referenceStyle', e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
-                    {referenceStyles.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Max References to Use</label>
-                  <input type="number" value={formData.maxReferences} onChange={(e) => handleInputChange('maxReferences', parseInt(e.target.value))} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
-                </div>
-              </div>
-
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px', color: '#111827' }}>Select Project Images</h4>
-                {uploadedImages.length > 0 ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
-                    {uploadedImages.map(img => (
-                      <div key={img.id} onClick={() => toggleImageSelection(img.id)} style={{ position: 'relative', height: '100px', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', border: formData.selectedImages.includes(img.id) ? '3px solid #3b82f6' : '1px solid #e5e7eb' }}>
-                        <img src={img.src} alt="thumb" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '4px', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '10px', textAlign: 'center' }}>{img.caption || img.name}</div>
-                        {formData.selectedImages.includes(img.id) && <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#3b82f6', color: 'white', borderRadius: '50%', padding: '2px' }}><Icons.Check /></div>}
-                      </div>
-                    ))}
+              {activeTab === 'materials' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Reference Style</label>
+                      <select value={formData.referenceStyle} onChange={(e) => handleInputChange('referenceStyle', e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
+                        {referenceStyles.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Max References to Use</label>
+                      <input type="number" value={formData.maxReferences} onChange={(e) => handleInputChange('maxReferences', parseInt(e.target.value))} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+                    </div>
                   </div>
-                ) : <p style={{ fontSize: '13px', color: '#9ca3af' }}>No images uploaded yet.</p>}
-              </div>
 
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px', color: '#111827' }}>Select Saved References</h4>
-                {researchPapers.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {researchPapers.map(paper => (
-                      <div key={paper.id} onClick={() => togglePaperSelection(paper.id)} style={{ padding: '12px', borderRadius: '10px', border: `1px solid ${formData.selectedPapers.includes(paper.id) ? '#3b82f6' : '#e5e7eb'}`, background: formData.selectedPapers.includes(paper.id) ? '#eff6ff' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '18px', height: '18px', border: '1px solid #d1d5db', borderRadius: '4px', background: formData.selectedPapers.includes(paper.id) ? '#3b82f6' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>{formData.selectedPapers.includes(paper.id) && <Icons.Check />}</div>
-                        <span style={{ fontSize: '13px', color: '#374151', fontWeight: '500' }}>{paper.title || paper.original_name}</span>
+                  <div>
+                    <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px', color: '#111827' }}>Select Project Images</h4>
+                    {uploadedImages.length > 0 ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
+                        {uploadedImages.map(img => (
+                          <div key={img.id} onClick={() => toggleImageSelection(img.id)} style={{ position: 'relative', height: '100px', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', border: formData.selectedImages.includes(img.id) ? '3px solid #3b82f6' : '1px solid #e5e7eb' }}>
+                            <img src={img.src} alt="thumb" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '4px', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '10px', textAlign: 'center' }}>{img.caption || img.name}</div>
+                            {formData.selectedImages.includes(img.id) && <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#3b82f6', color: 'white', borderRadius: '50%', padding: '2px' }}><Icons.Check /></div>}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : <p style={{ fontSize: '13px', color: '#9ca3af' }}>No images uploaded yet.</p>}
                   </div>
-                ) : <p style={{ fontSize: '13px', color: '#9ca3af' }}>No saved references. AI will search the web for sources.</p>}
-              </div>
-            </div>
-          )}
-        </div>
 
-        {/* Footer */}
-        <div style={{ padding: '20px 24px', borderTop: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-          <button onClick={onClose} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}>Cancel</button>
-          <button onClick={handleGenerate} disabled={generating} style={{ padding: '10px 32px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.7 : 1 }}>{generating ? 'AI is Writing...' : 'Generate Chapter'}</button>
-        </div>
+                  <div>
+                    <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px', color: '#111827' }}>Select Saved References</h4>
+                    {researchPapers.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {researchPapers.map(paper => (
+                          <div key={paper.id} onClick={() => togglePaperSelection(paper.id)} style={{ padding: '12px', borderRadius: '10px', border: `1px solid ${formData.selectedPapers.includes(paper.id) ? '#3b82f6' : '#e5e7eb'}`, background: formData.selectedPapers.includes(paper.id) ? '#eff6ff' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '18px', height: '18px', border: '1px solid #d1d5db', borderRadius: '4px', background: formData.selectedPapers.includes(paper.id) ? '#3b82f6' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>{formData.selectedPapers.includes(paper.id) && <Icons.Check />}</div>
+                            <span style={{ fontSize: '13px', color: '#374151', fontWeight: '500' }}>{paper.title || paper.original_name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : <p style={{ fontSize: '13px', color: '#9ca3af' }}>No saved references. AI will search the web for sources.</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '20px 24px', borderTop: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button onClick={onClose} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleGenerate} disabled={generating} style={{ padding: '10px 32px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.7 : 1 }}>{generating ? 'AI is Writing...' : 'Generate Chapter'}</button>
+            </div>
+          </>
+        ) : (
+          <div style={{ padding: '60px 40px', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>📂</div>
+            <h3 style={{ margin: '0 0 10px 0', color: '#111827' }}>No Chapter Selected</h3>
+            <p style={{ color: '#6b7280', maxWidth: '300px', margin: '0 auto 24px' }}>Please select a specific chapter from the sidebar before clicking generate.</p>
+            <button 
+              onClick={onClose}
+              style={{ padding: '10px 24px', background: '#111827', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+            >
+              Close
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
