@@ -84,15 +84,24 @@ function WorkspaceContent() {
       .eq('id', user.id)
       .single();
     
-    if (profile) setUserProfile(profile);
     setProjectStorageUsed(project.storage_used || 0);
 
+    // 1.5 Fetch Chapter Content
+    const { data: chapterContent } = await supabase
+      .from('premium_chapters')
+      .select('*')
+      .eq('project_id', projectId);
+
     if (project.custom_templates?.structure?.chapters) {
-      setChapters(project.custom_templates.structure.chapters.map(ch => ({
-        id: ch.number,
-        title: ch.title,
-        content: '' 
-      })));
+      setChapters(project.custom_templates.structure.chapters.map(ch => {
+        const existing = chapterContent?.find(cc => cc.chapter_number === (ch.number || ch.chapter));
+        return {
+          id: existing?.id || ch.number || ch.chapter, // Use DB ID if available
+          number: ch.number || ch.chapter,
+          title: ch.title,
+          content: existing?.content || '' 
+        };
+      }));
     }
 
     // 2. Fetch Project Assets
@@ -151,8 +160,37 @@ function WorkspaceContent() {
       )
       .subscribe();
 
+    // ✅ Real-time subscription for chapter updates
+    const chaptersChannel = supabase
+      .channel(`premium-chapters-updates-${projectId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'premium_chapters',
+          filter: `project_id=eq.${projectId}`
+        },
+        (payload) => {
+          console.log('Real-time chapter update:', payload);
+          setChapters(prev => prev.map(ch => {
+            if (ch.number === payload.new.chapter_number) {
+              return {
+                ...ch,
+                id: payload.new.id,
+                content: payload.new.content,
+                status: payload.new.status
+              };
+            }
+            return ch;
+          }));
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(chaptersChannel);
     };
   }, [projectId]);
 

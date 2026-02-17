@@ -21,5 +21,27 @@ CREATE TABLE IF NOT EXISTS premium_chapter_history (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Index for faster history queries
-CREATE INDEX idx_premium_chapter_history_chapter_id ON premium_chapter_history(chapter_id);
+-- Safely handle the index
+CREATE INDEX IF NOT EXISTS idx_premium_chapter_history_chapter_id ON premium_chapter_history(chapter_id);
+
+-- Enable RLS
+ALTER TABLE premium_chapters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE premium_chapter_history ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies to prevent "already exists" errors during re-runs
+DROP POLICY IF EXISTS "Users can view their own chapters" ON premium_chapters;
+DROP POLICY IF EXISTS "Users can view their own history" ON premium_chapter_history;
+
+-- Policies for premium_chapters
+CREATE POLICY "Users can view their own chapters" ON premium_chapters
+  FOR SELECT USING (auth.uid() IN (SELECT user_id FROM premium_projects WHERE id = project_id));
+
+-- Policies for premium_chapter_history
+CREATE POLICY "Users can view their own history" ON premium_chapter_history
+  FOR SELECT USING (
+    chapter_id IN (
+      SELECT id FROM premium_chapters WHERE project_id IN (
+        SELECT id FROM premium_projects WHERE user_id = auth.uid()
+      )
+    )
+  );

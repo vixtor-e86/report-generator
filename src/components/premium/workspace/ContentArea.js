@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { supabase } from '@/lib/supabase';
 import EditTemplateModal from '../modals/EditTemplateModal';
 
 // Simple SVG Icons
@@ -54,7 +54,7 @@ export default function ContentArea({
   }, [activeChapter?.id]);
 
   const fetchHistory = async (chapterId) => {
-    const { data } = await supabaseAdmin
+    const { data } = await supabase
       .from('premium_chapter_history')
       .select('*')
       .eq('chapter_id', chapterId)
@@ -98,6 +98,23 @@ export default function ContentArea({
       setLocalContent(version.content);
       setShowHistory(false);
     }
+  };
+
+  // Local state for the structure during editing
+  const handleSaveChapterTemplate = (updatedChapter) => {
+    const currentStructure = projectData.template?.structure || { chapters: [] };
+    const newChapters = currentStructure.chapters.map(ch => 
+      (ch.chapter || ch.number) === (updatedChapter.chapter || updatedChapter.number) ? updatedChapter : ch
+    );
+    
+    onUpdateTemplate({
+      ...currentStructure,
+      chapters: newChapters
+    });
+  };
+
+  const handleSaveFullTemplate = () => {
+    onUpdateTemplate(projectData.template?.structure);
   };
 
   // Determine if we are viewing an image
