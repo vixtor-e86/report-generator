@@ -25,8 +25,8 @@ export async function POST(request) {
       selectedPapers = []
     } = await request.json();
 
-    if (!projectId || !chapterNumber || !userId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!projectId || chapterNumber === undefined || !userId) {
+      return NextResponse.json({ error: 'Missing required fields (Project ID, Chapter Number, or User ID)' }, { status: 400 });
     }
 
     // 1. Fetch Latest Template Structure (for chapter sections)

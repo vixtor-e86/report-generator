@@ -41,6 +41,7 @@ function WorkspaceContent() {
   const [researchPapers, setResearchPapers] = useState([]);
   const [projectStorageUsed, setProjectStorageUsed] = useState(0);
   const [userProfile, setUserProfile] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Modal States
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -70,6 +71,7 @@ function WorkspaceContent() {
     
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    setCurrentUser(user);
 
     // 1. Fetch Project Details (including Template)
     const { data: project, error: pError } = await supabase
@@ -94,6 +96,7 @@ function WorkspaceContent() {
       .eq('id', user.id)
       .single();
     
+    if (profile) setUserProfile(profile);
     setProjectStorageUsed(project.storage_used || 0);
 
     // 1.5 Fetch Chapter Content
@@ -394,7 +397,7 @@ function WorkspaceContent() {
         isOpen={isVisualToolsModalOpen}
         onClose={() => setIsVisualToolsModalOpen(false)}
         projectId={projectId}
-        userId={userProfile?.id}
+        userId={currentUser?.id || userProfile?.id}
         onImageSaved={loadWorkspaceData}
       />
 
@@ -403,7 +406,7 @@ function WorkspaceContent() {
         onClose={() => setIsModifyModalOpen(false)}
         activeChapter={activeChapter}
         projectId={projectId}
-        userId={userProfile?.id}
+        userId={currentUser?.id || userProfile?.id}
         onGenerateSuccess={loadWorkspaceData}
       />
 
@@ -414,7 +417,7 @@ function WorkspaceContent() {
         researchPapers={[...files, ...researchPapers]}
         activeChapter={activeChapter}
         projectId={projectId}
-        userId={userProfile?.id}
+        userId={currentUser?.id || userProfile?.id}
         projectData={projectData}
         onGenerateSuccess={() => {
           loadWorkspaceData(); // Refresh chapters/history
