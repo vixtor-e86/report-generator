@@ -87,7 +87,7 @@ ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", U
       ? `\nFocus on these required sections from the template:\n${currentChapterData.sections.map(s => `- ${s}`).join('\n')}`
       : '';
 
-    // 4. Construct Multi-Part Prompt for Gemini 1.5 Flash
+    // 4. Construct Multi-Part Prompt for Gemini 1.5 Flash (Stricter DeepSeek/Gemini instructions)
     const systemPrompt = `You are an elite academic researcher and engineer specialized in ${project.faculty} (${project.department}).
     Task: Author Chapter ${chapterNumber}: "${chapterTitle || currentChapterData?.title}" for the project "${finalTitle}".
     
@@ -98,7 +98,17 @@ ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", U
     - Research Focus: ${finalResearch || 'Latest industry standards'}
     
     ${sectionContext}
-    ${imageContext}
+    
+    ---
+    IMAGE MAPPING (STRICT RULES):
+    ${imageContext || 'No images provided for this chapter.'}
+    
+    1. ONLY use images listed in the "IMAGE MAPPING" above.
+    2. NEVER use external URLs, GitHub links, or placeholder websites. 
+    3. If no images are mapped, DO NOT include any image tags.
+    4. To insert an image, use this EXACT syntax: ![Caption](URL)
+    ---
+    
     ${paperContext}
     ${searchInstruction}
     
@@ -108,13 +118,13 @@ ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", U
     - Language: Formal, objective, technical English.
     - Format: Markdown (## Headings, **bold**, bullet points).
     - Length: Detailed and comprehensive (Target ~2000 words).
-    - Visuals: Whenever an image from the provided mapping is relevant, insert it using standard markdown: ![Caption](URL). Ensure the URL matches EXACTLY.
+    - Visuals: Integrate relevant images from the mapping naturally within the technical explanation.
     - References: You MUST provide a "References" section at the end of the chapter using ${referenceStyle} style.`;
 
     // 5. Call AI (DeepSeek)
     const aiResponse = await callAI(systemPrompt, {
       provider: 'deepseek',
-      maxTokens: 8000,
+      maxTokens: 12000,
       temperature: 0.6
     });
 
