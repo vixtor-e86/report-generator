@@ -19,7 +19,9 @@ export default function GenerationModal({
   projectId, 
   userId,
   projectData, 
-  onGenerateSuccess 
+  onGenerateSuccess,
+  setIsGlobalLoading,
+  setGlobalLoadingText
 }) {
   const [formData, setFormData] = useState({
     projectTitle: '',
@@ -97,6 +99,10 @@ export default function GenerationModal({
     }
 
     setGenerating(true);
+    if (setIsGlobalLoading) {
+      setGlobalLoadingText(`Generating Chapter ${currentChapterNumber}...`);
+      setIsGlobalLoading(true);
+    }
 
     try {
       const selectedImagesData = uploadedImages.filter(img => formData.selectedImages.includes(img.id));
@@ -127,7 +133,6 @@ export default function GenerationModal({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Generation failed');
 
-      alert('Chapter generated successfully!');
       if (onGenerateSuccess) onGenerateSuccess();
       onClose();
 
@@ -135,6 +140,7 @@ export default function GenerationModal({
       alert(error.message);
     } finally {
       setGenerating(false);
+      if (setIsGlobalLoading) setIsGlobalLoading(false);
     }
   };
 

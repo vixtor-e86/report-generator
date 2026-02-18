@@ -416,6 +416,8 @@ function WorkspaceContent() {
         projectId={projectId}
         userId={currentUser?.id || userProfile?.id}
         onGenerateSuccess={loadWorkspaceData}
+        setIsGlobalLoading={setIsGlobalLoading}
+        setGlobalLoadingText={setGlobalLoadingText}
       />
 
       <GenerationModal 
@@ -431,6 +433,13 @@ function WorkspaceContent() {
           loadWorkspaceData(); // Refresh chapters/history
           setIsGenerationModalOpen(false);
         }}
+        setIsGlobalLoading={setIsGlobalLoading}
+        setGlobalLoadingText={setGlobalLoadingText}
+      />
+
+      <LoadingModal 
+        isOpen={isGlobalLoading} 
+        loadingText={globalLoadingText} 
       />
     </div>
   );

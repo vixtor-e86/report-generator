@@ -8,7 +8,16 @@ const Icons = {
   Zap: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
 };
 
-export default function ModifyModal({ isOpen, onClose, activeChapter, projectId, userId, onGenerateSuccess }) {
+export default function ModifyModal({ 
+  isOpen, 
+  onClose, 
+  activeChapter, 
+  projectId, 
+  userId, 
+  onGenerateSuccess,
+  setIsGlobalLoading,
+  setGlobalLoadingText
+}) {
   const [instruction, setInstruction] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -19,6 +28,11 @@ export default function ModifyModal({ isOpen, onClose, activeChapter, projectId,
     }
 
     setLoading(true);
+    if (setIsGlobalLoading) {
+      setGlobalLoadingText(`Modifying ${activeChapter?.title}...`);
+      setIsGlobalLoading(true);
+    }
+
     try {
       const response = await fetch('/api/premium/generate', {
         method: 'POST',
@@ -29,20 +43,19 @@ export default function ModifyModal({ isOpen, onClose, activeChapter, projectId,
           chapterNumber: activeChapter.number || activeChapter.id,
           chapterTitle: activeChapter.title,
           userPrompt: `MODIFICATION REQUEST: ${instruction}`,
-          // Note: We don't send projectTitle/Description here so it uses existing context in DB
         })
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Modification failed');
 
-      alert('Chapter updated successfully!');
       if (onGenerateSuccess) onGenerateSuccess();
       onClose();
     } catch (err) {
       alert(err.message);
     } finally {
       setLoading(false);
+      if (setIsGlobalLoading) setIsGlobalLoading(false);
     }
   };
 
