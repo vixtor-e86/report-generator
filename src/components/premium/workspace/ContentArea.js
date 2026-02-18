@@ -34,15 +34,15 @@ export default function ContentArea({
   onVisualToolsClick,
   images = []
 }) {
+  // 1. ALL HOOKS AT TOP LEVEL
   const [editingTemplate, setEditingTemplate] = useState(null);
-  
-  // Workspace States
   const [localContent, setLocalContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [chapterHistory, setChapterHistory] = useState([]);
   const [showImageSelector, setShowImageSelector] = useState(false);
-  const [workspaceMode, setWorkspaceMode] = useState('editor'); // 'editor' or 'preview'
+  const [workspaceMode, setWorkspaceMode] = useState('editor');
+  const [allProjectHistory, setAllHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   
   const textareaRef = useRef(null);
 
@@ -54,20 +54,31 @@ export default function ContentArea({
   useEffect(() => {
     if (activeChapter) {
       setLocalContent(activeChapter.content || '');
-      fetchHistory(activeChapter.id);
     }
-  }, [activeChapter?.id]);
+  }, [activeChapter?.id, activeChapter?.number]);
 
-  const fetchHistory = async (chapterId) => {
-    const { data } = await supabase
-      .from('premium_chapter_history')
-      .select('*')
-      .eq('chapter_id', chapterId)
-      .order('created_at', { ascending: false })
-      .limit(5);
-    if (data) setHistory(data);
-  };
+  // Fetch full project history for the History View
+  useEffect(() => {
+    if (activeView === 'history') {
+      async function fetchAllHistory() {
+        setLoadingHistory(true);
+        const { data } = await supabase
+          .from('premium_chapter_history')
+          .select('*, premium_chapters(title, chapter_number)')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        
+        const chapterIds = chapters.map(c => c.id);
+        const projectHistory = data?.filter(h => chapterIds.includes(h.chapter_id)) || [];
+        
+        setAllHistory(projectHistory);
+        setLoadingHistory(false);
+      }
+      fetchAllHistory();
+    }
+  }, [activeView, chapters]);
 
+  // 2. LOGIC HANDLERS
   const handleSaveEdit = async () => {
     if (!activeChapter) return;
     setIsSaving(true);
@@ -92,21 +103,16 @@ export default function ContentArea({
     }
   };
 
-  // Cursor-based Image Insertion
   const insertImageTag = (img) => {
     const tag = `\n![${img.caption || img.original_name}](${img.file_url})\n`;
-    
     if (textareaRef.current) {
       const start = textareaRef.current.selectionStart;
       const end = textareaRef.current.selectionEnd;
       const text = textareaRef.current.value;
       const before = text.substring(0, start);
       const after = text.substring(end, text.length);
-      
       const newText = before + tag + after;
       setLocalContent(newText);
-      
-      // Update cursor position after state update
       setTimeout(() => {
         textareaRef.current.focus();
         textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + tag.length;
@@ -114,197 +120,150 @@ export default function ContentArea({
     } else {
       setLocalContent(prev => prev + tag);
     }
-    
     setShowImageSelector(false);
   };
 
-  const restoreHistory = (version) => {
-    if (confirm('Replace current content with this version?')) {
-      setLocalContent(version.content);
-      setShowHistory(false);
-    }
-  };
-
-  // Local state for the structure during editing
   const handleSaveChapterTemplate = (updatedChapter) => {
     const currentStructure = projectData.template?.structure || { chapters: [] };
     const newChapters = currentStructure.chapters.map(ch => 
       (ch.chapter || ch.number) === (updatedChapter.chapter || updatedChapter.number) ? updatedChapter : ch
     );
-    
-    onUpdateTemplate({
-      ...currentStructure,
-      chapters: newChapters
-    });
+    onUpdateTemplate({ ...currentStructure, chapters: newChapters });
   };
 
-  const handleSaveFullTemplate = () => {
-    onUpdateTemplate(projectData.template?.structure);
-  };
-
-  // Determine if we are viewing an image
-  const activeImage = activeView.startsWith('image-')
-    ? images.find(img => `image-${img.id}` === activeView)
-    : null;
-
-  if (activeImage) {
+  // 3. VIEW RENDERING (NO HOOKS BELOW THIS)
+  
+  // History View
+  if (activeView === 'history') {
     return (
       <div className="content-area">
         <div className="content-layout-wrapper">
           <div style={{ marginBottom: '40px', width: '100%' }}>
-            <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
-              {activeImage.original_name}
-            </h1>
-            <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>
-              Asset in {projectData.title}
-            </p>
+            <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>Project History</h1>
+            <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>View and restore previous AI-generated versions.</p>
           </div>
-
-          <div style={{ 
-            background: 'white', 
-            borderRadius: '16px', 
-            border: '1px solid #e5e7eb', 
-            overflow: 'hidden', 
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '40px'
-          }}>
-            <img 
-              src={activeImage.file_url} 
-              alt={activeImage.original_name}
-              style={{ maxWidth: '100%', maxHeight: '600px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-            />
+          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e7eb' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Recent AI Generations</h3>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <thead>
+                  <tr style={{ background: '#f9fafb', textAlign: 'left' }}>
+                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Chapter</th>
+                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Instructions</th>
+                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Date</th>
+                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600', textAlign: 'right' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allProjectHistory.length > 0 ? allProjectHistory.map((item, index) => (
+                    <tr key={item.id} style={{ borderBottom: index < allProjectHistory.length - 1 ? '1px solid #e5e7eb' : 'none' }}>
+                      <td style={{ padding: '16px 24px', fontWeight: '600', color: '#111827' }}>
+                        Ch. {item.premium_chapters?.chapter_number}: {item.premium_chapters?.title}
+                      </td>
+                      <td style={{ padding: '16px 24px', color: '#4b5563' }}>
+                        <span style={{ fontSize: '12px', fontStyle: 'italic' }}>{item.prompt_used || 'Standard generation'}</span>
+                      </td>
+                      <td style={{ padding: '16px 24px', color: '#6b7280' }}>{new Date(item.created_at).toLocaleString()}</td>
+                      <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                        <button 
+                          onClick={() => {
+                            if (confirm(`Restore this version to ${item.premium_chapters?.title}?`)) {
+                              onUpdateChapter(item.chapter_id, item.content);
+                              alert('Version restored!');
+                            }
+                          }}
+                          style={{ background: '#6366f1', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                        >
+                          Restore
+                        </button>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
+                        {loadingHistory ? 'Loading history...' : 'No AI history found.'}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
+  // Image Detail View
+  const activeImage = activeView.startsWith('image-') ? images.find(img => `image-${img.id}` === activeView) : null;
+  if (activeImage) {
+    return (
+      <div className="content-area">
+        <div className="content-layout-wrapper">
+          <div style={{ marginBottom: '40px', width: '100%' }}>
+            <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>{activeImage.original_name}</h1>
+            <p style={{ fontSize: '16px', color: '#6b7280' }}>Asset in {projectData.title}</p>
+          </div>
+          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', padding: '40px', display: 'flex', justifyContent: 'center' }}>
+            <img src={activeImage.file_url} alt={activeImage.original_name} style={{ maxWidth: '100%', maxHeight: '600px', borderRadius: '8px' }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Chapter Workspace View
   if (activeChapter) {
     return (
       <div className="content-area">
         <div className="content-layout-wrapper">
-          {/* Header & Toolbar */}
           <div style={{ marginBottom: '24px', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
-                {activeChapter.title}
-              </h1>
+              <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>{activeChapter.title}</h1>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <div style={{ background: '#f3f4f6', padding: '4px', borderRadius: '8px', display: 'inline-flex' }}>
-                  <button 
-                    onClick={() => setWorkspaceMode('editor')}
-                    style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: workspaceMode === 'editor' ? 'white' : 'transparent', color: workspaceMode === 'editor' ? '#111827' : '#6b7280', fontSize: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: workspaceMode === 'editor' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
-                  >
-                    <Icons.Edit3 /> Editor
-                  </button>
-                  <button 
-                    onClick={() => setWorkspaceMode('preview')}
-                    style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: workspaceMode === 'preview' ? 'white' : 'transparent', color: workspaceMode === 'preview' ? '#111827' : '#6b7280', fontSize: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: workspaceMode === 'preview' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
-                  >
-                    <Icons.Eye /> Preview
-                  </button>
+                  <button onClick={() => setWorkspaceMode('editor')} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: workspaceMode === 'editor' ? 'white' : 'transparent', color: workspaceMode === 'editor' ? '#111827' : '#6b7280', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}><Icons.Edit3 /> Editor</button>
+                  <button onClick={() => setWorkspaceMode('preview')} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: workspaceMode === 'preview' ? 'white' : 'transparent', color: workspaceMode === 'preview' ? '#111827' : '#6b7280', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}><Icons.Eye /> Preview</button>
                 </div>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
-                  Workspace Mode
-                </p>
               </div>
             </div>
-
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <button 
-                onClick={() => setShowImageSelector(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
-              >
-                <Icons.Image /> Insert Image
-              </button>
-
-              <button 
-                onClick={handleSaveEdit}
-                disabled={isSaving}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: 'none', background: '#111827', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: isSaving ? 0.7 : 1 }}
-              >
-                {isSaving ? 'Saving...' : <><Icons.Save /> Save Changes</>}
-              </button>
+              <button onClick={() => setShowImageSelector(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}><Icons.Image /> Insert Image</button>
+              <button onClick={handleSaveEdit} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: 'none', background: '#111827', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: isSaving ? 0.7 : 1 }}>{isSaving ? 'Saving...' : <><Icons.Save /> Save Changes</>}</button>
             </div>
           </div>
-
-          {/* Editor Workspace */}
-          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', minHeight: '700px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', minHeight: '700px' }}>
             {workspaceMode === 'editor' ? (
-              <textarea
-                ref={textareaRef}
-                className="chapter-editor"
-                value={localContent}
-                onChange={(e) => setLocalContent(e.target.value)}
-                placeholder={`Write your ${activeChapter.title} here...`}
-                style={{
-                  width: '100%',
-                  minHeight: '700px',
-                  border: 'none',
-                  outline: 'none',
-                  fontSize: '16px',
-                  lineHeight: '1.8',
-                  color: '#111827',
-                  padding: '40px',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
-                  resize: 'vertical'
-                }}
-              />
+              <textarea ref={textareaRef} className="chapter-editor" value={localContent} onChange={(e) => setLocalContent(e.target.value)} placeholder={`Write your ${activeChapter.title} here...`} style={{ width: '100%', minHeight: '700px', border: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.8', color: '#111827', padding: '40px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'vertical' }} />
             ) : (
               <div className="markdown-preview" style={{ padding: '60px', minHeight: '700px' }}>
                 <style>{`
-                  .markdown-preview {
-                    color: #1f2937;
-                    line-height: 1.8;
-                    font-family: 'Inter', system-ui, sans-serif;
-                  }
+                  .markdown-preview { color: #1f2937; line-height: 1.8; font-family: 'Inter', system-ui, sans-serif; }
                   .markdown-preview h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1.5rem; color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; }
                   .markdown-preview h2 { font-size: 1.8rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1.2rem; color: #111827; }
                   .markdown-preview h3 { font-size: 1.4rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; color: #374151; }
                   .markdown-preview p { margin-bottom: 1.5rem; text-align: justify; }
-                  .markdown-preview ul, .markdown-preview ol { margin-bottom: 1.5rem; padding-left: 1.5rem; }
-                  .markdown-preview li { margin-bottom: 0.5rem; }
-                  .markdown-preview blockquote { border-left: 4px solid #e5e7eb; padding-left: 1rem; color: #6b7280; font-style: italic; margin: 1.5rem 0; }
-                  .markdown-preview img { 
-                    display: block;
-                    max-width: 600px; 
-                    height: auto; 
-                    margin: 2rem auto; 
-                    border-radius: 12px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-                    border: 1px solid #e5e7eb;
-                  }
+                  .markdown-preview img { display: block; max-width: 600px; height: auto; margin: 2rem auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; }
                   .markdown-preview table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
                   .markdown-preview th, .markdown-preview td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; }
                   .markdown-preview th { background: #f9fafb; font-weight: 600; }
                 `}</style>
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {localContent || '*No content yet.*'}
-                </ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{localContent || '*No content yet.*'}</ReactMarkdown>
               </div>
             )}
           </div>
         </div>
-
-        {/* Image Selector Modal */}
         {showImageSelector && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <h3 style={{ margin: 0 }}>Select Image to Insert</h3>
-                <button onClick={() => setShowImageSelector(false)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><Icons.X /></button>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h3 style={{ margin: 0 }}>Select Image</h3><button onClick={() => setShowImageSelector(false)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><Icons.X /></button></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
                 {images.length > 0 ? images.map(img => (
                   <div key={img.id} onClick={() => insertImageTag(img)} style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5e7eb', position: 'relative' }}>
                     <img src={img.src} alt="thumb" style={{ width: '100%', height: '100px', objectFit: 'cover' }} />
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '10px', padding: '4px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {img.caption || img.original_name}
-                    </div>
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '10px', padding: '4px', textAlign: 'center' }}>{img.caption || img.original_name}</div>
                   </div>
                 )) : <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#9ca3af' }}>No project assets found.</p>}
               </div>
@@ -320,200 +279,22 @@ export default function ContentArea({
     return (
       <div className="content-area">
         <div className="content-layout-wrapper">
-          {/* Header */}
-          <div style={{ marginBottom: '40px', width: '100%' }}>
-            <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
-              Template Editor
-            </h1>
-            <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>
-              Modify the structure of your current project.
-            </p>
-          </div>
-
-          {/* Template Chapters */}
+          <div style={{ marginBottom: '40px', width: '100%' }}><h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>Template Editor</h1><p style={{ fontSize: '16px', color: '#6b7280' }}>Modify the structure of your project.</p></div>
           <div style={{ maxWidth: '800px', width: '100%' }}>
-          {projectData.template?.structure?.chapters?.map((chapter) => (
-            <div key={chapter.chapter || chapter.number} style={{ 
-              background: 'white', 
-              padding: '24px', 
-              borderRadius: '12px', 
-              marginBottom: '16px',
-              border: '1px solid #e5e7eb',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                <div>
-                  <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600', color: '#111827' }}>
-                    Chapter {chapter.chapter || chapter.number}: {chapter.title}
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#6b7280' }}>
-                    {chapter.sections?.length || 0} section{chapter.sections?.length !== 1 ? 's' : ''}
-                  </p>
+            {projectData.template?.structure?.chapters?.map((chapter) => (
+              <div key={chapter.chapter || chapter.number} style={{ background: 'white', padding: '24px', borderRadius: '12px', marginBottom: '16px', border: '1px solid #e5e7eb' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                  <div><h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Chapter {chapter.chapter || chapter.number}: {chapter.title}</h3></div>
+                  <button onClick={() => setEditingTemplate(chapter)} style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Edit</button>
                 </div>
-                <button 
-                  onClick={() => setEditingTemplate(chapter)}
-                  style={{ 
-                    color: '#3b82f6', 
-                    background: 'none', 
-                    border: 'none', 
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = '#eff6ff';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = 'none';
-                  }}
-                >
-                  Edit
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {chapter.sections.map((section, idx) => (<div key={idx} style={{ padding: '10px 12px', background: '#f9fafb', borderRadius: '6px', fontSize: '14px', borderLeft: '3px solid #e5e7eb' }}>{section}</div>))}
+                </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {chapter.sections.map((section, idx) => (
-                  <div key={idx} style={{ 
-                    padding: '10px 12px', 
-                    background: '#f9fafb', 
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    color: '#4b5563',
-                    borderLeft: '3px solid #e5e7eb'
-                  }}>
-                    {section}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-          <button 
-            onClick={handleSaveFullTemplate}
-            style={{
-              background: '#111827',
-              color: 'white',
-              padding: '12px 24px',
-              borderRadius: '8px',
-              border: 'none',
-              fontWeight: '600',
-              cursor: 'pointer',
-              marginTop: '16px',
-              fontSize: '14px',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#1f2937';
-              e.target.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#111827';
-              e.target.style.transform = 'translateY(0)';
-            }}
-          >
-            Save All Changes
-          </button>
-        </div>
-
-          <EditTemplateModal
-            chapter={editingTemplate}
-            isOpen={!!editingTemplate}
-            onClose={() => setEditingTemplate(null)}
-            onSave={handleSaveChapterTemplate}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // History View
-  if (activeView === 'history') {
-    // Collect history for ALL chapters in this project
-    const [allHistory, setAllHistory] = useState([]);
-    const [loadingHistory, setLoadingLoadingHistory] = useState(true);
-
-    useEffect(() => {
-      async function fetchAllHistory() {
-        const { data } = await supabase
-          .from('premium_chapter_history')
-          .select('*, premium_chapters(title, chapter_number)')
-          .order('created_at', { ascending: false })
-          .limit(20);
-        
-        // Filter locally by project_id since joining is complex across tables
-        // Actually, we can just fetch where chapter_id IN (project chapters)
-        const chapterIds = chapters.map(c => c.id);
-        const projectHistory = data?.filter(h => chapterIds.includes(h.chapter_id)) || [];
-        
-        setAllHistory(projectHistory);
-        setLoadingLoadingHistory(false);
-      }
-      fetchAllHistory();
-    }, [chapters]);
-
-    return (
-      <div className="content-area">
-        <div className="content-layout-wrapper">
-          <div style={{ marginBottom: '40px', width: '100%' }}>
-            <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>Project History</h1>
-            <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>View and restore previous AI-generated versions.</p>
+            ))}
+            <button onClick={() => onUpdateTemplate(projectData.template?.structure)} style={{ background: '#111827', color: 'white', padding: '12px 24px', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer' }}>Save All Changes</button>
           </div>
-
-          {/* Activity Log */}
-          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e7eb' }}>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Recent AI Generations</h3>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '14px' }}>
-                <thead>
-                  <tr style={{ background: '#f9fafb', textAlign: 'left' }}>
-                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Chapter</th>
-                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Instructions Used</th>
-                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Date</th>
-                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600', textAlign: 'right' }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allHistory.length > 0 ? allHistory.map((item, index) => (
-                    <tr key={item.id} style={{ borderBottom: index < allHistory.length - 1 ? '1px solid #e5e7eb' : 'none' }}>
-                      <td style={{ padding: '16px 24px', fontWeight: '600', color: '#111827' }}>
-                        Ch. {item.premium_chapters?.chapter_number}: {item.premium_chapters?.title}
-                      </td>
-                      <td style={{ padding: '16px 24px', color: '#4b5563' }}>
-                        <span style={{ fontSize: '12px', fontStyle: 'italic' }}>
-                          {item.prompt_used || 'Standard generation'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '16px 24px', color: '#6b7280' }}>
-                        {new Date(item.created_at).toLocaleString()}
-                      </td>
-                      <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                        <button 
-                          onClick={() => {
-                            if (confirm(`Restore this version to ${item.premium_chapters?.title}? This will overwrite current changes.`)) {
-                              onUpdateChapter(item.chapter_id, item.content);
-                              alert('Version restored! Switch to the chapter to see changes.');
-                            }
-                          }}
-                          style={{ background: '#6366f1', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
-                        >
-                          Restore
-                        </button>
-                      </td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
-                        {loadingHistory ? 'Loading project history...' : 'No AI generation history found for this project.'}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <EditTemplateModal chapter={editingTemplate} isOpen={!!editingTemplate} onClose={() => setEditingTemplate(null)} onSave={handleSaveChapterTemplate} />
         </div>
       </div>
     );
@@ -524,98 +305,19 @@ export default function ContentArea({
     <div className="content-area">
       <div className="content-layout-wrapper">
         <div className="welcome-container">
-          <img 
-            src="/premium_icon/favicon.ico" 
-            alt="W3 Writelab Logo" 
-            className="welcome-logo" 
-            style={{ width: 80, height: 80, marginBottom: 24, display: 'block', margin: '0 auto 24px' }} 
-          />
+          <img src="/premium_icon/favicon.ico" alt="Logo" style={{ width: 80, height: 80, display: 'block', margin: '0 auto 24px' }} />
           <h1 className="welcome-title">Welcome to W3 Writelab</h1>
           <p className="welcome-subtitle">Your AI-Powered Academic Writing Assistant</p>
-          
           <div className="quick-actions-grid">
-          <ActionCard 
-            icon={<Icons.Search />} 
-            title="Citation & References" 
-            desc="Find relevant papers via Semantic Scholar." 
-          />
-          <ActionCard 
-            icon={<Icons.Edit3 />} 
-            title="Grammar Check" 
-            desc="Advanced proofreading with LanguageTool." 
-          />
-          <ActionCard 
-            icon={<Icons.FileText />} 
-            title="Format Document" 
-            desc="Convert to PDF/LaTeX using Pandoc." 
-          />
-          <ActionCard 
-            icon={<Icons.PieChart />} 
-            title="Data Analysis" 
-            desc="Compute insights with Wolfram Alpha." 
-          />
-          <ActionCard 
-            icon={<Icons.Shield />} 
-            title="Plagiarism Check" 
-            desc="Verify originality with Copyscape." 
-          />
-          <ActionCard 
-            icon={<Icons.Code />} 
-            title="Translate" 
-            desc="Multi-language support via DeepL." 
-          />
-        </div>
-
-        <div className="how-it-works-section" style={{ marginTop: '48px', textAlign: 'left', maxWidth: '100%' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '24px', color: '#111827' }}>How W3 Writelab Empowers Your Research</h2>
-          
-          <div className="feature-explanation" style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              🎨 AI-Powered Technical Visuals
-            </h3>
-            <p style={{ color: '#4b5563', lineHeight: '1.6' }}>
-              Visualize complex systems and concepts instantly. Our <strong>Diagram Studio</strong> uses AI to architect Mermaid.js flowcharts, while our <strong>Flux.1</strong> integration generates high-fidelity conceptual illustrations. Whether it's a system architecture or a 3D product concept, W3 Writelab brings your ideas to life.
-            </p>
-          </div>
-
-          <div className="feature-explanation" style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              📚 Smart Citation Management
-            </h3>
-            <p style={{ color: '#4b5563', lineHeight: '1.6' }}>
-              Never worry about formatting citations again. Our integration with <strong>Semantic Scholar</strong> allows you to search for academic papers directly within the workspace. We automatically generate citations in APA, MLA, Chicago, and IEEE formats, ensuring your bibliography is always perfect.
-            </p>
-          </div>
-
-          <div className="feature-explanation" style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              ✍️ Intelligent Writing Assistant
-            </h3>
-            <p style={{ color: '#4b5563', lineHeight: '1.6' }}>
-              Beyond basic spell-check, <strong>LanguageTool</strong> analyzes your writing style, tone, and clarity. It provides real-time suggestions to improve sentence structure and academic vocabulary, making your arguments more persuasive and professional.
-            </p>
-          </div>
-
-          <div className="feature-explanation" style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              📊 Data-Driven Insights
-            </h3>
-            <p style={{ color: '#4b5563', lineHeight: '1.6' }}>
-              Need to perform complex calculations or find statistical data? <strong>Wolfram Alpha</strong> is built right in. Generate charts, solve equations, and access curated knowledge without leaving your document.
-            </p>
-          </div>
-
-          <div className="feature-explanation" style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              🔄 Seamless Formatting & Export
-            </h3>
-            <p style={{ color: '#4b5563', lineHeight: '1.6' }}>
-              With <strong>Pandoc</strong>, you can export your project to any format required by your institution. Whether you need a standard Word document, a clean PDF, or LaTeX for scientific publication, W3 Writelab handles the conversion flawlessly.
-            </p>
+            <ActionCard icon={<Icons.Search />} title="Citation & References" desc="Find relevant papers via Semantic Scholar." />
+            <ActionCard icon={<Icons.Edit3 />} title="Grammar Check" desc="Advanced proofreading with LanguageTool." />
+            <ActionCard icon={<Icons.FileText />} title="Format Document" desc="Convert to PDF/LaTeX using Pandoc." />
+            <ActionCard icon={<Icons.PieChart />} title="Data Analysis" desc="Compute insights with Wolfram Alpha." />
+            <ActionCard icon={<Icons.Shield />} title="Plagiarism Check" desc="Verify originality with Copyscape." />
+            <ActionCard icon={<Icons.Code />} title="Translate" desc="Multi-language support via DeepL." />
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }
@@ -623,9 +325,7 @@ export default function ContentArea({
 function ActionCard({ icon, title, desc }) {
   return (
     <div className="action-card">
-      <div className="action-icon-wrapper">
-        {icon}
-      </div>
+      <div className="action-icon-wrapper">{icon}</div>
       <span className="action-title">{title}</span>
       <span className="action-desc">{desc}</span>
     </div>
