@@ -111,7 +111,7 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
                 <p className="text-sm text-slate-500 line-clamp-2 mb-4 italic">"{paper.abstract}"</p>
               )}
               <div className="flex justify-between items-center">
-                <a href={paper.url} target="_blank" className="text-xs text-slate-400 hover:underline">View on Semantic Scholar</a>
+                <a href={paper.url} target="_blank" className="text-xs text-slate-400 hover:underline">See more</a>
                 <button 
                   onClick={() => savePaper(paper)}
                   disabled={savingId === paper.paperId}

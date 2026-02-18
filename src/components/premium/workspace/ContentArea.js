@@ -50,6 +50,16 @@ export default function ContentArea({
     ? chapters.find(ch => `chapter-${ch.id}` === activeView || `chapter-${ch.number}` === activeView)
     : null;
 
+  // Track cursor position whenever it changes
+  const updateCursorPosition = () => {
+    if (textareaRef.current) {
+      setCursorPosition({
+        start: textareaRef.current.selectionStart,
+        end: textareaRef.current.selectionEnd
+      });
+    }
+  };
+
   useEffect(() => {
     if (activeChapter) {
       setLocalContent(activeChapter.content || '');
@@ -104,22 +114,29 @@ export default function ContentArea({
 
   const insertImageTag = (img) => {
     const tag = `\n![${img.caption || img.original_name}](${img.file_url})\n`;
-    if (textareaRef.current) {
-      const start = textareaRef.current.selectionStart;
-      const end = textareaRef.current.selectionEnd;
-      const text = textareaRef.current.value;
-      const before = text.substring(0, start);
-      const after = text.substring(end, text.length);
-      const newText = before + tag + after;
-      setLocalContent(newText);
-      setTimeout(() => {
+    const { start, end } = cursorPosition;
+    
+    // Insert at tracked cursor position
+    const before = localContent.substring(0, start);
+    const after = localContent.substring(end, localContent.length);
+    const newText = before + tag + after;
+    
+    setLocalContent(newText);
+    setShowImageSelector(false);
+    
+    // Success feedback
+    setTimeout(() => {
+      if (textareaRef.current) {
         textareaRef.current.focus();
         textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + tag.length;
-      }, 0);
-    } else {
-      setLocalContent(prev => prev + tag);
-    }
-    setShowImageSelector(false);
+      }
+    }, 10);
+  };
+
+  const copyImageTag = (img) => {
+    const tag = `![${img.caption || img.original_name}](${img.file_url})`;
+    navigator.clipboard.writeText(tag);
+    alert('Markdown tag copied! You can now paste it anywhere in the editor.');
   };
 
   const handleSaveChapterTemplate = (updatedChapter) => {
@@ -235,7 +252,32 @@ export default function ContentArea({
           </div>
           <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', minHeight: '700px' }}>
             {workspaceMode === 'editor' ? (
-              <textarea ref={textareaRef} className="chapter-editor" value={localContent} onChange={(e) => setLocalContent(e.target.value)} placeholder={`Write your ${activeChapter.title} here...`} style={{ width: '100%', minHeight: '700px', border: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.8', color: '#111827', padding: '40px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'vertical' }} />
+              <textarea
+                ref={textareaRef}
+                className="chapter-editor"
+                value={localContent}
+                onChange={(e) => {
+                  setLocalContent(e.target.value);
+                  updateCursorPosition();
+                }}
+                onSelect={updateCursorPosition}
+                onClick={updateCursorPosition}
+                onKeyUp={updateCursorPosition}
+                placeholder={`Write your ${activeChapter.title} here...`}
+                style={{
+                  width: '100%',
+                  minHeight: '700px',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '16px',
+                  lineHeight: '1.8',
+                  color: '#111827',
+                  padding: '40px',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                  resize: 'vertical'
+                }}
+              />
             ) : (
               <div className="markdown-preview" style={{ padding: '60px', minHeight: '700px' }}>
                 <style>{`
