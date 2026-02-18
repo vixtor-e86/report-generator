@@ -42,6 +42,7 @@ export default function ContentArea({
   const [workspaceMode, setWorkspaceMode] = useState('editor');
   const [allProjectHistory, setAllHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 }); // Added missing state
   
   const textareaRef = useRef(null);
 
@@ -124,11 +125,13 @@ export default function ContentArea({
     setLocalContent(newText);
     setShowImageSelector(false);
     
-    // Success feedback
+    // Maintain focus and set new cursor position
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
-        textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + tag.length;
+        const newCursorPos = start + tag.length;
+        textareaRef.current.selectionStart = textareaRef.current.selectionEnd = newCursorPos;
+        setCursorPosition({ start: newCursorPos, end: newCursorPos });
       }
     }, 10);
   };
@@ -136,7 +139,7 @@ export default function ContentArea({
   const copyImageTag = (img) => {
     const tag = `![${img.caption || img.original_name}](${img.file_url})`;
     navigator.clipboard.writeText(tag);
-    alert('Markdown tag copied! You can now paste it anywhere in the editor.');
+    alert('Markdown tag copied!');
   };
 
   const handleSaveChapterTemplate = (updatedChapter) => {
@@ -297,14 +300,35 @@ export default function ContentArea({
           </div>
         </div>
         {showImageSelector && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-            <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h3 style={{ margin: 0 }}>Select Image</h3><button onClick={() => setShowImageSelector(false)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><Icons.X /></button></div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyHeight: 'center', padding: '20px' }}>
+            <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '600px', padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h3 style={{ margin: 0 }}>Select Image to Insert</h3><button onClick={() => setShowImageSelector(false)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><Icons.X /></button></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '16px', maxHeight: '500px', overflowY: 'auto', padding: '4px' }}>
                 {images.length > 0 ? images.map(img => (
-                  <div key={img.id} onClick={() => insertImageTag(img)} style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e5e7eb', position: 'relative' }}>
-                    <img src={img.src} alt="thumb" style={{ width: '100%', height: '100px', objectFit: 'cover' }} />
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '10px', padding: '4px', textAlign: 'center' }}>{img.caption || img.original_name}</div>
+                  <div key={img.id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', background: '#f9fafb', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ position: 'relative', height: '100px' }}>
+                      <img src={img.src} alt="thumb" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <div style={{ padding: '8px', flex: 1 }}>
+                      <p style={{ margin: '0 0 8px 0', fontSize: '11px', fontWeight: '600', color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={img.caption || img.original_name}>
+                        {img.caption || img.original_name}
+                      </p>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button 
+                          onClick={() => insertImageTag(img)}
+                          style={{ flex: 1, padding: '6px', fontSize: '10px', fontWeight: '700', background: '#111827', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                        >
+                          Use
+                        </button>
+                        <button 
+                          onClick={() => copyImageTag(img)}
+                          style={{ padding: '6px', fontSize: '10px', fontWeight: '700', background: 'white', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '6px', cursor: 'pointer' }}
+                          title="Copy Markdown Tag"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )) : <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#9ca3af' }}>No project assets found.</p>}
               </div>
