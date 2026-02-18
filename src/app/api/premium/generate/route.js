@@ -124,7 +124,7 @@ ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", U
     // 5. Call AI (DeepSeek)
     const aiResponse = await callAI(systemPrompt, {
       provider: 'deepseek',
-      maxTokens: 12000,
+      maxTokens: 8000,
       temperature: 0.6
     });
 
