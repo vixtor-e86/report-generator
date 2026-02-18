@@ -111,10 +111,10 @@ ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", U
     - Visuals: Whenever an image from the provided mapping is relevant, insert it using standard markdown: ![Caption](URL). Ensure the URL matches EXACTLY.
     - References: You MUST provide a "References" section at the end of the chapter using ${referenceStyle} style.`;
 
-    // 5. Call AI (Gemini 1.5 Flash)
+    // 5. Call AI (DeepSeek)
     const aiResponse = await callAI(systemPrompt, {
-      provider: 'gemini',
-      maxTokens: 12000, // Large context for detailed chapter
+      provider: 'deepseek',
+      maxTokens: 8000,
       temperature: 0.6
     });
 

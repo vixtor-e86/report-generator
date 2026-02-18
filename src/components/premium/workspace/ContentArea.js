@@ -214,26 +214,6 @@ export default function ContentArea({
             </div>
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <div style={{ position: 'relative' }}>
-                <button 
-                  onClick={() => setShowHistory(!showHistory)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
-                >
-                  <Icons.Activity /> History
-                </button>
-                {showHistory && (
-                  <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '300px', background: 'white', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb', zIndex: 100, padding: '12px' }}>
-                    <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase' }}>Recent Generations</h4>
-                    {history.length > 0 ? history.map(v => (
-                      <div key={v.id} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #f3f4f6', marginBottom: '8px', cursor: 'pointer' }} onClick={() => restoreHistory(v)}>
-                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#111827' }}>{new Date(v.created_at).toLocaleString()}</div>
-                        <div style={{ fontSize: '11px', color: '#6b7280' }}>Model: {v.model_used}</div>
-                      </div>
-                    )) : <p style={{ fontSize: '12px', color: '#9ca3af', textAlign: 'center', margin: '20px 0' }}>No history yet.</p>}
-                  </div>
-                )}
-              </div>
-
               <button 
                 onClick={() => setShowImageSelector(true)}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
@@ -275,7 +255,33 @@ export default function ContentArea({
                 }}
               />
             ) : (
-              <div className="markdown-preview" style={{ padding: '40px', fontSize: '16px', lineHeight: '1.8', color: '#111827' }}>
+              <div className="markdown-preview" style={{ padding: '60px', minHeight: '700px' }}>
+                <style>{`
+                  .markdown-preview {
+                    color: #1f2937;
+                    line-height: 1.8;
+                    font-family: 'Inter', system-ui, sans-serif;
+                  }
+                  .markdown-preview h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1.5rem; color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; }
+                  .markdown-preview h2 { font-size: 1.8rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1.2rem; color: #111827; }
+                  .markdown-preview h3 { font-size: 1.4rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; color: #374151; }
+                  .markdown-preview p { margin-bottom: 1.5rem; text-align: justify; }
+                  .markdown-preview ul, .markdown-preview ol { margin-bottom: 1.5rem; padding-left: 1.5rem; }
+                  .markdown-preview li { margin-bottom: 0.5rem; }
+                  .markdown-preview blockquote { border-left: 4px solid #e5e7eb; padding-left: 1rem; color: #6b7280; font-style: italic; margin: 1.5rem 0; }
+                  .markdown-preview img { 
+                    display: block;
+                    max-width: 600px; 
+                    height: auto; 
+                    margin: 2rem auto; 
+                    border-radius: 12px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                    border: 1px solid #e5e7eb;
+                  }
+                  .markdown-preview table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+                  .markdown-preview th, .markdown-preview td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; }
+                  .markdown-preview th { background: #f9fafb; font-weight: 600; }
+                `}</style>
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {localContent || '*No content yet.*'}
                 </ReactMarkdown>
@@ -423,79 +429,87 @@ export default function ContentArea({
 
   // History View
   if (activeView === 'history') {
-    const historyData = [
-      { id: 1, chapter: 'Introduction to AI', tool: 'Full Generation', date: '2023-10-25 14:30', tokens: 15000, status: 'Completed' },
-      { id: 2, chapter: 'Machine Learning Basics', tool: 'Content Edit', date: '2023-10-24 09:15', tokens: 500, status: 'Completed' },
-      { id: 3, chapter: 'Data Processing', tool: 'Literature Search', date: '2023-10-23 16:45', tokens: 1200, status: 'Completed' },
-      { id: 4, chapter: 'Model Training', tool: 'Grammar Check', date: '2023-10-22 11:20', tokens: 300, status: 'Completed' },
-      { id: 5, chapter: 'Evaluation Metrics', tool: 'Citation Manager', date: '2023-10-20 10:00', tokens: 5000, status: 'Completed' },
-    ];
+    // Collect history for ALL chapters in this project
+    const [allHistory, setAllHistory] = useState([]);
+    const [loadingHistory, setLoadingLoadingHistory] = useState(true);
+
+    useEffect(() => {
+      async function fetchAllHistory() {
+        const { data } = await supabase
+          .from('premium_chapter_history')
+          .select('*, premium_chapters(title, chapter_number)')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        
+        // Filter locally by project_id since joining is complex across tables
+        // Actually, we can just fetch where chapter_id IN (project chapters)
+        const chapterIds = chapters.map(c => c.id);
+        const projectHistory = data?.filter(h => chapterIds.includes(h.chapter_id)) || [];
+        
+        setAllHistory(projectHistory);
+        setLoadingLoadingHistory(false);
+      }
+      fetchAllHistory();
+    }, [chapters]);
 
     return (
       <div className="content-area">
         <div className="content-layout-wrapper">
           <div style={{ marginBottom: '40px', width: '100%' }}>
             <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>Project History</h1>
-            <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>Track your chapter generation and token usage.</p>
-          </div>
-
-          {/* Usage Overview - Responsive Grid */}
-          <div className="history-stats-grid">
-            <div className="stat-card">
-              <span className="stat-label">Total Chapters Generated</span>
-              <span className="stat-value">24</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Images Added</span>
-              <span className="stat-value">18</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Tokens Spent</span>
-              <span className="stat-value">22,000</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Tokens Remaining</span>
-              <span className="stat-value">478k</span>
-            </div>
+            <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>View and restore previous AI-generated versions.</p>
           </div>
 
           {/* Activity Log */}
           <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%' }}>
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e7eb' }}>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Recent Chapter Activities</h3>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Recent AI Generations</h3>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '14px' }}>
                 <thead>
                   <tr style={{ background: '#f9fafb', textAlign: 'left' }}>
                     <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Chapter</th>
-                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Last Action</th>
+                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Instructions Used</th>
                     <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Date</th>
-                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Tokens Used</th>
-                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600' }}>Status</th>
+                    <th style={{ padding: '16px 24px', color: '#6b7280', fontWeight: '600', textAlign: 'right' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {historyData.map((item, index) => (
-                    <tr key={item.id} style={{ borderBottom: index < historyData.length - 1 ? '1px solid #e5e7eb' : 'none' }}>
-                      <td style={{ padding: '16px 24px', fontWeight: '500', color: '#111827' }}>{item.chapter}</td>
-                      <td style={{ padding: '16px 24px', color: '#4b5563' }}>{item.tool}</td>
-                      <td style={{ padding: '16px 24px', color: '#6b7280' }}>{item.date}</td>
-                      <td style={{ padding: '16px 24px', color: '#6b7280' }}>{item.tokens.toLocaleString()}</td>
-                      <td style={{ padding: '16px 24px' }}>
-                        <span style={{ 
-                          background: '#def7ec', 
-                          color: '#03543f', 
-                          padding: '4px 10px', 
-                          borderRadius: '100px', 
-                          fontSize: '12px', 
-                          fontWeight: '600' 
-                        }}>
-                          {item.status}
+                  {allHistory.length > 0 ? allHistory.map((item, index) => (
+                    <tr key={item.id} style={{ borderBottom: index < allHistory.length - 1 ? '1px solid #e5e7eb' : 'none' }}>
+                      <td style={{ padding: '16px 24px', fontWeight: '600', color: '#111827' }}>
+                        Ch. {item.premium_chapters?.chapter_number}: {item.premium_chapters?.title}
+                      </td>
+                      <td style={{ padding: '16px 24px', color: '#4b5563' }}>
+                        <span style={{ fontSize: '12px', fontStyle: 'italic' }}>
+                          {item.prompt_used || 'Standard generation'}
                         </span>
                       </td>
+                      <td style={{ padding: '16px 24px', color: '#6b7280' }}>
+                        {new Date(item.created_at).toLocaleString()}
+                      </td>
+                      <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                        <button 
+                          onClick={() => {
+                            if (confirm(`Restore this version to ${item.premium_chapters?.title}? This will overwrite current changes.`)) {
+                              onUpdateChapter(item.chapter_id, item.content);
+                              alert('Version restored! Switch to the chapter to see changes.');
+                            }
+                          }}
+                          style={{ background: '#6366f1', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                        >
+                          Restore
+                        </button>
+                      </td>
                     </tr>
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan="4" style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
+                        {loadingHistory ? 'Loading project history...' : 'No AI generation history found for this project.'}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
