@@ -15,6 +15,7 @@ import GenerationModal from '@/components/premium/modals/GenerationModal';
 import ResearchSearchModal from '@/components/premium/modals/ResearchSearchModal';
 import VisualToolsModal from '@/components/premium/modals/VisualToolsModal';
 import ModifyModal from '@/components/premium/modals/ModifyModal';
+import LoadingModal from '@/components/premium/modals/LoadingModal';
 import '@/styles/workspace.css';
 
 function WorkspaceContent() {
@@ -50,6 +51,8 @@ function WorkspaceContent() {
   const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isVisualToolsModalOpen, setIsVisualToolsModalOpen] = useState(false);
+  const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+  const [globalLoadingText, setGlobalLoadingText] = useState('Processing...');
   const [previewFile, setPreviewFile] = useState(null);
 
   const { uploadFile, uploading, deleteFile, deleting } = useFileUpload(projectId);

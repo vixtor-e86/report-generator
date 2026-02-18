@@ -21,12 +21,13 @@ export async function POST(request) {
       .insert({
         project_id: projectId,
         user_id: userId,
-        file_url: imageUrl, // This could be the mermaid.ink URL or the Flux base64 (though base64 in DB is bad)
+        file_url: imageUrl, 
         file_key: `visuals/${projectId}/${Date.now()}.png`,
         original_name: name || 'Generated Visual',
         file_type: 'image/png',
-        size_bytes: 0, // Unknown
-        purpose: 'project_image'
+        size_bytes: 0, 
+        purpose: 'project_image',
+        caption: name // ✅ Using the name (which contains the prompt) as the default caption
       })
       .select()
       .single();
