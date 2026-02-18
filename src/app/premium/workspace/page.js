@@ -262,13 +262,18 @@ function WorkspaceContent() {
         }
       }));
 
-      // Refresh chapters list in sidebar
+      // Refresh chapters list while preserving existing content and IDs
       if (newStructure.chapters) {
-        setChapters(newStructure.chapters.map(ch => ({
-          id: ch.number || ch.chapter,
-          title: ch.title,
-          content: chapters.find(existing => (existing.id === (ch.number || ch.chapter)))?.content || ''
-        })));
+        setChapters(prevChapters => newStructure.chapters.map(ch => {
+          const chNum = ch.number || ch.chapter;
+          const existing = prevChapters.find(p => p.number === chNum);
+          return {
+            id: existing?.id || chNum,
+            number: chNum,
+            title: ch.title,
+            content: existing?.content || ''
+          };
+        }));
       }
 
       alert('Template updated successfully!');

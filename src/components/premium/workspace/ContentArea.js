@@ -38,7 +38,6 @@ export default function ContentArea({
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [localContent, setLocalContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [chapterHistory, setChapterHistory] = useState([]);
   const [showImageSelector, setShowImageSelector] = useState(false);
   const [workspaceMode, setWorkspaceMode] = useState('editor');
   const [allProjectHistory, setAllHistory] = useState([]);
@@ -292,7 +291,6 @@ export default function ContentArea({
                 </div>
               </div>
             ))}
-            <button onClick={() => onUpdateTemplate(projectData.template?.structure)} style={{ background: '#111827', color: 'white', padding: '12px 24px', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer' }}>Save All Changes</button>
           </div>
           <EditTemplateModal chapter={editingTemplate} isOpen={!!editingTemplate} onClose={() => setEditingTemplate(null)} onSave={handleSaveChapterTemplate} />
         </div>
@@ -315,6 +313,26 @@ export default function ContentArea({
             <ActionCard icon={<Icons.PieChart />} title="Data Analysis" desc="Compute insights with Wolfram Alpha." />
             <ActionCard icon={<Icons.Shield />} title="Plagiarism Check" desc="Verify originality with Copyscape." />
             <ActionCard icon={<Icons.Code />} title="Translate" desc="Multi-language support via DeepL." />
+          </div>
+
+          <div className="how-it-works-section" style={{ marginTop: '48px', textAlign: 'left', maxWidth: '100%' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '24px', color: '#111827' }}>How W3 Writelab Empowers Your Research</h2>
+            <div className="feature-explanation" style={{ marginBottom: '32px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>🎨 AI-Powered Technical Visuals</h3>
+              <p style={{ color: '#4b5563', lineHeight: '1.6' }}>Visualize complex systems and concepts instantly. Our <strong>Diagram Studio</strong> uses AI to architect Mermaid.js flowcharts, while our <strong>Flux.1</strong> integration generates high-fidelity conceptual illustrations.</p>
+            </div>
+            <div className="feature-explanation" style={{ marginBottom: '32px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>📚 Smart Citation Management</h3>
+              <p style={{ color: '#4b5563', lineHeight: '1.6' }}>Never worry about formatting citations again. Our integration with <strong>Semantic Scholar</strong> allows you to search for academic papers directly within the workspace and automatically generate citations.</p>
+            </div>
+            <div className="feature-explanation" style={{ marginBottom: '32px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>✍️ Intelligent Writing Assistant</h3>
+              <p style={{ color: '#4b5563', lineHeight: '1.6' }}>Analyze your writing style, tone, and clarity with <strong>LanguageTool</strong>. It provides real-time suggestions to improve sentence structure and academic vocabulary.</p>
+            </div>
+            <div className="feature-explanation" style={{ marginBottom: '32px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>📊 Data-Driven Insights</h3>
+              <p style={{ color: '#4b5563', lineHeight: '1.6' }}>Perform complex calculations or find statistical data with <strong>Wolfram Alpha</strong>. Generate charts, solve equations, and access curated knowledge effortlessly.</p>
+            </div>
           </div>
         </div>
       </div>
