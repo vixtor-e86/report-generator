@@ -21,16 +21,25 @@ export async function POST(request) {
         const base64Data = imageUrl.split(',')[1];
         const buffer = Buffer.from(base64Data, 'base64');
 
+        const bucketName = process.env.R2_BUCKET_NAME;
+        if (!bucketName) throw new Error('R2_BUCKET_NAME is not configured');
+
         await r2Client.send(new PutObjectCommand({
-          Bucket: process.env.R2_BUCKET_NAME,
+          Bucket: bucketName,
           Key: fileKey,
           Body: buffer,
           ContentType: 'image/png',
         }));
 
-        // Get the public URL if configured, otherwise use the key
+        // Get the public URL if configured
         const publicUrl = getPublicUrl(fileKey);
-        finalImageUrl = publicUrl || fileKey;
+        if (!publicUrl) {
+           // If no public domain, we might need to use a different way to access it
+           // For now, let's ensure we don't save the base64
+           finalImageUrl = `https://${bucketName}.${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${fileKey}`;
+        } else {
+           finalImageUrl = publicUrl;
+        }
       } catch (uploadError) {
         console.error('R2 Upload Error:', uploadError);
         return NextResponse.json({ error: 'Failed to upload generated image to storage' }, { status: 500 });
