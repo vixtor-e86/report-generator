@@ -436,30 +436,72 @@ function WorkspaceContent() {
       {/* Global Print Styles */}
       <style jsx global>{`
         @media print {
+          /* Reset for multi-page support */
+          html, body {
+            height: auto !important;
+            overflow: visible !important;
+          }
+
+          /* Hide UI elements */
           body * {
             visibility: hidden;
           }
+
+          /* Show the specific print area */
           .premium-print-area, .premium-print-area * {
             visibility: visible;
           }
+
+          /* Ensure parents don't clip content */
+          .workspace, 
+          .main-workspace, 
+          .workspace-content, 
+          .content-area, 
+          .content-layout-wrapper {
+            display: block !important;
+            height: auto !important;
+            overflow: visible !important;
+            position: static !important;
+            width: 100% !important;
+          }
+
+          /* Reset positioning for the content specifically */
           .premium-print-area {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
+            min-height: auto !important;
+            height: auto !important;
             padding: 0 !important;
             margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
             background: white !important;
           }
+
+          /* Professional typography for print */
+          .premium-print-area p {
+            orphans: 3;
+            widows: 3;
+          }
+
           img {
             max-width: 100% !important;
             height: auto !important;
+            display: block !important;
+            margin: 20px auto !important;
             page-break-inside: avoid;
           }
-          h1, h2, h3 { page-break-after: avoid; }
-          p, li { page-break-inside: avoid; }
+
+          h1, h2, h3 { 
+            page-break-after: avoid; 
+            color: black !important;
+          }
+          
+          p, li { 
+            page-break-inside: auto; 
+          }
         }
       `}</style>
     </div>
