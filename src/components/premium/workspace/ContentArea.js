@@ -32,14 +32,17 @@ export default function ContentArea({
   onUpdateChapter,
   onUpdateTemplate,
   onVisualToolsClick,
-  images = []
+  images = [],
+  workspaceMode = 'editor',
+  setWorkspaceMode
 }) {
   // 1. ALL HOOKS AT TOP LEVEL
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [localContent, setLocalContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [chapterHistory, setChapterHistory] = useState([]);
   const [showImageSelector, setShowImageSelector] = useState(false);
-  const [workspaceMode, setWorkspaceMode] = useState('editor');
+  // workspaceMode moved to props
   const [allProjectHistory, setAllHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 }); // Added missing state
@@ -282,7 +285,7 @@ export default function ContentArea({
                 }}
               />
             ) : (
-              <div className="markdown-preview" style={{ padding: '60px', minHeight: '700px' }}>
+              <div className="markdown-preview premium-print-area" style={{ padding: '60px', minHeight: '700px' }}>
                 <style>{`
                   .markdown-preview { color: #1f2937; line-height: 1.8; font-family: 'Inter', system-ui, sans-serif; }
                   .markdown-preview h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1.5rem; color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; }

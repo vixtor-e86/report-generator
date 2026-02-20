@@ -53,6 +53,7 @@ function WorkspaceContent() {
   const [isVisualToolsModalOpen, setIsVisualToolsModalOpen] = useState(false);
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const [globalLoadingText, setGlobalLoadingText] = useState('Processing...');
+  const [workspaceMode, setWorkspaceMode] = useState('editor');
   const [previewFile, setPreviewFile] = useState(null);
 
   const { uploadFile, uploading, deleteFile, deleting } = useFileUpload(projectId);
@@ -63,6 +64,14 @@ function WorkspaceContent() {
     } else {
       setIsGenerationModalOpen(true);
     }
+  };
+
+  const handlePrint = () => {
+    if (!activeChapter?.content) return;
+    setWorkspaceMode('preview');
+    setTimeout(() => {
+      window.print();
+    }, 500);
   };
 
   // Fetch Project & Assets on Load
@@ -76,7 +85,6 @@ function WorkspaceContent() {
     if (!user) return;
     setCurrentUser(user);
 
-    // 1. Fetch Project Details (including Template)
     const { data: project, error: pError } = await supabase
       .from('premium_projects')
       .select('*, custom_templates(*)')
@@ -102,7 +110,6 @@ function WorkspaceContent() {
     if (profile) setUserProfile(profile);
     setProjectStorageUsed(project.storage_used || 0);
 
-    // 1.5 Fetch Chapter Content
     const { data: chapterContent } = await supabase
       .from('premium_chapters')
       .select('*')
@@ -110,17 +117,17 @@ function WorkspaceContent() {
 
     if (project.custom_templates?.structure?.chapters) {
       setChapters(project.custom_templates.structure.chapters.map(ch => {
-        const existing = chapterContent?.find(cc => cc.chapter_number === (ch.number || ch.chapter));
+        const chNum = ch.number || ch.chapter;
+        const existing = chapterContent?.find(cc => cc.chapter_number === chNum);
         return {
-          id: existing?.id || ch.number || ch.chapter, // Use DB ID if available
-          number: ch.number || ch.chapter,
+          id: existing?.id || chNum,
+          number: chNum,
           title: ch.title,
           content: existing?.content || '' 
         };
       }));
     }
 
-    // 2. Fetch Project Assets
     const { data: assets } = await supabase
       .from('premium_assets')
       .select('*')
@@ -140,7 +147,6 @@ function WorkspaceContent() {
       setFiles(process(loadedResearchFiles));
     }
 
-    // 3. Fetch Research Papers
     const { data: papers } = await supabase
       .from('premium_research_papers')
       .select('*')
@@ -154,7 +160,6 @@ function WorkspaceContent() {
     loadWorkspaceData();
     if (window.innerWidth >= 1024) setIsRightSidebarOpen(true);
 
-    // ✅ Real-time subscription for premium project updates (Tokens, etc.)
     const channel = supabase
       .channel(`premium-project-updates-${projectId}`)
       .on(
@@ -166,7 +171,6 @@ function WorkspaceContent() {
           filter: `id=eq.${projectId}`
         },
         (payload) => {
-          console.log('Real-time premium project update:', payload.new);
           setProjectData(prev => ({
             ...prev,
             ...payload.new
@@ -176,7 +180,6 @@ function WorkspaceContent() {
       )
       .subscribe();
 
-    // ✅ Real-time subscription for chapter updates
     const chaptersChannel = supabase
       .channel(`premium-chapters-updates-${projectId}`)
       .on(
@@ -188,7 +191,6 @@ function WorkspaceContent() {
           filter: `project_id=eq.${projectId}`
         },
         (payload) => {
-          console.log('Real-time chapter update:', payload);
           setChapters(prev => prev.map(ch => {
             if (ch.number === payload.new.chapter_number) {
               return {
@@ -210,8 +212,8 @@ function WorkspaceContent() {
     };
   }, [projectId]);
 
-  const handleUpload = async (file, purpose = 'general') => {
-    const asset = await uploadFile(file, purpose);
+  const handleUpload = async (file, purpose = 'general', folder = null, caption = null) => {
+    const asset = await uploadFile(file, purpose, folder, caption);
     if (asset) {
       setProjectStorageUsed(prev => prev + (asset.size_bytes || 0));
       const processedAsset = { ...asset, src: asset.file_url, name: asset.original_name };
@@ -227,7 +229,6 @@ function WorkspaceContent() {
 
   const handleDelete = async (file) => {
     if (!confirm('Are you sure you want to delete this file?')) return;
-
     const success = await deleteFile(file.file_key, file.id);
     if (success) {
       setProjectStorageUsed(prev => Math.max(0, prev - (file.size_bytes || 0)));
@@ -245,27 +246,15 @@ function WorkspaceContent() {
     try {
       const templateId = projectData.template?.id;
       if (!templateId) throw new Error('No template linked to this project');
-
       const { error } = await supabase
         .from('custom_templates')
-        .update({ 
-          structure: newStructure,
-          updated_at: new Date().toISOString()
-        })
+        .update({ structure: newStructure, updated_at: new Date().toISOString() })
         .eq('id', templateId);
-
       if (error) throw error;
-
-      // Update local state
       setProjectData(prev => ({
         ...prev,
-        template: {
-          ...prev.template,
-          structure: newStructure
-        }
+        template: { ...prev.template, structure: newStructure }
       }));
-
-      // Refresh chapters list while preserving existing content and IDs
       if (newStructure.chapters) {
         setChapters(prevChapters => newStructure.chapters.map(ch => {
           const chNum = ch.number || ch.chapter;
@@ -278,7 +267,6 @@ function WorkspaceContent() {
           };
         }));
       }
-
       alert('Template updated successfully!');
     } catch (err) {
       console.error('Error updating template:', err);
@@ -308,7 +296,7 @@ function WorkspaceContent() {
           setActiveView(view);
           setIsLeftSidebarOpen(false);
         }}
-        onUpload={(file, purpose) => handleUpload(file, purpose || 'project_image')}
+        onUpload={handleUpload}
         uploading={uploading}
         onDelete={handleDelete}
         deleting={deleting}
@@ -325,6 +313,7 @@ function WorkspaceContent() {
           isRightSidebarOpen={isRightSidebarOpen}
           onToggleLeftSidebar={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
           onGenerate={handleGenerateClick}
+          onPrint={handlePrint}
           activeChapter={activeChapter}
         />
 
@@ -333,7 +322,6 @@ function WorkspaceContent() {
             activeView={activeView}
             projectData={projectData}
             chapters={chapters}
-            images={images}
             onUpdateChapter={(chapterId, content) => {
               setChapters(chapters.map(ch => 
                 ch.id === chapterId ? { ...ch, content } : ch
@@ -341,6 +329,9 @@ function WorkspaceContent() {
             }}
             onUpdateTemplate={handleUpdateTemplate}
             onVisualToolsClick={() => setIsVisualToolsModalOpen(true)}
+            images={images}
+            workspaceMode={workspaceMode}
+            setWorkspaceMode={setWorkspaceMode}
           />
 
           <AnimatePresence>
@@ -441,6 +432,36 @@ function WorkspaceContent() {
         isOpen={isGlobalLoading} 
         loadingText={globalLoadingText} 
       />
+
+      {/* Global Print Styles */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .premium-print-area, .premium-print-area * {
+            visibility: visible;
+          }
+          .premium-print-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: white !important;
+          }
+          img {
+            max-width: 100% !important;
+            height: auto !important;
+            page-break-inside: avoid;
+          }
+          h1, h2, h3 { page-break-after: avoid; }
+          p, li { page-break-inside: avoid; }
+        }
+      `}</style>
     </div>
   );
 }

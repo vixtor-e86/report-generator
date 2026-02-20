@@ -17,9 +17,11 @@ const Icons = {
     isRightSidebarOpen,
     onToggleLeftSidebar,
     onGenerate,
+    onPrint,
     activeChapter
   }) {
     const hasContent = !!activeChapter?.content;
+    const canPrint = !!activeChapter && hasContent;
 
     return (
       <>
@@ -59,7 +61,13 @@ const Icons = {
               <Icons.Edit />
             </button>
             
-            <button className="btn-icon-only" title="Print">
+            <button 
+              className="btn-icon-only" 
+              title="Print Chapter"
+              onClick={onPrint}
+              disabled={!canPrint}
+              style={{ opacity: canPrint ? 1 : 0.4, cursor: canPrint ? 'pointer' : 'not-allowed' }}
+            >
               <Icons.Printer />
             </button>
             
