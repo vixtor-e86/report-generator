@@ -22,7 +22,8 @@ export async function POST(request) {
       
       // Materials
       selectedImages = [],
-      selectedPapers = []
+      selectedPapers = [],
+      skipReferences = false
     } = await request.json();
 
     if (!projectId || chapterNumber === undefined || !userId) {
@@ -75,51 +76,70 @@ export async function POST(request) {
 ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", URL: ${img.file_url}`).join('\n')}`
       : '';
 
-    const paperContext = selectedPapers.length > 0
-      ? `\n\nSpecific References to use:\n${selectedPapers.map(p => `- ${p.title || p.original_name} (Source: ${p.journal || 'Internal'})`).join('\n')}`
+    // Build full bibliographic entries for semantic scholar papers (skipped if user opted out)
+    const paperContext = !skipReferences && selectedPapers.length > 0
+      ? `\n\nPRE-SELECTED SEMANTIC SCHOLAR REFERENCES — MANDATORY CITATION RULES:\nYou MUST cite each of the following papers in the body of this chapter where relevant, AND you MUST list ALL of them verbatim in the References section at the end, formatted in ${referenceStyle} style. Do NOT omit any of them from the References section, even if you did not cite them in text.\n\n${selectedPapers.map((p, idx) => {
+        const authors = Array.isArray(p.authors)
+          ? p.authors.map(a => (typeof a === 'object' ? a.name : a)).filter(Boolean).join(', ')
+          : (p.authors || 'Unknown Author');
+        const year = p.year || 'n.d.';
+        const venue = p.venue || p.journal || 'Unknown Journal';
+        const url = p.url || p.external_url || '';
+        const snippet = p.abstract ? ` Key findings: ${p.abstract.substring(0, 250)}...` : '';
+        return `[SS${idx + 1}] ${authors} (${year}). "${p.title || p.original_name}". ${venue}.${url ? ` Available: ${url}` : ''}${snippet}`;
+      }).join('\n\n')}`
       : '';
 
-    const searchInstruction = (selectedPapers.length < maxReferences)
-      ? `\n\nIMPORTANT: Use your integrated web search capabilities to find and cite at least ${maxReferences - selectedPapers.length} additional REAL academic sources relevant to this topic. Ensure all citations follow the ${referenceStyle} style.`
-      : `\n\nEnsure all citations follow the ${referenceStyle} style.`;
+    const additionalNeeded = maxReferences - selectedPapers.length;
+    const searchInstruction = skipReferences
+      ? ''
+      : additionalNeeded > 0
+        ? `\n\nWEB SEARCH FOR ADDITIONAL REFERENCES: Find and cite ${additionalNeeded} additional REAL academic sources to supplement the pre-selected papers above. STRICT YEAR RESTRICTION: Only use sources published from 2018 to the present (${new Date().getFullYear()}). Do NOT cite any source published before 2018. Verify that each source actually contains content relevant to the specific claim or topic you are citing it for — do not cite a source merely because its title sounds relevant. All citations must follow ${referenceStyle} style.`
+        : `\n\nEnsure all citations follow ${referenceStyle} style.`;
 
     const sectionContext = currentChapterData?.sections 
       ? `\nFocus on these required sections from the template:\n${currentChapterData.sections.map(s => `- ${s}`).join('\n')}`
       : '';
 
-    // 4. Construct Multi-Part Prompt for Gemini 1.5 Flash (Stricter DeepSeek/Gemini instructions)
+    // 4. Construct the generation prompt
     const systemPrompt = `You are an elite academic researcher and engineer specialized in ${project.faculty} (${project.department}).
     Task: Author Chapter ${chapterNumber}: "${chapterTitle || currentChapterData?.title}" for the project "${finalTitle}".
-    
+
     Overall Project Objective: ${finalDescription}
-    
+
     Contextual Details:
     - Components/Tools: ${finalComponents || 'Standard engineering tools'}
     - Research Focus: ${finalResearch || 'Latest industry standards'}
-    
+
     ${sectionContext}
-    
+
     ---
     IMAGE MAPPING (STRICT RULES):
     ${imageContext || 'No images provided for this chapter.'}
-    
+
     1. ONLY use images listed in the "IMAGE MAPPING" above.
-    2. NEVER use external URLs, GitHub links, or placeholder websites. 
+    2. NEVER use external URLs, GitHub links, or placeholder websites.
     3. If no images are mapped, DO NOT include any image tags.
     4. To insert an image, use this EXACT syntax: ![Caption](URL)
     ---
-    
+
     ${paperContext}
     ${searchInstruction}
-    
+
     User Specific Instructions: ${userPrompt || 'Deliver a high-quality, technically accurate academic chapter.'}
-    
+
     Writing Requirements:
     - Language: Formal, objective, technical English.
     - Format: Markdown (## Headings, **bold**, bullet points).
     - Length: Detailed and comprehensive (Target ~2000 words).
     - Visuals: Integrate relevant images from the mapping naturally within the technical explanation.
-    - References: You MUST provide a "References" section at the end of the chapter using ${referenceStyle} style.`;
+    - Citation quality: When citing a source, reference its actual findings, data, or arguments — not merely its title or topic. Each in-text citation must correspond to a specific claim supported by that source.
+    - Currency: If this chapter contains a Bill of Materials, cost estimates, or any pricing — ALL monetary values MUST be expressed in Nigerian Naira (₦). Do not use USD, GBP, or any other currency.
+
+    ${skipReferences
+      ? `---\nNO REFERENCES REQUIRED: Do NOT include any in-text citations, footnotes, or a References/Bibliography section in this chapter. Write as plain technical prose without any citation markers.`
+      : `---\n    REFERENCES SECTION (MANDATORY):\n    At the very end of this chapter, you MUST include a "## References" section.\n    - List EVERY pre-selected Semantic Scholar paper provided above (all [SS#] entries) in ${referenceStyle} format.\n    - Also list any additional sources you cited from your web search.\n    - Do NOT omit any pre-selected paper, even if it was not explicitly cited in the chapter body.\n    - Use only ${referenceStyle} formatting throughout. Do not mix styles.`
+    }`;
 
     // 5. Call AI (DeepSeek)
     const aiResponse = await callAI(systemPrompt, {

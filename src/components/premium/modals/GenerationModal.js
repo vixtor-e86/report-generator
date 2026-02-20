@@ -32,7 +32,8 @@ export default function GenerationModal({
     selectedImages: [],
     selectedPapers: [],
     referenceStyle: 'APA',
-    maxReferences: 10
+    maxReferences: 10,
+    skipReferences: false
   });
 
   // Safe chapter checks
@@ -126,7 +127,8 @@ export default function GenerationModal({
           maxReferences: formData.maxReferences,
           
           selectedImages: selectedImagesData,
-          selectedPapers: selectedPapersData
+          selectedPapers: selectedPapersData,
+          skipReferences: formData.skipReferences
         })
       });
 
@@ -222,16 +224,33 @@ export default function GenerationModal({
 
               {activeTab === 'materials' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Reference Style</label>
-                      <select value={formData.referenceStyle} onChange={(e) => handleInputChange('referenceStyle', e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
-                        {referenceStyles.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                  <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {/* Skip references toggle */}
+                    <div
+                      onClick={() => handleInputChange('skipReferences', !formData.skipReferences)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '10px 14px', borderRadius: '8px', background: formData.skipReferences ? '#fef3c7' : 'white', border: `1px solid ${formData.skipReferences ? '#f59e0b' : '#d1d5db'}`, transition: 'all 0.15s' }}
+                    >
+                      <div style={{ width: '20px', height: '20px', borderRadius: '4px', border: `2px solid ${formData.skipReferences ? '#f59e0b' : '#d1d5db'}`, background: formData.skipReferences ? '#f59e0b' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        {formData.skipReferences && <Icons.Check />}
+                      </div>
+                      <div>
+                        <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: formData.skipReferences ? '#92400e' : '#374151' }}>No references for this chapter</p>
+                        <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: formData.skipReferences ? '#b45309' : '#6b7280' }}>The AI will skip all citations and the References section, even if papers are selected above.</p>
+                      </div>
                     </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Max References to Use</label>
-                      <input type="number" value={formData.maxReferences} onChange={(e) => handleInputChange('maxReferences', parseInt(e.target.value))} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+
+                    {/* Reference style + max references (dimmed when skip is on) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', opacity: formData.skipReferences ? 0.4 : 1, pointerEvents: formData.skipReferences ? 'none' : 'auto', transition: 'opacity 0.15s' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Reference Style</label>
+                        <select value={formData.referenceStyle} onChange={(e) => handleInputChange('referenceStyle', e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
+                          {referenceStyles.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Max References to Use</label>
+                        <input type="number" value={formData.maxReferences} onChange={(e) => handleInputChange('maxReferences', parseInt(e.target.value))} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+                      </div>
                     </div>
                   </div>
 
