@@ -59,7 +59,7 @@ export default function LoadingModal({ isOpen, loadingText = 'Processing...' }) 
                 {loadingText}
               </h3>
               <p style={{ margin: 0, fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-                Please do not close this window or refresh the page. DeepSeek is architecting your academic content.
+                Please do not close this window or refresh the page. AI is architecting your academic content.
               </p>
 
               {/* Progress Pulse */}
