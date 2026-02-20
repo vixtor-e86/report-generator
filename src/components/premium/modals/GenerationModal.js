@@ -33,7 +33,8 @@ export default function GenerationModal({
     selectedPapers: [],
     referenceStyle: 'APA',
     maxReferences: 10,
-    skipReferences: false
+    skipReferences: false,
+    targetWordCount: 2000 // ✅ Added targetWordCount
   });
 
   // Safe chapter checks
@@ -59,7 +60,8 @@ export default function GenerationModal({
           researchBooks: projectData.research_papers_context || '',
           userPrompt: '',
           selectedImages: [],
-          selectedPapers: []
+          selectedPapers: [],
+          targetWordCount: 2000 // Reset to default
         }));
       }
       setGenerating(false);
@@ -125,6 +127,7 @@ export default function GenerationModal({
           userPrompt: formData.userPrompt,
           referenceStyle: formData.referenceStyle,
           maxReferences: formData.maxReferences,
+          targetWordCount: formData.targetWordCount, // ✅ Passed to API
           
           selectedImages: selectedImagesData,
           selectedPapers: selectedPapersData,
@@ -237,6 +240,33 @@ export default function GenerationModal({
                         <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: formData.skipReferences ? '#92400e' : '#374151' }}>No references for this chapter</p>
                         <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: formData.skipReferences ? '#b45309' : '#6b7280' }}>The AI will skip all citations and the References section, even if papers are selected above.</p>
                       </div>
+                    </div>
+
+                    {/* Word Count Slider */}
+                    <div style={{ marginTop: '8px', padding: '12px', background: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <label style={{ fontSize: '13px', fontWeight: '700', color: '#374151' }}>Target Word Count</label>
+                        <span style={{ fontSize: '14px', fontWeight: '800', color: '#6366f1', background: '#eff6ff', padding: '2px 10px', borderRadius: '100px' }}>
+                          ~{formData.targetWordCount.toLocaleString()} words
+                        </span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="1500" 
+                        max="4000" 
+                        step="100" 
+                        value={formData.targetWordCount} 
+                        onChange={(e) => handleInputChange('targetWordCount', parseInt(e.target.value))}
+                        style={{ width: '100%', cursor: 'pointer', accentColor: '#6366f1' }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9ca3af', marginTop: '4px', fontWeight: '600' }}>
+                        <span>Standard (1,500)</span>
+                        <span>Comprehensive (4,000)</span>
+                      </div>
+                      <p style={{ margin: '12px 0 0 0', fontSize: '11px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ color: '#f59e0b' }}>⚠️</span> 
+                        Note: Higher word counts will use more AI tokens.
+                      </p>
                     </div>
 
                     {/* Reference style + max references (dimmed when skip is on) */}

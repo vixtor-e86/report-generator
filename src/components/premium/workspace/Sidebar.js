@@ -261,14 +261,14 @@ export default function Sidebar({
               <span className="upgrade-title">AI Tokens</span>
             </div>
             <span className="token-count">
-              {((projectData?.tokens_used || 0) / 1000).toFixed(0)}k / {((projectData?.tokens_limit || 500000) / 1000).toFixed(0)}k
+              {((projectData?.tokens_used || 0) / 1000).toFixed(0)}k / {((projectData?.tokens_limit || 300000) / 1000).toFixed(0)}k
             </span>
           </div>
           <div className="upgrade-bar">
              <div 
                className="upgrade-progress" 
                style={{ 
-                 width: `${Math.min(((projectData?.tokens_used || 0) / (projectData?.tokens_limit || 500000)) * 100, 100)}%` 
+                 width: `${Math.min(((projectData?.tokens_used || 0) / (projectData?.tokens_limit || 300000)) * 100, 100)}%` 
                }}
              ></div>
           </div>

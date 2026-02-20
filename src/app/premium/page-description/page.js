@@ -174,7 +174,7 @@ function ProjectDescriptionContent() {
             status: 'in_progress',
             tier: 'premium',
             current_chapter: 1,
-            tokens_limit: 500000,
+            tokens_limit: 300000,
             tokens_used: 0,
             payment_status: 'paid',
             amount_paid: 20000,

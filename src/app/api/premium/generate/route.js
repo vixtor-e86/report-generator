@@ -19,6 +19,7 @@ export async function POST(request) {
       userPrompt,
       referenceStyle,
       maxReferences,
+      targetWordCount = 2000,
       
       // Materials
       selectedImages = [],
@@ -60,9 +61,11 @@ export async function POST(request) {
       ch => (ch.number || ch.chapter) === chapterNumber
     );
 
-    // 2. Check Tokens (Approximate 10k limit for high-quality premium chapters)
-    if ((project.tokens_used || 0) + 10000 > (project.tokens_limit || 500000)) {
-      return NextResponse.json({ error: 'Insufficient tokens' }, { status: 403 });
+    // 2. Check Tokens (Dynamic check based on target words)
+    // DeepSeek V3/R1 tokens ≈ 1.5 - 2x word count for technical content + formatting
+    const estimatedTokens = Math.ceil(targetWordCount * 4); 
+    if ((project.tokens_used || 0) + estimatedTokens > (project.tokens_limit || 300000)) {
+      return NextResponse.json({ error: `Insufficient tokens for a ${targetWordCount} word chapter. Please upgrade your limit.` }, { status: 403 });
     }
 
     // 3. Prepare Context Strings (Fallback to project record if not passed in request)
@@ -131,7 +134,7 @@ ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", U
     Writing Requirements:
     - Language: Formal, objective, technical English.
     - Format: Markdown (## Headings, **bold**, bullet points).
-    - Length: Detailed and comprehensive (Target ~2000 words).
+    - Length: Detailed and comprehensive. **TARGET WORD COUNT: ${targetWordCount} words.** Ensure the content is substantive, in-depth, and meets this length requirement.
     - Visuals: Integrate relevant images from the mapping naturally within the technical explanation.
     - Citation quality: When citing a source, reference its actual findings, data, or arguments — not merely its title or topic. Each in-text citation must correspond to a specific claim supported by that source.
     - Currency: If this chapter contains a Bill of Materials, cost estimates, or any pricing — ALL monetary values MUST be expressed in Nigerian Naira (₦). Do not use USD, GBP, or any other currency.

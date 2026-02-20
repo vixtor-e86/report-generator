@@ -22,7 +22,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    if (project.tokens_used + 1000 > (project.tokens_limit || 500000)) {
+    if (project.tokens_used + 1000 > (project.tokens_limit || 300000)) {
       return NextResponse.json({ 
         error: 'Insufficient tokens. Generating a visual requires 1,000 tokens. Please upgrade your limit.' 
       }, { status: 403 });
