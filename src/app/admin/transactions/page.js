@@ -1,6 +1,14 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
 
+const Icons = {
+  Check: ({ className }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+    </svg>
+  )
+};
+
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
