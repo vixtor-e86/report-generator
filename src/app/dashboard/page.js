@@ -70,7 +70,15 @@ export default function Dashboard() {
         .limit(1);
 
       if (unusedPayments && unusedPayments.length > 0) {
-        setPendingPayment(unusedPayments[0]);
+        const payment = unusedPayments[0];
+        const paymentDate = new Date(payment.paid_at);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        // Only set as pending if it was made in the last 7 days
+        if (paymentDate >= sevenDaysAgo) {
+          setPendingPayment(payment);
+        }
       }
 
       setUser(user);
