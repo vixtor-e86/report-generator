@@ -37,23 +37,61 @@ export async function GET(request) {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (email) {
-      // Look up user_id for this exact email first
-      const { data: profile } = await supabaseAdmin
-        .from('user_profiles')
-        .select('id')
-        .eq('email', email)
-        .single();
+    let filterUserId = null;
 
-      if (!profile) {
-        // No user found — return empty array (not an error)
-        return NextResponse.json([]);
+    if (email) {
+      // 1. Search in Auth users (Most reliable)
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+      if (authError) throw authError;
+
+      const user = authData.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+      
+      if (user) {
+        filterUserId = user.id;
+      } else {
+        // 2. Fallback to user_profiles if email is stored there
+        const { data: profile } = await supabaseAdmin
+          .from('user_profiles')
+          .select('id')
+          .eq('email', email)
+          .single();
+        
+        if (profile) filterUserId = profile.id;
       }
 
-      baseQuery = baseQuery.eq('user_id', profile.id);
+      if (!filterUserId) return NextResponse.json([]); // Not found
+      baseQuery = baseQuery.eq('user_id', filterUserId);
     }
 
-    const enriched = await fetchAndEnrich(baseQuery);
+    const { data: transactions, error: txError } = await baseQuery;
+    if (txError) throw txError;
+    if (!transactions || transactions.length === 0) return NextResponse.json([]);
+
+    // Enrich with both Profile (username) and Auth (email)
+    const userIds = [...new Set(transactions.map(tx => tx.user_id))];
+    
+    // Fetch Profiles
+    const { data: profiles } = await supabaseAdmin
+      .from('user_profiles')
+      .select('id, username, email')
+      .in('id', userIds);
+
+    // Fetch Auth Users for Emails (Service Role required)
+    const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+
+    const enriched = transactions.map(tx => {
+      const profile = profiles?.find(p => p.id === tx.user_id);
+      const authUser = authUsers?.users.find(u => u.id === tx.user_id);
+      
+      return {
+        ...tx,
+        user_profiles: {
+          username: profile?.username || 'Student',
+          email: authUser?.email || profile?.email || 'Unknown'
+        }
+      };
+    });
+
     return NextResponse.json(enriched);
 
   } catch (error) {
