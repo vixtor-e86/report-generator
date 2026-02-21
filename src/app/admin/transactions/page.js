@@ -179,7 +179,7 @@ export default function TransactionsPage() {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden w-full">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent"></div>
@@ -195,74 +195,87 @@ export default function TransactionsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+          <div className="w-full overflow-x-auto overflow-y-hidden">
+            <table className="min-w-[1000px] w-full text-left text-sm border-collapse">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider text-xs">User</th>
-                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider text-xs">Amount</th>
-                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider text-xs">Tier</th>
-                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider text-xs">Reference</th>
-                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider text-xs">Date</th>
-                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider text-xs">Status</th>
-                  <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider text-xs">Action</th>
+                  <th className="px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-[11px]">User Account</th>
+                  <th className="px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-[11px]">Payment Details</th>
+                  <th className="px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-[11px]">Plan</th>
+                  <th className="px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-[11px]">TX Reference</th>
+                  <th className="px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-[11px]">Timestamp</th>
+                  <th className="px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-[11px]">Status</th>
+                  <th className="px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-[11px] sticky right-0 bg-slate-50 shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {filtered.map((tx) => {
                   const isPending = tx.status !== 'paid';
                   return (
-                    <tr key={tx.id} className={`transition ${isPending ? 'bg-amber-50/40 hover:bg-amber-50' : 'hover:bg-slate-50'}`}>
+                    <tr key={tx.id} className={`transition group ${isPending ? 'bg-amber-50/20 hover:bg-amber-50/40' : 'hover:bg-slate-50'}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <p className="font-semibold text-slate-900">{tx.user_profiles?.username || 'Unknown'}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{tx.user_profiles?.email}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs uppercase">
+                            {tx.user_profiles?.email?.[0] || 'U'}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900 text-sm">{tx.user_profiles?.username || 'Student'}</p>
+                            <p className="text-xs text-slate-500">{tx.user_profiles?.email}</p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="font-bold text-slate-900">₦{tx.amount?.toLocaleString()}</span>
-                        {tx.currency && <p className="text-xs text-slate-400">{tx.currency}</p>}
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-900 text-sm">₦{tx.amount?.toLocaleString()}</span>
+                          <span className="text-[10px] text-slate-400 font-medium uppercase tracking-tight">{tx.currency || 'NGN'}</span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
-                          tx.tier === 'standard' ? 'bg-indigo-100 text-indigo-700' : 'bg-purple-100 text-purple-700'
+                        <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md ${
+                          tx.tier === 'standard' ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'bg-purple-50 text-purple-700 border border-purple-100'
                         }`}>
-                          {tx.tier ? tx.tier.charAt(0).toUpperCase() + tx.tier.slice(1) : '—'}
+                          {tx.tier || '—'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-slate-500 font-mono text-xs bg-slate-100 px-2 py-1 rounded">
-                          {tx.paystack_reference || tx.flutterwave_reference || tx.reference || '—'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-600 font-mono text-[11px] bg-slate-100 px-2 py-1 rounded select-all">
+                            {tx.paystack_reference || tx.flutterwave_reference || tx.reference || '—'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <p className="text-slate-900">{new Date(tx.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                        <p className="text-xs text-slate-500">{new Date(tx.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p className="text-slate-700 font-medium">{new Date(tx.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</p>
+                        <p className="text-[11px] text-slate-400">{new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {isPending ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block"></span>
-                            Pending
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                            PENDING
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                            Paid
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            PAID
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap sticky right-0 bg-white group-hover:bg-slate-50 transition shadow-[-4px_0_10px_rgba(0,0,0,0.02)]">
                         {isPending ? (
                           <button
                             onClick={() => setConfirmModal({ open: true, transaction: tx })}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition shadow-sm"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 active:scale-95 transition shadow-sm"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                             </svg>
-                            Mark Paid
+                            Verify & Pay
                           </button>
                         ) : (
-                          <span className="text-xs text-slate-400 italic">—</span>
+                          <div className="text-xs text-slate-400 font-medium italic flex items-center gap-1">
+                            <Icons.Check className="w-3 h-3 text-emerald-500" /> Verified
+                          </div>
                         )}
                       </td>
                     </tr>
