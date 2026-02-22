@@ -9,6 +9,7 @@ import ChapterEdit from '@/components/standard/ChapterEdit';
 import ModifyModal from '@/components/standard/ModifyModal';
 import PreviewModal from '@/components/standard/PreviewModal'; // ✅ NEW
 import SuggestionsModal from '@/components/standard/SuggestionsModal';
+import LoadingModal from '@/components/premium/modals/LoadingModal'; // Reusing premium loading modal
 import FeedbackWidget from '@/components/FeedbackWidget';// ✅ NEW
 
 export default function StandardWorkspace({ params }) {
@@ -29,6 +30,8 @@ export default function StandardWorkspace({ params }) {
   const [showPreviewModal, setShowPreviewModal] = useState(false); // ✅ NEW
   const [showSuggestionsModal, setShowSuggestionsModal] = useState(false); // ✅ NEW
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+  const [globalLoadingText, setGlobalLoadingText] = useState('AI is writing your chapter...');
 
   // Load workspace data
   useEffect(() => {
@@ -186,6 +189,9 @@ export default function StandardWorkspace({ params }) {
     if (!currentChapter) return;
 
     setGenerating(true);
+    setGlobalLoadingText(`AI is generating Chapter ${selectedChapter}...`);
+    setIsGlobalLoading(true);
+
     try {
       const response = await fetch('/api/standard/generate', {
         method: 'POST',
@@ -214,6 +220,7 @@ export default function StandardWorkspace({ params }) {
       alert(error.message || 'Failed to generate chapter');
     } finally {
       setGenerating(false);
+      setIsGlobalLoading(false);
     }
   };
 
@@ -224,6 +231,8 @@ export default function StandardWorkspace({ params }) {
 
     setGenerating(true);
     setShowModifyModal(false);
+    setGlobalLoadingText(`AI is modifying Chapter ${selectedChapter}...`);
+    setIsGlobalLoading(true);
 
     try {
       const response = await fetch('/api/standard/regenerate', {
@@ -254,6 +263,7 @@ export default function StandardWorkspace({ params }) {
       alert(error.message || 'Failed to regenerate chapter');
     } finally {
       setGenerating(false);
+      setIsGlobalLoading(false);
     }
   };
 
@@ -406,6 +416,12 @@ export default function StandardWorkspace({ params }) {
       )}
       {/* Feedback Widget */}
       <FeedbackWidget projectId={project.id} userId={user.id} />
+
+      {/* Global Loading Modal */}
+      <LoadingModal 
+        isOpen={isGlobalLoading} 
+        loadingText={globalLoadingText} 
+      />
     </div>
   );
 }
