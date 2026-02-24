@@ -27,12 +27,17 @@ export default function TransactionsPage() {
 
   const isValidEmail = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
 
-  const fetchTransactions = useCallback(async (email = '') => {
+  const fetchTransactions = useCallback(async (searchQuery = '') => {
     setLoading(true);
     try {
-      const url = email
-        ? `/api/admin/transactions?email=${encodeURIComponent(email)}`
-        : '/api/admin/transactions';
+      let url = '/api/admin/transactions';
+      if (searchQuery) {
+        if (isValidEmail(searchQuery)) {
+          url += `?email=${encodeURIComponent(searchQuery)}`;
+        } else {
+          url += `?reference=${encodeURIComponent(searchQuery)}`;
+        }
+      }
       const response = await fetch(url);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to fetch transactions');
@@ -50,8 +55,8 @@ export default function TransactionsPage() {
 
   const handleSearch = () => {
     const trimmed = emailInput.trim();
-    if (!isValidEmail(trimmed)) {
-      setSearchError('Enter a valid full email');
+    if (!trimmed) {
+      setSearchError('Enter an email or reference code');
       return;
     }
     setSearchError('');
@@ -117,20 +122,25 @@ export default function TransactionsPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <input
-              type="email"
+              type="text"
               value={emailInput}
               onChange={(e) => { setEmailInput(e.target.value); setSearchError(''); }}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Search full email..."
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+              placeholder="Search by Email or TX Reference (W3WL...)"
+              className="w-full px-4 py-2.5 border border-slate-400 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-900 font-bold placeholder-slate-500 text-sm outline-none"
             />
           </div>
           <div className="flex gap-2">
             <button onClick={handleSearch} className="flex-1 sm:flex-none px-6 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition">Search</button>
-            {activeEmail && <button onClick={handleClearSearch} className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-200 transition">Clear</button>}
+            {(activeEmail || emailInput) && <button onClick={handleClearSearch} className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-200 transition">Clear</button>}
           </div>
         </div>
         {searchError && <p className="mt-2 text-xs text-red-600 font-bold">{searchError}</p>}
+        {!searchError && (
+          <p className="mt-2 text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+            Supports exact email or Flutterwave/Paystack reference
+          </p>
+        )}
       </div>
 
       {/* Stats & Filters */}
@@ -155,15 +165,16 @@ export default function TransactionsPage() {
                 <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">User Details</th>
                 <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Amount & Plan</th>
                 <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Reference</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date & Time</th>
                 <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Status</th>
                 <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right sticky right-0 bg-slate-50 shadow-l shadow-slate-50">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr><td colSpan="5" className="py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent mx-auto"></div></td></tr>
+                <tr><td colSpan="6" className="py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent mx-auto"></div></td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="5" className="py-20 text-center text-slate-400 text-sm font-medium">No transactions found for this search.</td></tr>
+                <tr><td colSpan="6" className="py-20 text-center text-slate-400 text-sm font-medium">No transactions found for this search.</td></tr>
               ) : filtered.map((tx) => (
                 <tr key={tx.id} className="hover:bg-slate-50/80 transition group">
                   <td className="px-4 py-4 whitespace-nowrap">
@@ -187,6 +198,10 @@ export default function TransactionsPage() {
                     <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded select-all">
                       {tx.paystack_reference || tx.flutterwave_reference || tx.reference}
                     </span>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <p className="text-slate-700 font-bold text-xs">{new Date(tx.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    <p className="text-[10px] text-indigo-600 font-black tracking-widest mt-0.5 uppercase">{new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-center">
                     {tx.status === 'paid' ? (

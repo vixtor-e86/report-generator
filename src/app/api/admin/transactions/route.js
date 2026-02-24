@@ -8,9 +8,14 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
+    const reference = searchParams.get('reference');
 
-    let targetUserId = null;
-    let targetUserEmail = null;
+    let baseQuery = supabaseAdmin
+      .from('payment_transactions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    let filterUserId = null;
 
     if (email) {
       // 1. Search official Auth accounts for this email (Manual Step 1 mirror)
@@ -37,19 +42,13 @@ export async function GET(request) {
       }
 
       if (!targetUserId) return NextResponse.json([]); // Return empty if user not found
-    }
-
-    // 2. Fetch Transactions (Manual Step 2 mirror)
-    let query = supabaseAdmin
-      .from('payment_transactions')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (targetUserId) {
-      query = query.eq('user_id', targetUserId);
+      baseQuery = baseQuery.eq('user_id', targetUserId);
+    } else if (reference) {
+      // Search by any of the possible reference columns
+      baseQuery = baseQuery.or(`paystack_reference.eq.${reference},flutterwave_reference.eq.${reference},reference.eq.${reference}`);
     } else {
-      // Limit to 50 recent if no specific user search
-      query = query.limit(50);
+      // Limit to 50 recent if no specific search
+      baseQuery = baseQuery.limit(50);
     }
 
     const { data: transactions, error: txError } = await query;

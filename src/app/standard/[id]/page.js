@@ -65,13 +65,15 @@ export default function StandardWorkspace({ params }) {
           return;
         }
 
-        // Check access expiration
-        const expiresAt = new Date(projectData.access_expires_at);
-        const now = new Date();
-        if (now > expiresAt) {
-          alert('Your 30-day access to this project has expired');
-          router.push('/dashboard');
-          return;
+        // Check access expiration (Only for FREE tier)
+        if (projectData.tier === 'free') {
+          const expiresAt = new Date(projectData.access_expires_at);
+          const now = new Date();
+          if (now > expiresAt) {
+            alert('Your 30-day access to this project has expired');
+            router.push('/dashboard');
+            return;
+          }
         }
 
         // Fetch chapters
