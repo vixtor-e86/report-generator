@@ -16,6 +16,7 @@ import ResearchSearchModal from '@/components/premium/modals/ResearchSearchModal
 import VisualToolsModal from '@/components/premium/modals/VisualToolsModal';
 import ModifyModal from '@/components/premium/modals/ModifyModal';
 import LoadingModal from '@/components/premium/modals/LoadingModal';
+import PresentationModal from '@/components/premium/modals/PresentationModal';
 import '@/styles/workspace.css';
 
 function WorkspaceContent() {
@@ -51,6 +52,7 @@ function WorkspaceContent() {
   const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isVisualToolsModalOpen, setIsVisualToolsModalOpen] = useState(false);
+  const [isPresentationModalOpen, setIsPresentationModalOpen] = useState(false);
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const [globalLoadingText, setGlobalLoadingText] = useState('Processing...');
   const [workspaceMode, setWorkspaceMode] = useState('editor');
@@ -365,6 +367,7 @@ function WorkspaceContent() {
                   onError={handleError}
                   onSearchClick={() => setIsSearchModalOpen(true)}
                   onVisualToolsClick={() => setIsVisualToolsModalOpen(true)}
+                  onPresentationClick={() => setIsPresentationModalOpen(true)}
                 />
               </>
             )}
@@ -398,6 +401,16 @@ function WorkspaceContent() {
         projectId={projectId}
         userId={currentUser?.id || userProfile?.id}
         onImageSaved={loadWorkspaceData}
+      />
+
+      <PresentationModal
+        isOpen={isPresentationModalOpen}
+        onClose={() => setIsPresentationModalOpen(false)}
+        chapters={chapters}
+        projectId={projectId}
+        userId={currentUser?.id || userProfile?.id}
+        setIsGlobalLoading={setIsGlobalLoading}
+        setGlobalLoadingText={setGlobalLoadingText}
       />
 
       <ModifyModal
