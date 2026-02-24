@@ -31,11 +31,8 @@ export async function POST(request) {
 
     // 2. Prepare content for AI summarization
     const contentToSummarize = chapters.map(ch => 
-      `### CHAPTER ${ch.chapter_number}: ${ch.title}
-${ch.content}`
-    ).join('
-
-');
+      `### CHAPTER ${ch.chapter_number}: ${ch.title}\n${ch.content}`
+    ).join('\n\n');
 
     const systemPrompt = `You are an academic presentation expert. 
     Summarize the following engineering project content into bullet points for a PowerPoint presentation.
