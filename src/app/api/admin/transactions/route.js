@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 // GET — all transactions (paid + pending), newest first
-// Optional query param: ?email=user@example.com
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -18,7 +17,6 @@ export async function GET(request) {
     let targetUserId = null;
 
     if (email) {
-      // 1. Search official Auth accounts for this email (Manual Step 1 mirror)
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
       if (authError) throw authError;
 
@@ -27,23 +25,21 @@ export async function GET(request) {
       if (user) {
         targetUserId = user.id;
       } else {
-        // Fallback: Check user_profiles table
         const { data: profile } = await supabaseAdmin
           .from('user_profiles')
           .select('id, email')
           .eq('email', email.trim())
           .single();
-        
         if (profile) targetUserId = profile.id;
       }
 
-      if (!targetUserId) return NextResponse.json([]); // Return empty if user not found
+      if (!targetUserId) return NextResponse.json([]);
       baseQuery = baseQuery.eq('user_id', targetUserId);
     } else if (reference) {
-      // Search by any of the possible reference columns
-      baseQuery = baseQuery.or(`paystack_reference.eq.${reference},flutterwave_reference.eq.${reference},reference.eq.${reference}`);
+      // NOTE: Based on verify route, flw and paystack references are both 
+      // checked against 'paystack_reference' or 'reference' columns.
+      baseQuery = baseQuery.or(`paystack_reference.eq.${reference},reference.eq.${reference}`);
     } else {
-      // Limit to 50 recent if no specific search
       baseQuery = baseQuery.limit(50);
     }
 
@@ -52,22 +48,17 @@ export async function GET(request) {
 
     if (!transactions || transactions.length === 0) return NextResponse.json([]);
 
-    // 3. Enrich display data
     const uniqueUserIds = [...new Set(transactions.map(tx => tx.user_id))];
-    
-    // Fetch Profiles
     const { data: profiles } = await supabaseAdmin
       .from('user_profiles')
       .select('id, username, email')
       .in('id', uniqueUserIds);
 
-    // Fetch Auth Users for Emails
     const { data: allAuthUsers } = await supabaseAdmin.auth.admin.listUsers();
 
     const enriched = transactions.map(tx => {
       const profile = profiles?.find(p => p.id === tx.user_id);
       const authUser = allAuthUsers?.users.find(u => u.id === tx.user_id);
-      
       return {
         ...tx,
         user_profiles: {
