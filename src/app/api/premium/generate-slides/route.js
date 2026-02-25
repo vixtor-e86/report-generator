@@ -43,28 +43,34 @@ export async function POST(request) {
 
     // 4. Prepare content for AI summarization
     const contentToSummarize = chapters.map(ch => 
-      `### CHAPTER ${ch.chapter_number}: ${ch.title}\n${ch.content || 'No content provided for this chapter.'}`
+      `### CHAPTER ${ch.chapter_number}: ${ch.title}\n${ch.content || ''}`
     ).join('\n\n');
 
     const systemPrompt = `You are an academic presentation expert. 
-    Summarize the following engineering project content into bullet points for a PowerPoint presentation.
+    Summarize the following engineering project content into technical bullet points for a PowerPoint presentation.
     
-    Structure the response as a JSON array of objects, where each object is a slide:
+    Structure the response as a valid JSON object with this EXACT structure:
     {
-      "slides": [
-        { "title": "Slide Title", "bullets": ["Point 1", "Point 2", "Point 3"] }
-      ]
+      "title": "Full Project Title",
+      "subtitle": "A Short Technical Subtitle",
+      "author": "${profile?.full_name || profile?.username || 'Student'}",
+      "institution": "Department of ${project.department}",
+      "sections": [
+        { 
+          "title": "Section Title (e.g. Introduction, Methodology)", 
+          "bullets": ["Bullet point 1", "Bullet point 2", "Max 5 per section"] 
+        }
+      ],
+      "conclusion": {
+        "title": "Conclusion & Future Work",
+        "bullets": ["Key takeaway 1", "Key takeaway 2"]
+      }
     }
     
     Rules:
-    - Max 5-6 bullets per slide.
-    - Keep text concise and technical.
-    - Create a logical flow: Introduction, Objectives, Methodology, Results, Conclusion.
-    - Respond ONLY with the JSON.
-    
-    Project Title: ${project.title}
-    Faculty: ${project.faculty}
-    Author: ${profile?.full_name || profile?.username || 'Student'}
+    - Keep text concise, technical, and academic.
+    - Focus on the main objectives, design, and results.
+    - Return ONLY the JSON object. No markdown formatting.
     
     Content:
     ${contentToSummarize}`;
@@ -73,12 +79,11 @@ export async function POST(request) {
     const aiResponse = await callAI(systemPrompt, {
       provider: 'gemini',
       maxTokens: 4000,
-      temperature: 0.3
+      temperature: 0.2
     });
 
     let slidesData;
     try {
-      // Extract JSON if AI wrapped it in code blocks
       const jsonString = aiResponse.content.replace(/```json/g, '').replace(/```/g, '').trim();
       slidesData = JSON.parse(jsonString);
     } catch (parseError) {
@@ -88,13 +93,7 @@ export async function POST(request) {
 
     return NextResponse.json({ 
       success: true, 
-      slides: slidesData.slides,
-      metadata: {
-        title: project.title,
-        author: profile?.full_name || profile?.username || 'Student',
-        department: project.department,
-        university: 'Academic Institution'
-      }
+      data: slidesData
     });
 
   } catch (error) {
