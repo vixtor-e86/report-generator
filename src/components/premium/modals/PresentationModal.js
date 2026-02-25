@@ -260,11 +260,12 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={onClose} />
       
-      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-white rounded-[40px] shadow-2xl w-full max-w-6xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[750px]">
+      <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} 
+        className="relative bg-white rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col md:flex-row h-[95vh] md:h-[850px]">
         
         {/* Main Workspace */}
-        <div className="flex-1 flex flex-col bg-slate-50 border-r border-slate-100">
-          <div className="p-8 flex justify-between items-center bg-white border-b border-slate-100">
+        <div className="flex-1 flex flex-col bg-slate-50 border-r border-slate-100 overflow-hidden">
+          <div className="p-6 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl"><Icons.Monitor /></div>
               <div>
@@ -275,9 +276,9 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
             <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"><Icons.X /></button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-10 flex flex-col items-center justify-center">
+          <div className="flex-1 overflow-y-auto p-4 md:p-10 flex flex-col items-center">
             {step === 'selection' ? (
-              <div className="w-full max-w-lg space-y-8">
+              <div className="w-full max-w-lg space-y-8 my-auto">
                 <div className="text-center">
                   <h3 className="text-2xl font-black text-slate-900">Choose Presentation Content</h3>
                   <p className="text-slate-500 font-medium mt-2">Select the chapters you've completed to build your defense slides.</p>
@@ -307,24 +308,26 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
                 </button>
               </div>
             ) : (
-              <div className="w-full h-full flex flex-col items-center">
-                <div className="w-full max-w-[700px] aspect-video rounded-[32px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] overflow-hidden relative group border-[12px] border-white">
+              <div className="w-full h-full flex flex-col items-center justify-center py-4">
+                <div className="w-full max-w-[850px] aspect-video rounded-[32px] shadow-[0_48px_80px_-12px_rgba(0,0,0,0.3)] overflow-hidden relative group border-[12px] border-white transition-all duration-500">
                   <SlideRenderer slide={slides[currentIndex]} template={selectedTemplate} />
                   
                   <button onClick={() => setCurrentIndex(p => Math.max(0, p-1))}
-                    className="absolute left-6 top-1/2 -translate-y-1/2 p-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20"><Icons.ChevronLeft /></button>
+                    className="absolute left-6 top-1/2 -translate-y-1/2 p-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20 z-10"><Icons.ChevronLeft /></button>
                   <button onClick={() => setCurrentIndex(p => Math.min(slides.length-1, p+1))}
-                    className="absolute right-6 top-1/2 -translate-y-1/2 p-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20"><Icons.ChevronRight /></button>
+                    className="absolute right-6 top-1/2 -translate-y-1/2 p-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20 z-10"><Icons.ChevronRight /></button>
                 </div>
 
-                <div className="mt-12 flex items-center gap-8">
-                  <button onClick={() => setStep('selection')} className="text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-colors">← Back to selection</button>
-                  <div className="flex gap-2">
+                <div className="mt-10 flex flex-col items-center gap-6">
+                  <div className="flex gap-2.5">
                     {slides.map((_, i) => (
-                      <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentIndex ? 'w-10 bg-slate-900' : 'w-3 bg-slate-200'}`} />
+                      <button key={i} onClick={() => setCurrentIndex(i)} className={`h-2 rounded-full transition-all ${i === currentIndex ? 'w-12 bg-slate-900' : 'w-2 bg-slate-200 hover:bg-slate-300'}`} />
                     ))}
                   </div>
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Slide {currentIndex + 1} / {slides.length}</span>
+                  <div className="flex items-center gap-8">
+                    <button onClick={() => setStep('selection')} className="text-[10px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back to selection</button>
+                    <span className="text-[10px] font-black text-slate-900 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-100 uppercase tracking-widest">Slide {currentIndex + 1} / {slides.length}</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -332,32 +335,34 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
         </div>
 
         {/* Sidebar Controls */}
-        <div className="w-full md:w-80 p-8 flex flex-col bg-white">
-          <div className="mb-10">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Visual Theme</h4>
-            <div className="grid gap-4">
-              {SLIDE_TEMPLATES.map(t => (
-                <button key={t.id} onClick={() => setSelectedTemplate(t)}
-                  className={`group relative p-5 rounded-[24px] border-2 transition-all text-left overflow-hidden ${selectedTemplate.id === t.id ? 'border-slate-900 shadow-xl' : 'border-slate-50 hover:border-slate-200'}`}>
-                  <div className="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20" style={{ backgroundColor: t.primaryColor }} />
-                  <div className="flex items-center gap-4 relative z-10">
-                    <div className="w-10 h-10 rounded-xl shadow-lg flex items-center justify-center text-white" style={{ background: t.primaryColor }}>
-                      <div className="w-4 h-1 bg-white/40 rounded-full" />
+        <div className="w-full md:w-96 flex flex-col bg-white overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-8">
+            <div className="mb-10">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Visual Theme</h4>
+              <div className="grid gap-4">
+                {SLIDE_TEMPLATES.map(t => (
+                  <button key={t.id} onClick={() => setSelectedTemplate(t)}
+                    className={`group relative p-5 rounded-[24px] border-2 transition-all text-left overflow-hidden ${selectedTemplate.id === t.id ? 'border-slate-900 shadow-xl ring-4 ring-slate-50' : 'border-slate-50 hover:border-slate-200'}`}>
+                    <div className="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20" style={{ backgroundColor: t.primaryColor }} />
+                    <div className="flex items-center gap-4 relative z-10">
+                      <div className="w-10 h-10 rounded-xl shadow-lg flex items-center justify-center text-white" style={{ background: t.primaryColor }}>
+                        <div className="w-4 h-1 bg-white/40 rounded-full" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-900 leading-none">{t.name}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-1">{t.theme}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-black text-slate-900 leading-none">{t.name}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-1">{t.theme}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="mt-auto space-y-4 pt-8 border-t border-slate-100">
-            <p className="text-[10px] text-center text-slate-400 font-bold leading-relaxed">Your slides will be exported as a professional PPTX file matching this visual theme.</p>
+          <div className="p-8 bg-slate-50 border-t border-slate-100 space-y-4 shrink-0">
+            <p className="text-[10px] text-center text-slate-400 font-bold leading-relaxed px-2">Your presentation will be exported as a professional PPTX file matching this visual theme.</p>
             <button onClick={handleDownload} disabled={step === 'selection'}
-              className="w-full py-5 bg-slate-900 hover:bg-black disabled:bg-slate-100 disabled:text-slate-300 text-white rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
+              className="w-full py-5 bg-slate-900 hover:bg-black disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
               <Icons.Download /> DOWNLOAD PPTX
             </button>
           </div>
