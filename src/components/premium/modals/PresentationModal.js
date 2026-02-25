@@ -134,31 +134,43 @@ ${data.metadata.university}`, {
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
-          {chapters.map(ch => (
-            <div 
-              key={ch.id} 
-              onClick={() => toggleChapter(ch.number)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '14px 18px', borderRadius: '12px', cursor: 'pointer',
-                border: `2px solid ${selectedChapters.includes(ch.number) ? '#6366f1' : '#f1f5f9'}`,
-                background: selectedChapters.includes(ch.number) ? '#f5f3ff' : 'white',
-                transition: 'all 0.2s'
-              }}
-            >
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>Chapter {ch.number}</span>
-                <span style={{ fontSize: '12px', color: '#64748b' }}>{ch.title}</span>
+          {chapters.map(ch => {
+            const hasContent = ch.content && ch.content.length > 50;
+            return (
+              <div 
+                key={ch.id} 
+                onClick={() => hasContent && toggleChapter(ch.number)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '14px 18px', borderRadius: '12px', 
+                  cursor: hasContent ? 'pointer' : 'not-allowed',
+                  border: `2px solid ${selectedChapters.includes(ch.number) ? '#6366f1' : '#f1f5f9'}`,
+                  background: selectedChapters.includes(ch.number) ? '#f5f3ff' : 'white',
+                  opacity: hasContent ? 1 : 0.5,
+                  transition: 'all 0.2s'
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>Chapter {ch.number}</span>
+                    {hasContent ? (
+                      <span style={{ fontSize: '10px', fontWeight: '800', background: '#dcfce7', color: '#166534', padding: '2px 6px', borderRadius: '4px' }}>READY</span>
+                    ) : (
+                      <span style={{ fontSize: '10px', fontWeight: '800', background: '#f1f5f9', color: '#64748b', padding: '2px 6px', borderRadius: '4px' }}>EMPTY</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '12px', color: '#64748b' }}>{ch.title}</span>
+                </div>
+                <div style={{ 
+                  width: '24px', height: '24px', borderRadius: '50%', 
+                  background: selectedChapters.includes(ch.number) ? '#6366f1' : '#f1f5f9',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
+                }}>
+                  {selectedChapters.includes(ch.number) && <Icons.Check />}
+                </div>
               </div>
-              <div style={{ 
-                width: '24px', height: '24px', borderRadius: '50%', 
-                background: selectedChapters.includes(ch.number) ? '#6366f1' : '#f1f5f9',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-              }}>
-                {selectedChapters.includes(ch.number) && <Icons.Check />}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <button 

@@ -11,27 +11,39 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // 1. Fetch Project & Selected Chapters
-    const { data: project } = await supabaseAdmin
+    // 1. Fetch Project Details
+    const { data: project, error: pError } = await supabaseAdmin
       .from('premium_projects')
-      .select('*, user_profiles(full_name, username, universities(name))')
+      .select('*')
       .eq('id', projectId)
       .single();
 
-    const { data: chapters } = await supabaseAdmin
+    if (pError || !project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // 2. Fetch User Profile
+    const { data: profile } = await supabaseAdmin
+      .from('user_profiles')
+      .select('full_name, username')
+      .eq('id', project.user_id)
+      .single();
+
+    // 3. Fetch Selected Chapters
+    const { data: chapters, error: cError } = await supabaseAdmin
       .from('premium_chapters')
       .select('*')
       .eq('project_id', projectId)
       .in('chapter_number', selectedChapterNumbers)
       .order('chapter_number', { ascending: true });
 
-    if (!chapters || chapters.length === 0) {
-      return NextResponse.json({ error: 'No content found for selected chapters' }, { status: 404 });
+    if (cError || !chapters || chapters.length === 0) {
+      return NextResponse.json({ error: 'No content found for the selected chapters. Please generate them first.' }, { status: 404 });
     }
 
-    // 2. Prepare content for AI summarization
+    // 4. Prepare content for AI summarization
     const contentToSummarize = chapters.map(ch => 
-      `### CHAPTER ${ch.chapter_number}: ${ch.title}\n${ch.content}`
+      `### CHAPTER ${ch.chapter_number}: ${ch.title}\n${ch.content || 'No content provided for this chapter.'}`
     ).join('\n\n');
 
     const systemPrompt = `You are an academic presentation expert. 
@@ -47,22 +59,21 @@ export async function POST(request) {
     Rules:
     - Max 5-6 bullets per slide.
     - Keep text concise and technical.
-    - Create a logical flow: Intro, Objectives, Methodology (if Ch 3 selected), Results, Conclusion.
+    - Create a logical flow: Introduction, Objectives, Methodology, Results, Conclusion.
     - Respond ONLY with the JSON.
     
     Project Title: ${project.title}
     Faculty: ${project.faculty}
-    Author: ${project.user_profiles?.full_name || project.user_profiles?.username}
-    University: ${project.user_profiles?.universities?.name || 'Academic Institution'}
+    Author: ${profile?.full_name || profile?.username || 'Student'}
     
     Content:
     ${contentToSummarize}`;
 
-    // 3. Call Gemini for high-quality summarization
+    // 5. Call Gemini for high-quality summarization
     const aiResponse = await callAI(systemPrompt, {
       provider: 'gemini',
       maxTokens: 4000,
-      temperature: 0.3 // Low temperature for factual consistency
+      temperature: 0.3
     });
 
     let slidesData;
@@ -80,9 +91,9 @@ export async function POST(request) {
       slides: slidesData.slides,
       metadata: {
         title: project.title,
-        author: project.user_profiles?.full_name || project.user_profiles?.username,
+        author: profile?.full_name || profile?.username || 'Student',
         department: project.department,
-        university: project.user_profiles?.universities?.name || 'Academic Institution'
+        university: 'Academic Institution'
       }
     });
 

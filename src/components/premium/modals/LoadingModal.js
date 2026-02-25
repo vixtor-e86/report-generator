@@ -46,12 +46,12 @@ export default function LoadingModal({ isOpen, loadingText = 'Processing...' }) 
                   animate={{ rotate: 360 }}
                   transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
                   style={{
-                    position: 'absolute', inset: 0, border: '4px solid #6366f1',
+                    position: 'absolute', inset: 0, border: '4px solid #0f172a',
                     borderTopColor: 'transparent', borderRadius: '50%'
                   }}
                 />
                 <div style={{
-                  position: 'absolute', inset: '20px', background: '#6366f1', opacity: 0.1, borderRadius: '50%'
+                  position: 'absolute', inset: '20px', background: '#0f172a', opacity: 0.1, borderRadius: '50%'
                 }} />
               </div>
 
@@ -69,7 +69,7 @@ export default function LoadingModal({ isOpen, loadingText = 'Processing...' }) 
                     key={i}
                     animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
                     transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.2 }}
-                    style={{ width: '8px', height: '8px', background: '#6366f1', borderRadius: '50%' }}
+                    style={{ width: '8px', height: '8px', background: '#0f172a', borderRadius: '50%' }}
                   />
                 ))}
               </div>
