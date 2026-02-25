@@ -15,7 +15,7 @@ export async function GET(request) {
       .select('*')
       .order('created_at', { ascending: false });
 
-    let filterUserId = null;
+    let targetUserId = null;
 
     if (email) {
       // 1. Search official Auth accounts for this email (Manual Step 1 mirror)
@@ -26,7 +26,6 @@ export async function GET(request) {
       
       if (user) {
         targetUserId = user.id;
-        targetUserEmail = user.email;
       } else {
         // Fallback: Check user_profiles table
         const { data: profile } = await supabaseAdmin
@@ -35,10 +34,7 @@ export async function GET(request) {
           .eq('email', email.trim())
           .single();
         
-        if (profile) {
-          targetUserId = profile.id;
-          targetUserEmail = profile.email;
-        }
+        if (profile) targetUserId = profile.id;
       }
 
       if (!targetUserId) return NextResponse.json([]); // Return empty if user not found
@@ -51,18 +47,21 @@ export async function GET(request) {
       baseQuery = baseQuery.limit(50);
     }
 
-    const { data: transactions, error: txError } = await query;
+    const { data: transactions, error: txError } = await baseQuery;
     if (txError) throw txError;
 
+    if (!transactions || transactions.length === 0) return NextResponse.json([]);
+
     // 3. Enrich display data
-    // Fetch all profiles for the current batch of transactions
     const uniqueUserIds = [...new Set(transactions.map(tx => tx.user_id))];
+    
+    // Fetch Profiles
     const { data: profiles } = await supabaseAdmin
       .from('user_profiles')
       .select('id, username, email')
       .in('id', uniqueUserIds);
 
-    // Fetch all auth users for emails (to avoid "Unknown")
+    // Fetch Auth Users for Emails
     const { data: allAuthUsers } = await supabaseAdmin.auth.admin.listUsers();
 
     const enriched = transactions.map(tx => {
@@ -86,7 +85,7 @@ export async function GET(request) {
   }
 }
 
-// PATCH — verify payment (Manual Step 3 mirror)
+// PATCH — verify payment
 export async function PATCH(request) {
   try {
     const { transactionId } = await request.json();
@@ -98,7 +97,7 @@ export async function PATCH(request) {
         status: 'paid',
         paid_at: now,
         updated_at: now,
-        verified_at: now // Match webhook behavior
+        verified_at: now
       })
       .eq('id', transactionId)
       .select()

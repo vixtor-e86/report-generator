@@ -17,6 +17,7 @@ import VisualToolsModal from '@/components/premium/modals/VisualToolsModal';
 import ModifyModal from '@/components/premium/modals/ModifyModal';
 import LoadingModal from '@/components/premium/modals/LoadingModal';
 import PresentationModal from '@/components/premium/modals/PresentationModal';
+import HumanizerModal from '@/components/premium/modals/HumanizerModal';
 import '@/styles/workspace.css';
 
 function WorkspaceContent() {
@@ -53,6 +54,7 @@ function WorkspaceContent() {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isVisualToolsModalOpen, setIsVisualToolsModalOpen] = useState(false);
   const [isPresentationModalOpen, setIsPresentationModalOpen] = useState(false);
+  const [isHumanizerModalOpen, setIsHumanizerModalOpen] = useState(false);
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const [globalLoadingText, setGlobalLoadingText] = useState('Processing...');
   const [workspaceMode, setWorkspaceMode] = useState('editor');
@@ -368,6 +370,7 @@ function WorkspaceContent() {
                   onSearchClick={() => setIsSearchModalOpen(true)}
                   onVisualToolsClick={() => setIsVisualToolsModalOpen(true)}
                   onPresentationClick={() => setIsPresentationModalOpen(true)}
+                  onHumanizerClick={() => setIsHumanizerModalOpen(true)}
                 />
               </>
             )}
@@ -411,6 +414,16 @@ function WorkspaceContent() {
         userId={currentUser?.id || userProfile?.id}
         setIsGlobalLoading={setIsGlobalLoading}
         setGlobalLoadingText={setGlobalLoadingText}
+      />
+
+      <HumanizerModal
+        isOpen={isHumanizerModalOpen}
+        onClose={() => setIsHumanizerModalOpen(false)}
+        chapters={chapters}
+        userId={currentUser?.id || userProfile?.id}
+        setIsGlobalLoading={setIsGlobalLoading}
+        setGlobalLoadingText={setGlobalLoadingText}
+        onSaved={loadWorkspaceData}
       />
 
       <ModifyModal

@@ -28,7 +28,8 @@ export default function RightSidebar({
   onError, 
   onSearchClick,
   onVisualToolsClick,
-  onPresentationClick // ✅ Added new prop
+  onPresentationClick,
+  onHumanizerClick // ✅ Added new prop
 }) {
   const [activeTab, setActiveTab] = useState('tools');
 
@@ -104,10 +105,11 @@ export default function RightSidebar({
                 onClick={onSearchClick}
               />
               <ToolItem 
-                icon={<Icons.Edit3 />} 
-                title="LanguageTool" 
-                desc="Grammar, spelling, and style checking."
+                icon={<Icons.User style={{ color: '#4f46e5' }} />} 
+                title="Humanizer Tool" 
+                desc="Bypass detectors and improve flow."
                 action="Use"
+                onClick={onHumanizerClick}
               />
               <ToolItem 
                 icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>} 

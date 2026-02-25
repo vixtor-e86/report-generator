@@ -269,7 +269,7 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl"><Icons.Monitor /></div>
               <div>
-                <h2 className="text-xl font-black text-slate-900 leading-tight">Academic Slide Suite</h2>
+                <h2 className="text-xl font-black text-slate-900 leading-tight">Presentation Builder</h2>
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{step === 'selection' ? 'Select Chapters' : 'Slide Preview & Customization'}</p>
               </div>
             </div>
