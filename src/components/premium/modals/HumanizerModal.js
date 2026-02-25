@@ -32,21 +32,14 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
       const response = await fetch('/api/premium/humanize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chapterId: chapter.id,
-          content: chapter.content,
-          userId: userId
-        })
+        body: JSON.stringify({ chapterId: chapter.id, content: chapter.content, userId: userId })
       });
-
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Humanization failed');
-
       setResults({ original: data.original, humanized: data.humanized });
       setStep('compare');
-    } catch (err) {
-      alert(err.message);
-    } finally {
+    } catch (err) { alert(err.message); }
+    finally {
       setIsGenerating(false);
       setIsGlobalLoading(false);
     }
@@ -57,49 +50,38 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
       setGlobalLoadingText('Updating chapter and creating version history...');
       setIsGlobalLoading(true);
     }
-
     try {
       const response = await fetch('/api/premium/save-edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chapterId: selectedChapterId,
-          content: results.humanized,
-          userId: userId,
-          isAiAction: true 
-        })
+        body: JSON.stringify({ chapterId: selectedChapterId, content: results.humanized, userId: userId, isAiAction: true })
       });
-
       if (!response.ok) throw new Error('Failed to save humanized version');
-
       if (onSaved) onSaved();
       onClose();
       alert('Humanized version saved successfully to history.');
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      if (setIsGlobalLoading) setIsGlobalLoading(false);
-    }
+    } catch (err) { alert(err.message); }
+    finally { if (setIsGlobalLoading) setIsGlobalLoading(false); }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={onClose} />
       
       <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} 
-        className="relative bg-white rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col h-[90vh] md:h-[800px]">
+        className="relative bg-white md:rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col h-full md:h-[90vh] md:max-h-[800px]">
         
         {/* Header */}
-        <div className="p-6 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl">
+        <div className="p-5 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-xl">
               <Icons.User />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900 leading-tight">Humanizer Tool</h2>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Powered by Undetectable AI</p>
+              <h2 className="text-base md:text-xl font-black text-slate-900 leading-tight">Humanizer Tool</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Powered by W3 HUB</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"><Icons.X /></button>
@@ -110,7 +92,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
             <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-10 bg-slate-50 overflow-hidden">
               <div className="w-full max-w-md flex flex-col h-full max-h-[600px] space-y-6">
                 <div className="text-center shrink-0">
-                  <h3 className="text-2xl font-black text-slate-900">Select a Chapter</h3>
+                  <h3 className="text-xl md:text-2xl font-black text-slate-900">Select a Chapter</h3>
                   <p className="text-sm text-slate-500 mt-1">Bypass AI detectors and improve academic readability.</p>
                 </div>
                 
@@ -121,14 +103,14 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
                       const isSelected = selectedChapterId === ch.id;
                       return (
                         <button key={ch.id} disabled={!hasContent} onClick={() => setSelectedChapterId(ch.id)}
-                          className={`flex items-center justify-between p-5 rounded-3xl border-2 transition-all text-left shrink-0 ${
-                            isSelected ? 'border-slate-900 bg-white shadow-xl ring-8 ring-slate-100' : 'border-slate-100 bg-white hover:border-slate-200'
+                          className={`flex items-center justify-between p-4 md:p-5 rounded-2xl md:rounded-3xl border-2 transition-all text-left shrink-0 ${
+                            isSelected ? 'border-slate-900 bg-white shadow-xl ring-4 md:ring-8 ring-slate-100' : 'border-slate-100 bg-white hover:border-slate-200'
                           } ${!hasContent ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
-                          <div>
+                          <div className="flex-1 min-w-0 pr-4">
                             <span className="font-black text-slate-900">Chapter {ch.number}</span>
-                            <p className="text-xs text-slate-400 font-bold truncate max-w-[250px]">{ch.title}</p>
+                            <p className="text-xs text-slate-400 font-bold truncate">{ch.title}</p>
                           </div>
-                          {isSelected && <div className="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-lg"><Icons.Check /></div>}
+                          {isSelected && <div className="w-6 h-6 md:w-8 md:h-8 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-lg shrink-0"><Icons.Check /></div>}
                         </button>
                       );
                     })}
@@ -136,7 +118,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
                 </div>
 
                 <button onClick={handleHumanize} disabled={!selectedChapterId || isProcessing}
-                  className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 shrink-0">
+                  className="w-full py-4 md:py-5 bg-slate-900 hover:bg-black text-white rounded-2xl md:rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 shrink-0">
                   <Icons.Sparkles /> HUMANIZZE CONTENT
                 </button>
               </div>
@@ -145,36 +127,34 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-100 gap-px">
                 {/* Original */}
-                <div className="flex-1 flex flex-col bg-white overflow-hidden">
-                  <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden">
+                  <div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Original Draft</span>
                     <span className="text-[10px] font-bold text-slate-400">{results.original.split(' ').length} Words</span>
                   </div>
-                  <div className="flex-1 p-8 overflow-y-auto text-sm text-slate-400 leading-relaxed font-medium markdown-view opacity-60">
+                  <div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-400 leading-relaxed font-medium markdown-view opacity-60">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{results.original}</ReactMarkdown>
                   </div>
                 </div>
 
                 {/* Humanized */}
-                <div className="flex-1 flex flex-col bg-white overflow-hidden">
-                  <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden">
+                  <div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
                     <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Humanized Version</span>
                     <span className="text-[10px] font-bold text-slate-900">{results.humanized.split(' ').length} Words</span>
                   </div>
-                  <div className="flex-1 p-8 overflow-y-auto text-sm text-slate-900 leading-relaxed font-bold bg-slate-50/30 markdown-view">
+                  <div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-900 leading-relaxed font-bold bg-slate-50/30 markdown-view">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{results.humanized}</ReactMarkdown>
                   </div>
                 </div>
               </div>
 
               {/* Action Bar */}
-              <div className="p-6 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
-                <button onClick={() => setStep('select')} className="text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back / Re-Humanize</button>
-                <div className="flex gap-4">
-                  <button onClick={handleSave} className="px-10 py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-sm shadow-xl transition-all active:scale-95 flex items-center gap-3">
-                    <Icons.Save /> SAVE TO HISTORY
-                  </button>
-                </div>
+              <div className="p-5 md:p-6 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
+                <button onClick={() => setStep('select')} className="text-[9px] md:text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back</button>
+                <button onClick={handleSave} className="px-6 md:px-10 py-3 md:py-4 bg-slate-900 hover:bg-black text-white rounded-xl md:rounded-2xl font-black text-[11px] md:text-sm shadow-xl transition-all active:scale-95 flex items-center gap-3">
+                  <Icons.Save /> SAVE TO HISTORY
+                </button>
               </div>
             </div>
           )}
@@ -186,7 +166,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
           .markdown-view ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
           .custom-scrollbar::-webkit-scrollbar { width: 4px; }
           .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-          .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; borderRadius: 10px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         `}</style>
       </motion.div>
     </div>

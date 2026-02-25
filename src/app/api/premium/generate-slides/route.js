@@ -75,9 +75,9 @@ export async function POST(request) {
     Content:
     ${contentToSummarize}`;
 
-    // 5. Call Gemini for high-quality summarization
+    // 5. Call DeepSeek for high-quality summarization
     const aiResponse = await callAI(systemPrompt, {
-      provider: 'gemini',
+      provider: 'deepseek',
       maxTokens: 4000,
       temperature: 0.2
     });

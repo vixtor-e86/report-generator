@@ -17,7 +17,6 @@ const Icons = {
   Sparkles: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 0 01.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"></path></svg>,
   GraduationCap: (props) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path></svg>,
   User: (props) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>,
-  Calendar: (props) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>,
   Bookmark: (props) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>,
   ArrowRight: (props) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14M12 5l7 7-7 7"></path></svg>,
   CheckCircle2: (props) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>,
@@ -112,68 +111,65 @@ const SlideRenderer = ({ slide, template }) => {
   switch (slide.type) {
     case 'title':
       return (
-        <div style={{ ...commonStyles, backgroundColor: template.primaryColor, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px', textAlign: 'center' }}>
-          <div style={{ position: 'absolute', top: 0, right: 0, width: '200px', height: '200px', borderRadius: '50%', background: template.accentColor, opacity: 0.1, transform: 'translate(30%, -30%)' }} />
-          <div style={{ padding: '16px', background: `${template.accentColor}20`, borderRadius: '16px', marginBottom: '24px' }}>
-            <Icons.GraduationCap style={{ color: template.accentColor, width: '48px', height: '48px' }} />
+        <div style={{ ...commonStyles, backgroundColor: template.primaryColor, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10%', textAlign: 'center' }}>
+          <div style={{ position: 'absolute', top: 0, right: 0, width: '30%', height: '30%', borderRadius: '50%', background: template.accentColor, opacity: 0.1, transform: 'translate(30%, -30%)' }} />
+          <div style={{ padding: '4%', background: `${template.accentColor}20`, borderRadius: '16px', marginBottom: '5%' }}>
+            <Icons.GraduationCap style={{ color: template.accentColor, width: '40px', height: '40px' }} />
           </div>
-          <h1 style={{ fontSize: '32px', fontWeight: '900', color: 'white', textTransform: 'uppercase', marginBottom: '16px', lineHeight: '1.2' }}>{slide.title}</h1>
-          <p style={{ fontSize: '18px', color: template.accentColor, marginBottom: '32px' }}>{slide.subtitle}</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.8)' }}>
-              <Icons.User style={{ width: '16px', height: '16px' }} /> <span style={{ fontSize: '14px', fontWeight: '600' }}>{slide.author}</span>
+          <h1 style={{ fontSize: 'clamp(18px, 4vw, 32px)', fontWeight: '900', color: 'white', textTransform: 'uppercase', marginBottom: '4%', lineHeight: '1.2' }}>{slide.title}</h1>
+          <p style={{ fontSize: 'clamp(12px, 2.5vw, 18px)', color: template.accentColor, marginBottom: '6%' }}>{slide.subtitle}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'rgba(255,255,255,0.8)' }}>
+              <Icons.User style={{ width: '14px', height: '14px' }} /> <span style={{ fontSize: 'clamp(10px, 2vw, 14px)', fontWeight: '600' }}>{slide.author}</span>
             </div>
-            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>{slide.institution}</p>
+            <p style={{ fontSize: 'clamp(10px, 1.8vw, 12px)', color: 'rgba(255,255,255,0.6)' }}>{slide.institution}</p>
           </div>
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', background: template.accentColor }} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4%', background: template.accentColor }} />
         </div>
       );
     case 'section':
       return (
-        <div style={{ ...commonStyles, backgroundColor: template.secondaryColor, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px', textAlign: 'center' }}>
-          <Icons.Bookmark style={{ color: template.accentColor, width: '40px', height: '40px', marginBottom: '16px' }} />
-          <p style={{ fontSize: '14px', fontWeight: '800', color: template.accentColor, textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '16px' }}>{slide.sectionTitle}</p>
-          <h2 style={{ fontSize: '40px', fontWeight: '900', color: 'white', lineHeight: '1.1' }}>{slide.title}</h2>
-          <Icons.ArrowRight style={{ color: template.accentColor, marginTop: '32px' }} className="animate-pulse" />
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', background: template.accentColor }} />
+        <div style={{ ...commonStyles, backgroundColor: template.secondaryColor, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10%', textAlign: 'center' }}>
+          <Icons.Bookmark style={{ color: template.accentColor, width: '32px', height: '32px', marginBottom: '4%' }} />
+          <p style={{ fontSize: 'clamp(10px, 2vw, 14px)', fontWeight: '800', color: template.accentColor, textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '4%' }}>{slide.sectionTitle}</p>
+          <h2 style={{ fontSize: 'clamp(24px, 5vw, 40px)', fontWeight: '900', color: 'white', lineHeight: '1.1' }}>{slide.title}</h2>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4%', background: template.accentColor }} />
         </div>
       );
     case 'conclusion':
       return (
-        <div style={{ ...commonStyles, backgroundColor: template.primaryColor, padding: '40px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-            <Icons.Lightbulb style={{ color: template.accentColor, width: '32px', height: '32px' }} />
-            <div style={{ width: '48px', height: '4px', background: template.accentColor, borderRadius: '2px' }} />
+        <div style={{ ...commonStyles, backgroundColor: template.primaryColor, padding: '8%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3%', marginBottom: '6%' }}>
+            <Icons.Lightbulb style={{ color: template.accentColor, width: '24px', height: '24px' }} />
+            <div style={{ width: '40px', height: '4px', background: template.accentColor, borderRadius: '2px' }} />
           </div>
-          <h2 style={{ fontSize: '32px', fontWeight: '900', color: 'white', marginBottom: '32px' }}>{slide.title}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <h2 style={{ fontSize: 'clamp(20px, 4vw, 32px)', fontWeight: '900', color: 'white', marginBottom: '8%' }}>{slide.title}</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {slide.bullets?.map((b, i) => (
-              <div key={i} style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderLeft: `4px solid ${template.accentColor}`, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Icons.Star style={{ color: template.accentColor, width: '16px', height: '16px' }} />
-                <span style={{ color: '#eee', fontSize: '16px', fontWeight: '500' }}>{b}</span>
+              <div key={i} style={{ padding: '3%', background: 'rgba(255,255,255,0.05)', borderLeft: `3px solid ${template.accentColor}`, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Icons.Star style={{ color: template.accentColor, width: '14px', height: '14px' }} />
+                <span style={{ color: '#eee', fontSize: 'clamp(12px, 2vw, 16px)', fontWeight: '500' }}>{b}</span>
               </div>
             ))}
           </div>
-          <div style={{ position: 'absolute', bottom: '32px', right: '40px', color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: '700' }}>THANK YOU</div>
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8px', background: template.accentColor }} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4%', background: template.accentColor }} />
         </div>
       );
     default:
       return (
-        <div style={{ ...commonStyles, backgroundColor: 'white', padding: '40px' }}>
-          <div style={{ width: '60px', height: '4px', background: template.accentColor, borderRadius: '2px', marginBottom: '16px' }} />
-          <h2 style={{ fontSize: '28px', fontWeight: '900', color: template.primaryColor, marginBottom: '8px', textTransform: 'uppercase' }}>{slide.title}</h2>
-          {slide.subtitle && <p style={{ fontSize: '16px', color: template.secondaryColor, marginBottom: '24px' }}>{slide.subtitle}</p>}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
+        <div style={{ ...commonStyles, backgroundColor: 'white', padding: '8%' }}>
+          <div style={{ width: '10%', height: '4px', background: template.accentColor, borderRadius: '2px', marginBottom: '4%' }} />
+          <h2 style={{ fontSize: 'clamp(18px, 3.5vw, 28px)', fontWeight: '900', color: template.primaryColor, marginBottom: '2%', textTransform: 'uppercase' }}>{slide.title}</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4%' }}>
             {slide.bullets?.map((b, i) => (
-              <div key={i} style={{ padding: '12px 16px', background: i % 2 === 0 ? '#f8fafc' : 'white', borderLeft: `4px solid ${template.accentColor}`, display: 'flex', alignItems: 'start', gap: '12px', borderRadius: '4px' }}>
-                <Icons.CheckCircle2 style={{ color: template.accentColor, width: '18px', height: '18px', marginTop: '2px' }} />
-                <span style={{ color: '#334155', fontSize: '15px', fontWeight: '500', lineHeight: '1.4' }}>{b}</span>
+              <div key={i} style={{ padding: '2% 3%', background: i % 2 === 0 ? '#f8fafc' : 'white', borderLeft: `3px solid ${template.accentColor}`, display: 'flex', alignItems: 'start', gap: '12px', borderRadius: '4px' }}>
+                <Icons.CheckCircle2 style={{ color: template.accentColor, width: '16px', height: '16px', marginTop: '2px' }} />
+                <span style={{ color: '#334155', fontSize: 'clamp(11px, 1.8vw, 14px)', fontWeight: '500', lineHeight: '1.4' }}>{b}</span>
               </div>
             ))}
           </div>
-          <div style={{ position: 'absolute', bottom: '24px', right: '24px', color: '#cbd5e1', fontSize: '12px', fontWeight: '800' }}>{slide.id}</div>
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '6px', background: template.accentColor }} />
+          <div style={{ position: 'absolute', bottom: '4%', right: '4%', color: '#cbd5e1', fontSize: '10px', fontWeight: '800' }}>{slide.id}</div>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4px', background: template.accentColor }} />
         </div>
       );
   }
@@ -195,29 +191,16 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
   const processData = (data) => {
     const slideList = [];
     let counter = 1;
-
-    // 1. Title Slide
     slideList.push({ id: String(counter++), type: 'title', title: data.title, subtitle: data.subtitle, author: data.author, institution: data.institution });
-
-    // 2. Section & Content Slides
     data.sections.forEach((sec, idx) => {
       slideList.push({ id: String(counter++), type: 'section', title: sec.title, sectionTitle: `Section ${idx + 1}` });
-      
       const chunkedBullets = [];
-      for (let i = 0; i < sec.bullets.length; i += 5) {
-        chunkedBullets.push(sec.bullets.slice(i, i + 5));
-      }
-
+      for (let i = 0; i < sec.bullets.length; i += 5) chunkedBullets.push(sec.bullets.slice(i, i + 5));
       chunkedBullets.forEach((bullets, bIdx) => {
         slideList.push({ id: String(counter++), type: 'content', title: sec.title + (chunkedBullets.length > 1 ? ` (${bIdx + 1})` : ''), bullets });
       });
     });
-
-    // 3. Conclusion
-    if (data.conclusion) {
-      slideList.push({ id: String(counter++), type: 'conclusion', title: data.conclusion.title, bullets: data.conclusion.bullets });
-    }
-
+    if (data.conclusion) slideList.push({ id: String(counter++), type: 'conclusion', title: data.conclusion.title, bullets: data.conclusion.bullets });
     return slideList;
   };
 
@@ -227,7 +210,6 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
       setGlobalLoadingText('AI is summarizing content for academic slides...');
       setIsGlobalLoading(true);
     }
-
     try {
       const response = await fetch('/api/premium/generate-slides', {
         method: 'POST',
@@ -236,14 +218,11 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-
-      const processed = processData(data.data);
-      setSlides(processed);
+      setSlides(processData(data.data));
       setStep('preview');
       setCurrentIndex(0);
-    } catch (err) {
-      alert(err.message);
-    } finally {
+    } catch (err) { alert(err.message); }
+    finally {
       setIsGenerating(false);
       if (setIsGlobalLoading) setIsGlobalLoading(false);
     }
@@ -257,20 +236,20 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={onClose} />
       
       <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} 
-        className="relative bg-white rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col md:flex-row h-[95vh] md:h-[850px]">
+        className="relative bg-white md:rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col md:flex-row h-full md:h-[90vh] md:max-h-[850px]">
         
         {/* Main Workspace */}
         <div className="flex-1 flex flex-col bg-slate-50 border-r border-slate-100 overflow-hidden">
-          <div className="p-6 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl"><Icons.Monitor /></div>
+          <div className="p-5 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-xl"><Icons.Monitor /></div>
               <div>
-                <h2 className="text-xl font-black text-slate-900 leading-tight">Presentation Builder</h2>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{step === 'selection' ? 'Select Chapters' : 'Slide Preview & Customization'}</p>
+                <h2 className="text-base md:text-xl font-black text-slate-900 leading-tight">Academic Slide Suite</h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{step === 'selection' ? 'Select Content' : 'Slide Preview'}</p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"><Icons.X /></button>
@@ -278,55 +257,55 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
 
           <div className="flex-1 overflow-y-auto p-4 md:p-10 flex flex-col items-center">
             {step === 'selection' ? (
-              <div className="w-full max-w-lg space-y-8 my-auto">
+              <div className="w-full max-w-lg space-y-6 md:space-y-8 my-auto">
                 <div className="text-center">
-                  <h3 className="text-2xl font-black text-slate-900">Choose Presentation Content</h3>
-                  <p className="text-slate-500 font-medium mt-2">Select the chapters you've completed to build your defense slides.</p>
+                  <h3 className="text-xl md:text-2xl font-black text-slate-900">Presentation Content</h3>
+                  <p className="text-sm text-slate-500 font-medium mt-2 px-4">Select completed chapters to build your slides.</p>
                 </div>
-                <div className="grid gap-4">
+                <div className="grid gap-3">
                   {chapters.map(ch => {
                     const hasContent = ch.content && ch.content.length > 50;
                     const isSelected = selectedChapters.includes(ch.number);
                     return (
                       <button key={ch.id} disabled={!hasContent} onClick={() => toggleChapter(ch.number)}
-                        className={`flex items-center justify-between p-5 rounded-3xl border-2 transition-all text-left ${isSelected ? 'border-slate-900 bg-white shadow-xl ring-8 ring-slate-100' : 'border-slate-100 bg-white opacity-60'}`}>
-                        <div>
-                          <div className="flex items-center gap-3">
-                            <span className="font-black text-lg text-slate-900">Chapter {ch.number}</span>
-                            {!hasContent && <span className="text-[10px] font-black bg-slate-100 text-slate-400 px-3 py-1 rounded-full">NOT READY</span>}
+                        className={`flex items-center justify-between p-4 md:p-5 rounded-2xl md:rounded-3xl border-2 transition-all text-left ${isSelected ? 'border-slate-900 bg-white shadow-xl ring-4 md:ring-8 ring-slate-100' : 'border-slate-100 bg-white opacity-60'}`}>
+                        <div className="flex-1 min-w-0 pr-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-slate-900">Chapter {ch.number}</span>
+                            {!hasContent && <span className="text-[9px] font-black bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full">NOT READY</span>}
                           </div>
-                          <p className="text-sm text-slate-400 font-bold truncate max-w-[300px] mt-1">{ch.title}</p>
+                          <p className="text-xs text-slate-400 font-bold truncate mt-1">{ch.title}</p>
                         </div>
-                        {isSelected && <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-lg"><Icons.Check /></div>}
+                        {isSelected && <div className="w-6 h-6 md:w-8 md:h-8 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-lg shrink-0"><Icons.Check /></div>}
                       </button>
                     );
                   })}
                 </div>
                 <button onClick={handleGenerate} disabled={isGenerating || selectedChapters.length === 0}
-                  className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
-                  <Icons.Sparkles /> {isGenerating ? 'SUMMARIZING...' : 'BUILD PRESENTATION PREVIEW'}
+                  className="w-full py-4 md:py-5 bg-slate-900 hover:bg-black text-white rounded-2xl md:rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
+                  <Icons.Sparkles /> {isGenerating ? 'SUMMARIZING...' : 'BUILD PREVIEW'}
                 </button>
               </div>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center py-4">
-                <div className="w-full max-w-[850px] aspect-video rounded-[32px] shadow-[0_48px_80px_-12px_rgba(0,0,0,0.3)] overflow-hidden relative group border-[12px] border-white transition-all duration-500">
+              <div className="w-full h-full flex flex-col items-center justify-center py-2 md:py-4">
+                <div className="w-full max-w-[850px] aspect-video rounded-2xl md:rounded-[32px] shadow-2xl overflow-hidden relative group border-4 md:border-[12px] border-white transition-all duration-500 bg-white">
                   <SlideRenderer slide={slides[currentIndex]} template={selectedTemplate} />
                   
                   <button onClick={() => setCurrentIndex(p => Math.max(0, p-1))}
-                    className="absolute left-6 top-1/2 -translate-y-1/2 p-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20 z-10"><Icons.ChevronLeft /></button>
+                    className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 p-2 md:p-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20 z-10"><Icons.ChevronLeft /></button>
                   <button onClick={() => setCurrentIndex(p => Math.min(slides.length-1, p+1))}
-                    className="absolute right-6 top-1/2 -translate-y-1/2 p-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20 z-10"><Icons.ChevronRight /></button>
+                    className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 p-2 md:p-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20 z-10"><Icons.ChevronRight /></button>
                 </div>
 
-                <div className="mt-10 flex flex-col items-center gap-6">
-                  <div className="flex gap-2.5">
+                <div className="mt-6 md:mt-10 flex flex-col items-center gap-4 md:gap-6">
+                  <div className="flex gap-1.5 md:gap-2.5">
                     {slides.map((_, i) => (
-                      <button key={i} onClick={() => setCurrentIndex(i)} className={`h-2 rounded-full transition-all ${i === currentIndex ? 'w-12 bg-slate-900' : 'w-2 bg-slate-200 hover:bg-slate-300'}`} />
+                      <button key={i} onClick={() => setCurrentIndex(i)} className={`h-1.5 md:h-2 rounded-full transition-all ${i === currentIndex ? 'w-8 md:w-12 bg-slate-900' : 'w-1.5 md:w-2 bg-slate-200 hover:bg-slate-300'}`} />
                     ))}
                   </div>
-                  <div className="flex items-center gap-8">
-                    <button onClick={() => setStep('selection')} className="text-[10px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back to selection</button>
-                    <span className="text-[10px] font-black text-slate-900 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-100 uppercase tracking-widest">Slide {currentIndex + 1} / {slides.length}</span>
+                  <div className="flex items-center gap-4 md:gap-8">
+                    <button onClick={() => setStep('selection')} className="text-[9px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back</button>
+                    <span className="text-[10px] font-black text-slate-900 bg-white px-3 md:px-4 py-1.5 md:py-2 rounded-full shadow-sm border border-slate-100 uppercase tracking-widest">Slide {currentIndex + 1} / {slides.length}</span>
                   </div>
                 </div>
               </div>
@@ -335,34 +314,32 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
         </div>
 
         {/* Sidebar Controls */}
-        <div className="w-full md:w-96 flex flex-col bg-white overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-8">
-            <div className="mb-10">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Visual Theme</h4>
-              <div className="grid gap-4">
-                {SLIDE_TEMPLATES.map(t => (
-                  <button key={t.id} onClick={() => setSelectedTemplate(t)}
-                    className={`group relative p-5 rounded-[24px] border-2 transition-all text-left overflow-hidden ${selectedTemplate.id === t.id ? 'border-slate-900 shadow-xl ring-4 ring-slate-50' : 'border-slate-50 hover:border-slate-200'}`}>
-                    <div className="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20" style={{ backgroundColor: t.primaryColor }} />
-                    <div className="flex items-center gap-4 relative z-10">
-                      <div className="w-10 h-10 rounded-xl shadow-lg flex items-center justify-center text-white" style={{ background: t.primaryColor }}>
-                        <div className="w-4 h-1 bg-white/40 rounded-full" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-slate-900 leading-none">{t.name}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-1">{t.theme}</p>
-                      </div>
+        <div className="w-full md:w-80 lg:w-96 flex flex-col bg-white overflow-hidden shrink-0 border-t md:border-t-0 border-slate-100">
+          <div className="flex-1 overflow-y-auto p-5 md:p-8">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 md:mb-6">Visual Theme</h4>
+            <div className="grid grid-cols-2 md:grid-cols-1 gap-3 md:gap-4">
+              {SLIDE_TEMPLATES.map(t => (
+                <button key={t.id} onClick={() => setSelectedTemplate(t)}
+                  className={`group relative p-3 md:p-5 rounded-xl md:rounded-[24px] border-2 transition-all text-left overflow-hidden ${selectedTemplate.id === t.id ? 'border-slate-900 shadow-lg md:shadow-xl ring-4 ring-slate-50' : 'border-slate-50 hover:border-slate-200'}`}>
+                  <div className="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20" style={{ backgroundColor: t.primaryColor }} />
+                  <div className="flex items-center gap-2 md:gap-4 relative z-10">
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg shadow-lg flex items-center justify-center text-white" style={{ background: t.primaryColor }}>
+                      <div className="w-3 md:w-4 h-1 bg-white/40 rounded-full" />
                     </div>
-                  </button>
-                ))}
-              </div>
+                    <div>
+                      <p className="text-xs md:text-sm font-black text-slate-900 leading-none">{t.name}</p>
+                      <p className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-1">{t.theme}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="p-8 bg-slate-50 border-t border-slate-100 space-y-4 shrink-0">
-            <p className="text-[10px] text-center text-slate-400 font-bold leading-relaxed px-2">Your presentation will be exported as a professional PPTX file matching this visual theme.</p>
+          <div className="p-5 md:p-8 bg-slate-50 border-t border-slate-100 space-y-3 md:space-y-4 shrink-0">
+            <p className="hidden md:block text-[10px] text-center text-slate-400 font-bold leading-relaxed px-2 uppercase tracking-wide">Professional PPTX Export</p>
             <button onClick={handleDownload} disabled={step === 'selection'}
-              className="w-full py-5 bg-slate-900 hover:bg-black disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
+              className="w-full py-4 md:py-5 bg-slate-900 hover:bg-black disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-2xl md:rounded-3xl font-black text-[11px] md:text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3">
               <Icons.Download /> DOWNLOAD PPTX
             </button>
           </div>
