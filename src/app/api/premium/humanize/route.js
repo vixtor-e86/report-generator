@@ -24,8 +24,8 @@ export async function POST(request) {
       body: JSON.stringify({
         content: content,
         readability: 'University',
-        purpose: 'Technical Writing',
-        strength: 'Quality' // Focus on academic integrity
+        purpose: 'Report',
+        strength: 'Quality'
       })
     });
 

@@ -106,34 +106,36 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
 
         <div className="flex-1 overflow-hidden flex flex-col">
           {step === 'select' ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-10 bg-slate-50">
-              <div className="w-full max-w-md space-y-8">
-                <div className="text-center">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-10 bg-slate-50 overflow-hidden">
+              <div className="w-full max-w-md flex flex-col h-full max-h-[600px] space-y-6">
+                <div className="text-center shrink-0">
                   <h3 className="text-2xl font-black text-slate-900">Select a Chapter</h3>
-                  <p className="text-slate-500 font-medium mt-2">Bypass AI detectors and improve academic readability.</p>
+                  <p className="text-sm text-slate-500 mt-1">Bypass AI detectors and improve academic readability.</p>
                 </div>
                 
-                <div className="grid gap-3">
-                  {chapters.map(ch => {
-                    const hasContent = ch.content && ch.content.length > 100;
-                    const isSelected = selectedChapterId === ch.id;
-                    return (
-                      <button key={ch.id} disabled={!hasContent} onClick={() => setSelectedChapterId(ch.id)}
-                        className={`flex items-center justify-between p-5 rounded-3xl border-2 transition-all text-left ${
-                          isSelected ? 'border-indigo-600 bg-white shadow-xl ring-8 ring-indigo-50' : 'border-slate-100 bg-white'
-                        } ${!hasContent ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
-                        <div>
-                          <span className="font-black text-slate-900">Chapter {ch.number}</span>
-                          <p className="text-xs text-slate-400 font-bold truncate max-w-[250px]">{ch.title}</p>
-                        </div>
-                        {isSelected && <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg"><Icons.Check /></div>}
-                      </button>
-                    );
-                  })}
+                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid gap-3 py-2">
+                    {chapters.map(ch => {
+                      const hasContent = ch.content && ch.content.length > 100;
+                      const isSelected = selectedChapterId === ch.id;
+                      return (
+                        <button key={ch.id} disabled={!hasContent} onClick={() => setSelectedChapterId(ch.id)}
+                          className={`flex items-center justify-between p-5 rounded-3xl border-2 transition-all text-left shrink-0 ${
+                            isSelected ? 'border-indigo-600 bg-white shadow-xl ring-8 ring-indigo-50' : 'border-slate-100 bg-white hover:border-slate-200'
+                          } ${!hasContent ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
+                          <div>
+                            <span className="font-black text-slate-900">Chapter {ch.number}</span>
+                            <p className="text-xs text-slate-400 font-bold truncate max-w-[250px]">{ch.title}</p>
+                          </div>
+                          {isSelected && <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg"><Icons.Check /></div>}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <button onClick={handleHumanize} disabled={!selectedChapterId || isProcessing}
-                  className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
+                  className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 shrink-0">
                   <Icons.Sparkles /> HUMANIZZE CONTENT
                 </button>
               </div>
