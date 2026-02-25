@@ -36,9 +36,8 @@ export async function GET(request) {
       if (!targetUserId) return NextResponse.json([]);
       baseQuery = baseQuery.eq('user_id', targetUserId);
     } else if (reference) {
-      // NOTE: Based on verify route, flw and paystack references are both 
-      // checked against 'paystack_reference' or 'reference' columns.
-      baseQuery = baseQuery.or(`paystack_reference.eq.${reference},reference.eq.${reference}`);
+      // Searching by ID (W3WL_...) which is stored in paystack_reference
+      baseQuery = baseQuery.eq('paystack_reference', reference);
     } else {
       baseQuery = baseQuery.limit(50);
     }
