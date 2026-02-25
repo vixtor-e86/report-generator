@@ -3,13 +3,15 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const Icons = {
   X: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
   User: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>,
   Sparkles: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 0 01.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"></path></svg>,
   Save: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
-  Check: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+  Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
 };
 
 export default function HumanizerModal({ isOpen, onClose, chapters, userId, setIsGlobalLoading, setGlobalLoadingText, onSaved }) {
@@ -57,7 +59,6 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
     }
 
     try {
-      // 1. Update Chapter and Save to History (Using existing save-edit endpoint logic)
       const response = await fetch('/api/premium/save-edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,7 +66,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
           chapterId: selectedChapterId,
           content: results.humanized,
           userId: userId,
-          isAiAction: true // This triggers history creation in our backend
+          isAiAction: true 
         })
       });
 
@@ -93,7 +94,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
         {/* Header */}
         <div className="p-6 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100">
+            <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl">
               <Icons.User />
             </div>
             <div>
@@ -121,13 +122,13 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
                       return (
                         <button key={ch.id} disabled={!hasContent} onClick={() => setSelectedChapterId(ch.id)}
                           className={`flex items-center justify-between p-5 rounded-3xl border-2 transition-all text-left shrink-0 ${
-                            isSelected ? 'border-indigo-600 bg-white shadow-xl ring-8 ring-indigo-50' : 'border-slate-100 bg-white hover:border-slate-200'
+                            isSelected ? 'border-slate-900 bg-white shadow-xl ring-8 ring-slate-100' : 'border-slate-100 bg-white hover:border-slate-200'
                           } ${!hasContent ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
                           <div>
                             <span className="font-black text-slate-900">Chapter {ch.number}</span>
                             <p className="text-xs text-slate-400 font-bold truncate max-w-[250px]">{ch.title}</p>
                           </div>
-                          {isSelected && <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg"><Icons.Check /></div>}
+                          {isSelected && <div className="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-lg"><Icons.Check /></div>}
                         </button>
                       );
                     })}
@@ -149,19 +150,19 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Original Draft</span>
                     <span className="text-[10px] font-bold text-slate-400">{results.original.split(' ').length} Words</span>
                   </div>
-                  <div className="flex-1 p-8 overflow-y-auto text-sm text-slate-400 leading-relaxed font-medium line-through decoration-red-200">
-                    {results.original}
+                  <div className="flex-1 p-8 overflow-y-auto text-sm text-slate-400 leading-relaxed font-medium markdown-view opacity-60">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{results.original}</ReactMarkdown>
                   </div>
                 </div>
 
                 {/* Humanized */}
                 <div className="flex-1 flex flex-col bg-white overflow-hidden">
-                  <div className="p-4 bg-indigo-50/30 border-b border-indigo-100 flex items-center justify-between">
-                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Humanized Version</span>
-                    <span className="text-[10px] font-bold text-indigo-600">{results.humanized.split(' ').length} Words</span>
+                  <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Humanized Version</span>
+                    <span className="text-[10px] font-bold text-slate-900">{results.humanized.split(' ').length} Words</span>
                   </div>
-                  <div className="flex-1 p-8 overflow-y-auto text-sm text-slate-900 leading-relaxed font-bold bg-indigo-50/5">
-                    {results.humanized}
+                  <div className="flex-1 p-8 overflow-y-auto text-sm text-slate-900 leading-relaxed font-bold bg-slate-50/30 markdown-view">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{results.humanized}</ReactMarkdown>
                   </div>
                 </div>
               </div>
@@ -170,7 +171,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
               <div className="p-6 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
                 <button onClick={() => setStep('select')} className="text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back / Re-Humanize</button>
                 <div className="flex gap-4">
-                  <button onClick={handleSave} className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-indigo-100 transition-all active:scale-95 flex items-center gap-3">
+                  <button onClick={handleSave} className="px-10 py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-sm shadow-xl transition-all active:scale-95 flex items-center gap-3">
                     <Icons.Save /> SAVE TO HISTORY
                   </button>
                 </div>
@@ -178,6 +179,15 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
             </div>
           )}
         </div>
+
+        <style jsx global>{`
+          .markdown-view h1, .markdown-view h2, .markdown-view h3 { margin-top: 1rem; margin-bottom: 0.5rem; color: #0f172a; font-weight: 800; }
+          .markdown-view p { margin-bottom: 1rem; }
+          .markdown-view ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+          .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+          .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; borderRadius: 10px; }
+        `}</style>
       </motion.div>
     </div>
   );
