@@ -1,75 +1,79 @@
 // src/app/api/premium/humanize/route.js
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(request) {
   try {
-    const { chapterId, content, userId } = await request.json();
+    const { content } = await request.json();
 
-    if (!content || !chapterId) {
-      return NextResponse.json({ error: 'Missing content or chapter ID' }, { status: 400 });
+    if (!content || content.length < 50) {
+      return NextResponse.json({ error: 'Content must be at least 50 characters long.' }, { status: 400 });
     }
 
     const apiKey = process.env.UNDETECTABLE_API_KEY;
+    if (!apiKey) {
+      throw new Error('UNDETECTABLE_API_KEY is not configured in .env');
+    }
 
-    // 1. Submit Document to Undetectable AI
-    // Note: We use the 'humanize' endpoint. 
-    // Settings: readability='University', purpose='Academic'
-    const submitRes = await fetch('https://api.undetectable.ai/submit', {
+    // 1. Submit Document
+    const submitRes = await fetch('https://humanize.undetectable.ai/submit', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': apiKey,
+        'apikey': apiKey,
       },
       body: JSON.stringify({
         content: content,
         readability: 'University',
         purpose: 'Report',
-        strength: 'Quality'
+        strength: 'Quality',
+        model: 'v11' // High humanization for English
       })
     });
 
     const submitData = await submitRes.json();
 
     if (!submitRes.ok || !submitData.id) {
-      throw new Error(submitData.error || 'Failed to submit to humanizer');
+      console.error('Undetectable Submit Error:', submitData);
+      throw new Error(submitData.error || 'Failed to submit document');
     }
 
-    const taskId = submitData.id;
+    const documentId = submitData.id;
 
-    // 2. Polling Logic (Undetectable AI takes 10-30 seconds)
+    // 2. Polling for Completion
     let humanizedText = null;
     let attempts = 0;
-    const maxAttempts = 20; // ~40 seconds max
+    const maxAttempts = 30; // Up to 2.5 minutes for long chapters
 
     while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3s between polls
+      // Wait 5 seconds between checks as per documentation recommendation
+      await new Promise(resolve => setTimeout(resolve, 5000));
       
-      const statusRes = await fetch('https://api.undetectable.ai/status', {
+      const statusRes = await fetch('https://humanize.undetectable.ai/document', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'api-key': apiKey,
+          'apikey': apiKey,
         },
-        body: JSON.stringify({ id: taskId })
+        body: JSON.stringify({ id: documentId })
       });
 
       const statusData = await statusRes.json();
 
-      if (statusData.status === 'done') {
+      // According to docs, 'output' field is present when done
+      if (statusData.output) {
         humanizedText = statusData.output;
         break;
       }
 
       if (statusData.status === 'error') {
-        throw new Error('Undetectable AI returned an error during processing');
+        throw new Error('API returned an error status during processing');
       }
 
       attempts++;
     }
 
     if (!humanizedText) {
-      throw new Error('Humanization timed out. Please try again.');
+      throw new Error('Humanization processing is taking longer than expected. Please check history later.');
     }
 
     return NextResponse.json({ 
@@ -79,7 +83,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Humanizer API Error:', error);
+    console.error('Humanizer Route Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
