@@ -30,11 +30,11 @@ export async function POST(request) {
     const aiResponse = await callAI(
       `Please humanize the following academic text:\n\n${content}`, 
       {
-        provider: 'anthropic',
+        provider: 'claude',
         model: model,
         system: HUMANIZER_SYSTEM_PROMPT,
         maxTokens: 4000,
-        temperature: 0.7 // Slightly higher temperature for more "human" variability
+        temperature: 0.7 
       }
     );
 

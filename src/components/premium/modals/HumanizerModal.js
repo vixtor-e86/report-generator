@@ -81,7 +81,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
             </div>
             <div>
               <h2 className="text-base md:text-xl font-black text-slate-900 leading-tight">Academic Humanizer</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Powered by Claude 3.5 Engine</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Powered by W3 Hub</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"><Icons.X /></button>
@@ -119,7 +119,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
 
                 <button onClick={handleHumanize} disabled={!selectedChapterId || isProcessing}
                   className="w-full py-4 md:py-5 bg-slate-900 hover:bg-black text-white rounded-2xl md:rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 shrink-0">
-                  <Icons.Sparkles /> HUMANIZE WITH CLAUDE
+                  <Icons.Sparkles /> HUMANIZE
                 </button>
               </div>
             </div>
