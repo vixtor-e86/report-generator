@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { callAI } from '@/lib/aiProvider';
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { r2 } from "@/lib/r2";
+import { r2Client } from "@/lib/r2";
 import { jsPDF } from "jspdf";
 
 const ABSTRACT_PROMPT = "You are an academic engineering researcher. " +
@@ -122,7 +122,7 @@ export async function POST(request) {
     const cleanTitle = (project.title || "Export").replace(/\s+/g, '_');
     const fileName = "exports/" + projectId + "/" + cleanTitle + "_" + Date.now() + ".pdf";
 
-    await r2.send(
+    await r2Client.send(
       new PutObjectCommand({
         Bucket: process.env.R2_BUCKET_NAME,
         Key: fileName,
