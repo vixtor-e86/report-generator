@@ -25,7 +25,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
     if (!chapter) return;
 
     setIsGenerating(true);
-    setGlobalLoadingText('Undetectable AI is rewriting your chapter for academic flow...');
+    setGlobalLoadingText('Claude is rewriting your chapter for academic flow...');
     setIsGlobalLoading(true);
 
     try {
@@ -80,8 +80,8 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
               <Icons.User />
             </div>
             <div>
-              <h2 className="text-base md:text-xl font-black text-slate-900 leading-tight">Humanizer Tool</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Powered by W3 HUB</p>
+              <h2 className="text-base md:text-xl font-black text-slate-900 leading-tight">Academic Humanizer</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Powered by Claude 3.5 Engine</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"><Icons.X /></button>
@@ -93,7 +93,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
               <div className="w-full max-w-md flex flex-col h-full max-h-[600px] space-y-6">
                 <div className="text-center shrink-0">
                   <h3 className="text-xl md:text-2xl font-black text-slate-900">Select a Chapter</h3>
-                  <p className="text-sm text-slate-500 mt-1">Bypass AI detectors and improve academic readability.</p>
+                  <p className="text-sm text-slate-500 mt-1">Bypass detectors and improve academic flow with strict engineering rules.</p>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -119,7 +119,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
 
                 <button onClick={handleHumanize} disabled={!selectedChapterId || isProcessing}
                   className="w-full py-4 md:py-5 bg-slate-900 hover:bg-black text-white rounded-2xl md:rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 shrink-0">
-                  <Icons.Sparkles /> HUMANIZZE CONTENT
+                  <Icons.Sparkles /> HUMANIZE WITH CLAUDE
                 </button>
               </div>
             </div>
@@ -127,7 +127,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-100 gap-px">
                 {/* Original */}
-                <div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden">
+                <div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden border-b md:border-b-0">
                   <div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Original Draft</span>
                     <span className="text-[10px] font-bold text-slate-400">{results.original.split(' ').length} Words</span>
@@ -151,7 +151,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
 
               {/* Action Bar */}
               <div className="p-5 md:p-6 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
-                <button onClick={() => setStep('select')} className="text-[9px] md:text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back</button>
+                <button onClick={() => setStep('select')} className="text-[9px] md:text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back / Reset</button>
                 <button onClick={handleSave} className="px-6 md:px-10 py-3 md:py-4 bg-slate-900 hover:bg-black text-white rounded-xl md:rounded-2xl font-black text-[11px] md:text-sm shadow-xl transition-all active:scale-95 flex items-center gap-3">
                   <Icons.Save /> SAVE TO HISTORY
                 </button>
