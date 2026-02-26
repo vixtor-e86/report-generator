@@ -1,6 +1,7 @@
 // src/app/api/premium/humanize/route.js
 import { NextResponse } from 'next/server';
 import { callAI } from '@/lib/aiProvider';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const HUMANIZER_SYSTEM_PROMPT = `You are an expert academic writing humanizer. Your sole job is to rewrite AI-generated academic text so it reads as if written by a real university student or researcher — natural, slightly imperfect, and genuinely human.
 
@@ -18,10 +19,10 @@ Follow these rules STRICTLY:
 
 export async function POST(request) {
   try {
-    const { content } = await request.json();
+    const { content, projectId } = await request.json();
 
-    if (!content || content.length < 50) {
-      return NextResponse.json({ error: 'Content must be at least 50 characters long.' }, { status: 400 });
+    if (!content || content.length < 50 || !projectId) {
+      return NextResponse.json({ error: 'Missing content or project ID.' }, { status: 400 });
     }
 
     const model = process.env.HUMANIZER_MODEL || 'claude-3-5-sonnet-20240620';
@@ -38,10 +39,32 @@ export async function POST(request) {
       }
     );
 
+    const tokensUsed = aiResponse.tokensUsed?.total || 0;
+
+    // Increment tokens used in the project
+    if (tokensUsed > 0) {
+      const { data: project } = await supabaseAdmin
+        .from('premium_projects')
+        .select('tokens_used')
+        .eq('id', projectId)
+        .single();
+
+      if (project) {
+        await supabaseAdmin
+          .from('premium_projects')
+          .update({
+            tokens_used: (project.tokens_used || 0) + tokensUsed,
+            last_generated_at: new Date().toISOString()
+          })
+          .eq('id', projectId);
+      }
+    }
+
     return NextResponse.json({ 
       success: true, 
       humanized: aiResponse.content,
-      original: content
+      original: content,
+      tokensUsed
     });
 
   } catch (error) {

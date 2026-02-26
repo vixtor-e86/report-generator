@@ -14,7 +14,7 @@ const Icons = {
   Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
 };
 
-export default function HumanizerModal({ isOpen, onClose, chapters, userId, setIsGlobalLoading, setGlobalLoadingText, onSaved }) {
+export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, onSaved }) {
   const [step, setStep] = useState('select'); // select | compare
   const [selectedChapterId, setSelectedChapterId] = useState(null);
   const [results, setResults] = useState({ original: '', humanized: '' });
@@ -32,7 +32,12 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
       const response = await fetch('/api/premium/humanize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chapterId: chapter.id, content: chapter.content, userId: userId })
+        body: JSON.stringify({ 
+          chapterId: chapter.id, 
+          content: chapter.content, 
+          userId: userId,
+          projectId: projectId 
+        })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Humanization failed');
