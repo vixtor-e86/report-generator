@@ -6,18 +6,15 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { r2 } from "@/lib/r2";
 import { jsPDF } from "jspdf";
 
-const ABSTRACT_PROMPT = `You are an academic engineering researcher. 
-Generate a professional Abstract for the following engineering project.
-The abstract should be a single, well-structured paragraph (250-350 words) that includes:
-1. The problem statement and objectives.
-2. The methodology/design approach used.
-3. The expected results and technical significance.
-
-Keep the tone formal, technical, and high-level. 
-Output ONLY the abstract text. No preamble.
-
-Project Content:
-`;
+const ABSTRACT_PROMPT = "You are an academic engineering researcher. " +
+"Generate a professional Abstract for the following engineering project. " +
+"The abstract should be a single, well-structured paragraph (250-350 words) that includes: " +
+"1. The problem statement and objectives. " +
+"2. The methodology/design approach used. " +
+"3. The expected results and technical significance. " +
+"Keep the tone formal, technical, and high-level. " +
+"Output ONLY the abstract text. No preamble. " +
+"Project Content: ";
 
 export async function POST(request) {
   try {
@@ -30,18 +27,15 @@ export async function POST(request) {
     // 1. Fetch ALL Data
     const { data: project } = await supabaseAdmin.from('premium_projects').select('*').eq('id', projectId).single();
     const { data: chapters } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).order('chapter_number', { ascending: true });
-    const { data: assets } = await supabaseAdmin.from('premium_assets').select('*').eq('project_id', projectId);
 
-    // 2. Optional: Generate Abstract with Claude
+    // 2. Optional: Generate Abstract with the same model set for content generation
     let abstract = "";
     if (options.includeAbstract) {
-      const summaryContext = chapters.map(c => `Chapter ${c.chapter_number}: ${c.title}
-${c.content?.substring(0, 1000)}`).join('
-
-');
+      const summaryContext = chapters.map(c => "Chapter " + c.chapter_number + ": " + c.title + "\n" + (c.content || "").substring(0, 1000)).join("\n\n");
+      
       const aiRes = await callAI(ABSTRACT_PROMPT + summaryContext, {
-        provider: 'claude',
-        model: process.env.HUMANIZER_MODEL || 'claude-3-5-sonnet-20240620',
+        provider: process.env.AI_PROVIDER || 'gemini',
+        model: process.env.AI_MODEL,
         maxTokens: 1000,
         temperature: 0.3
       });
@@ -49,7 +43,6 @@ ${c.content?.substring(0, 1000)}`).join('
     }
 
     // 3. Assemble PDF
-    // Note: We use jsPDF. For high-fidelity images and layouts, we'll implement a technical assembly.
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
     let currentPage = 1;
 
@@ -57,17 +50,9 @@ ${c.content?.substring(0, 1000)}`).join('
       if (options.includePageNumbers) {
         doc.setFontSize(10);
         doc.setTextColor(150);
-        doc.text(`Page ${currentPage}`, 105, 285, { align: 'center' });
+        doc.text("Page " + currentPage, 105, 285, { align: 'center' });
       }
     };
-
-    // --- Cover & Attached Docs ---
-    if (orderedDocIds && orderedDocIds.length > 0) {
-      // In a real implementation, we would merge existing PDFs or render DOCX here.
-      // For this assembly, we will add a technical "Placeholder" page for external docs 
-      // since merging binary PDFs server-side requires extra heavy libraries (like pdf-lib).
-      // We will focus on the main content assembly here.
-    }
 
     // --- Abstract Page ---
     if (abstract) {
@@ -91,7 +76,7 @@ ${c.content?.substring(0, 1000)}`).join('
       doc.setFontSize(12);
       let y = 60;
       chapters.forEach(ch => {
-        doc.text(`Chapter ${ch.chapter_number}: ${ch.title}`, 20, y);
+        doc.text("Chapter " + ch.chapter_number + ": " + ch.title, 20, y);
         doc.text("........", 160, y); 
         y += 10;
       });
@@ -104,14 +89,13 @@ ${c.content?.substring(0, 1000)}`).join('
     for (const ch of chapters) {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
-      doc.text(`CHAPTER ${ch.chapter_number}`, 20, 30);
-      doc.text(ch.title.toUpperCase(), 20, 40);
+      doc.text("CHAPTER " + ch.chapter_number, 20, 30);
+      doc.text((ch.title || "").toUpperCase(), 20, 40);
       
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
       
-      // Basic Markdown stripping for PDF text
-      const cleanContent = ch.content?.replace(/[#*`]/g, '') || "No content generated for this chapter.";
+      const cleanContent = (ch.content || "").replace(/[#*`]/g, '') || "No content generated for this chapter.";
       const splitText = doc.splitTextToSize(cleanContent, 170);
       
       let y = 55;
@@ -126,18 +110,17 @@ ${c.content?.substring(0, 1000)}`).join('
         y += 6;
       }
 
-      // Handle Images (If any technical images belong to this chapter)
-      // Logic: Search content for markdown image tags and attempt to render them
-      // For this high-level assembly, we'll ensure the text flows correctly.
-
       addPageNumber();
-      doc.addPage();
-      currentPage++;
+      if (ch.chapter_number < chapters.length) {
+        doc.addPage();
+        currentPage++;
+      }
     }
 
     // 4. Finalize and Upload to R2
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
-    const fileName = `exports/${projectId}/${project.title.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+    const cleanTitle = (project.title || "Export").replace(/\s+/g, '_');
+    const fileName = "exports/" + projectId + "/" + cleanTitle + "_" + Date.now() + ".pdf";
 
     await r2.send(
       new PutObjectCommand({
@@ -148,7 +131,7 @@ ${c.content?.substring(0, 1000)}`).join('
       })
     );
 
-    const publicUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${fileName}`;
+    const publicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL + "/" + fileName;
 
     return NextResponse.json({ 
       success: true, 
