@@ -153,7 +153,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, userId, setI
               <div className="p-5 md:p-6 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
                 <button onClick={() => setStep('select')} className="text-[9px] md:text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back / Reset</button>
                 <button onClick={handleSave} className="px-6 md:px-10 py-3 md:py-4 bg-slate-900 hover:bg-black text-white rounded-xl md:rounded-2xl font-black text-[11px] md:text-sm shadow-xl transition-all active:scale-95 flex items-center gap-3">
-                  <Icons.Save /> SAVE TO HISTORY
+                  <Icons.Save /> SAVE CHANGES
                 </button>
               </div>
             </div>
