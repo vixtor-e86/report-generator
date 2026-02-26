@@ -20,6 +20,7 @@ import ModifyModal from '@/components/premium/modals/ModifyModal';
 import LoadingModal from '@/components/premium/modals/LoadingModal';
 import PresentationModal from '@/components/premium/modals/PresentationModal';
 import HumanizerModal from '@/components/premium/modals/HumanizerModal';
+import ExportModal from '@/components/premium/modals/ExportModal';
 
 import '@/styles/workspace.css';
 
@@ -58,7 +59,14 @@ function WorkspaceContent() {
   const [isVisualToolsModalOpen, setIsVisualToolsModalOpen] = useState(false);
   const [isPresentationModalOpen, setIsPresentationModalOpen] = useState(false);
   const [isHumanizerModalOpen, setIsHumanizerModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportType, setExportType] = useState('pdf');
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+
+  const handleExportClick = (type) => {
+    setExportType(type);
+    setIsExportModalOpen(true);
+  };
   const [globalLoadingText, setGlobalLoadingText] = useState('Processing...');
   const [workspaceMode, setWorkspaceMode] = useState('editor');
   const [previewFile, setPreviewFile] = useState(null);
@@ -149,6 +157,7 @@ function WorkspaceContent() {
           onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)} isRightSidebarOpen={isRightSidebarOpen}
           onToggleLeftSidebar={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)} onGenerate={() => activeChapter?.content ? setIsModifyModalOpen(true) : setIsGenerationModalOpen(true)}
           onPrint={() => { setWorkspaceMode('preview'); setTimeout(() => window.print(), 500); }} activeChapter={activeChapter}
+          onExportClick={handleExportClick}
         />
 
         <div className="workspace-content">
@@ -180,7 +189,28 @@ function WorkspaceContent() {
       <ResearchSearchModal isOpen={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} projectId={projectId} onPaperSaved={loadWorkspaceData} />
       <VisualToolsModal isOpen={isVisualToolsModalOpen} onClose={() => setIsVisualToolsModalOpen(false)} projectId={projectId} userId={currentUser?.id} onImageSaved={loadWorkspaceData} />
       <PresentationModal isOpen={isPresentationModalOpen} onClose={() => setIsPresentationModalOpen(false)} chapters={chapters} projectId={projectId} userId={currentUser?.id} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />
-      <HumanizerModal isOpen={isHumanizerModalOpen} onClose={() => setIsHumanizerModalOpen(false)} chapters={chapters} userId={currentUser?.id} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} onSaved={loadWorkspaceData} />
+      <HumanizerModal 
+        isOpen={isHumanizerModalOpen} 
+        onClose={() => setIsHumanizerModalOpen(false)} 
+        chapters={chapters} 
+        projectId={projectId}
+        userId={currentUser?.id} 
+        setIsGlobalLoading={setIsGlobalLoading} 
+        setGlobalLoadingText={setGlobalLoadingText} 
+        onSaved={loadWorkspaceData} 
+      />
+
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        type={exportType}
+        projectDocs={projectDocs}
+        chapters={chapters}
+        projectId={projectId}
+        userId={currentUser?.id}
+        setIsGlobalLoading={setIsGlobalLoading}
+        setGlobalLoadingText={setGlobalLoadingText}
+      />
       <ModifyModal isOpen={isModifyModalOpen} onClose={() => setIsModifyModalOpen(false)} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />
       <GenerationModal isOpen={isGenerationModalOpen} onClose={() => setIsGenerationModalOpen(false)} uploadedImages={images} researchPapers={[...files, ...researchPapers]} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} projectData={projectData} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />
       <LoadingModal isOpen={isGlobalLoading} loadingText={globalLoadingText} />
