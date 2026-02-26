@@ -27,6 +27,13 @@ export async function POST(request) {
     // 1. Fetch ALL Data
     const { data: project } = await supabaseAdmin.from('premium_projects').select('*').eq('id', projectId).single();
     const { data: chapters } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).order('chapter_number', { ascending: true });
+    
+    // Fetch project-wide references
+    const { data: references } = await supabaseAdmin
+      .from('project_references')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('order_number', { ascending: true });
 
     // 2. Optional: Generate Abstract with the same model set for content generation
     let abstract = "";
@@ -95,7 +102,8 @@ export async function POST(request) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
       
-      const cleanContent = (ch.content || "").replace(/[#*`]/g, '') || "No content generated for this chapter.";
+      // Clean content (strip image tags for text flow)
+      const cleanContent = (ch.content || "").replace(/!\[.*?\]\(.*?\)/g, '').replace(/[#*`]/g, '') || "No content generated.";
       const splitText = doc.splitTextToSize(cleanContent, 170);
       
       let y = 55;
@@ -111,10 +119,39 @@ export async function POST(request) {
       }
 
       addPageNumber();
-      if (ch.chapter_number < chapters.length) {
-        doc.addPage();
-        currentPage++;
-      }
+      doc.addPage();
+      currentPage++;
+    }
+
+    // --- FINAL INDEPENDENT REFERENCES PAGE ---
+    if (references && references.length > 0) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text("REFERENCES", 105, 40, { align: 'center' });
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      
+      let y = 60;
+      references.forEach((ref, idx) => {
+        const refText = (idx + 1) + ". " + (ref.reference_text || "");
+        const splitRef = doc.splitTextToSize(refText, 170);
+        
+        if (y + (splitRef.length * 5) > 275) {
+          addPageNumber();
+          doc.addPage();
+          currentPage++;
+          y = 30;
+        }
+        
+        doc.text(splitRef, 20, y);
+        y += (splitRef.length * 5) + 5; // Add spacing between references
+      });
+      
+      addPageNumber();
+    } else {
+      // If no stored references, remove the last empty page added by the chapter loop
+      // but only if it's actually empty.
     }
 
     // 4. Finalize and Upload to R2

@@ -76,16 +76,13 @@ export default function Sidebar({
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validation: PDF, DOCX
-    const validTypes = [
-      'application/pdf', 
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
-    const validExtensions = ['.pdf', '.docx'];
+    // Validation: PDF ONLY for project docs
+    const validTypes = ['application/pdf'];
+    const validExtensions = ['.pdf'];
     const extension = '.' + file.name.split('.').pop().toLowerCase();
 
     if (!validTypes.includes(file.type) && !validExtensions.includes(extension)) {
-      onError('Only PDF and DOCX files are allowed for project documents.');
+      onError('Only PDF files are allowed for project documents to ensure merging compatibility.');
       return;
     }
 
