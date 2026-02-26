@@ -190,10 +190,29 @@ export default function ContentArea({
                       <td style={{ padding: '16px 24px', color: '#6b7280' }}>{new Date(item.created_at).toLocaleString()}</td>
                       <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                         <button 
-                          onClick={() => {
+                          onClick={async () => {
                             if (confirm(`Restore this version to ${item.premium_chapters?.title}?`)) {
+                              // 1. Update UI state
                               onUpdateChapter(item.chapter_id, item.content);
-                              alert('Version restored!');
+                              
+                              // 2. Automatically save to database
+                              try {
+                                await fetch('/api/premium/save-edit', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    chapterId: item.chapter_id,
+                                    content: item.content,
+                                    projectId: projectData.id,
+                                    userId: projectData.user_id,
+                                    isAiAction: false // Don't create history for a restore itself
+                                  })
+                                });
+                                alert('Version restored and saved successfully!');
+                              } catch (err) {
+                                console.error('Failed to auto-save during restore:', err);
+                                alert('Version applied to editor, but failed to save to database.');
+                              }
                             }
                           }}
                           style={{ background: '#6366f1', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}

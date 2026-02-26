@@ -158,12 +158,15 @@ export async function POST(request) {
 
       const addPageNumber = () => {
         if (options.includePageNumbers) {
-          mainDoc.setFontSize(10); mainDoc.setTextColor(150);
+          mainDoc.setFontSize(10); 
+          mainDoc.setTextColor(150, 150, 150); // Grey for page number
           mainDoc.text("Page " + currentPage, 105, 285, { align: 'center' });
+          mainDoc.setTextColor(0, 0, 0); // RESET TO BLACK for actual content
         }
       };
 
       if (abstract) {
+        mainDoc.setTextColor(0, 0, 0);
         mainDoc.setFont("helvetica", "bold"); mainDoc.setFontSize(18);
         mainDoc.text("ABSTRACT", 105, 40, { align: 'center' });
         mainDoc.setFont("helvetica", "normal"); mainDoc.setFontSize(11);
@@ -173,6 +176,7 @@ export async function POST(request) {
       }
 
       if (options.includeTOC) {
+        mainDoc.setTextColor(0, 0, 0);
         mainDoc.setFont("helvetica", "bold"); mainDoc.setFontSize(18);
         mainDoc.text("TABLE OF CONTENTS", 20, 40);
         mainDoc.setFontSize(12);
@@ -181,6 +185,7 @@ export async function POST(request) {
       }
 
       for (const ch of chapters) {
+        mainDoc.setTextColor(0, 0, 0);
         mainDoc.setFont("helvetica", "bold"); mainDoc.setFontSize(16);
         mainDoc.text(`CHAPTER ${ch.chapter_number}`, 20, 30);
         mainDoc.text((ch.title || "").toUpperCase(), 20, 40);
@@ -196,6 +201,7 @@ export async function POST(request) {
       }
 
       if (references && references.length > 0) {
+        mainDoc.setTextColor(0, 0, 0);
         mainDoc.setFont("helvetica", "bold"); mainDoc.setFontSize(18);
         mainDoc.text("REFERENCES", 105, 40, { align: 'center' });
         mainDoc.setFont("helvetica", "normal"); mainDoc.setFontSize(10);
