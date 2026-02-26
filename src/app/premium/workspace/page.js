@@ -210,6 +210,7 @@ function WorkspaceContent() {
         userId={currentUser?.id}
         setIsGlobalLoading={setIsGlobalLoading}
         setGlobalLoadingText={setGlobalLoadingText}
+        onSaved={loadWorkspaceData}
       />
       <ModifyModal isOpen={isModifyModalOpen} onClose={() => setIsModifyModalOpen(false)} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />
       <GenerationModal isOpen={isGenerationModalOpen} onClose={() => setIsGenerationModalOpen(false)} uploadedImages={images} researchPapers={[...files, ...researchPapers]} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} projectData={projectData} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />

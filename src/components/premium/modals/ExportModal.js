@@ -27,7 +27,8 @@ const Icons = {
   Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>,
   Sparkles: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 0 01.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"></path></svg>,
   Download: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>,
-  Plus: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+  Plus: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
+  Info: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
 };
 
 function SortableItem({ id, file }) {
@@ -50,15 +51,15 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
   const [options, setFormData] = useState({ includeAbstract: true, includeTOC: true, includePageNumbers: true });
   const [exportState, setExportState] = useState('idle'); // idle | processing | ready
   const [exportUrl, setExportUrl] = useState(null);
-  const [exportKey, setExportKey] = useState(null);
   const [isSavingToFiles, setIsSavingToFiles] = useState(false);
+
+  const isDocx = type === 'docx';
 
   useEffect(() => {
     if (isOpen) {
       setOrderedDocs(projectDocs || []);
       setExportState('idle');
       setExportUrl(null);
-      setExportKey(null);
     }
   }, [isOpen, projectDocs]);
 
@@ -83,12 +84,11 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
       const response = await fetch('/api/premium/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId, userId, type, orderedDocIds: orderedDocs.map(d => d.id), options })
+        body: JSON.stringify({ projectId, userId, type, orderedDocIds: isDocx ? [] : orderedDocs.map(d => d.id), options })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Export failed');
       setExportUrl(data.fileUrl);
-      setExportKey(data.fileKey);
       setExportState('ready');
     } catch (err) { alert(err.message); setExportState('idle'); }
     finally { setIsGlobalLoading(false); }
@@ -104,8 +104,8 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
           imageUrl: exportUrl,
           projectId,
           userId,
-          name: `Export_${type.toUpperCase()}_${new Date().toLocaleDateString()}.pdf`,
-          type: 'document'
+          name: `Full_Project_${type.toUpperCase()}_${new Date().toLocaleDateString().replace(/\//g, '-')}.${isDocx ? 'docx' : 'pdf'}`,
+          type: 'project_component'
         })
       });
       if (!response.ok) throw new Error('Failed to add to files');
@@ -121,69 +121,83 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={onClose} />
       <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} 
-        className="relative bg-white md:rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col h-full md:h-[90vh] md:max-h-[850px]">
+        className={`relative bg-white md:rounded-[40px] shadow-2xl w-full ${isDocx ? 'max-w-xl' : 'max-w-7xl'} overflow-hidden flex flex-col h-full md:h-auto md:max-h-[850px]`}>
+        
         <div className="p-6 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl"><Icons.Download /></div>
             <div>
-              <h2 className="text-xl font-black text-slate-900 leading-tight">Export Project</h2>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Order documents and configure format</p>
+              <h2 className="text-xl font-black text-slate-900 leading-tight">Export {type.toUpperCase()}</h2>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Configure project formatting</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"><Icons.X /></button>
         </div>
 
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-          <div className="flex-1 flex flex-col bg-slate-50 border-r border-slate-100 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 bg-white/50 shrink-0">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Step 1: Order PDF Attachments</h3>
-              <p className="text-xs text-slate-500 font-medium mt-1">Arrange your uploaded PDF components (Cover page, etc.) before the chapters.</p>
+          {/* File Ordering (Only for PDF) */}
+          {!isDocx && (
+            <div className="flex-1 flex flex-col bg-slate-50 border-r border-slate-100 overflow-hidden">
+              <div className="p-6 border-b border-slate-100 bg-white/50 shrink-0">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Step 1: Order PDF Attachments</h3>
+                <p className="text-xs text-slate-500 font-medium mt-1">Arrange your uploaded PDF components before the chapters.</p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6">
+                {orderedDocs.length > 0 ? (
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={orderedDocs.map(d => d.id)} strategy={verticalListSortingStrategy}>
+                      {orderedDocs.map(doc => <SortableItem key={doc.id} id={doc.id} file={doc} />)}
+                    </SortableContext>
+                  </DndContext>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+                    <div className="text-4xl mb-4">📄</div>
+                    <p className="text-sm font-bold text-slate-900">No PDF attachments found</p>
+                    <p className="text-xs max-w-[200px] mt-1">Upload PDF files in the sidebar to order them here.</p>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              {orderedDocs.length > 0 ? (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={orderedDocs.map(d => d.id)} strategy={verticalListSortingStrategy}>
-                    {orderedDocs.map(doc => <SortableItem key={doc.id} id={doc.id} file={doc} />)}
-                  </SortableContext>
-                </DndContext>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
-                  <div className="text-4xl mb-4">📄</div>
-                  <p className="text-sm font-bold text-slate-900">No PDF attachments found</p>
-                  <p className="text-xs max-w-[200px] mt-1">Upload PDF files in the sidebar to order them here.</p>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
 
-          <div className="w-full md:w-96 p-8 flex flex-col bg-white overflow-y-auto">
+          {/* Options & Settings */}
+          <div className={`${isDocx ? 'w-full' : 'w-full md:w-96'} p-8 flex flex-col bg-white overflow-y-auto`}>
             <div className="space-y-10">
               <section>
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Step 2: Configuration</h4>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Configuration</h4>
                 <div className="space-y-4">
-                  <ToggleItem active={options.includeAbstract} onClick={() => setFormData(p => ({ ...p, includeAbstract: !p.includeAbstract }))} title="Generate Abstract" desc="AI will write a professional summary of your project." />
-                  <ToggleItem active={options.includeTOC} onClick={() => setFormData(p => ({ ...p, includeTOC: !p.includeTOC }))} title="Table of Contents" desc="Automatically generate a linked TOC page." />
-                  <ToggleItem active={options.includePageNumbers} onClick={() => setFormData(p => ({ ...p, includePageNumbers: !p.includePageNumbers }))} title="Page Numbering" desc="Add standard numbering to document footer." />
+                  <ToggleItem active={options.includeAbstract} onClick={() => setFormData(p => ({ ...p, includeAbstract: !p.includeAbstract }))} title="Generate Abstract" desc="AI will write a technical summary of your research." />
+                  <ToggleItem active={options.includeTOC} onClick={() => setFormData(p => ({ ...p, includeTOC: !p.includeTOC }))} title="Table of Contents" desc="Include an automated TOC page with numbering." />
+                  <ToggleItem active={options.includePageNumbers} onClick={() => setFormData(p => ({ ...p, includePageNumbers: !p.includePageNumbers }))} title="Page Numbering" desc="Add academic numbering to the document footer." />
                 </div>
+                
+                {isDocx && (
+                  <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-start gap-3">
+                    <div className="text-slate-400 shrink-0 mt-0.5"><Icons.Info /></div>
+                    <p className="text-[11px] font-bold text-slate-500 leading-relaxed uppercase tracking-wide">
+                      Tip: Use <span className="text-slate-900">Export PDF</span> if you want to merge cover pages or certifications with your report.
+                    </p>
+                  </div>
+                )}
               </section>
 
               <section className="bg-slate-50 rounded-3xl p-6 border-2 border-dashed border-slate-200">
                 {exportState === 'idle' && (
                   <div className="text-center">
                     <button onClick={handleStartExport} className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
-                      <Icons.Sparkles /> PREPARE PROJECT FILE
+                      <Icons.Sparkles /> {isDocx ? 'BUILD DOCX FILE' : 'PREPARE PROJECT FILE'}
                     </button>
                   </div>
                 )}
                 {exportState === 'processing' && (
                   <div className="text-center py-4">
                     <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-sm font-black text-slate-900 uppercase tracking-widest animate-pulse">Building PDF...</p>
+                    <p className="text-sm font-black text-slate-900 uppercase tracking-widest animate-pulse">Building {type.toUpperCase()}...</p>
                   </div>
                 )}
                 {exportState === 'ready' && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-center gap-2 text-emerald-600 font-black text-[10px] uppercase tracking-widest mb-4"><Icons.Check /> Export successful</div>
+                    <div className="flex items-center justify-center gap-2 text-emerald-600 font-black text-[10px] uppercase tracking-widest mb-4"><Icons.Check /> {type.toUpperCase()} ready</div>
                     <button onClick={handleSaveToAssets} disabled={isSavingToFiles} className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all">
                       {isSavingToFiles ? "SAVING..." : <><Icons.Plus /> ADD TO FILES TAB</>}
                     </button>
