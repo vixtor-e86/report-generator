@@ -12,18 +12,24 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    let finalImageUrl = imageUrl;
+    let finalUrl = imageUrl;
     let fileKey = `visuals/${projectId}/${Date.now()}.png`;
+    let fileType = 'image/png';
+    let purpose = 'project_image';
 
-    // 1. If it's a Base64 image (from Flux), upload it to R2
-    if (imageUrl.startsWith('data:image/')) {
+    // 1. Handle Document Saves (Exports)
+    if (type === 'project_component') {
+      purpose = 'project_component';
+      fileType = name.toLowerCase().endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/pdf';
+      // imageUrl is already an R2 URL for exports
+    } 
+    // 2. Handle Base64 Image Saves (Flux)
+    else if (imageUrl.startsWith('data:image/')) {
       try {
         const base64Data = imageUrl.split(',')[1];
         const buffer = Buffer.from(base64Data, 'base64');
-
         const bucketName = process.env.R2_BUCKET_NAME;
-        if (!bucketName) throw new Error('R2_BUCKET_NAME is not configured');
-
+        
         await r2Client.send(new PutObjectCommand({
           Bucket: bucketName,
           Key: fileKey,
@@ -31,33 +37,25 @@ export async function POST(request) {
           ContentType: 'image/png',
         }));
 
-        // Get the public URL if configured
-        const publicUrl = getPublicUrl(fileKey);
-        if (!publicUrl) {
-           // If no public domain, we might need to use a different way to access it
-           // For now, let's ensure we don't save the base64
-           finalImageUrl = `https://${bucketName}.${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${fileKey}`;
-        } else {
-           finalImageUrl = publicUrl;
-        }
+        finalUrl = getPublicUrl(fileKey) || `https://${bucketName}.${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${fileKey}`;
       } catch (uploadError) {
         console.error('R2 Upload Error:', uploadError);
         return NextResponse.json({ error: 'Failed to upload generated image to storage' }, { status: 500 });
       }
     }
 
-    // 2. Create asset record in premium_assets
+    // 3. Create asset record
     const { data: asset, error: assetError } = await supabaseAdmin
       .from('premium_assets')
       .insert({
         project_id: projectId,
         user_id: userId,
-        file_url: finalImageUrl, 
+        file_url: finalUrl, 
         file_key: fileKey,
-        original_name: name || 'Generated Visual',
-        file_type: 'image/png',
+        original_name: name || 'Generated Asset',
+        file_type: fileType,
         size_bytes: 0, 
-        purpose: 'project_image',
+        purpose: purpose,
         caption: name
       })
       .select()
@@ -69,6 +67,6 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Save Visual Error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to save visual' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to save asset' }, { status: 500 });
   }
 }
