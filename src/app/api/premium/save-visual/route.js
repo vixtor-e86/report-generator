@@ -6,7 +6,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 export async function POST(request) {
   try {
-    const { imageUrl, projectId, userId, name, type } = await request.json();
+    const { imageUrl, projectId, userId, name, type, sizeBytes } = await request.json();
 
     if (!imageUrl || !projectId || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -16,12 +16,12 @@ export async function POST(request) {
     let fileKey = `visuals/${projectId}/${Date.now()}.png`;
     let fileType = 'image/png';
     let purpose = 'project_image';
+    let finalSize = sizeBytes || 0;
 
     // 1. Handle Document Saves (Exports)
-    if (type === 'project_component') {
-      purpose = 'project_component';
+    if (type === 'general') {
+      purpose = 'general';
       fileType = name.toLowerCase().endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/pdf';
-      // imageUrl is already an R2 URL for exports
     } 
     // 2. Handle Base64 Image Saves (Flux)
     else if (imageUrl.startsWith('data:image/')) {
@@ -29,6 +29,7 @@ export async function POST(request) {
         const base64Data = imageUrl.split(',')[1];
         const buffer = Buffer.from(base64Data, 'base64');
         const bucketName = process.env.R2_BUCKET_NAME;
+        finalSize = buffer.length;
         
         await r2Client.send(new PutObjectCommand({
           Bucket: bucketName,
@@ -54,7 +55,7 @@ export async function POST(request) {
         file_key: fileKey,
         original_name: name || 'Generated Asset',
         file_type: fileType,
-        size_bytes: 0, 
+        size_bytes: finalSize, 
         purpose: purpose,
         caption: name
       })
@@ -62,6 +63,24 @@ export async function POST(request) {
       .single();
 
     if (assetError) throw assetError;
+
+    // 4. Update Project Storage Meter
+    if (finalSize > 0) {
+      const { data: project } = await supabaseAdmin
+        .from('premium_projects')
+        .select('storage_used')
+        .eq('id', projectId)
+        .single();
+
+      if (project) {
+        await supabaseAdmin
+          .from('premium_projects')
+          .update({
+            storage_used: (project.storage_used || 0) + finalSize
+          })
+          .eq('id', projectId);
+      }
+    }
 
     return NextResponse.json({ success: true, asset });
 

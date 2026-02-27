@@ -51,6 +51,7 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
   const [options, setFormData] = useState({ includeAbstract: true, includeTOC: true, includePageNumbers: true });
   const [exportState, setExportState] = useState('idle'); // idle | processing | ready
   const [exportUrl, setExportUrl] = useState(null);
+  const [exportSize, setExportSize] = useState(0);
   const [isSavingToFiles, setIsSavingToFiles] = useState(false);
 
   const isDocx = type === 'docx';
@@ -89,6 +90,7 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Export failed');
       setExportUrl(data.fileUrl);
+      setExportSize(data.fileSize); // Added state for size
       setExportState('ready');
     } catch (err) { alert(err.message); setExportState('idle'); }
     finally { setIsGlobalLoading(false); }
@@ -105,7 +107,8 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
           projectId,
           userId,
           name: `Full_Project_${type.toUpperCase()}_${new Date().toLocaleDateString().replace(/\//g, '-')}.${isDocx ? 'docx' : 'pdf'}`,
-          type: 'project_component'
+          type: 'general', // Changed from project_component
+          sizeBytes: exportSize // Pass the real size for the meter
         })
       });
       if (!response.ok) throw new Error('Failed to add to files');
