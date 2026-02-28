@@ -24,23 +24,10 @@ import {
 
 const ABSTRACT_PROMPT = "You are an academic engineering researcher. Generate a professional Abstract. Project Content: ";
 
-// --- Enhanced Engineering Parser ---
-function cleanMarkdown(text) {
+// --- Shared Engineering Parsers ---
+function parseMathematicalText(text) {
   if (!text) return "";
   return text
-    .replace(/\*\*(.*?)\*\*/g, '$1') // Remove Bold
-    .replace(/\*(.*?)\*/g, '$1')     // Remove Italic
-    .replace(/__(.*?)__/g, '$1')     // Remove alternative bold
-    .replace(/_(.*?)_/g, '$1')      // Remove alternative italic
-    .replace(/###?\s/g, '')          // Remove headings
-    .replace(/`{1,3}.*?`{1,3}/g, '') // Remove code blocks
-    .trim();
-}
-
-function parseTechnicalText(text) {
-  if (!text) return "";
-  // First handle tech symbols
-  let t = text
     .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
     .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
     .replace(/\$\$/g, '').replace(/\$/g, '')
@@ -48,10 +35,46 @@ function parseTechnicalText(text) {
     .replace(/\\alpha/g, 'α').replace(/\\beta/g, 'β')
     .replace(/\\times/g, '×').replace(/\\div/g, '÷').replace(/\\pm/g, '±')
     .replace(/\\approx/g, '≈').replace(/\\neq/g, '≠')
-    .replace(/\\degree/g, '°')
-    .replace(/\\mu/g, 'μ').replace(/\\Delta/g, 'Δ');
-  
-  return cleanMarkdown(t);
+    .replace(/\\degree/g, '°');
+}
+
+function cleanMarkdownStrict(text) {
+  if (!text) return "";
+  return text
+    .replace(/^#+\s+/gm, '') // Remove all # at start of lines (headers)
+    .replace(/\*\*(.*?)\*\*/g, '$1') // Remove Bold
+    .replace(/\*(.*?)\*/g, '$1')     // Remove Italic
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/_(.*?)_/g, '$1')
+    .replace(/`{1,3}.*?`{1,3}/g, '') // Remove code
+    .replace(/###/g, '').replace(/##/g, '').replace(/#/g, '') // Extra catch for stray #
+    .trim();
+}
+
+function parseTechnicalText(text) {
+  const t = parseMathematicalText(text);
+  return cleanMarkdownStrict(t);
+}
+
+// Fixed: Defined inside or shared correctly
+function parseInlineFormatting(text, fontSize = 24, isBold = false) {
+  const processedText = parseMathematicalText(text).replace(/^#+\s+/, ''); // Clear # from starts
+  const textRuns = [];
+  let currentIndex = 0;
+  const formatRegex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)/g;
+  let match;
+  while ((match = formatRegex.exec(processedText)) !== null) {
+    if (match.index > currentIndex) {
+      textRuns.push(new TextRun({ text: processedText.substring(currentIndex, match.index), font: 'Times New Roman', size: fontSize, bold: isBold }));
+    }
+    if (match[2]) textRuns.push(new TextRun({ text: match[2], bold: true, font: 'Times New Roman', size: fontSize }));
+    else if (match[4]) textRuns.push(new TextRun({ text: match[4], italics: true, font: 'Times New Roman', size: fontSize, bold: isBold }));
+    currentIndex = match.index + match[0].length;
+  }
+  if (currentIndex < processedText.length) {
+    textRuns.push(new TextRun({ text: processedText.substring(currentIndex), font: 'Times New Roman', size: fontSize, bold: isBold }));
+  }
+  return textRuns.length > 0 ? textRuns : [new TextRun({ text: processedText, font: 'Times New Roman', size: fontSize, bold: isBold })];
 }
 
 export async function POST(request) {
@@ -84,7 +107,7 @@ export async function POST(request) {
 
     let finalBuffer;
     let contentType;
-    const fileName = "exports/" + projectId + "/Project_Report_" + Date.now() + "." + type;
+    const fileName = "exports/" + projectId + "/Report_" + Date.now() + "." + type;
 
     if (type === 'docx') {
       const sections = [];
@@ -101,7 +124,8 @@ export async function POST(request) {
       }
       for (const ch of chapters) {
         const children = [new Paragraph({ children: [new TextRun({ text: `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`, font: 'Times New Roman', size: 28, bold: true })], alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } })];
-        const lines = (ch.content || "").split(/### References|## References/i)[0].split('\n');
+        const rawContent = (ch.content || "").split(/### References|## References/i)[0];
+        const lines = rawContent.split('\n');
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim(); if (!line) continue;
           if (line.startsWith('|')) {
@@ -124,7 +148,11 @@ export async function POST(request) {
               continue;
             }
           }
-          children.push(new Paragraph({ children: parseInlineFormatting(line), alignment: AlignmentType.JUSTIFIED, spacing: { after: 200, line: 360 } }));
+          if (line.startsWith('### ')) {
+            children.push(new Paragraph({ children: [new TextRun({ text: line.replace('### ', ''), font: 'Times New Roman', size: 26, bold: true })], spacing: { before: 200, after: 200 } }));
+          } else {
+            children.push(new Paragraph({ children: parseInlineFormatting(line), alignment: AlignmentType.JUSTIFIED, spacing: { after: 200, line: 360 } }));
+          }
         }
         sections.push({ children });
       }
@@ -137,25 +165,21 @@ export async function POST(request) {
       const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
       let currPage = 1;
       const footer = () => { if (options.includePageNumbers) { pdf.setFontSize(10); pdf.setTextColor(150, 150, 150); pdf.text("Page " + currPage, 105, 285, { align: 'center' }); pdf.setTextColor(0, 0, 0); } };
-
       if (abstract) {
         pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.text("ABSTRACT", 105, 40, { align: 'center' });
         pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); pdf.text(pdf.splitTextToSize(parseTechnicalText(abstract), 170), 20, 60);
         footer(); pdf.addPage(); currPage++;
       }
-
       if (options.includeTOC && project.custom_templates) {
         pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.text("TABLE OF CONTENTS", 20, 40);
         pdf.setFontSize(11); let ty = 60;
         project.custom_templates.structure.chapters.forEach(ch => {
           if (ty > 270) { footer(); pdf.addPage(); currPage++; ty = 30; }
           pdf.setFont("helvetica", "bold"); pdf.text(`Chapter ${ch.chapter || ch.number}: ${ch.title}`, 20, ty); ty += 8;
-          pdf.setFont("helvetica", "normal");
-          ch.sections?.slice(0,3).forEach(s => { pdf.text("- " + s, 30, ty); ty += 6; }); ty += 4;
+          pdf.setFont("helvetica", "normal"); ch.sections?.slice(0,3).forEach(s => { pdf.text("- " + s, 30, ty); ty += 6; }); ty += 4;
         });
         footer(); pdf.addPage(); currPage++;
       }
-
       for (const ch of chapters) {
         pdf.setFont("helvetica", "bold"); pdf.setFontSize(16); pdf.text(`CHAPTER ${ch.chapter_number}`, 20, 30);
         pdf.text((ch.title || "").toUpperCase(), 20, 40); pdf.setFont("helvetica", "normal"); pdf.setFontSize(11);
@@ -167,9 +191,7 @@ export async function POST(request) {
             const rows = [];
             while (i < lines.length && lines[i].trim().startsWith('|')) {
               const r = lines[i].trim();
-              if (!r.includes('---')) {
-                rows.push(r.split('|').filter(c => c.trim()).map(c => parseTechnicalText(c.trim())));
-              }
+              if (!r.includes('---')) rows.push(r.split('|').filter(c => c.trim()).map(c => parseTechnicalText(c.trim())));
               i++;
             }
             autoTable(pdf, { startY: y, head: [rows[0]], body: rows.slice(1), theme: 'grid', styles: { fontSize: 9, cellPadding: 2 }, headStyles: { fillColor: [15, 23, 42] }, margin: { left: 20, right: 20 } });
@@ -191,7 +213,6 @@ export async function POST(request) {
         }
         footer(); pdf.addPage(); currPage++;
       }
-
       if (references?.length > 0) {
         pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.text("REFERENCES", 105, 40, { align: 'center' });
         pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); let ry = 60;
@@ -202,14 +223,14 @@ export async function POST(request) {
         });
         footer();
       }
-
       const generatedDoc = await PDFDocument.load(pdf.output('arraybuffer'));
       const finalPdf = await PDFDocument.create();
       if (orderedDocIds?.length > 0) {
         const sorted = orderedDocIds.map(id => assets.find(a => a.id === id)).filter(Boolean);
         for (const a of sorted) {
           try {
-            const docToMerge = await PDFDocument.load(await (await fetch(a.file_url)).arrayBuffer());
+            const res = await fetch(a.file_url);
+            const docToMerge = await PDFDocument.load(await res.arrayBuffer());
             const pages = await finalPdf.copyPages(docToMerge, docToMerge.getPageIndices());
             pages.forEach(p => finalPdf.addPage(p));
           } catch (e) {}
@@ -223,10 +244,6 @@ export async function POST(request) {
 
     await r2Client.send(new PutObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: fileName, Body: finalBuffer, ContentType: contentType }));
     const publicUrl = (process.env.R2_PUBLIC_DOMAIN || "").replace(/\/$/, '') + "/" + fileName;
-    return NextResponse.json({ 
-      success: true, 
-      fileUrl: publicUrl,
-      fileSize: finalBuffer.length // Return size for meter tracking
-    });
+    return NextResponse.json({ success: true, fileUrl: publicUrl, fileSize: finalBuffer.length });
   } catch (error) { console.error('Export Error:', error); return NextResponse.json({ error: error.message }, { status: 500 }); }
 }

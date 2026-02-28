@@ -5,17 +5,21 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const HUMANIZER_SYSTEM_PROMPT = `You are an expert academic writing humanizer. Your sole job is to rewrite AI-generated academic text so it reads as if written by a real university student or researcher — natural, slightly imperfect, and genuinely human.
 
+STRICT RULE ON PLACEHOLDERS:
+You will see tags like {{IMAGE_PLACEHOLDER_0}}, {{IMAGE_PLACEHOLDER_1}}, etc. 
+MANDATORY: You MUST keep these tags in the text. Do not remove them, do not change them, and do not translate them. Place them in the natural flow of your rewritten paragraphs where they make sense.
+
 Follow these rules STRICTLY:
-1. SENTENCE VARIETY: Mix short punchy sentences with longer, more complex ones. Never have three sentences of similar length in a row.
-2. IMPERFECT TRANSITIONS: Use natural connectors like "That said,", "Interestingly,", "It's worth noting that", "On a related note," — NOT robotic ones like "Furthermore," "Moreover," "In addition," every time.
-3. NATURAL HEDGING: Add realistic uncertainty where appropriate. Use phrases like "arguably", "seems to suggest", "tends to", "in many cases" — real writers are not always 100% confident.
-4. VARIED VOCABULARY: Avoid repeating the same high-level academic words. Replace some formal vocabulary with slightly simpler but still academic alternatives.
-5. HUMAN QUIRKS: Occasionally start a sentence with "And" or "But". Use a rhetorical question once or twice. Add a brief real-world analogy if it fits naturally.
+1. SENTENCE VARIETY: Mix short punchy sentences with longer, more complex ones.
+2. IMPERFECT TRANSITIONS: Use natural connectors like "That said,", "Interestingly,", "It's worth noting that".
+3. NATURAL HEDGING: Add realistic uncertainty where appropriate. 
+4. VARIED VOCABULARY: Avoid repeating the same high-level academic words.
+5. HUMAN QUIRKS: Occasionally start a sentence with "And" or "But".
 6. PARAGRAPH FLOW: Make paragraph lengths uneven.
-7. AVOID AI PATTERNS: Never use "It is important to note that", "In conclusion, it is evident that", "This essay will explore", or "Delve into".
-8. PRESERVE MEANING: Do NOT change facts, arguments, citations, or academic integrity. Only change how it is written, not what it says.
-9. ACADEMIC TONE: Keep it appropriate for university-level writing. Do not make it too casual — just human.
-10. OUTPUT ONLY the rewritten text. No explanations, no preamble. Just the text.`;
+7. AVOID AI PATTERNS: Never use "It is important to note that", "In conclusion, it is evident that".
+8. PRESERVE MEANING: Do NOT change facts or citations.
+9. ACADEMIC TONE: Keep it appropriate for university-level writing.
+10. OUTPUT ONLY the rewritten text. No preamble.`;
 
 export async function POST(request) {
   try {
@@ -25,11 +29,22 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing content or project ID.' }, { status: 400 });
     }
 
+    // --- 1. IMAGE PROTECTION LOGIC ---
+    const images = [];
+    const imageRegex = /!\[.*?\]\(.*?\)/g;
+    
+    // Replace all image tags with placeholders so Claude doesn't "eat" the URLs
+    const processedContent = content.replace(imageRegex, (match) => {
+      const placeholder = `{{IMAGE_PLACEHOLDER_${images.length}}}`;
+      images.push(match);
+      return placeholder;
+    });
+
     const model = process.env.HUMANIZER_MODEL || 'claude-3-5-sonnet-20240620';
 
-    // Call Claude via our unified AI provider
+    // --- 2. CALL CLAUDE ---
     const aiResponse = await callAI(
-      `Please humanize the following academic text:\n\n${content}`, 
+      `Please humanize the following academic text:\n\n${processedContent}`, 
       {
         provider: 'claude',
         model: model,
@@ -39,9 +54,8 @@ export async function POST(request) {
       }
     );
 
+    // --- 3. IMMEDIATE TOKEN INCREMENT ---
     const tokensUsed = aiResponse.tokensUsed?.total || 0;
-
-    // Increment tokens used in the project
     if (tokensUsed > 0) {
       const { data: project } = await supabaseAdmin
         .from('premium_projects')
@@ -60,9 +74,21 @@ export async function POST(request) {
       }
     }
 
+    // --- 4. RESTORE IMAGES ---
+    let humanizedText = aiResponse.content;
+    images.forEach((originalTag, index) => {
+      const placeholder = `{{IMAGE_PLACEHOLDER_${index}}}`;
+      humanizedText = humanizedText.replace(placeholder, originalTag);
+    });
+
+    // Final safety: if AI lost placeholders, append images at end (rare but safe)
+    if (images.length > 0 && !humanizedText.includes('![')) {
+        humanizedText += "\n\n" + images.join('\n\n');
+    }
+
     return NextResponse.json({ 
       success: true, 
-      humanized: aiResponse.content,
+      humanized: humanizedText,
       original: content,
       tokensUsed
     });

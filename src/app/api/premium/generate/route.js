@@ -97,8 +97,18 @@ ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", U
     const searchInstruction = skipReferences
       ? ''
       : additionalNeeded > 0
-        ? `\n\nWEB SEARCH FOR ADDITIONAL REFERENCES: Find and cite ${additionalNeeded} additional REAL academic sources to supplement the pre-selected papers above. STRICT YEAR RESTRICTION: Only use sources published from 2018 to the present (${new Date().getFullYear()}). Do NOT cite any source published before 2018. Verify that each source actually contains content relevant to the specific claim or topic you are citing it for — do not cite a source merely because its title sounds relevant. All citations must follow ${referenceStyle} style.`
-        : `\n\nEnsure all citations follow ${referenceStyle} style.`;
+        ? `\n\nWEB SEARCH FOR ADDITIONAL REFERENCES: Find and cite ${additionalNeeded} additional REAL academic sources to supplement the pre-selected papers above. STRICT YEAR RESTRICTION: Only use sources published from 2018 to the present (${new Date().getFullYear()}). Do NOT cite any source published before 2018. All citations must follow strict ${referenceStyle} rules.`
+        : `\n\nEnsure all citations follow strict ${referenceStyle} rules.`;
+
+    // Strict citation style definitions
+    const citationStyleRules = referenceStyle === 'IEEE' 
+      ? `STRICT IEEE STYLE RULES:
+      1. IN-TEXT: Use sequential numbers in square brackets, e.g., [1], [2]. Multiple sources: [1], [2] or [1]-[3].
+      2. PLACEMENT: Place brackets before any punctuation, with a space before the bracket.
+      3. REFERENCE LIST: List sources numerically in the order they first appear in the text.
+      4. FORMAT: Author initials. Surname, "Title of paper," Journal Name, vol. x, no. x, pp. xxx-xxx, Month, Year.`
+      : `STRICT ${referenceStyle} STYLE RULES: 
+      Follow the latest official manual for ${referenceStyle} citations for both in-text and the reference list.`;
 
     const sectionContext = currentChapterData?.sections 
       ? `\nFocus on these required sections from the template:\n${currentChapterData.sections.map(s => `- ${s}`).join('\n')}`
@@ -128,20 +138,21 @@ ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", U
 
     ${paperContext}
     ${searchInstruction}
+    ${citationStyleRules}
 
     User Specific Instructions: ${userPrompt || 'Deliver a high-quality, technically accurate academic chapter.'}
 
     Writing Requirements:
     - Language: Formal, objective, technical English.
     - Format: Markdown (## Headings, **bold**, bullet points).
-    - Length: Detailed and comprehensive. **TARGET WORD COUNT: ${targetWordCount} words.** Ensure the content is substantive, in-depth, and meets this length requirement.
+    - Length: Detailed and comprehensive. **TARGET WORD COUNT: ${targetWordCount} words.**
     - Visuals: Integrate relevant images from the mapping naturally within the technical explanation.
-    - Citation quality: When citing a source, reference its actual findings, data, or arguments — not merely its title or topic. Each in-text citation must correspond to a specific claim supported by that source.
-    - Currency: If this chapter contains a Bill of Materials, cost estimates, or any pricing — ALL monetary values MUST be expressed in Nigerian Naira (₦). Do not use USD, GBP, or any other currency.
+    - Citation quality: When citing a source, reference its actual findings, data, or arguments. Each in-text citation MUST correspond to a specific claim.
+    - Currency: ALL monetary values MUST be expressed in Nigerian Naira (₦).
 
     ${skipReferences
-      ? `---\nNO REFERENCES REQUIRED: Do NOT include any in-text citations, footnotes, or a References/Bibliography section in this chapter. Write as plain technical prose without any citation markers.`
-      : `---\n    REFERENCES SECTION (MANDATORY):\n    At the very end of this chapter, you MUST include a "## References" section.\n    - List EVERY pre-selected Semantic Scholar paper provided above (all [SS#] entries) in ${referenceStyle} format.\n    - Also list any additional sources you cited from your web search.\n    - Do NOT omit any pre-selected paper, even if it was not explicitly cited in the chapter body.\n    - Use only ${referenceStyle} formatting throughout. Do not mix styles.`
+      ? `---\nNO REFERENCES REQUIRED: Do NOT include any citations or a References section.`
+      : `---\n    REFERENCES SECTION (MANDATORY):\n    At the very end of this chapter, you MUST include a "## References" section.\n    - List EVERY pre-selected Semantic Scholar paper provided above AND any additional sources found.\n    - For IEEE: List them in order of appearance ([1], [2], etc.).\n    - Use only ${referenceStyle} formatting throughout.`
     }`;
 
     // 5. Call AI (DeepSeek)
@@ -208,6 +219,30 @@ ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", U
         prompt_used: userPrompt,
         model_used: aiResponse.model
       });
+
+    // --- NEW: Reference Extraction Logic ---
+    // Extract everything after '## References' or similar
+    const refSection = aiResponse.content.split(/## References|# References/i)[1];
+    if (refSection) {
+      const refLines = refSection.split('\n').filter(line => 
+        line.trim() && (line.trim().startsWith('[') || line.match(/^\d+\./))
+      );
+
+      if (refLines.length > 0) {
+        // Prepare entries for project_references
+        const refEntries = refLines.map((line, idx) => ({
+          project_id: projectId,
+          user_id: userId,
+          reference_text: line.trim(),
+          order_number: idx + 1,
+          chapter_number: chapterNumber
+        }));
+
+        // Upsert references (delete old for this chapter first)
+        await supabaseAdmin.from('project_references').delete().eq('project_id', projectId).eq('chapter_number', chapterNumber);
+        await supabaseAdmin.from('project_references').insert(refEntries);
+      }
+    }
 
     // 8. Update Tokens
     await supabaseAdmin
