@@ -2,8 +2,10 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { callAI } from '@/lib/aiProvider';
-import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
+
+// Use require for pdf-parse as it has ESM compatibility issues in some environments
+const pdf = require('pdf-parse');
 
 export async function POST(request) {
   try {
