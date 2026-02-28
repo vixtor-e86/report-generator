@@ -92,6 +92,7 @@ export default function TopToolbar({
 
       <div className="toolbar-actions">
         <button 
+          id="step-generate"
           className={hasContent ? "btn-white" : "btn-black"}
           onClick={onGenerate}
           style={hasContent ? { 
@@ -123,7 +124,7 @@ export default function TopToolbar({
         </button>
         
         {/* Export Dropdown */}
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative" ref={dropdownRef} id="step-export">
           <button 
             className="btn-icon-only" 
             title="Export Project"

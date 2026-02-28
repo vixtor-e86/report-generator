@@ -31,10 +31,11 @@ export default function GenerationModal({
     userPrompt: '',
     selectedImages: [],
     selectedPapers: [],
+    selectedContextFiles: [], // NEW: for data analysis
     referenceStyle: 'APA',
     maxReferences: 10,
     skipReferences: false,
-    targetWordCount: 2000 // ✅ Added targetWordCount
+    targetWordCount: 2000 
   });
 
   // Safe chapter checks
@@ -61,7 +62,8 @@ export default function GenerationModal({
           userPrompt: '',
           selectedImages: [],
           selectedPapers: [],
-          targetWordCount: 2000 // Reset to default
+          selectedContextFiles: [],
+          targetWordCount: 2000 
         }));
       }
       setGenerating(false);
@@ -90,6 +92,15 @@ export default function GenerationModal({
     }));
   };
 
+  const toggleContextFileSelection = (fileId) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedContextFiles: prev.selectedContextFiles.includes(fileId)
+        ? prev.selectedContextFiles.filter(id => id !== fileId)
+        : [...prev.selectedContextFiles, fileId]
+    }));
+  };
+
   const handleGenerate = async () => {
     if (!activeChapter) {
       alert('Please select a chapter first.');
@@ -110,6 +121,7 @@ export default function GenerationModal({
     try {
       const selectedImagesData = uploadedImages.filter(img => formData.selectedImages.includes(img.id));
       const selectedPapersData = researchPapers.filter(p => formData.selectedPapers.includes(p.id));
+      const selectedContextFilesData = researchPapers.filter(f => formData.selectedContextFiles.includes(f.id));
 
       const response = await fetch('/api/premium/generate', {
         method: 'POST',
@@ -127,10 +139,11 @@ export default function GenerationModal({
           userPrompt: formData.userPrompt,
           referenceStyle: formData.referenceStyle,
           maxReferences: formData.maxReferences,
-          targetWordCount: formData.targetWordCount, // ✅ Passed to API
+          targetWordCount: formData.targetWordCount,
           
           selectedImages: selectedImagesData,
           selectedPapers: selectedPapersData,
+          selectedContextFiles: selectedContextFilesData, // Pass to API
           skipReferences: formData.skipReferences
         })
       });
@@ -297,6 +310,24 @@ export default function GenerationModal({
                         ))}
                       </div>
                     ) : <p style={{ fontSize: '13px', color: '#9ca3af' }}>No images uploaded yet.</p>}
+                  </div>
+
+                  <div>
+                    <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px', color: '#111827' }}>Analyze Data Files (Tests/Readings)</h4>
+                    <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>Select files containing your experimental data, readings, or analyses. The AI will extract and use this data for Chapter 4.</p>
+                    {researchPapers.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+                        {researchPapers.map(file => (
+                          <div key={file.id} onClick={() => toggleContextFileSelection(file.id)} style={{ padding: '12px', borderRadius: '10px', border: `1px solid ${formData.selectedContextFiles.includes(file.id) ? '#111827' : '#e5e7eb'}`, background: formData.selectedContextFiles.includes(file.id) ? '#f9fafb' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '18px', height: '18px', border: '1px solid #d1d5db', borderRadius: '4px', background: formData.selectedContextFiles.includes(file.id) ? '#111827' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>{formData.selectedContextFiles.includes(file.id) && <Icons.Check />}</div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontSize: '13px', color: '#374151', fontWeight: '700' }}>{file.name || file.original_name}</span>
+                              <span style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>{file.file_type || 'Unknown Type'}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '24px' }}>No data files uploaded yet.</p>}
                   </div>
 
                   <div>

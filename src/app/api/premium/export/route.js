@@ -19,7 +19,8 @@ import {
   TableRow, 
   TableCell, 
   WidthType, 
-  BorderStyle 
+  BorderStyle,
+  LevelFormat
 } from 'docx';
 
 const ABSTRACT_PROMPT = "You are an academic engineering researcher. Generate a professional Abstract. Project Content: ";
@@ -83,7 +84,14 @@ export async function POST(request) {
 
     const { data: project } = await supabaseAdmin.from('premium_projects').select('*, custom_templates(*)').eq('id', projectId).single();
     const { data: chapters } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).order('chapter_number', { ascending: true });
-    const { data: references } = await supabaseAdmin.from('project_references').select('*').eq('project_id', projectId).order('order_number', { ascending: true });
+    
+    // Fetch ALL references for the entire project, sorted by chapter and order
+    const { data: references } = await supabaseAdmin.from('project_references')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('chapter_number', { ascending: true })
+      .order('order_number', { ascending: true });
+
     const { data: assets } = await supabaseAdmin.from('premium_assets').select('*').eq('project_id', projectId);
 
     const imageMap = {};
@@ -110,6 +118,25 @@ export async function POST(request) {
 
     if (type === 'docx') {
       const sections = [];
+      
+      // Define numbering for Microsoft Word style lists
+      const numbering = {
+        config: [
+          {
+            reference: "numeric-list",
+            levels: [
+              { level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT }
+            ]
+          },
+          {
+            reference: "bullet-list",
+            levels: [
+              { level: 0, format: LevelFormat.BULLET, text: "\u2022", alignment: AlignmentType.LEFT }
+            ]
+          }
+        ]
+      };
+
       if (abstract) {
         sections.push({ children: [new Paragraph({ text: 'ABSTRACT', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 400 } }), new Paragraph({ children: [new TextRun({ text: parseTechnicalText(abstract), font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED })] });
       }
@@ -127,6 +154,8 @@ export async function POST(request) {
         const lines = contentBody.split('\n');
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim(); if (!line) continue;
+          
+          // Tables
           if (line.startsWith('|')) {
             const tableRows = [];
             while (i < lines.length && lines[i].trim().startsWith('|')) {
@@ -143,6 +172,8 @@ export async function POST(request) {
             chapterChildren.push(new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } }));
             chapterChildren.push(new Paragraph({ text: "" })); continue;
           }
+
+          // Images
           const imgMatch = line.match(/!\[.*?\]\((.*?)\)/);
           if (imgMatch) {
             const asset = assets.find(a => a.file_url === imgMatch[1]);
@@ -152,9 +183,41 @@ export async function POST(request) {
               continue;
             }
           }
+
+          // Sub-headings (Bold)
           if (line.startsWith('### ')) {
-            chapterChildren.push(new Paragraph({ children: [new TextRun({ text: line.replace('### ', ''), font: 'Times New Roman', size: 26, bold: true })], spacing: { before: 200, after: 200 } }));
-          } else {
+            chapterChildren.push(new Paragraph({ 
+              children: [new TextRun({ text: line.replace('### ', ''), font: 'Times New Roman', size: 26, bold: true })], 
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 200, after: 200 } 
+            }));
+          } else if (line.startsWith('#### ')) {
+            chapterChildren.push(new Paragraph({ 
+              children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 24, bold: true })], 
+              heading: HeadingLevel.HEADING_3,
+              spacing: { before: 150, after: 150 } 
+            }));
+          }
+          // Numbered Lists
+          else if (/^\d+\.\s/.test(line)) {
+            chapterChildren.push(new Paragraph({
+              children: parseInlineFormatting(line.replace(/^\d+\.\s/, ''), 24),
+              numbering: { reference: "numeric-list", level: 0 },
+              alignment: AlignmentType.JUSTIFIED,
+              spacing: { after: 120, line: 360 }
+            }));
+          }
+          // Bullet Lists
+          else if (line.startsWith('- ') || line.startsWith('* ')) {
+            chapterChildren.push(new Paragraph({
+              children: parseInlineFormatting(line.substring(2), 24),
+              numbering: { reference: "bullet-list", level: 0 },
+              alignment: AlignmentType.JUSTIFIED,
+              spacing: { after: 120, line: 360 }
+            }));
+          }
+          // Paragraphs
+          else {
             chapterChildren.push(new Paragraph({ children: parseInlineFormatting(line), alignment: AlignmentType.JUSTIFIED, spacing: { after: 200, line: 360 } }));
           }
         }
@@ -163,7 +226,7 @@ export async function POST(request) {
       if (references?.length > 0) {
         sections.push({ children: [new Paragraph({ text: 'REFERENCES', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } }), ...references.map((r, i) => new Paragraph({ text: `${i + 1}. ${r.reference_text}`, alignment: AlignmentType.JUSTIFIED, spacing: { after: 150 } }))] });
       }
-      finalBuffer = await Packer.toBuffer(new Document({ sections }));
+      finalBuffer = await Packer.toBuffer(new Document({ sections, numbering }));
       contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     } else {
       const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
@@ -233,6 +296,7 @@ export async function POST(request) {
         const sorted = orderedDocIds.map(id => assets.find(a => a.id === id)).filter(Boolean);
         for (const a of sorted) {
           try {
+            const res = await fetch(a.file_url);
             const docToMerge = await PDFDocument.load(await (await fetch(a.file_url)).arrayBuffer());
             const pages = await finalPdf.copyPages(docToMerge, docToMerge.getPageIndices());
             pages.forEach(p => finalPdf.addPage(p));

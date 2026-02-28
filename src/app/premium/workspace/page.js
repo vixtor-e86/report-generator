@@ -21,6 +21,7 @@ import LoadingModal from '@/components/premium/modals/LoadingModal';
 import PresentationModal from '@/components/premium/modals/PresentationModal';
 import HumanizerModal from '@/components/premium/modals/HumanizerModal';
 import ExportModal from '@/components/premium/modals/ExportModal';
+import TourGuide from '@/components/premium/workspace/TourGuide';
 
 import '@/styles/workspace.css';
 
@@ -215,6 +216,8 @@ function WorkspaceContent() {
       <ModifyModal isOpen={isModifyModalOpen} onClose={() => setIsModifyModalOpen(false)} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />
       <GenerationModal isOpen={isGenerationModalOpen} onClose={() => setIsGenerationModalOpen(false)} uploadedImages={images} researchPapers={[...files, ...researchPapers]} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} projectData={projectData} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />
       <LoadingModal isOpen={isGlobalLoading} loadingText={globalLoadingText} />
+      
+      <TourGuide />
     </div>
   );
 }

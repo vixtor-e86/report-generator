@@ -99,7 +99,7 @@ export default function Sidebar({
         />
       )}
       
-      <div className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
+      <div id="step-sidebar" className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
         {/* Workspace Selector */}
         <div className="sidebar-header-new">
           <div className="workspace-selector" style={{ cursor: 'default' }}>
