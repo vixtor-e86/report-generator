@@ -4,29 +4,13 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { callAI } from '@/lib/aiProvider';
 import mammoth from 'mammoth';
 
-// Use require for pdf-parse as it has ESM compatibility issues in some environments
-const pdf = require('pdf-parse');
-
 export async function POST(request) {
   try {
     const { 
-      projectId, 
-      chapterNumber, 
-      chapterTitle, 
-      userId, 
-      
-      projectTitle,
-      projectDescription,
-      componentsUsed,
-      researchBooks,
-      userPrompt,
-      referenceStyle,
-      maxReferences,
-      targetWordCount = 2000,
-      
-      selectedImages = [],
-      selectedPapers = [],
-      selectedContextFiles = [], // NEW: Files for analysis
+      projectId, chapterNumber, chapterTitle, userId, 
+      projectTitle, projectDescription, componentsUsed, researchBooks,
+      userPrompt, referenceStyle, maxReferences, targetWordCount = 2000,
+      selectedImages = [], selectedPapers = [], selectedContextFiles = [], 
       skipReferences = false
     } = await request.json();
 
@@ -40,13 +24,13 @@ export async function POST(request) {
       .eq('id', projectId)
       .single();
 
-    if (projectError || !project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
+    if (projectError || !project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-    // --- NEW: Contextual File Text Extraction ---
+    // --- Lazy Load pdf-parse inside handler to avoid build-time Canvas/DOM errors on Vercel ---
     let contextualSourceData = "";
     if (selectedContextFiles.length > 0) {
+      const pdf = require('pdf-parse'); // Lazy require
+      
       for (const file of selectedContextFiles) {
         try {
           const res = await fetch(file.file_url || file.src);
@@ -61,7 +45,6 @@ export async function POST(request) {
             const result = await mammoth.extractRawText({ buffer });
             extractedText = result.value;
           } else {
-            // Text files or unknown
             extractedText = buffer.toString('utf-8');
           }
           
@@ -73,34 +56,24 @@ export async function POST(request) {
     }
 
     if (projectTitle || projectDescription || componentsUsed || researchBooks) {
-      await supabaseAdmin
-        .from('premium_projects')
-        .update({
-          title: projectTitle || project.title,
-          description: projectDescription || project.description,
-          components_used: componentsUsed || project.components_used,
-          research_papers_context: researchBooks || project.research_papers_context,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', projectId);
+      await supabaseAdmin.from('premium_projects').update({
+        title: projectTitle || project.title,
+        description: projectDescription || project.description,
+        components_used: componentsUsed || project.components_used,
+        research_papers_context: researchBooks || project.research_papers_context,
+        updated_at: new Date().toISOString()
+      }).eq('id', projectId);
     }
 
     const templateStructure = project.custom_templates?.structure;
     const currentChapterData = templateStructure?.chapters?.find(ch => (ch.number || ch.chapter) === chapterNumber);
-
     const estimatedTokens = Math.ceil(targetWordCount * 4); 
     if ((project.tokens_used || 0) + estimatedTokens > (project.tokens_limit || 300000)) {
       return NextResponse.json({ error: `Insufficient tokens.` }, { status: 403 });
     }
 
-    const finalTitle = projectTitle || project.title;
-    const finalDescription = projectDescription || project.description;
-    const finalComponents = componentsUsed || project.components_used;
-    const finalResearch = researchBooks || project.research_papers_context;
-
     const imageContext = selectedImages.length > 0
-      ? `\n\nIncluded Images (Mapping of Caption to URL):
-${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", URL: ${img.file_url}`).join('\n')}`
+      ? `\n\nIncluded Images:\n${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", URL: ${img.file_url}`).join('\n')}`
       : '';
 
     const paperContext = !skipReferences && selectedPapers.length > 0
@@ -114,35 +87,22 @@ ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", U
       ? `STRICT IEEE RULES: Use [1], [2] sequential in-text citations. Order References list by appearance.`
       : `Follow ${referenceStyle} style rules.`;
 
-    const sectionContext = currentChapterData?.sections 
-      ? `\nFocus on these required sections:\n${currentChapterData.sections.map(s => `- ${s}`).join('\n')}`
-      : '';
-
     const systemPrompt = `You are an elite academic researcher and engineer specialized in ${project.faculty} (${project.department}).
-    Task: Author Chapter ${chapterNumber}: "${chapterTitle || currentChapterData?.title}" for "${finalTitle}".
+    Task: Author Chapter ${chapterNumber}: "${chapterTitle || currentChapterData?.title}" for "${projectTitle || project.title}".
 
-    Overall Objective: ${finalDescription}
-    Context: ${finalComponents} | ${finalResearch}
-    ${sectionContext}
+    Objective: ${projectDescription || project.description}
+    Context: ${componentsUsed || project.components_used} | ${researchBooks || project.research_papers_context}
 
-    ${contextualSourceData ? `\n--- MANDATORY SOURCE DATA FOR ANALYSIS ---\n${contextualSourceData}\nAnalyze the data provided above (readings, tests, experimental results) and incorporate it specifically into this chapter. If this is Chapter 4, perform detailed technical analysis, comparisons, and evaluation based on this provided data.` : ''}
+    ${contextualSourceData ? `\n--- MANDATORY SOURCE DATA FOR ANALYSIS ---\n${contextualSourceData}\nAnalyze the data provided above and incorporate it specifically into this chapter results/evaluation.` : ''}
 
     IMAGE MAPPING:
     ${imageContext}
-    Rule: Use exactly ![Caption](URL) syntax.
-
+    
     ${paperContext}
     ${citationStyleRules}
 
-    Instructions: ${userPrompt || 'Deliver high-quality academic content.'}
-
-    Requirements:
-    - Formal, technical English.
-    - Markdown format.
-    - Target: ${targetWordCount} words.
-    - Currency: Nigerian Naira (₦).
-
-    ${skipReferences ? `--- NO REFERENCES SECTION.` : `--- Include a "## References" section at the end using ${referenceStyle} style.`}`;
+    Target: ${targetWordCount} words. Currency: Nigerian Naira (₦).
+    ${skipReferences ? `--- NO REFERENCES SECTION.` : `--- Include a "## References" section at the end.`}`;
 
     const aiResponse = await callAI(systemPrompt, { provider: 'deepseek', maxTokens: 8000, temperature: 0.6 });
 
@@ -154,7 +114,6 @@ ${selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", U
       await supabaseAdmin.from('premium_chapters').update({ content: aiResponse.content, status: 'draft', updated_at: new Date().toISOString() }).eq('id', chapter.id);
     }
 
-    // History extraction logic...
     await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: aiResponse.content, prompt_used: userPrompt, model_used: aiResponse.model });
 
     const refSection = aiResponse.content.split(/## References|# References/i)[1];
