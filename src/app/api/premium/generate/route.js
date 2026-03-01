@@ -4,74 +4,54 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { callAI } from '@/lib/aiProvider';
 import mammoth from 'mammoth';
 
+// Polyfills
+if (typeof global.DOMMatrix === 'undefined') { global.DOMMatrix = class DOMMatrix { constructor() { this.a = 1; this.d = 1; } }; }
+if (typeof global.ImageData === 'undefined') { global.ImageData = class ImageData { constructor(w, h) { this.width = w; this.height = h; this.data = new Uint8ClampedArray(w * h * 4); } }; }
+
 export async function POST(request) {
   try {
     const body = await request.json();
     const { 
-      projectId, chapterNumber, chapterTitle, userId, 
+      projectId, chapterNumber, userId, 
+      selectedContextFiles = [], testOnly = false,
       projectTitle, projectDescription, componentsUsed, researchBooks,
-      userPrompt, referenceStyle, maxReferences, targetWordCount = 2000,
-      selectedImages = [], selectedPapers = [], selectedContextFiles = [], 
-      skipReferences = false, testOnly = false 
+      userPrompt, referenceStyle, targetWordCount = 2000,
+      selectedImages = [], selectedPapers = [], skipReferences = false
     } = body;
 
-    if (!projectId || chapterNumber === undefined || !userId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    // 1. Fetch Project
-    let project = null;
-    if (projectId !== 'test') {
-      const { data, error: projectError } = await supabaseAdmin
-        .from('premium_projects')
-        .select('*, custom_templates(*)')
-        .eq('id', projectId)
-        .single();
-      if (projectError || !data) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-      project = data;
-    }
-
-    // 2. Technical Extraction (Using pdf-parse but with safe require)
+    // 1. Technical Extraction Logic
     let contextualSourceData = "";
     if (selectedContextFiles.length > 0) {
-      let pdfParser;
-      try {
-        pdfParser = require('pdf-parse');
-      } catch (e) {
-        console.error("Failed to load pdf-parse:", e);
-      }
+      const pdf = require('pdf-parse');
       
       for (const file of selectedContextFiles) {
         try {
-          const fileUrl = file.file_url || file.src;
-          if (!fileUrl) continue;
-
-          const res = await fetch(fileUrl);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          
-          const arrayBuffer = await res.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
+          const res = await fetch(file.file_url || file.src);
+          const buffer = Buffer.from(await res.arrayBuffer());
           
           let extractedText = "";
-          const fileName = file.name || file.original_name || "File";
-          const isPdf = file.file_type === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf');
-          const isDocx = file.file_type?.includes('word') || fileName.toLowerCase().endsWith('.docx');
+          const isPdf = (file.file_type === 'application/pdf' || (file.name || "").toLowerCase().endsWith('.pdf'));
           
-          if (isPdf && pdfParser) {
-            // Options to prevent n is not a function (some versions of pdf-parse have issues with default renderers)
-            const data = await pdfParser(buffer);
-            extractedText = data.text;
-          } else if (isDocx) {
+          if (isPdf) {
+            // Use safe options to avoid renderer errors
+            const data = await pdf(buffer, { pagerender: () => "" });
+            extractedText = data.text || "";
+          } else if ((file.name || "").toLowerCase().endsWith('.docx')) {
             const result = await mammoth.extractRawText({ buffer });
             extractedText = result.value;
           } else {
             extractedText = buffer.toString('utf-8');
           }
-          
-          contextualSourceData += `\n--- SOURCE: ${fileName} ---\n${extractedText.substring(0, 15000)}\n`;
+
+          // Safety Check: If it's still showing raw PDF headers, extraction failed
+          if (extractedText.includes("%PDF-")) {
+            throw new Error("Binary PDF data detected. Text extraction failed.");
+          }
+
+          const snippet = extractedText.trim().substring(0, 500);
+          contextualSourceData += `\n--- SOURCE: ${file.name || "Data File"} ---\n${snippet}\n`;
         } catch (e) {
-          console.error("File extraction error:", e);
-          contextualSourceData += `\n--- ERROR IN ${file.name || "File"}: ${e.message} ---\n`;
+          contextualSourceData += `\n--- ERROR READING ${file.name}: ${e.message} ---\n`;
         }
       }
     }
@@ -80,55 +60,30 @@ export async function POST(request) {
       return NextResponse.json({ success: true, debugExtractions: contextualSourceData || "No data extracted." });
     }
 
-    // --- AI Generation Logic ---
-    if (projectTitle || projectDescription || componentsUsed || researchBooks) {
-      await supabaseAdmin.from('premium_projects').update({
-        title: projectTitle || project.title,
-        description: projectDescription || project.description,
-        components_used: componentsUsed || project.components_used,
-        research_papers_context: researchBooks || project.research_papers_context,
-        updated_at: new Date().toISOString()
-      }).eq('id', projectId);
-    }
+    // --- Proceed with AI Generation ---
+    const { data: project } = await supabaseAdmin.from('premium_projects').select('*, custom_templates(*)').eq('id', projectId).single();
+    if (!project && projectId !== 'test') return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
     const currentChapterData = project?.custom_templates?.structure?.chapters?.find(ch => (ch.number || ch.chapter) === chapterNumber);
-    const estimatedTokens = Math.ceil(targetWordCount * 4); 
-    if (project && (project.tokens_used || 0) + estimatedTokens > (project.tokens_limit || 300000)) {
-      return NextResponse.json({ error: `Insufficient tokens.` }, { status: 403 });
-    }
-
-    const imageContext = selectedImages.length > 0 ? `\n\nImages:\n${selectedImages.map(img => `- "${img.caption || img.original_name}": ${img.file_url}`).join('\n')}` : '';
-    const paperContext = !skipReferences && selectedPapers.length > 0 ? `\n\nReferences:\n${selectedPapers.map((p, idx) => `[SS${idx + 1}] ${p.title}`).join('\n')}` : '';
-
-    const systemPrompt = `You are an elite academic engineer. Task: Author Chapter ${chapterNumber}: "${chapterTitle || currentChapterData?.title}" for "${projectTitle || project?.title}".
+    
+    const systemPrompt = `You are an academic engineering researcher. 
+    Task: Author Chapter ${chapterNumber}: "${currentChapterData?.title}" for "${projectTitle || project?.title}".
+    ${contextualSourceData ? `\nANALYSIS DATA:\n${contextualSourceData}\nSTRICT RULE: Analyze and evaluate this data specifically.` : ''}
     Objective: ${projectDescription || project?.description}
-    ${contextualSourceData ? `\n--- SOURCE DATA ---\n${contextualSourceData}\nAnalyze and use this data.` : ''}
     Target: ${targetWordCount} words. Style: ${referenceStyle}. IEEE uses [1], [2].`;
 
     const aiResponse = await callAI(systemPrompt, { provider: 'deepseek', maxTokens: 8000, temperature: 0.6 });
 
+    // Upsert logic...
     let { data: chapter } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
     if (!chapter) {
-      const { data: newChapter } = await supabaseAdmin.from('premium_chapters').insert({ project_id: projectId, chapter_number: chapterNumber, title: chapterTitle || currentChapterData?.title || `Chapter ${chapterNumber}`, content: aiResponse.content, status: 'draft' }).select().single();
-      chapter = newChapter;
+      const { data: nc } = await supabaseAdmin.from('premium_chapters').insert({ project_id: projectId, chapter_number: chapterNumber, title: currentChapterData?.title || `Chapter ${chapterNumber}`, content: aiResponse.content, status: 'draft' }).select().single();
+      chapter = nc;
     } else {
       await supabaseAdmin.from('premium_chapters').update({ content: aiResponse.content, status: 'draft', updated_at: new Date().toISOString() }).eq('id', chapter.id);
     }
 
-    await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: aiResponse.content, prompt_used: userPrompt, model_used: aiResponse.model });
-
-    // Extraction of references...
-    const refSection = aiResponse.content.split(/## References|# References/i)[1];
-    if (refSection) {
-      const refLines = refSection.split('\n').filter(line => line.trim() && (line.trim().startsWith('[') || line.match(/^\d+\./)));
-      if (refLines.length > 0) {
-        await supabaseAdmin.from('project_references').delete().eq('project_id', projectId).eq('chapter_number', chapterNumber);
-        await supabaseAdmin.from('project_references').insert(refLines.map((l, i) => ({ project_id: projectId, user_id: userId, reference_text: l.trim(), order_number: i + 1, chapter_number: chapterNumber })));
-      }
-    }
-
-    if (project) await supabaseAdmin.from('premium_projects').update({ tokens_used: (project.tokens_used || 0) + aiResponse.tokensUsed.total, updated_at: new Date().toISOString() }).eq('id', projectId);
-
     return NextResponse.json({ success: true, content: aiResponse.content });
-  } catch (error) { console.error('Gen Error:', error); return NextResponse.json({ error: error.message }, { status: 500 }); }
+
+  } catch (error) { console.error(error); return NextResponse.json({ error: error.message }, { status: 500 }); }
 }

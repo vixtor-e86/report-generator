@@ -74,6 +74,22 @@ function WorkspaceContent() {
   const [workspaceMode, setWorkspaceMode] = useState('editor');
   const [previewFile, setPreviewFile] = useState(null);
 
+  // Sticky Generation Settings (Persists as long as page is not reloaded)
+  const [stickyGenSettings, setStickyGenSettings] = useState({
+    projectTitle: '',
+    projectDescription: '',
+    componentsUsed: '',
+    researchBooks: '',
+    userPrompt: '',
+    selectedImages: [],
+    selectedPapers: [],
+    selectedContextFiles: [],
+    referenceStyle: 'APA',
+    maxReferences: 10,
+    skipReferences: false,
+    targetWordCount: 2000 
+  });
+
   const { uploadFile, uploading, deleteFile, deleting } = useFileUpload(projectId);
 
   const loadWorkspaceData = async () => {
@@ -218,7 +234,21 @@ function WorkspaceContent() {
         onSaved={loadWorkspaceData}
       />
       <ModifyModal isOpen={isModifyModalOpen} onClose={() => setIsModifyModalOpen(false)} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />
-      <GenerationModal isOpen={isGenerationModalOpen} onClose={() => setIsGenerationModalOpen(false)} uploadedImages={images} researchPapers={[...files, ...researchPapers]} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} projectData={projectData} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />
+      <GenerationModal 
+        isOpen={isGenerationModalOpen} 
+        onClose={() => setIsGenerationModalOpen(false)} 
+        uploadedImages={images} 
+        researchPapers={[...files, ...researchPapers]} 
+        activeChapter={activeChapter} 
+        projectId={projectId} 
+        userId={currentUser?.id} 
+        projectData={projectData} 
+        onGenerateSuccess={loadWorkspaceData} 
+        setIsGlobalLoading={setIsGlobalLoading} 
+        setGlobalLoadingText={setGlobalLoadingText} 
+        formData={stickyGenSettings}
+        setFormData={setStickyGenSettings}
+      />
       <LoadingModal isOpen={isGlobalLoading} loadingText={globalLoadingText} />
       
       <TourGuide />
