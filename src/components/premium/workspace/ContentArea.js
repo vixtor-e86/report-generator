@@ -20,7 +20,8 @@ const Icons = {
   X: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
   Save: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
   Eye: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
-  ArrowRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+  ArrowRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>,
+  Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
 };
 
 export default function ContentArea({ 
@@ -133,7 +134,7 @@ export default function ContentArea({
   if (activeView === 'history') {
     return (
       <div className="content-area">
-        <div className="content-layout-wrapper">
+        <div className="content-layout-wrapper" style={{ alignItems: 'flex-start' }}>
           <div style={{ marginBottom: '40px', width: '100%' }}>
             <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>Project History</h1>
             <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>View and restore previous AI-generated versions.</p>
@@ -200,7 +201,7 @@ export default function ContentArea({
   if (activeChapter) {
     return (
       <div className="content-area">
-        <div className="content-layout-wrapper">
+        <div className="content-layout-wrapper" style={{ alignItems: 'flex-start' }}>
           <div style={{ marginBottom: '24px', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
             <div>
               <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>{activeChapter.title}</h1>
@@ -216,7 +217,7 @@ export default function ContentArea({
               <button onClick={handleSaveEdit} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: 'none', background: '#111827', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: isSaving ? 0.7 : 1 }}>{isSaving ? 'Saving...' : <><Icons.Save /> Save Changes</>}</button>
             </div>
           </div>
-          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', minHeight: '700px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', minHeight: '700px', display: 'flex', flexDirection: 'column' }}>
             {workspaceMode === 'editor' ? (
               <textarea
                 ref={textareaRef}
@@ -225,10 +226,21 @@ export default function ContentArea({
                 onChange={(e) => { setLocalContent(e.target.value); updateCursorPosition(); }}
                 onSelect={updateCursorPosition} onClick={updateCursorPosition} onKeyUp={updateCursorPosition}
                 placeholder={`Write your ${activeChapter.title} here...`}
-                style={{ width: '100%', minHeight: '700px', border: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.8', color: '#111827', padding: '40px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'vertical' }}
+                style={{ width: '100%', minHeight: '700px', border: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.8', color: '#111827', padding: '40px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'vertical', flex: 1 }}
               />
             ) : (
-              <div className="markdown-preview premium-print-area" style={{ padding: '60px', minHeight: '700px' }}>
+              <div className="markdown-preview premium-print-area" style={{ padding: '60px', minHeight: '700px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                <style>{`
+                  .markdown-preview { color: #1f2937; line-height: 1.8; font-family: 'Inter', system-ui, sans-serif; width: 100%; }
+                  .markdown-preview h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1.5rem; color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; }
+                  .markdown-preview h2 { font-size: 1.8rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1.2rem; color: #111827; }
+                  .markdown-preview h3 { font-size: 1.4rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; color: #374151; }
+                  .markdown-preview p { margin-bottom: 1.5rem; text-align: justify; }
+                  .markdown-preview img { display: block; max-width: 100%; height: auto; margin: 2rem auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; }
+                  .markdown-preview table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; table-layout: auto; }
+                  .markdown-preview th, .markdown-preview td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; word-break: break-word; }
+                  .markdown-preview th { background: #f9fafb; font-weight: 600; }
+                `}</style>
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{localContent || '*No content yet.*'}</ReactMarkdown>
               </div>
             )}
@@ -258,42 +270,56 @@ export default function ContentArea({
     );
   }
 
+  // Dashboard View
   return (
     <div className="content-area">
-      <div className="content-layout-wrapper" style={{ padding: '40px 60px' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '48px' }}>
-            <div style={{ width: '64px', height: '64px', background: '#111827', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+      <div className="content-layout-wrapper" style={{ padding: '48px 24px' }}>
+        <div style={{ maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
+          
+          {/* Welcome Header */}
+          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <img src="/premium_icon/favicon.ico" alt="Logo" style={{ width: 80, height: 80, display: 'block', margin: '0 auto 24px', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} />
+            <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '900', color: '#111827', margin: '0 0 12px 0', letterSpacing: '-0.03em' }}>Welcome to W3 Writelab</h1>
+            <p style={{ fontSize: '18px', color: '#6b7280', fontWeight: '500' }}>Your High-End AI Academic Research Workspace</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', marginTop: '40px' }}>
+              <ActionCard icon={<Icons.Search />} title="Scholar Search" desc="Academic sources" />
+              <ActionCard icon={<Icons.Edit3 />} title="Grammar Fix" desc="Native proofreading" />
+              <ActionCard icon={<Icons.PieChart />} title="Data Analysis" desc="Test evaluation" />
+              <ActionCard icon={<Icons.Shield />} title="AI Humanizer" desc="Bypass detectors" />
+              <ActionCard icon={<Icons.Code />} title="Translators" desc="Multi-language" />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '40px', padding: '0 12px' }}>
+            <div style={{ width: '48px', height: '48px', background: '#111827', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
               <Icons.Zap />
             </div>
-            <div>
-              <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>Premium Workspace Guide</h1>
-              <p style={{ color: '#6b7280', fontSize: '16px', marginTop: '4px' }}>Welcome Researcher. Let's build your engineering project.</p>
+            <h2 style={{ fontSize: '28px', fontWeight: '900', color: '#111827', margin: 0 }}>Premium Execution Guide</h2>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+            <GuideCard number="01" title="Technical Content" icon={<Icons.FileText />} description="Choose a chapter and use the AI Architect to generate up to 4,000 words of technical report." 
+              bullets={["Specify project context", "IEEE & APA citations", "Mathematical formulas"]} />
+            <GuideCard number="02" title="Technical Diagrams" icon={<Icons.Image />} description="Found in the tools bar. Generate technical illustrations or Mermaid flowcharts instantly."
+              bullets={["Describe systems", "Professional styling", "One-click insertion"]} />
+            <GuideCard number="03" title="Bypass Detection" icon={<Icons.Shield />} description="Use the Humanizer to ensure your project sounds professional and bypasses AI detection tools."
+              bullets={["Removes AI patterns", "Natural sentence flow", "Preserves citations"]} />
+            <GuideCard number="04" title="Final Assembly" icon={<Icons.ArrowRight />} description="Assemble into high-quality PDF or editable Word files with automatic TOC and page numbering."
+              bullets={["Custom file order", "AI Abstract generation", "References page"]} />
+          </div>
+
+          <div style={{ marginTop: '48px', background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)', borderRadius: '32px', padding: '40px', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <div style={{ position: 'absolute', top: 0, right: 0, padding: '20px', opacity: 0.1 }}><Icons.Activity /></div>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ color: '#6366f1' }}>★</span> Pro Tip: Research Data Analysis
+              </h3>
+              <p style={{ color: '#9ca3af', lineHeight: '1.8', fontSize: '16px', maxWidth: '800px' }}>
+                Building <strong>Chapter 4</strong>? Upload your experimental readings (PDF/DOCX) to the <strong>Files Tab</strong>. 
+                In the Generator, select those files under "Materials." Claude will read your real data and perform a customized technical evaluation for your project.
+              </p>
             </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
-            <GuideCard number="01" title="Chapter Generation" icon={<Icons.FileText />} description="Select a chapter and use the AI Architect to generate up to 4,000 words of technical content." 
-              bullets={["Input project context", "Analyze experimental data", "Choose IEEE/APA styles"]} />
-            <GuideCard number="02" title="Diagram Studio" icon={<Icons.Image />} description="Generate technical illustrations or Mermaid flowcharts directly in the right sidebar."
-              bullets={["Describe your system", "AI draws professional diagrams", "Insert into chapters"]} />
-            <GuideCard number="03" title="Academic Humanizer" icon={<Icons.Shield />} description="Bypass AI detectors and improve flow while keeping all technical citations intact."
-              bullets={["Removes robotic patterns", "Ensures high sentence variety", "Powered by Claude 3.5"]} />
-            <GuideCard number="04" title="Professional Export" icon={<Icons.ArrowRight />} description="Assemble your project into high-quality PDF or editable DOCX files with native formatting."
-              bullets={["Automatic TOC & numbering", "Merge cover pages (PDF)", "Dedicated Reference page"]} />
-          </div>
-
-          <div style={{ marginTop: '64px', background: '#f9fafb', borderRadius: '32px', padding: '40px', border: '1px solid #e5e7eb' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#111827', marginBottom: '16px' }}>Pro Tip: Experimental Data</h2>
-            <p style={{ color: '#4b5563', lineHeight: '1.7', fontSize: '15px' }}>For <strong>Chapter 4</strong>, upload your test readings to the <strong>Files Tab</strong>. The AI will read your real data and perform specific analysis for your report.</p>
-          </div>
-
-          {/* Quick Actions (Using ActionCard) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px', marginTop: '48px' }}>
-            <ActionCard icon={<Icons.Search />} title="Research Scholar" desc="Find academic sources" />
-            <ActionCard icon={<Icons.Edit3 />} title="Grammar Check" desc="Advanced proofreading" />
-            <ActionCard icon={<Icons.PieChart />} title="Data Analysis" desc="Computational insights" />
-            <ActionCard icon={<Icons.Code />} title="Translation" desc="Technical translation" />
           </div>
         </div>
       </div>
@@ -310,7 +336,7 @@ function GuideCard({ number, title, icon, description, bullets }) {
         <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#111827', marginBottom: '12px' }}>{title}</h3>
         <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.6', marginBottom: '20px' }}>{description}</p>
         <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-          {bullets.map((b, i) => <li key={i} style={{ display: 'flex', gap: '8px', fontSize: '13px', color: '#4b5563', marginBottom: '8px' }}><span style={{ color: '#111827' }}>•</span> {b}</li>)}
+          {bullets.map((b, i) => <li key={i} style={{ display: 'flex', gap: '8px', fontSize: '13px', color: '#4b5563', marginBottom: '8px', fontWeight: '500' }}><span style={{ color: '#111827' }}>•</span> {b}</li>)}
         </ul>
       </div>
     </div>
@@ -319,10 +345,10 @@ function GuideCard({ number, title, icon, description, bullets }) {
 
 function ActionCard({ icon, title, desc }) {
   return (
-    <div style={{ background: 'white', padding: '20px', borderRadius: '16px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+    <div style={{ background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
       <div style={{ width: '32px', height: '32px', background: '#f3f4f6', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111827', margin: '0 auto 12px' }}>{icon}</div>
-      <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '700' }}>{title}</h4>
-      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>{desc}</p>
+      <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: '800', color: '#111827' }}>{title}</h4>
+      <p style={{ margin: 0, fontSize: '10px', color: '#6b7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{desc}</p>
     </div>
   );
 }

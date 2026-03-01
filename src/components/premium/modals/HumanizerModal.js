@@ -76,7 +76,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={onClose} />
       
       <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} 
-        className="relative bg-white md:rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col h-full md:h-[90vh] md:max-h-[800px]">
+        className="relative bg-white md:rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col h-full md:h-[85vh] md:max-h-[750px]">
         
         {/* Header */}
         <div className="p-5 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
