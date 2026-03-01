@@ -71,6 +71,7 @@ export default function GenerationModal({
   };
 
   const handleGenerate = async () => {
+    if (!activeChapter) return;
     setGenerating(true);
     if (setIsGlobalLoading) {
       setGlobalLoadingText(`Generating Chapter ${currentChapterNumber}...`);
@@ -98,11 +99,10 @@ export default function GenerationModal({
 
   return (
     <>
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)', zIndex: 999 }} onClick={onClose} />
+      <div className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm" onClick={onClose} />
       
-      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', zIndex: 1000, maxWidth: '800px', width: 'calc(100% - 32px)', maxHeight: '95vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col z-[1000] max-h-[95vh]">
         
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px', borderBottom: '1px solid #e5e7eb' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#111827' }}>
@@ -113,94 +113,119 @@ export default function GenerationModal({
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}><Icons.X /></button>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: '12px', padding: '0 24px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
-          <button onClick={() => setActiveTab('details')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'details' ? '#111827' : '#6b7280', borderBottom: activeTab === 'details' ? '2px solid #111827' : '2px solid transparent' }}>Details & Context</button>
-          <button onClick={() => setActiveTab('materials')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'materials' ? '#111827' : '#6b7280', borderBottom: activeTab === 'materials' ? '2px solid #111827' : '2px solid transparent' }}>Materials & References ({formData.selectedImages.length + formData.selectedPapers.length})</button>
-        </div>
-
-        {/* Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-          {activeTab === 'details' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Title</label>
-                <input type="text" value={formData.projectTitle} onChange={(e) => setFormData({...formData, projectTitle: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Custom Instructions</label>
-                <textarea value={formData.userPrompt} onChange={(e) => setFormData({...formData, userPrompt: e.target.value})} placeholder="e.g. Focus on technical data..." style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '120px' }} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Reference Style</label>
-                  <select value={formData.referenceStyle} onChange={(e) => setFormData({...formData, referenceStyle: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
-                    <option value="APA">APA</option><option value="IEEE">IEEE</option><option value="MLA">MLA</option><option value="Harvard">Harvard</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Target Word Count</label>
-                  <input type="number" step="500" value={formData.targetWordCount} onChange={(e) => setFormData({...formData, targetWordCount: parseInt(e.target.value)})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
-                </div>
-              </div>
+        {!activeChapter ? (
+          <div style={{ padding: '80px 40px', textAlign: 'center' }}>
+            <div style={{ fontSize: '64px', marginBottom: '24px' }}>📂</div>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '24px', fontWeight: '800', color: '#111827' }}>No Chapter Selected</h3>
+            <p style={{ color: '#6b7280', maxWidth: '360px', margin: '0 auto 32px', fontSize: '15px', lineHeight: '1.6' }}>
+              Please select a specific chapter from the left sidebar before you can generate content.
+            </p>
+            <button 
+              onClick={onClose}
+              style={{ padding: '12px 32px', background: '#111827', color: 'white', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '14px' }}
+            >
+              Got it, close
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: '12px', padding: '0 24px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
+              <button onClick={() => setActiveTab('details')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'details' ? '#111827' : '#6b7280', borderBottom: activeTab === 'details' ? '2px solid #111827' : '2px solid transparent' }}>Details & Context</button>
+              <button onClick={() => setActiveTab('materials')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'materials' ? '#111827' : '#6b7280', borderBottom: activeTab === 'materials' ? '2px solid #111827' : '2px solid transparent' }}>Materials & References</button>
             </div>
-          )}
 
-          {activeTab === 'materials' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              {isChapter4 && (
-                <div style={{ padding: '16px', background: '#111827', borderRadius: '12px', color: 'white' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <Icons.Activity />
-                    <span style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase' }}>Experimental Data Analysis</span>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+              {activeTab === 'details' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Title</label>
+                    <input type="text" value={formData.projectTitle} onChange={(e) => setFormData({...formData, projectTitle: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }} />
                   </div>
-                  <p style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '12px' }}>Select data files (PDF/DOCX) for AI reading. (500 chars limit)</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {researchPapers.filter(f => !f.file_type?.startsWith('image/')).map(f => (
-                      <div key={f.id} onClick={() => handlePreviewFile(f)} style={{ padding: '10px', borderRadius: '8px', background: formData.selectedContextFiles.find(sf => sf.id === f.id) ? '#374151' : '#1f2937', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '12px' }}>{f.name || f.original_name}</span>
-                        {formData.selectedContextFiles.find(sf => sf.id === f.id) && <Icons.Check />}
-                      </div>
-                    ))}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Instructions</label>
+                    <textarea value={formData.userPrompt} onChange={(e) => setFormData({...formData, userPrompt: e.target.value})} placeholder="e.g. Focus on calculations..." style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '120px' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Reference Style</label>
+                      <select value={formData.referenceStyle} onChange={(e) => setFormData({...formData, referenceStyle: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
+                        <option value="APA">APA</option><option value="IEEE">IEEE</option><option value="MLA">MLA</option><option value="Harvard">Harvard</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>Target Word Count</label>
+                      <input type="number" step="500" value={formData.targetWordCount} onChange={(e) => setFormData({...formData, targetWordCount: parseInt(e.target.value)})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+                    </div>
                   </div>
                 </div>
               )}
 
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Select Visuals</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
-                  {uploadedImages.map(img => (
-                    <div key={img.id} onClick={() => setFormData({...formData, selectedImages: formData.selectedImages.includes(img.id) ? formData.selectedImages.filter(i => i !== img.id) : [...formData.selectedImages, img.id]})} style={{ position: 'relative', height: '100px', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', border: formData.selectedImages.includes(img.id) ? '3px solid #111827' : '1px solid #e5e7eb' }}>
-                      <img src={img.src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      {formData.selectedImages.includes(img.id) && <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#111827', color: 'white', borderRadius: '50%', padding: '2px' }}><Icons.Check /></div>}
+              {activeTab === 'materials' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {isChapter4 && (
+                    <div style={{ padding: '16px', background: '#111827', borderRadius: '12px', color: 'white' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                        <Icons.Activity />
+                        <span style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase' }}>Data Analysis (DOCX/TXT Only)</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {researchPapers.filter(f => !f.file_type?.startsWith('image/')).map(f => (
+                          <div key={f.id} onClick={() => handlePreviewFile(f)} style={{ padding: '10px', borderRadius: '8px', background: formData.selectedContextFiles.find(sf => sf.id === f.id) ? '#374151' : '#1f2937', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '12px' }}>{f.name || f.original_name}</span>
+                            {formData.selectedContextFiles.find(sf => sf.id === f.id) && <Icons.Check />}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                  )}
+
+                  <div>
+                    <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Select References</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {researchPapers.filter(f => !f.file_type?.startsWith('image/')).map(paper => (
+                        <div key={paper.id} onClick={() => setFormData({...formData, selectedPapers: formData.selectedPapers.includes(paper.id) ? formData.selectedPapers.filter(id => id !== paper.id) : [...formData.selectedPapers, paper.id]})} style={{ padding: '12px', borderRadius: '10px', border: `1px solid ${formData.selectedPapers.includes(paper.id) ? '#111827' : '#e5e7eb'}`, background: formData.selectedPapers.includes(paper.id) ? '#f9fafb' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '18px', height: '18px', border: '1px solid #d1d5db', borderRadius: '4px', background: formData.selectedPapers.includes(paper.id) ? '#111827' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>{formData.selectedPapers.includes(paper.id) && <Icons.Check />}</div>
+                          <span style={{ fontSize: '13px' }}>{paper.title || paper.original_name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Select Visuals</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
+                      {uploadedImages.map(img => (
+                        <div key={img.id} onClick={() => setFormData({...formData, selectedImages: formData.selectedImages.includes(img.id) ? formData.selectedImages.filter(i => i !== img.id) : [...formData.selectedImages, img.id]})} style={{ position: 'relative', height: '100px', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', border: formData.selectedImages.includes(img.id) ? '3px solid #111827' : '1px solid #e5e7eb' }}>
+                          <img src={img.src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          {formData.selectedImages.includes(img.id) && <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#111827', color: 'white', borderRadius: '50%', padding: '2px' }}><Icons.Check /></div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Footer */}
-        <div style={{ padding: '20px 24px', borderTop: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-          <button onClick={onClose} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}>Cancel</button>
-          <button onClick={handleGenerate} disabled={generating || !formData.projectTitle} style={{ padding: '10px 32px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.7 : 1 }}>
-            {generating ? 'AI is Writing...' : 'Generate Chapter'}
-          </button>
-        </div>
+            <div style={{ padding: '20px 24px', borderTop: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button onClick={onClose} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleGenerate} disabled={generating || !formData.projectTitle} style={{ padding: '10px 32px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.7 : 1 }}>
+                {generating ? 'AI is Writing...' : 'Generate Chapter'}
+              </button>
+            </div>
+          </>
+        )}
 
-        {/* Nested Preview */}
         <AnimatePresence>
           {previewFile && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, background: 'white', zIndex: 1100, display: 'flex', flexDirection: 'column', padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <h3 style={{ margin: 0 }}>Confirm Data Analysis</h3>
+                <h3 style={{ margin: 0 }}>Confirm Data Analysis (500 Words)</h3>
                 <button onClick={() => setPreviewFile(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Icons.X /></button>
               </div>
               <div style={{ flex: 1, background: '#f9fafb', padding: '20px', borderRadius: '12px', overflowY: 'auto', marginBottom: '20px', border: '1px solid #e5e7eb' }}>
                 {previewLoading ? 'Reading file...' : <pre style={{ fontSize: '11px', whiteSpace: 'pre-wrap' }}>{extractedPreview}</pre>}
               </div>
-              <button onClick={() => toggleContextFile(previewFile)} style={{ padding: '16px', background: '#6366f1', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>
+              <button onClick={() => toggleContextFile(previewFile)} style={{ padding: '16px', background: '#111827', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>
                 {formData.selectedContextFiles.find(f => f.id === previewFile.id) ? 'Deselect File' : 'Confirm & Use Data'}
               </button>
             </motion.div>
