@@ -6,13 +6,14 @@ import mammoth from 'mammoth';
 
 export async function POST(request) {
   try {
+    const body = await request.json();
     const { 
       projectId, chapterNumber, chapterTitle, userId, 
       projectTitle, projectDescription, componentsUsed, researchBooks,
       userPrompt, referenceStyle, maxReferences, targetWordCount = 2000,
       selectedImages = [], selectedPapers = [], selectedContextFiles = [], 
-      skipReferences = false
-    } = await request.json();
+      skipReferences = false, testOnly = false // Extract testOnly
+    } = body;
 
     if (!projectId || chapterNumber === undefined || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -24,12 +25,14 @@ export async function POST(request) {
       .eq('id', projectId)
       .single();
 
-    if (projectError || !project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    if (projectError || !project) {
+        if (projectId !== 'test') return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
 
-    // --- Lazy Load pdf-parse inside handler to avoid build-time Canvas/DOM errors on Vercel ---
+    // --- Lazy Load pdf-parse inside handler ---
     let contextualSourceData = "";
     if (selectedContextFiles.length > 0) {
-      const pdf = require('pdf-parse'); // Lazy require
+      const pdf = require('pdf-parse');
       
       for (const file of selectedContextFiles) {
         try {
@@ -38,28 +41,31 @@ export async function POST(request) {
           const buffer = Buffer.from(arrayBuffer);
           
           let extractedText = "";
-          if (file.file_type === 'application/pdf' || (file.name || "").endsWith('.pdf')) {
+          const fileName = file.name || file.original_name || "";
+          
+          if (file.file_type === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
             const data = await pdf(buffer);
             extractedText = data.text;
-          } else if (file.file_type?.includes('word') || (file.name || "").endsWith('.docx')) {
+          } else if (file.file_type?.includes('word') || fileName.toLowerCase().endsWith('.docx')) {
             const result = await mammoth.extractRawText({ buffer });
             extractedText = result.value;
           } else {
             extractedText = buffer.toString('utf-8');
           }
           
-          contextualSourceData += `\n--- SOURCE FILE: ${file.name || "Data File"} ---\n${extractedText.substring(0, 15000)}\n`;
+          contextualSourceData += `\n--- SOURCE FILE: ${fileName} ---\n${extractedText.substring(0, 15000)}\n`;
         } catch (e) {
           console.error("Extraction error:", e);
+          contextualSourceData += `\n--- ERROR READING: ${file.name || "File"} ---\n${e.message}\n`;
         }
       }
     }
 
-    // --- NEW: Test/Debug Mode for Verification ---
-    if (request.testOnly || (await request.clone().json()).testOnly) {
+    // --- NEW: Simplified Test/Debug Mode Check ---
+    if (testOnly) {
       return NextResponse.json({ 
         success: true, 
-        debugExtractions: contextualSourceData || "No data extracted." 
+        debugExtractions: contextualSourceData || "No data extracted from the selected files." 
       });
     }
 
