@@ -4,6 +4,16 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { callAI } from '@/lib/aiProvider';
 import mammoth from 'mammoth';
 
+// Polyfill for pdf-parse to prevent ReferenceError: DOMMatrix is not defined on Vercel
+if (typeof global.DOMMatrix === 'undefined') {
+  global.DOMMatrix = class DOMMatrix {
+    constructor() { this.a = 1; this.b = 0; this.c = 0; this.d = 1; this.e = 0; this.f = 0; }
+  };
+}
+if (typeof global.ImageData === 'undefined') {
+  global.ImageData = class ImageData { constructor(width, height) { this.width = width; this.height = height; this.data = new Uint8ClampedArray(width * height * 4); } };
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -12,41 +22,51 @@ export async function POST(request) {
       projectTitle, projectDescription, componentsUsed, researchBooks,
       userPrompt, referenceStyle, maxReferences, targetWordCount = 2000,
       selectedImages = [], selectedPapers = [], selectedContextFiles = [], 
-      skipReferences = false, testOnly = false // Extract testOnly
+      skipReferences = false, testOnly = false 
     } = body;
 
     if (!projectId || chapterNumber === undefined || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const { data: project, error: projectError } = await supabaseAdmin
-      .from('premium_projects')
-      .select('*, custom_templates(*)')
-      .eq('id', projectId)
-      .single();
-
-    if (projectError || !project) {
-        if (projectId !== 'test') return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    // 1. Fetch Project (Skip if testing)
+    let project = null;
+    if (projectId !== 'test') {
+      const { data, error: projectError } = await supabaseAdmin
+        .from('premium_projects')
+        .select('*, custom_templates(*)')
+        .eq('id', projectId)
+        .single();
+      
+      if (projectError || !data) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      project = data;
     }
 
-    // --- Lazy Load pdf-parse inside handler ---
+    // 2. Technical Extraction
     let contextualSourceData = "";
     if (selectedContextFiles.length > 0) {
+      // Lazy Load pdf-parse inside handler
       const pdf = require('pdf-parse');
       
       for (const file of selectedContextFiles) {
         try {
-          const res = await fetch(file.file_url || file.src);
+          const fileUrl = file.file_url || file.src;
+          if (!fileUrl) continue;
+
+          const res = await fetch(fileUrl);
+          if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+          
           const arrayBuffer = await res.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
           
           let extractedText = "";
-          const fileName = file.name || file.original_name || "";
+          const fileName = file.name || file.original_name || "Unknown File";
+          const fileType = file.file_type || "";
           
-          if (file.file_type === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
+          if (fileType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
             const data = await pdf(buffer);
             extractedText = data.text;
-          } else if (file.file_type?.includes('word') || fileName.toLowerCase().endsWith('.docx')) {
+          } else if (fileType.includes('word') || fileName.toLowerCase().endsWith('.docx')) {
             const result = await mammoth.extractRawText({ buffer });
             extractedText = result.value;
           } else {
@@ -61,13 +81,16 @@ export async function POST(request) {
       }
     }
 
-    // --- NEW: Simplified Test/Debug Mode Check ---
+    // 3. Test/Debug Response
     if (testOnly) {
       return NextResponse.json({ 
         success: true, 
-        debugExtractions: contextualSourceData || "No data extracted from the selected files." 
+        debugExtractions: contextualSourceData || "No data extracted. Verify file type." 
       });
     }
+
+    // --- Proceed with Generation if not testOnly ---
+    if (!project) return NextResponse.json({ error: 'Project context missing for generation.' }, { status: 400 });
 
     if (projectTitle || projectDescription || componentsUsed || researchBooks) {
       await supabaseAdmin.from('premium_projects').update({
@@ -81,6 +104,7 @@ export async function POST(request) {
 
     const templateStructure = project.custom_templates?.structure;
     const currentChapterData = templateStructure?.chapters?.find(ch => (ch.number || ch.chapter) === chapterNumber);
+    
     const estimatedTokens = Math.ceil(targetWordCount * 4); 
     if ((project.tokens_used || 0) + estimatedTokens > (project.tokens_limit || 300000)) {
       return NextResponse.json({ error: `Insufficient tokens.` }, { status: 403 });
@@ -109,8 +133,7 @@ export async function POST(request) {
 
     ${contextualSourceData ? `\n--- MANDATORY SOURCE DATA FOR ANALYSIS ---\n${contextualSourceData}\nAnalyze the data provided above and incorporate it specifically into this chapter results/evaluation.` : ''}
 
-    IMAGE MAPPING:
-    ${imageContext}
+    IMAGE MAPPING: ${imageContext}
     
     ${paperContext}
     ${citationStyleRules}
