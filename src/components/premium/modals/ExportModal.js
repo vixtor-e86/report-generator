@@ -124,7 +124,7 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={onClose} />
       <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} 
-        className={`relative bg-white md:rounded-[40px] shadow-2xl w-full ${isDocx ? 'max-w-xl' : 'max-w-7xl'} overflow-hidden flex flex-col h-full md:h-auto md:max-h-[850px]`}>
+        className={`relative bg-white md:rounded-[40px] shadow-2xl w-full ${isDocx ? 'max-w-xl' : 'max-w-7xl'} overflow-hidden flex flex-col h-full md:h-auto md:max-h-[90vh]`}>
         
         <div className="p-6 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-4">

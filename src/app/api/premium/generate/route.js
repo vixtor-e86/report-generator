@@ -55,6 +55,14 @@ export async function POST(request) {
       }
     }
 
+    // --- NEW: Test/Debug Mode for Verification ---
+    if (request.testOnly || (await request.clone().json()).testOnly) {
+      return NextResponse.json({ 
+        success: true, 
+        debugExtractions: contextualSourceData || "No data extracted." 
+      });
+    }
+
     if (projectTitle || projectDescription || componentsUsed || researchBooks) {
       await supabaseAdmin.from('premium_projects').update({
         title: projectTitle || project.title,

@@ -25,7 +25,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     if (!chapter) return;
 
     setIsGenerating(true);
-    setGlobalLoadingText('Claude is rewriting your chapter for academic flow...');
+    setGlobalLoadingText('AI is rewriting your chapter for academic flow...');
     setIsGlobalLoading(true);
 
     try {

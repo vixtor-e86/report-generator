@@ -31,6 +31,7 @@ export default function ContentArea({
   onUpdateChapter,
   onUpdateTemplate,
   onVisualToolsClick,
+  onLogoClick,
   images = [],
   workspaceMode = 'editor',
   setWorkspaceMode
@@ -198,6 +199,29 @@ export default function ContentArea({
     );
   }
 
+  // --- NEW: Image Detail View Logic ---
+  const activeImage = activeView.startsWith('image-') ? images.find(img => `image-${img.id}` === activeView) : null;
+  if (activeImage) {
+    return (
+      <div className="content-area">
+        <div className="content-layout-wrapper" style={{ alignItems: 'flex-start' }}>
+          <div style={{ marginBottom: '40px', width: '100%' }}>
+            <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>{activeImage.original_name || 'Project Image'}</h1>
+            <p style={{ fontSize: '16px', color: '#6b7280' }}>Visual Asset in {projectData.title}</p>
+          </div>
+          <div style={{ background: 'white', borderRadius: '24px', border: '1px solid #e5e7eb', padding: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: '500px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+            <img src={activeImage.src} alt={activeImage.original_name} style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: '12px', objectFit: 'contain', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} />
+            {activeImage.caption && (
+              <p style={{ marginTop: '24px', fontSize: '14px', color: '#4b5563', fontStyle: 'italic', fontWeight: '600', background: '#f9fafb', padding: '12px 24px', borderRadius: '100px' }}>
+                Figure: {activeImage.caption}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (activeChapter) {
     return (
       <div className="content-area">
@@ -278,7 +302,12 @@ export default function ContentArea({
           
           {/* Welcome Header */}
           <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-            <img src="/premium_icon/favicon.ico" alt="Logo" style={{ width: 80, height: 80, display: 'block', margin: '0 auto 24px', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} />
+            <img 
+              src="/premium_icon/favicon.ico" 
+              alt="Logo" 
+              onClick={onLogoClick}
+              style={{ width: 80, height: 80, display: 'block', margin: '0 auto 24px', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))', cursor: 'pointer' }} 
+            />
             <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '900', color: '#111827', margin: '0 0 12px 0', letterSpacing: '-0.03em' }}>Welcome to W3 Writelab</h1>
             <p style={{ fontSize: '18px', color: '#6b7280', fontWeight: '500' }}>Your High-End AI Academic Research Workspace</p>
             
@@ -317,7 +346,7 @@ export default function ContentArea({
               </h3>
               <p style={{ color: '#9ca3af', lineHeight: '1.8', fontSize: '16px', maxWidth: '800px' }}>
                 Building <strong>Chapter 4</strong>? Upload your experimental readings (PDF/DOCX) to the <strong>Files Tab</strong>. 
-                In the Generator, select those files under "Materials." Claude will read your real data and perform a customized technical evaluation for your project.
+                In the Generator, select those files under "Materials." Our AI Architect will read your real data and perform a customized technical evaluation for your project.
               </p>
             </div>
           </div>
