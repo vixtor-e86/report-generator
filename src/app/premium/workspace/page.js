@@ -238,7 +238,8 @@ function WorkspaceContent() {
         isOpen={isGenerationModalOpen} 
         onClose={() => setIsGenerationModalOpen(false)} 
         uploadedImages={images} 
-        researchPapers={[...files, ...researchPapers]} 
+        researchPapers={researchPapers} // Only Semantic Scholar papers
+        dataFiles={files} // Only user uploaded data files
         activeChapter={activeChapter} 
         projectId={projectId} 
         userId={currentUser?.id} 

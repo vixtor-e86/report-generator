@@ -12,7 +12,7 @@ const Icons = {
 };
 
 export default function GenerationModal({ 
-  isOpen, onClose, uploadedImages = [], researchPapers = [], 
+  isOpen, onClose, uploadedImages = [], researchPapers = [], dataFiles = [],
   activeChapter, projectId, userId, projectData, onGenerateSuccess,
   setIsGlobalLoading, setGlobalLoadingText,
   formData, setFormData
@@ -99,10 +99,11 @@ export default function GenerationModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)', zIndex: 999 }} onClick={onClose} />
       
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col z-[1000] max-h-[95vh]">
+      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', zIndex: 1000, maxWidth: '800px', width: 'calc(100% - 32px)', maxHeight: '95vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px', borderBottom: '1px solid #e5e7eb' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#111827' }}>
@@ -129,11 +130,13 @@ export default function GenerationModal({
           </div>
         ) : (
           <>
+            {/* Tabs */}
             <div style={{ display: 'flex', gap: '12px', padding: '0 24px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
               <button onClick={() => setActiveTab('details')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'details' ? '#111827' : '#6b7280', borderBottom: activeTab === 'details' ? '2px solid #111827' : '2px solid transparent' }}>Details & Context</button>
               <button onClick={() => setActiveTab('materials')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'materials' ? '#111827' : '#6b7280', borderBottom: activeTab === 'materials' ? '2px solid #111827' : '2px solid transparent' }}>Materials & References</button>
             </div>
 
+            {/* Content */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
               {activeTab === 'details' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -162,35 +165,39 @@ export default function GenerationModal({
 
               {activeTab === 'materials' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {/* Separate Data Analysis Section (Only for Chapter 4) */}
                   {isChapter4 && (
                     <div style={{ padding: '16px', background: '#111827', borderRadius: '12px', color: 'white' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                         <Icons.Activity />
-                        <span style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase' }}>Data Analysis (DOCX/TXT Only)</span>
+                        <span style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase' }}>Experimental Data Analysis (DOCX/TXT)</span>
                       </div>
+                      <p style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '12px' }}>Select data files from your uploads to analyze in Chapter 4.</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {researchPapers.filter(f => !f.file_type?.startsWith('image/')).map(f => (
+                        {dataFiles.length > 0 ? dataFiles.map(f => (
                           <div key={f.id} onClick={() => handlePreviewFile(f)} style={{ padding: '10px', borderRadius: '8px', background: formData.selectedContextFiles.find(sf => sf.id === f.id) ? '#374151' : '#1f2937', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
                             <span style={{ fontSize: '12px' }}>{f.name || f.original_name}</span>
                             {formData.selectedContextFiles.find(sf => sf.id === f.id) && <Icons.Check />}
                           </div>
-                        ))}
+                        )) : <p style={{ fontSize: '11px', color: '#4b5563' }}>No data files uploaded.</p>}
                       </div>
                     </div>
                   )}
 
+                  {/* Separate References Section */}
                   <div>
-                    <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Select References</h4>
+                    <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Select Saved References</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {researchPapers.filter(f => !f.file_type?.startsWith('image/')).map(paper => (
+                      {researchPapers.length > 0 ? researchPapers.map(paper => (
                         <div key={paper.id} onClick={() => setFormData({...formData, selectedPapers: formData.selectedPapers.includes(paper.id) ? formData.selectedPapers.filter(id => id !== paper.id) : [...formData.selectedPapers, paper.id]})} style={{ padding: '12px', borderRadius: '10px', border: `1px solid ${formData.selectedPapers.includes(paper.id) ? '#111827' : '#e5e7eb'}`, background: formData.selectedPapers.includes(paper.id) ? '#f9fafb' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div style={{ width: '18px', height: '18px', border: '1px solid #d1d5db', borderRadius: '4px', background: formData.selectedPapers.includes(paper.id) ? '#111827' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>{formData.selectedPapers.includes(paper.id) && <Icons.Check />}</div>
                           <span style={{ fontSize: '13px' }}>{paper.title || paper.original_name}</span>
                         </div>
-                      ))}
+                      )) : <p style={{ fontSize: '12px', color: '#9ca3af' }}>No saved references found.</p>}
                     </div>
                   </div>
 
+                  {/* Visuals Section */}
                   <div>
                     <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Select Visuals</h4>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
@@ -206,6 +213,7 @@ export default function GenerationModal({
               )}
             </div>
 
+            {/* Footer */}
             <div style={{ padding: '20px 24px', borderTop: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button onClick={onClose} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}>Cancel</button>
               <button onClick={handleGenerate} disabled={generating || !formData.projectTitle} style={{ padding: '10px 32px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', cursor: generating ? 'not-allowed' : 'pointer', opacity: generating ? 0.7 : 1 }}>
@@ -215,6 +223,7 @@ export default function GenerationModal({
           </>
         )}
 
+        {/* Nested Preview */}
         <AnimatePresence>
           {previewFile && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, background: 'white', zIndex: 1100, display: 'flex', flexDirection: 'column', padding: '24px' }}>

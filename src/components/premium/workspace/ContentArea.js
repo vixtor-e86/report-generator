@@ -1,3 +1,4 @@
+// src/components/premium/workspace/ContentArea.js
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -21,7 +22,8 @@ const Icons = {
   Save: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
   Eye: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
   ArrowRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>,
-  Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+  Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
+  Layers: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
 };
 
 export default function ContentArea({ 
@@ -132,6 +134,57 @@ export default function ContentArea({
     onUpdateTemplate({ ...currentStructure, chapters: newChapters });
   };
 
+  if (activeView === 'edit-template') {
+    return (
+      <div className="content-area">
+        <div className="content-layout-wrapper" style={{ alignItems: 'flex-start' }}>
+          <div style={{ marginBottom: '40px', width: '100%' }}>
+            <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>Project Template</h1>
+            <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>Define the structure and sections for each chapter.</p>
+          </div>
+          
+          <div style={{ background: 'white', borderRadius: '24px', border: '1px solid #e5e7eb', width: '100%', overflow: 'hidden' }}>
+            <div style={{ padding: '32px', borderBottom: '1px solid #f3f4f6', background: '#f9fafb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', background: '#111827', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}><Icons.Layers /></div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>Report Outline</h3>
+              </div>
+            </div>
+            
+            <div style={{ padding: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
+                {projectData.template?.structure?.chapters.map((ch) => (
+                  <div key={ch.chapter || ch.number} style={{ background: '#f9fafb', borderRadius: '20px', border: '1px solid #e5e7eb', padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                      <div>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chapter {ch.chapter || ch.number}</span>
+                        <h4 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: '800', color: '#111827' }}>{ch.title}</h4>
+                      </div>
+                      <button onClick={() => setEditingTemplate(ch)} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>Edit Structure</button>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {ch.sections?.map((s, idx) => (
+                        <span key={idx} style={{ background: 'white', border: '1px solid #f1f5f9', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', color: '#6b7280' }}>{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        {editingTemplate && (
+          <EditTemplateModal 
+            isOpen={!!editingTemplate} 
+            onClose={() => setEditingTemplate(null)} 
+            chapter={editingTemplate} 
+            onSave={handleSaveChapterTemplate} 
+          />
+        )}
+      </div>
+    );
+  }
+
   if (activeView === 'history') {
     return (
       <div className="content-area">
@@ -199,7 +252,6 @@ export default function ContentArea({
     );
   }
 
-  // --- NEW: Image Detail View Logic ---
   const activeImage = activeView.startsWith('image-') ? images.find(img => `image-${img.id}` === activeView) : null;
   if (activeImage) {
     return (
@@ -300,7 +352,6 @@ export default function ContentArea({
       <div className="content-layout-wrapper" style={{ padding: '48px 24px' }}>
         <div style={{ maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
           
-          {/* Welcome Header */}
           <div style={{ textAlign: 'center', marginBottom: '64px' }}>
             <img 
               src="/premium_icon/favicon.ico" 
