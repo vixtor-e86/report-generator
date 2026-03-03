@@ -248,7 +248,7 @@ function WorkspaceContent() {
       />
       <LoadingModal isOpen={isGlobalLoading} loadingText={globalLoadingText} />
       
-      <TourGuide />
+      <TourGuide projectId={projectId} />
     </div>
   );
 }

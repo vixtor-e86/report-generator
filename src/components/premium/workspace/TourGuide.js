@@ -12,7 +12,7 @@ const TOUR_STEPS = [
   { target: '#step-export', title: 'Final Export', content: 'When ready, export your project as a professional PDF or an editable Word document.', position: 'bottom' }
 ];
 
-export default function TourGuide() {
+export default function TourGuide({ projectId }) {
   const [currentStep, setCurrentStep] = useState(-1);
   const [targetRect, setTargetRect] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -30,13 +30,15 @@ export default function TourGuide() {
   }, [currentStep, retryCount]);
 
   useEffect(() => {
-    // Force show if hasn't seen
-    const hasSeenTour = localStorage.getItem('has_seen_premium_tour');
+    // Check if user has seen the tour FOR THIS SPECIFIC PROJECT
+    if (!projectId) return;
+    const hasSeenTour = localStorage.getItem(`has_seen_tour_${projectId}`);
+    
     if (!hasSeenTour) {
-      const timer = setTimeout(() => setCurrentStep(0), 3000); // 3s delay to ensure workspace is fully loaded
+      const timer = setTimeout(() => setCurrentStep(0), 3000); 
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [projectId]);
 
   useEffect(() => {
     updatePosition();
@@ -54,7 +56,9 @@ export default function TourGuide() {
 
   const handleComplete = () => {
     setCurrentStep(-1);
-    localStorage.setItem('has_seen_premium_tour', 'true');
+    if (projectId) {
+      localStorage.setItem(`has_seen_tour_${projectId}`, 'true');
+    }
   };
 
   if (currentStep < 0 || !targetRect) return null;

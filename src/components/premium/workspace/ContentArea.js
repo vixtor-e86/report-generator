@@ -396,8 +396,8 @@ export default function ContentArea({
                 <span style={{ color: '#6366f1' }}>★</span> Pro Tip: Research Data Analysis
               </h3>
               <p style={{ color: '#9ca3af', lineHeight: '1.8', fontSize: '16px', maxWidth: '800px' }}>
-                Building <strong>Chapter 4</strong>? Upload your experimental readings (PDF/DOCX) to the <strong>Files Tab</strong>. 
-                In the Generator, select those files under "Materials." Our AI Architect will read your real data and perform a customized technical evaluation for your project.
+                Building <strong>Chapter 4</strong>? Upload your experimental readings (DOCX/TXT) to the <strong>Files Tab</strong>. 
+                In the Generator, select those files under "Materials." Our System Architect will read your real data and perform a customized technical evaluation for your project.
               </p>
             </div>
           </div>
