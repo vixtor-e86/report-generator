@@ -4,25 +4,35 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { callAI } from '@/lib/aiProvider';
 import mammoth from 'mammoth';
 
+// Polyfills
+if (typeof global.DOMMatrix === 'undefined') { global.DOMMatrix = class DOMMatrix { constructor() { this.a = 1; this.d = 1; } }; }
+if (typeof global.ImageData === 'undefined') { global.ImageData = class ImageData { constructor(w, h) { this.width = w; this.height = h; this.data = new Uint8ClampedArray(w * h * 4); } }; }
+
 export async function POST(request) {
   try {
     const body = await request.json();
     const { 
-      projectId, chapterNumber, chapterTitle, userId, 
+      projectId, chapterNumber, userId, 
+      selectedContextFiles = [],
       projectTitle, projectDescription, componentsUsed, researchBooks,
-      userPrompt, referenceStyle, maxReferences, targetWordCount = 2000,
-      selectedImages = [], selectedPapers = [], selectedContextFiles = [], 
-      skipReferences = false, testOnly = false 
+      userPrompt, referenceStyle, targetWordCount = 2000,
+      selectedImages = [], selectedPapers = [], skipReferences = false
     } = body;
 
     if (!projectId || chapterNumber === undefined || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const { data: project } = await supabaseAdmin.from('premium_projects').select('*, custom_templates(*)').eq('id', projectId).single();
-    if (!project && projectId !== 'test') return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    // 1. Fetch Project
+    const { data: project, error: projectError } = await supabaseAdmin
+      .from('premium_projects')
+      .select('*, custom_templates(*)')
+      .eq('id', projectId)
+      .single();
+    
+    if (projectError || !project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-    // --- 2. Technical Extraction (DOCX & TXT ONLY) ---
+    // 2. Technical Extraction (DOCX & TXT ONLY)
     let contextualSourceData = "";
     if (selectedContextFiles.length > 0) {
       for (const file of selectedContextFiles) {
@@ -52,38 +62,34 @@ export async function POST(request) {
       }
     }
 
-    if (testOnly) return NextResponse.json({ success: true, debugExtractions: contextualSourceData || "No data extracted." });
-
     // --- AI Generation Logic ---
     const estimatedTokens = Math.ceil(targetWordCount * 4); 
-    if (project && (project.tokens_used || 0) + estimatedTokens > (project.tokens_limit || 300000)) {
+    if ((project.tokens_used || 0) + estimatedTokens > (project.tokens_limit || 300000)) {
       return NextResponse.json({ error: `Insufficient tokens.` }, { status: 403 });
     }
 
+    const currentChapterData = project.custom_templates?.structure?.chapters?.find(ch => (ch.number || ch.chapter) === chapterNumber);
     const imageContext = selectedImages.length > 0 ? `\n\nImages:\n${selectedImages.map(img => `- "${img.caption || img.original_name}": ${img.file_url}`).join('\n')}` : '';
     const paperContext = !skipReferences && selectedPapers.length > 0 ? `\n\nReferences:\n${selectedPapers.map((p, idx) => `[SS${idx + 1}] ${p.title}`).join('\n')}` : '';
 
-    const systemPrompt = `You are an elite academic engineer. Task: Author Chapter ${chapterNumber}: "${chapterTitle}" for "${projectTitle || project?.title}".
-    Objective: ${projectDescription || project?.description}
+    const systemPrompt = `You are an elite academic engineer. Task: Author Chapter ${chapterNumber}: "${currentChapterData?.title || 'Chapter Content'}" for "${projectTitle || project.title}".
+    Objective: ${projectDescription || project.description}
     ${contextualSourceData ? `\n--- SOURCE DATA ---\n${contextualSourceData}\nAnalyze and use this data.` : ''}
     ${imageContext} ${paperContext}
     Target: ${targetWordCount} words. Style: ${referenceStyle}. IEEE uses [1], [2].`;
 
     const aiResponse = await callAI(systemPrompt, { provider: 'deepseek', maxTokens: 8000, temperature: 0.6 });
 
-    // DB logic...
     let { data: chapter } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
     if (!chapter) {
-      const { data: nc } = await supabaseAdmin.from('premium_chapters').insert({ project_id: projectId, chapter_number: chapterNumber, title: chapterTitle || `Chapter ${chapterNumber}`, content: aiResponse.content, status: 'draft' }).select().single();
+      const { data: nc } = await supabaseAdmin.from('premium_chapters').insert({ project_id: projectId, chapter_number: chapterNumber, title: currentChapterData?.title || `Chapter ${chapterNumber}`, content: aiResponse.content, status: 'draft' }).select().single();
       chapter = nc;
     } else {
       await supabaseAdmin.from('premium_chapters').update({ content: aiResponse.content, status: 'draft', updated_at: new Date().toISOString() }).eq('id', chapter.id);
     }
 
-    // Save history
     await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: aiResponse.content, prompt_used: userPrompt, model_used: aiResponse.model });
 
-    // References extraction logic...
     const refSection = aiResponse.content.split(/## References|# References/i)[1];
     if (refSection) {
       const refLines = refSection.split('\n').filter(line => line.trim() && (line.trim().startsWith('[') || line.match(/^\d+\./)));
@@ -93,8 +99,8 @@ export async function POST(request) {
       }
     }
 
-    if (project) await supabaseAdmin.from('premium_projects').update({ tokens_used: (project.tokens_used || 0) + aiResponse.tokensUsed.total, updated_at: new Date().toISOString() }).eq('id', projectId);
+    await supabaseAdmin.from('premium_projects').update({ tokens_used: (project.tokens_used || 0) + aiResponse.tokensUsed.total, updated_at: new Date().toISOString() }).eq('id', projectId);
 
     return NextResponse.json({ success: true, content: aiResponse.content });
-  } catch (error) { console.error(error); return NextResponse.json({ error: error.message }, { status: 500 }); }
+  } catch (error) { console.error('Gen Error:', error); return NextResponse.json({ error: error.message }, { status: 500 }); }
 }

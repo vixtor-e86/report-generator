@@ -22,7 +22,6 @@ import PresentationModal from '@/components/premium/modals/PresentationModal';
 import HumanizerModal from '@/components/premium/modals/HumanizerModal';
 import ExportModal from '@/components/premium/modals/ExportModal';
 import TourGuide from '@/components/premium/workspace/TourGuide';
-import ExtractionTestModal from '@/components/premium/modals/ExtractionTestModal';
 
 import '@/styles/workspace.css';
 
@@ -62,7 +61,6 @@ function WorkspaceContent() {
   const [isPresentationModalOpen, setIsPresentationModalOpen] = useState(false);
   const [isHumanizerModalOpen, setIsHumanizerModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [isExtractionTestOpen, setIsExtractionTestOpen] = useState(false);
   const [exportType, setExportType] = useState('pdf');
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
 
@@ -182,7 +180,6 @@ function WorkspaceContent() {
         <div className="workspace-content">
           <ContentArea
             activeView={activeView} projectData={projectData} chapters={chapters} images={images} workspaceMode={workspaceMode} setWorkspaceMode={setWorkspaceMode}
-            onLogoClick={() => setIsExtractionTestOpen(true)}
             onUpdateChapter={(id, content) => setChapters(chapters.map(ch => ch.id === id ? { ...ch, content } : ch))}
             onUpdateTemplate={async (ns) => {
               const { error } = await supabase.from('custom_templates').update({ structure: ns }).eq('id', projectData.template?.id);
@@ -208,7 +205,6 @@ function WorkspaceContent() {
       <FilePreviewModal isOpen={!!previewFile} onClose={() => setPreviewFile(null)} file={previewFile} />
       <ResearchSearchModal isOpen={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} projectId={projectId} onPaperSaved={loadWorkspaceData} />
       <VisualToolsModal isOpen={isVisualToolsModalOpen} onClose={() => setIsVisualToolsModalOpen(false)} projectId={projectId} userId={currentUser?.id} onImageSaved={loadWorkspaceData} />
-      <ExtractionTestModal isOpen={isExtractionTestOpen} onClose={() => setIsExtractionTestOpen(false)} files={files} />
       <PresentationModal isOpen={isPresentationModalOpen} onClose={() => setIsPresentationModalOpen(false)} chapters={chapters} projectId={projectId} userId={currentUser?.id} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />
       <HumanizerModal 
         isOpen={isHumanizerModalOpen} 

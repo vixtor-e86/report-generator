@@ -17,6 +17,8 @@ export default function Dashboard() {
   const [creatingPayment, setCreatingPayment] = useState(false);
   const [pendingPayment, setPendingPayment] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [premiumPassword, setPremiumPassword] = useState('');
+  const [verifyingPremium, setVerifyingPremium] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -153,7 +155,51 @@ export default function Dashboard() {
     if (isAdmin) {
       router.push('/premium/template-selection');
     } else {
+      setPremiumPassword('');
       setShowPremiumModal(true);
+    }
+  };
+
+  const handlePremiumAuthSubmit = async (e) => {
+    e.preventDefault();
+    if (!premiumPassword) return;
+
+    setVerifyingPremium(true);
+    try {
+      const response = await fetch('/api/auth/verify-premium-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: premiumPassword })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setShowPremiumModal(false);
+        // Authorized - Proceed to payment
+        setCreatingPayment(true);
+        const payRes = await fetch('/api/flutterwave/initialize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            email: user.email,
+            tier: 'premium',
+            amount: PRICING.PREMIUM
+          })
+        });
+
+        const payData = await payRes.json();
+        if (!payRes.ok) throw new Error(payData.error || 'Payment failed');
+        window.location.href = payData.authorization_url;
+      } else {
+        alert(data.error || 'Invalid authorization code.');
+      }
+    } catch (error) {
+      console.error('Premium access error:', error);
+      alert(error.message || 'Verification failed. Please try again.');
+    } finally {
+      setVerifyingPremium(false);
     }
   };
 
@@ -453,9 +499,50 @@ export default function Dashboard() {
             <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 mx-auto text-purple-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
-            <h3 className="text-xl font-bold text-center text-slate-900 mb-2">Premium Coming Soon</h3>
-            <p className="text-center text-slate-600 mb-6 text-sm">We are fine-tuning our most powerful AI models. Please try the <strong className="text-indigo-600">Standard</strong> plan for professional results today.</p>
-            <button onClick={() => setShowPremiumModal(false)} className="w-full py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition">Close</button>
+            <h3 className="text-xl font-bold text-center text-slate-900 mb-2">Premium Authorized Access</h3>
+            <p className="text-center text-slate-600 mb-6 text-sm">The Premium workspace is currently under construction and only available to authorized testers.</p>
+            
+            <form onSubmit={handlePremiumAuthSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Authorization Code</label>
+                <input 
+                  type="password"
+                  value={premiumPassword}
+                  onChange={(e) => setPremiumPassword(e.target.value)}
+                  placeholder="Enter access code"
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                  required
+                />
+              </div>
+              
+              <button 
+                type="submit"
+                disabled={verifyingPremium || creatingPayment}
+                className="w-full py-3.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:pointer-events-none flex items-center justify-center gap-2"
+              >
+                {verifyingPremium ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    Verifying...
+                  </>
+                ) : creatingPayment ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    Initializing...
+                  </>
+                ) : (
+                  'Access Premium Workspace'
+                )}
+              </button>
+              
+              <button 
+                type="button"
+                onClick={() => setShowPremiumModal(false)}
+                className="w-full py-3 text-slate-400 hover:text-slate-600 text-sm font-semibold transition-colors"
+              >
+                Close
+              </button>
+            </form>
           </div>
         </div>
       )}

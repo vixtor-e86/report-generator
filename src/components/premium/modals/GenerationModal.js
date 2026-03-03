@@ -9,20 +9,16 @@ const Icons = {
   Check: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>,
   FileText: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>,
   Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
-  Image: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+  Image: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>,
+  Info: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
 };
 
 export default function GenerationModal({ 
   isOpen, onClose, uploadedImages = [], researchPapers = [], dataFiles = [],
   activeChapter, projectId, userId, projectData, onGenerateSuccess,
-  setIsGlobalLoading, setGlobalLoadingText
+  setIsGlobalLoading, setGlobalLoadingText,
+  formData, setFormData // These are the 'sticky' settings from parent
 }) {
-  const [formData, setFormData] = useState({
-    projectTitle: '', projectDescription: '', componentsUsed: '', researchBooks: '',
-    userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [],
-    referenceStyle: 'APA', maxReferences: 10, skipReferences: false, targetWordCount: 2000 
-  });
-
   const [activeTab, setActiveTab] = useState('details');
   const [generating, setGenerating] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
@@ -33,16 +29,29 @@ export default function GenerationModal({
   const isChapter4 = currentChapterNumber === 4;
   const isSubsequentChapter = currentChapterNumber > 1;
 
+  // Initialize non-sticky parts (images, papers, instruction) every time it opens
   useEffect(() => {
     if (isOpen && projectData) {
-      setFormData({
-        projectTitle: projectData.title || '',
-        projectDescription: projectData.description || '',
-        componentsUsed: projectData.components_used || '',
-        researchBooks: projectData.research_papers_context || '',
-        userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [],
-        referenceStyle: 'APA', maxReferences: 10, skipReferences: false, targetWordCount: 2000 
-      });
+      // If sticky settings are empty (first run), populate them
+      if (!formData.projectTitle) {
+        setFormData(prev => ({
+          ...prev,
+          projectTitle: projectData.title || '',
+          projectDescription: projectData.description || '',
+          componentsUsed: projectData.components_used || '',
+          researchBooks: projectData.research_papers_context || '',
+        }));
+      }
+      
+      // Reset only chapter-specific instructions/selections
+      setFormData(prev => ({
+        ...prev,
+        userPrompt: '',
+        selectedImages: [],
+        selectedPapers: [],
+        selectedContextFiles: []
+      }));
+
       setActiveTab(isSubsequentChapter ? 'materials' : 'details');
     }
   }, [isOpen, projectData, currentChapterNumber]);
@@ -124,7 +133,7 @@ export default function GenerationModal({
           <>
             <div style={{ display: 'flex', gap: '12px', padding: '0 24px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
               <button onClick={() => setActiveTab('details')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'details' ? '#111827' : '#6b7280', borderBottom: activeTab === 'details' ? '2px solid #111827' : '2px solid transparent' }}>Details & Context</button>
-              <button onClick={() => setActiveTab('materials')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'materials' ? '#111827' : '#6b7280', borderBottom: activeTab === 'materials' ? '2px solid #111827' : '2px solid transparent' }}>Materials & References ({formData.selectedImages.length + formData.selectedPapers.length})</button>
+              <button onClick={() => setActiveTab('materials')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'materials' ? '#111827' : '#6b7280', borderBottom: activeTab === 'materials' ? '2px solid #111827' : '2px solid transparent' }}>Materials & References</button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
@@ -198,13 +207,26 @@ export default function GenerationModal({
                         <Icons.Activity />
                         <span style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase' }}>Experimental Data Analysis</span>
                       </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px', marginBottom: '12px' }}>
+                        <Icons.Info style={{ color: '#6366f1' }} />
+                        <p style={{ fontSize: '10px', color: '#9ca3af', margin: 0, textTransform: 'uppercase', fontWeight: '700' }}>Note: Only DOCX and TXT files are supported for extraction.</p>
+                      </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {dataFiles.map(f => (
+                        {dataFiles.filter(f => {
+                          const name = (f.name || f.original_name || "").toLowerCase();
+                          return name.endsWith('.docx') || name.endsWith('.txt');
+                        }).map(f => (
                           <div key={f.id} onClick={() => handlePreviewFile(f)} style={{ padding: '10px', borderRadius: '8px', background: formData.selectedContextFiles.find(sf => sf.id === f.id) ? '#374151' : '#1f2937', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
                             <span style={{ fontSize: '12px' }}>{f.name || f.original_name}</span>
                             {formData.selectedContextFiles.find(sf => sf.id === f.id) && <Icons.Check />}
                           </div>
                         ))}
+                        {dataFiles.filter(f => {
+                          const name = (f.name || f.original_name || "").toLowerCase();
+                          return name.endsWith('.docx') || name.endsWith('.txt');
+                        }).length === 0 && (
+                          <p style={{ fontSize: '11px', color: '#4b5563', textAlign: 'center', padding: '10px' }}>No supported files (DOCX/TXT) found.</p>
+                        )}
                       </div>
                     </div>
                   )}
