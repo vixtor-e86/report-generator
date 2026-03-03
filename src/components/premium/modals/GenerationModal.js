@@ -18,8 +18,8 @@ export default function GenerationModal({
   setIsGlobalLoading, setGlobalLoadingText,
   formData: stickyData, setFormData: setStickyData 
 }) {
-  // Ensure local state is initialized correctly
   const [localData, setLocalData] = useState({
+    projectTitle: '', projectDescription: '', componentsUsed: '', researchBooks: '',
     userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
   });
 
@@ -36,6 +36,10 @@ export default function GenerationModal({
   useEffect(() => {
     if (isOpen && projectData) {
       setLocalData({
+        projectTitle: projectData.title || '',
+        projectDescription: projectData.description || '',
+        componentsUsed: projectData.components_used || '',
+        researchBooks: projectData.research_papers_context || '',
         userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
       });
       setActiveTab(isSubsequentChapter ? 'materials' : 'details');
@@ -71,7 +75,7 @@ export default function GenerationModal({
     if (!activeChapter) return;
     setGenerating(true);
     if (setIsGlobalLoading) {
-      setGlobalLoadingText(`System is architecting Chapter ${currentChapterNumber}...`);
+      setGlobalLoadingText(`System Architect is designing Chapter ${currentChapterNumber}...`);
       setIsGlobalLoading(true);
     }
     try {
@@ -80,10 +84,6 @@ export default function GenerationModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId, userId, chapterNumber: currentChapterNumber, chapterTitle: activeChapter?.title,
-          projectTitle: projectData.title,
-          projectDescription: projectData.description,
-          componentsUsed: projectData.components_used,
-          researchBooks: projectData.research_papers_context,
           ...localData,
           referenceStyle: stickyData.referenceStyle,
           maxReferences: stickyData.maxReferences,
@@ -117,7 +117,7 @@ export default function GenerationModal({
           <div style={{ padding: '80px 40px', textAlign: 'center' }}>
             <div style={{ fontSize: '64px', marginBottom: '24px' }}>📂</div>
             <h3 style={{ margin: '0 0 12px 0', fontSize: '24px', fontWeight: '800', color: '#111827' }}>No Chapter Selected</h3>
-            <p style={{ color: '#6b7280', maxWidth: '360px', margin: '0 auto 32px', fontSize: '15px', lineHeight: '1.6' }}>Please select a specific chapter from the left sidebar before clicking generate.</p>
+            <p style={{ color: '#6b7280', maxWidth: '360px', margin: '0 auto 32px', fontSize: '15px', lineHeight: '1.6' }}>Please select a chapter from the left sidebar before clicking generate.</p>
             <button onClick={onClose} style={{ padding: '12px 32px', background: '#111827', color: 'white', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: '700' }}>Close</button>
           </div>
         ) : (
@@ -131,10 +131,28 @@ export default function GenerationModal({
               {activeTab === 'details' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {isSubsequentChapter && (
-                    <div style={{ padding: '16px', background: '#eff6ff', borderRadius: '12px', border: '1px solid #dbeafe' }}>
-                      <p style={{ margin: 0, fontSize: '14px', color: '#1e40af', fontWeight: '600' }}>Context Inherited from Project</p>
+                    <div style={{ padding: '16px', background: '#eff6ff', borderRadius: '12px', border: '1px solid #dbeafe', marginBottom: '8px' }}>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#1e40af', fontWeight: '600' }}>Refining Technical Context</p>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#3b82f6' }}>You can update your project components and research context for this chapter below.</p>
                     </div>
                   )}
+                  
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Title</label>
+                    <input type="text" value={localData.projectTitle} onChange={(e) => setLocalData({...localData, projectTitle: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Components Used</label>
+                      <textarea placeholder="e.g. Arduino, React, Tensile Tester" value={localData.componentsUsed} onChange={(e) => setLocalData({...localData, componentsUsed: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '80px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Research Context / Journals</label>
+                      <textarea placeholder="e.g. IEEE Journal, Academic Journals" value={localData.researchBooks} onChange={(e) => setLocalData({...localData, researchBooks: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '80px' }} />
+                    </div>
+                  </div>
+
                   <div>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Custom Instructions</label>
                     <textarea value={localData.userPrompt} onChange={(e) => setLocalData({...localData, userPrompt: e.target.value})} placeholder="e.g. Focus on technical calculations..." style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '120px' }} />
@@ -223,7 +241,7 @@ export default function GenerationModal({
 
             <div style={{ padding: '20px 24px', borderTop: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button onClick={onClose} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleGenerate} disabled={generating || !projectData.title} style={{ padding: '10px 32px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', cursor: generating ? 'not-allowed' : 'pointer' }}>{generating ? 'System is Writing...' : 'Generate Chapter'}</button>
+              <button onClick={handleGenerate} disabled={generating || !localData.projectTitle} style={{ padding: '10px 32px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', cursor: generating ? 'not-allowed' : 'pointer' }}>{generating ? 'System is Writing...' : 'Generate Chapter'}</button>
             </div>
           </>
         )}
