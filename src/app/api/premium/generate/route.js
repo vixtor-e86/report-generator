@@ -16,7 +16,8 @@ export async function POST(request) {
       selectedContextFiles = [],
       projectTitle, projectDescription, componentsUsed, researchBooks,
       userPrompt, referenceStyle, maxReferences, targetWordCount = 2000,
-      selectedImages = [], selectedPapers = [], skipReferences = false
+      selectedImages = [], selectedPapers = [], skipReferences = false,
+      scrapedContext = ""
     } = body;
 
     if (!projectId || chapterNumber === undefined || !userId) {
@@ -96,6 +97,8 @@ export async function POST(request) {
     - DESCRIPTION: ${projectDescription || project.description}
     - TECHNICAL COMPONENTS: ${componentsUsed || project.components_used}
     - RESEARCH CONTEXT: ${researchBooks || project.research_papers_context}
+
+    ${scrapedContext ? `## SCRAPED RESEARCH DATA (MANDATORY)\n${scrapedContext}\n` : ''}
 
     ${mandatorySections}
 
