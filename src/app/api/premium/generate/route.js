@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { callAI } from '@/lib/aiProvider';
 import mammoth from 'mammoth';
 
-// Polyfills
+// Polyfills for Vercel
 if (typeof global.DOMMatrix === 'undefined') { global.DOMMatrix = class DOMMatrix { constructor() { this.a = 1; this.d = 1; } }; }
 if (typeof global.ImageData === 'undefined') { global.ImageData = class ImageData { constructor(w, h) { this.width = w; this.height = h; this.data = new Uint8ClampedArray(w * h * 4); } }; }
 
@@ -15,7 +15,7 @@ export async function POST(request) {
       projectId, chapterNumber, userId, 
       selectedContextFiles = [],
       projectTitle, projectDescription, componentsUsed, researchBooks,
-      userPrompt, referenceStyle, targetWordCount = 2000,
+      userPrompt, referenceStyle, maxReferences, targetWordCount = 2000,
       selectedImages = [], selectedPapers = [], skipReferences = false
     } = body;
 
@@ -23,16 +23,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // 1. Fetch Project
-    const { data: project, error: projectError } = await supabaseAdmin
-      .from('premium_projects')
-      .select('*, custom_templates(*)')
-      .eq('id', projectId)
-      .single();
-    
-    if (projectError || !project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    const { data: project } = await supabaseAdmin.from('premium_projects').select('*, custom_templates(*)').eq('id', projectId).single();
+    if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
-    // 2. Technical Extraction (DOCX & TXT ONLY)
+    const provider = process.env.PREMIUM_AI_PROVIDER || 'deepseek';
+    const model = process.env.PREMIUM_AI_MODEL || 'deepseek-chat';
+
+    // 1. Data Extraction (DOCX & TXT ONLY)
     let contextualSourceData = "";
     if (selectedContextFiles.length > 0) {
       for (const file of selectedContextFiles) {
@@ -47,42 +44,83 @@ export async function POST(request) {
             extractedText = result.value;
           } else if (fileName.toLowerCase().endsWith('.txt')) {
             extractedText = buffer.toString('utf-8');
-          } else {
-            contextualSourceData += `\n--- SOURCE: ${fileName} ---\n[Unsupported type. Use DOCX or TXT for analysis]\n`;
-            continue;
-          }
+          } else continue;
 
-          // Enforce 500 WORD limit
           const words = extractedText.trim().split(/\s+/);
           const snippet = words.slice(0, 500).join(" ");
-          contextualSourceData += `\n--- SOURCE: ${fileName} ---\n${snippet}\n[Note: Limited to first 500 words]\n`;
-        } catch (e) {
-          contextualSourceData += `\n--- ERROR IN ${file.name}: ${e.message} ---\n`;
-        }
+          contextualSourceData += `\n--- EXPERIMENTAL DATA FROM: ${fileName} ---\n${snippet}\n`;
+        } catch (e) { console.error(e); }
       }
     }
 
-    // --- AI Generation Logic ---
-    const estimatedTokens = Math.ceil(targetWordCount * 4); 
-    if ((project.tokens_used || 0) + estimatedTokens > (project.tokens_limit || 300000)) {
-      return NextResponse.json({ error: `Insufficient tokens.` }, { status: 403 });
-    }
-
+    // 2. Resource Mapping (Force the AI to see these)
     const currentChapterData = project.custom_templates?.structure?.chapters?.find(ch => (ch.number || ch.chapter) === chapterNumber);
-    const imageContext = selectedImages.length > 0 ? `\n\nImages:\n${selectedImages.map(img => `- "${img.caption || img.original_name}": ${img.file_url}`).join('\n')}` : '';
-    const paperContext = !skipReferences && selectedPapers.length > 0 ? `\n\nReferences:\n${selectedPapers.map((p, idx) => `[SS${idx + 1}] ${p.title}`).join('\n')}` : '';
+    const chapterTitle = currentChapterData?.title || `Chapter ${chapterNumber}`;
+    
+    // FETCH LATEST STRUCTURE: Explicitly tell the AI which sections to include
+    const mandatorySections = currentChapterData?.sections?.length > 0 
+      ? `## MANDATORY CHAPTER SECTIONS\n` +
+        `You MUST include the following specific sections as sub-headings (###) in your response:\n` +
+        currentChapterData.sections.map(s => `- ${s}`).join('\n')
+      : '';
 
-    const systemPrompt = `You are an elite academic engineer. Task: Author Chapter ${chapterNumber}: "${currentChapterData?.title || 'Chapter Content'}" for "${projectTitle || project.title}".
-    Objective: ${projectDescription || project.description}
-    ${contextualSourceData ? `\n--- SOURCE DATA ---\n${contextualSourceData}\nAnalyze and use this data.` : ''}
-    ${imageContext} ${paperContext}
-    Target: ${targetWordCount} words. Style: ${referenceStyle}. IEEE uses [1], [2].`;
+    const imageMapping = selectedImages.length > 0
+      ? `\n\n### MANDATORY IMAGE ATTACHMENTS (STRICT RULES):\n` +
+        `You MUST include the following images in your technical explanation. To insert an image, use this EXACT syntax: ![Caption](URL)\n` +
+        selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", URL: ${img.file_url}`).join('\n')
+      : '';
 
-    const aiResponse = await callAI(systemPrompt, { provider: 'deepseek', maxTokens: 8000, temperature: 0.6 });
+    const referencesMapping = !skipReferences && selectedPapers.length > 0
+      ? `\n\n### CORE RESEARCH REFERENCES:\n` +
+        `Use these specific sources for your citations. Do NOT invent bibliography details.\n` +
+        selectedPapers.map((p, idx) => {
+          const auths = Array.isArray(p.authors) ? p.authors.map(a => typeof a === 'object' ? a.name : a).join(', ') : (p.authors || 'Unknown');
+          return `SOURCE [${idx + 1}]: ${auths} (${p.year}). "${p.title}". ${p.venue}.`;
+        }).join('\n\n')
+      : '';
 
+    // 3. Citation Logic (FORCEFUL)
+    const citationStyleInst = referenceStyle === 'IEEE'
+      ? `### CITATION STYLE: STRICT IEEE\n` +
+        `1. IN-TEXT: Use numbers in square brackets like [1], [2]. Sequential order only.\n` +
+        `2. BIBLIOGRAPHY: List at end under "## References" in numerical order.`
+      : `### CITATION STYLE: STRICT APA\n` +
+        `1. IN-TEXT: Use (Author, Year) format.\n` +
+        `2. BIBLIOGRAPHY: List at end under "## References" in alphabetical order.`;
+
+    // 4. Construct Structured System Prompt
+    const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
+    TASK: Author a comprehensive Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${projectTitle || project.title}".
+
+    ## PROJECT CONTEXT
+    - DESCRIPTION: ${projectDescription || project.description}
+    - TECHNICAL COMPONENTS: ${componentsUsed || project.components_used}
+    - RESEARCH CONTEXT: ${researchBooks || project.research_papers_context}
+
+    ${mandatorySections}
+
+    ${contextualSourceData ? `## MANDATORY EXPERIMENTAL DATA ANALYSIS\n${contextualSourceData}\nSTRICT REQUIREMENT: Perform detailed technical evaluation and result discussion based ONLY on the data provided above.` : ''}
+
+    ${imageMapping}
+    ${referencesMapping}
+    ${citationStyleInst}
+
+    ## WRITING REQUIREMENTS
+    - LANGUAGE: Professional, formal, objective academic English.
+    - FORMAT: Markdown (## Headings, ### Sub-headings, **bold**, lists).
+    - LENGTH: Highly detailed. TARGET: ${targetWordCount} words.
+    - CURRENCY: All costs in Nigerian Naira (₦).
+    - USER SPECIFIC INSTRUCTIONS: ${userPrompt || 'Deliver an elite technical chapter.'}
+
+    ${skipReferences ? '--- DO NOT INCLUDE ANY CITATIONS OR REFERENCES.' : '--- MANDATORY: Include a "## References" section at the very end.'}`;
+
+    // 5. Call AI
+    const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 8000, temperature: 0.6 });
+
+    // 6. DB Persistence
     let { data: chapter } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
     if (!chapter) {
-      const { data: nc } = await supabaseAdmin.from('premium_chapters').insert({ project_id: projectId, chapter_number: chapterNumber, title: currentChapterData?.title || `Chapter ${chapterNumber}`, content: aiResponse.content, status: 'draft' }).select().single();
+      const { data: nc } = await supabaseAdmin.from('premium_chapters').insert({ project_id: projectId, chapter_number: chapterNumber, title: chapterTitle, content: aiResponse.content, status: 'draft' }).select().single();
       chapter = nc;
     } else {
       await supabaseAdmin.from('premium_chapters').update({ content: aiResponse.content, status: 'draft', updated_at: new Date().toISOString() }).eq('id', chapter.id);
@@ -90,17 +128,19 @@ export async function POST(request) {
 
     await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: aiResponse.content, prompt_used: userPrompt, model_used: aiResponse.model });
 
+    // Extract and Save Project-Wide References
     const refSection = aiResponse.content.split(/## References|# References/i)[1];
     if (refSection) {
-      const refLines = refSection.split('\n').filter(line => line.trim() && (line.trim().startsWith('[') || line.match(/^\d+\./)));
-      if (refLines.length > 0) {
+      const lines = refSection.split('\n').filter(l => l.trim() && (l.trim().startsWith('[') || l.match(/^\d+\./)));
+      if (lines.length > 0) {
         await supabaseAdmin.from('project_references').delete().eq('project_id', projectId).eq('chapter_number', chapterNumber);
-        await supabaseAdmin.from('project_references').insert(refLines.map((l, i) => ({ project_id: projectId, user_id: userId, reference_text: l.trim(), order_number: i + 1, chapter_number: chapterNumber })));
+        await supabaseAdmin.from('project_references').insert(lines.map((l, i) => ({ project_id: projectId, user_id: userId, reference_text: l.trim(), order_number: i + 1, chapter_number: chapterNumber })));
       }
     }
 
     await supabaseAdmin.from('premium_projects').update({ tokens_used: (project.tokens_used || 0) + aiResponse.tokensUsed.total, updated_at: new Date().toISOString() }).eq('id', projectId);
 
     return NextResponse.json({ success: true, content: aiResponse.content });
+
   } catch (error) { console.error('Gen Error:', error); return NextResponse.json({ error: error.message }, { status: 500 }); }
 }

@@ -18,6 +18,7 @@ export default function GenerationModal({
   setIsGlobalLoading, setGlobalLoadingText,
   formData: stickyData, setFormData: setStickyData 
 }) {
+  // Ensure local state is initialized correctly
   const [localData, setLocalData] = useState({
     userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
   });
@@ -39,7 +40,7 @@ export default function GenerationModal({
       });
       setActiveTab(isSubsequentChapter ? 'materials' : 'details');
     }
-  }, [isOpen, projectData, currentChapterNumber]);
+  }, [isOpen, projectData, currentChapterNumber, isSubsequentChapter]);
 
   const handlePreviewFile = async (file) => {
     setPreviewFile(file);
@@ -132,26 +133,8 @@ export default function GenerationModal({
                   {isSubsequentChapter && (
                     <div style={{ padding: '16px', background: '#eff6ff', borderRadius: '12px', border: '1px solid #dbeafe' }}>
                       <p style={{ margin: 0, fontSize: '14px', color: '#1e40af', fontWeight: '600' }}>Context Inherited from Project</p>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#3b82f6' }}>Values below are pre-filled from your previous work. You can refine them for this specific chapter.</p>
                     </div>
                   )}
-                  
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Title</label>
-                    <input type="text" value={formData.projectTitle} onChange={(e) => setFormData({...formData, projectTitle: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }} />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Components Used</label>
-                      <textarea placeholder="e.g. Arduino, React" value={formData.componentsUsed} onChange={(e) => setFormData({...formData, componentsUsed: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '80px' }} />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Research Papers Context</label>
-                      <textarea placeholder="e.g. IEEE Journal X" value={formData.researchBooks} onChange={(e) => setFormData({...formData, researchBooks: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '80px' }} />
-                    </div>
-                  </div>
-
                   <div>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Custom Instructions</label>
                     <textarea value={localData.userPrompt} onChange={(e) => setLocalData({...localData, userPrompt: e.target.value})} placeholder="e.g. Focus on technical calculations..." style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '120px' }} />
@@ -240,7 +223,7 @@ export default function GenerationModal({
 
             <div style={{ padding: '20px 24px', borderTop: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button onClick={onClose} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleGenerate} disabled={generating} style={{ padding: '10px 32px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', cursor: generating ? 'not-allowed' : 'pointer' }}>{generating ? 'System is Writing...' : 'Generate Chapter'}</button>
+              <button onClick={handleGenerate} disabled={generating || !projectData.title} style={{ padding: '10px 32px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', cursor: generating ? 'not-allowed' : 'pointer' }}>{generating ? 'System is Writing...' : 'Generate Chapter'}</button>
             </div>
           </>
         )}
