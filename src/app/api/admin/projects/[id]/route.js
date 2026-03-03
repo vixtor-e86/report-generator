@@ -10,82 +10,94 @@ export async function GET(request, props) {
 
     let project = null;
     let chapters = [];
-    let isStandard = false;
+    let tier = 'free';
 
-    // 1. Attempt Standard Project Lookup
-    let { data: stdProject, error: stdError } = await supabaseAdmin
-      .from('standard_projects')
-      .select('*')
+    // 1. Attempt PREMIUM Project Lookup
+    let { data: premProject } = await supabaseAdmin
+      .from('premium_projects')
+      .select('*, custom_templates(*)')
       .eq('id', id)
-      .maybeSingle(); // Use maybeSingle() to avoid error on 0 rows
+      .maybeSingle();
 
-    if (stdError) console.warn('[AdminAPI] Std Lookup Error:', stdError.message);
+    if (premProject) {
+      console.log(`[AdminAPI] Found Premium Project: ${premProject.id}`);
+      project = premProject;
+      tier = 'premium';
 
-    if (stdProject) {
-      console.log(`[AdminAPI] Found Standard Project: ${stdProject.id}`);
-      project = stdProject;
-      isStandard = true;
-
-      // Fetch Standard Chapters
-      const { data: stdChapters } = await supabaseAdmin
-        .from('standard_chapters')
+      // Fetch Premium Chapters
+      const { data: premChapters } = await supabaseAdmin
+        .from('premium_chapters')
         .select('*')
         .eq('project_id', id)
         .order('chapter_number', { ascending: true });
+      
+      chapters = premChapters || [];
+    }
 
-      if (stdChapters && stdChapters.length > 0) {
-        // Fetch Content from Versions
-        const chapterIds = stdChapters.map(c => c.id);
-        const { data: versions } = await supabaseAdmin
-          .from('standard_chapter_versions')
-          .select('chapter_id, content, version_number')
-          .in('chapter_id', chapterIds)
-          .order('version_number', { ascending: false });
-
-        chapters = stdChapters.map(chapter => {
-          // Find latest version for this chapter
-          const ver = versions?.find(v => v.chapter_id === chapter.id);
-          return { ...chapter, content: ver?.content || chapter.content || null };
-        });
-      }
-    } 
-    
-    // 2. If NOT Standard, Attempt Free Project Lookup
+    // 2. Attempt STANDARD Project Lookup (If not found in Premium)
     if (!project) {
-      let { data: freeProject, error: freeError } = await supabaseAdmin
+      let { data: stdProject } = await supabaseAdmin
+        .from('standard_projects')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (stdProject) {
+        console.log(`[AdminAPI] Found Standard Project: ${stdProject.id}`);
+        project = stdProject;
+        tier = 'standard';
+
+        // Fetch Standard Chapters
+        const { data: stdChapters } = await supabaseAdmin
+          .from('standard_chapters')
+          .select('*')
+          .eq('project_id', id)
+          .order('chapter_number', { ascending: true });
+
+        if (stdChapters && stdChapters.length > 0) {
+          const chapterIds = stdChapters.map(c => c.id);
+          const { data: versions } = await supabaseAdmin
+            .from('standard_chapter_versions')
+            .select('chapter_id, content, version_number')
+            .in('chapter_id', chapterIds)
+            .order('version_number', { ascending: false });
+
+          chapters = stdChapters.map(chapter => {
+            const ver = versions?.find(v => v.chapter_id === chapter.id);
+            return { ...chapter, content: ver?.content || chapter.content || null };
+          });
+        }
+      } 
+    }
+    
+    // 3. Attempt FREE Project Lookup (If not found yet)
+    if (!project) {
+      let { data: freeProject } = await supabaseAdmin
         .from('projects')
         .select('*')
         .eq('id', id)
         .maybeSingle();
 
-      if (freeError) console.warn('[AdminAPI] Free Lookup Error:', freeError.message);
-
       if (freeProject) {
         console.log(`[AdminAPI] Found Free Project: ${freeProject.id}`);
         project = freeProject;
+        tier = 'free';
         
-        // Fetch Free Chapters
         const { data: freeChapters } = await supabaseAdmin
           .from('chapters')
           .select('*')
           .eq('project_id', id)
           .order('chapter_number', { ascending: true });
           
-        if (freeChapters) {
-             console.log(`[AdminAPI] Free Chapters Content Check:`);
-             freeChapters.forEach(c => console.log(` - Ch ${c.chapter_number}: ${c.content ? c.content.length : 0} chars`));
-        }
-
         chapters = freeChapters || [];
       }
     }
 
     if (!project) {
-      console.error(`[AdminAPI] Project ${id} not found in any table.`);
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // 3. Fetch User Profile
+    // 4. Fetch User Profile
     let userProfile = { username: 'Unknown', email: 'N/A' };
     if (project.user_id) {
       const { data: user } = await supabaseAdmin
@@ -93,13 +105,12 @@ export async function GET(request, props) {
         .select('username, email')
         .eq('id', project.user_id)
         .maybeSingle();
-      
       if (user) userProfile = user;
     }
 
     return NextResponse.json({
       ...project,
-      tier: project.tier || (isStandard ? 'standard' : 'free'),
+      tier: project.tier || tier,
       user_profiles: userProfile,
       chapters: chapters
     });

@@ -176,22 +176,8 @@ export default function Dashboard() {
 
       if (data.success) {
         setShowPremiumModal(false);
-        // Authorized - Proceed to payment
-        setCreatingPayment(true);
-        const payRes = await fetch('/api/flutterwave/initialize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            email: user.email,
-            tier: 'premium',
-            amount: PRICING.PREMIUM
-          })
-        });
-
-        const payData = await payRes.json();
-        if (!payRes.ok) throw new Error(payData.error || 'Payment failed');
-        window.location.href = payData.authorization_url;
+        // Authorized - Bypass payment and go directly to project creation
+        router.push('/premium/template-selection');
       } else {
         alert(data.error || 'Invalid authorization code.');
       }

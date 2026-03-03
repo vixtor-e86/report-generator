@@ -57,7 +57,9 @@ export default function ProjectDetailPage() {
             </p>
           </div>
           <span className={`px-3 py-1 rounded-full text-sm font-semibold capitalize ${
-            (project.tier || 'free') === 'standard' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-700'
+            (project.tier || 'free') === 'standard' ? 'bg-indigo-100 text-indigo-700' : 
+            (project.tier || 'free') === 'premium' ? 'bg-purple-100 text-purple-700' :
+            'bg-slate-100 text-slate-700'
           }`}>
             {project.tier || 'free'} Tier
           </span>

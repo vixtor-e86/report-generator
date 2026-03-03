@@ -1,7 +1,6 @@
 // src/app/api/admin/stats/route.js
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { supabase } from '@/lib/supabase'; // Client for auth check
 
 export async function GET(request) {
   try {
@@ -20,42 +19,74 @@ export async function GET(request) {
     // 2. Total Revenue
     let totalRevenue = 0;
     try {
-      const { data: payments, error } = await supabaseAdmin
-        .from('payment_transactions')
-        .select('amount')
-        .eq('status', 'paid');
-      if (error) console.error('[AdminStats] Rev Error:', error);
-      totalRevenue = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+      // Fetch amount from all successful transactions
+      // We don't use head: true here because we need the sum of amounts
+      // But we must handle pagination if there are > 1000 transactions
+      let allPayments = [];
+      let from = 0;
+      let to = 999;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data: payments, error } = await supabaseAdmin
+          .from('payment_transactions')
+          .select('amount')
+          .eq('status', 'paid')
+          .range(from, to);
+        
+        if (error) {
+          console.error('[AdminStats] Rev Error:', error);
+          break;
+        }
+
+        if (payments && payments.length > 0) {
+          allPayments = [...allPayments, ...payments];
+          if (payments.length < 1000) {
+            hasMore = false;
+          } else {
+            from += 1000;
+            to += 1000;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      totalRevenue = allPayments.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
     } catch (e) { console.error('[AdminStats] Rev Exception:', e); }
 
-    // 3. Projects Today
+    // 3. Projects Today & Breakdown
     let breakdown = { free: 0, standard: 0, premium: 0 };
     let projectsToday = 0;
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      const todayISO = today.toISOString();
       
-      // Standard Projects
-      const { data: stdToday, error: stdError } = await supabaseAdmin
+      // Standard Projects Today
+      const { count: stdTodayCount } = await supabaseAdmin
         .from('standard_projects')
-        .select('tier')
-        .gte('created_at', today.toISOString());
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', todayISO);
       
-      // Free Projects (Count)
-      const { count: freeTodayCount, error: freeError } = await supabaseAdmin
+      // Premium Projects Today
+      const { count: premTodayCount } = await supabaseAdmin
+        .from('premium_projects')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', todayISO);
+      
+      // Free Projects Today
+      const { count: freeTodayCount } = await supabaseAdmin
         .from('projects')
         .select('*', { count: 'exact', head: true })
-        .gte('created_at', today.toISOString());
+        .gte('created_at', todayISO);
 
-      const stdCount = stdToday?.filter(p => p.tier === 'standard').length || 0;
-      const premCount = stdToday?.filter(p => p.tier === 'premium').length || 0;
-      // Some standard projects might be marked 'free' in tier column, add them to free count
-      const stdFreeCount = stdToday?.filter(p => p.tier === 'free').length || 0;
-      
-      const actualFreeCount = (freeTodayCount || 0) + stdFreeCount;
-
-      breakdown = { free: actualFreeCount, standard: stdCount, premium: premCount };
-      projectsToday = actualFreeCount + stdCount + premCount;
+      breakdown = { 
+        free: freeTodayCount || 0, 
+        standard: stdTodayCount || 0, 
+        premium: premTodayCount || 0 
+      };
+      projectsToday = (freeTodayCount || 0) + (stdTodayCount || 0) + (premTodayCount || 0);
 
     } catch (e) { console.error('[AdminStats] Project Exception:', e); }
 
@@ -83,7 +114,6 @@ export async function GET(request) {
         }
     } catch (e) { console.error('[AdminStats] Tx Exception:', e); }
 
-    console.log('[AdminStats] Success. Returning data.');
     return NextResponse.json({
       totalUsers: usersCount,
       totalRevenue,
@@ -93,7 +123,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Admin stats error FULL DETAILS:', error);
+    console.error('Admin stats error:', error);
     return NextResponse.json({ error: error.message || 'Failed to fetch stats' }, { status: 500 });
   }
 }

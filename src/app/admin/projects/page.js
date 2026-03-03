@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState([]);
+  const [counts, setCounts] = useState({ all: 0, free: 0, standard: 0, premium: 0 });
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, free, standard, premium
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,7 +18,8 @@ export default function AdminProjectsPage() {
       const response = await fetch('/api/admin/projects');
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-      setProjects(data || []);
+      setProjects(data.projects || []);
+      setCounts(data.counts || { all: 0, free: 0, standard: 0, premium: 0 });
     } catch (error) {
       console.error('Error fetching projects:', error);
     } finally {
@@ -63,7 +65,7 @@ export default function AdminProjectsPage() {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {tier} ({projects.filter(p => (p.tier || 'free') === tier).length})
+                {tier} ({counts[tier]?.toLocaleString() || 0})
               </button>
             ))}
           </div>
