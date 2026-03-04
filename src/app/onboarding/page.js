@@ -77,6 +77,23 @@ export default function Onboarding() {
     setSubmitting(true);
 
     try {
+      // Get referral info
+      const refCode = localStorage.getItem('referred_by_code');
+      let referredBy = null;
+      if (refCode) {
+        const { data: referrer } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('referral_code', refCode)
+          .single();
+        
+        if (referrer) {
+          referredBy = referrer.id;
+          // Clean up to prevent reuse/confusion
+          localStorage.removeItem('referred_by_code');
+        }
+      }
+
       // Insert into user_profiles table
       const { error } = await supabase
         .from('user_profiles')
@@ -89,6 +106,7 @@ export default function Onboarding() {
           faculty: faculty, // ✅ SAVE FACULTY
           department: department,
           created_at: new Date().toISOString(),
+          referred_by: referredBy,
         });
 
       if (error) throw error;

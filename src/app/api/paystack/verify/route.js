@@ -66,6 +66,18 @@ export async function GET(request) {
       );
     }
 
+    // ✅ NEW: Process Referral Logic
+    try {
+      // Call the stored procedure to handle referral commissions
+      await supabaseAdmin.rpc('process_referral_purchase', {
+        p_referred_id: transaction.user_id,
+        p_amount: transaction.amount,
+        p_transaction_id: transaction.id
+      });
+    } catch (refError) {
+      console.error('Referral processing error:', refError);
+    }
+
     return NextResponse.json({
       verified: true,
       transaction,

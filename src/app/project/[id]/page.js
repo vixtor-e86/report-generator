@@ -8,6 +8,7 @@ import Image from 'next/image';
 import ReactMarkdown from 'react-markdown'; 
 import remarkGfm from 'remark-gfm'; 
 import { useReactToPrint } from 'react-to-print';
+import ReferralFAB from '@/components/ReferralFAB';
 
 export default function Workspace({ params }) {
   const resolvedParams = use(params);
@@ -731,6 +732,7 @@ export default function Workspace({ params }) {
           </div>
         </div>
       )}
+      <ReferralFAB userId={user?.id} />
     </div>
   );
 }

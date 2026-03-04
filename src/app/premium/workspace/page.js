@@ -180,6 +180,7 @@ function WorkspaceContent() {
         <div className="workspace-content">
           <ContentArea
             activeView={activeView} projectData={projectData} chapters={chapters} images={images} workspaceMode={workspaceMode} setWorkspaceMode={setWorkspaceMode}
+            userProfile={userProfile}
             onUpdateChapter={(id, content) => setChapters(chapters.map(ch => ch.id === id ? { ...ch, content } : ch))}
             onUpdateTemplate={async (ns) => {
               const { error } = await supabase.from('custom_templates').update({ structure: ns }).eq('id', projectData.template?.id);

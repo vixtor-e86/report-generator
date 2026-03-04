@@ -17,6 +17,13 @@ export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
+    // Capture referral code from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if (ref) {
+      localStorage.setItem('referred_by_code', ref);
+    }
+
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {

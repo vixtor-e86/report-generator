@@ -36,7 +36,8 @@ export default function ContentArea({
   onLogoClick,
   images = [],
   workspaceMode = 'editor',
-  setWorkspaceMode
+  setWorkspaceMode,
+  userProfile
 }) {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [localContent, setLocalContent] = useState('');
@@ -45,8 +46,123 @@ export default function ContentArea({
   const [allProjectHistory, setAllHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 }); 
-  
+  const [copied, setCopied] = useState(false);  
   const textareaRef = useRef(null);
+
+  const [commissions, setCommissions] = useState([]);
+
+  useEffect(() => {
+    if (activeView === 'referral' && projectData?.user_id) {
+      async function fetchReferralData() {
+        const { data } = await supabase
+          .from('referral_commissions')
+          .select('*')
+          .eq('referrer_id', projectData.user_id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        if (data) setCommissions(data);
+      }
+      fetchReferralData();
+    }
+  }, [activeView, projectData?.user_id]);
+
+  const referralLink = typeof window !== 'undefined' 
+    ? `${window.location.origin}?ref=${userProfile?.referral_code}`
+    : '';
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(referralLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (activeView === 'referral') {
+    const weeklyPurchases = userProfile?.referral_weekly_purchases || 0;
+    const weeklyEarnings = userProfile?.referral_weekly_earnings || 0;
+    const isVip = userProfile?.role === 'vip';
+    const redeemThreshold = 5;
+    const canRedeem = weeklyPurchases >= redeemThreshold;
+
+    return (
+      <div className="content-area">
+        <div className="content-layout-wrapper" style={{ alignItems: 'flex-start', maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ marginBottom: '40px', width: '100%', textAlign: 'center' }}>
+            <h1 style={{ fontSize: '36px', fontWeight: '900', color: '#111827', margin: '0 0 12px 0', letterSpacing: '-1px' }}>Affiliate Dashboard</h1>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+               <span style={{ padding: '4px 12px', borderRadius: '100px', background: isVip ? '#f3e8ff' : '#f1f5f9', color: isVip ? '#7e22ce' : '#475569', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase' }}>
+                 {isVip ? 'VIP Partner' : 'Standard Partner'}
+               </span>
+               <span style={{ padding: '4px 12px', borderRadius: '100px', background: '#ecfdf5', color: '#059669', fontSize: '12px', fontWeight: '800' }}>
+                 {isVip ? '15% Commission' : '10% Commission'}
+               </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px', width: '100%' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              <div style={{ background: 'white', borderRadius: '32px', border: '1px solid #e5e7eb', padding: '40px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#111827', marginBottom: '24px' }}>Invite Friends</h3>
+                <p style={{ fontSize: '15px', color: '#6b7280', marginBottom: '24px', lineHeight: '1.6' }}>
+                  Share your link. When they upgrade, you earn. Simple as that.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', background: '#f9fafb', padding: '8px', borderRadius: '16px', border: '1px solid #e5e7eb' }}>
+                  <input type="text" readOnly value={referralLink} style={{ flex: 1, background: 'none', border: 'none', padding: '12px 16px', fontSize: '14px', fontWeight: '600', color: '#4b5563', outline: 'none' }} />
+                  <button onClick={handleCopy} style={{ padding: '12px 24px', borderRadius: '12px', border: 'none', background: copied ? '#ecfdf5' : '#111827', color: copied ? '#059669' : 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ background: 'white', borderRadius: '32px', border: '1px solid #e5e7eb', padding: '40px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#111827', marginBottom: '24px' }}>Recent Commissions</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {commissions.length > 0 ? commissions.map(comm => (
+                    <div key={comm.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f9fafb', borderRadius: '16px' }}>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: '800', color: '#111827' }}>₦{comm.amount.toLocaleString()}</p>
+                        <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af' }}>{new Date(comm.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <span style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', color: comm.status === 'paid' ? '#059669' : '#d97706' }}>{comm.status}</span>
+                    </div>
+                  )) : <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '14px' }}>No commissions yet this week.</p>}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              <div style={{ background: '#111827', borderRadius: '32px', padding: '40px', color: 'white' }}>
+                <p style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px' }}>Weekly Earnings</p>
+                <h2 style={{ fontSize: '42px', fontWeight: '900', margin: '0 0 24px 0' }}>₦{weeklyEarnings.toLocaleString()}</h2>
+                
+                <div style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '8px' }}>
+                    <span>Redeem Goal</span>
+                    <span>{weeklyPurchases}/{redeemThreshold} Purchases</span>
+                  </div>
+                  <div style={{ height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '100px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${Math.min(100, (weeklyPurchases/redeemThreshold)*100)}%`, background: '#10b981' }} />
+                  </div>
+                </div>
+
+                <button disabled={!canRedeem} style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: canRedeem ? '#10b981' : 'rgba(255,255,255,0.05)', color: canRedeem ? 'white' : '#4b5563', fontWeight: '800', cursor: canRedeem ? 'pointer' : 'not-allowed' }}>
+                  {canRedeem ? 'Redeem Payout' : 'Redeem Locked'}
+                </button>
+              </div>
+
+              <div style={{ padding: '32px', background: '#fffbeb', borderRadius: '32px', border: '1px solid #fef3c7' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '800', color: '#92400e' }}>Weekly Rules</h4>
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Payouts every Friday</li>
+                  <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Min. 5 purchases to redeem</li>
+                  <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Balance resets Saturday 00:00</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const activeChapter = activeView.startsWith('chapter-') 
     ? chapters.find(ch => `chapter-${ch.id}` === activeView || `chapter-${ch.number}` === activeView)

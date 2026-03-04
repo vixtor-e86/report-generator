@@ -11,6 +11,7 @@ import PreviewModal from '@/components/standard/PreviewModal'; // ✅ NEW
 import SuggestionsModal from '@/components/standard/SuggestionsModal';
 import LoadingModal from '@/components/premium/modals/LoadingModal'; // Reusing premium loading modal
 import FeedbackWidget from '@/components/FeedbackWidget';// ✅ NEW
+import ReferralFAB from '@/components/ReferralFAB';
 
 export default function StandardWorkspace({ params }) {
   const resolvedParams = use(params);
@@ -424,6 +425,7 @@ export default function StandardWorkspace({ params }) {
         isOpen={isGlobalLoading} 
         loadingText={globalLoadingText} 
       />
+      <ReferralFAB userId={user?.id} />
     </div>
   );
 }

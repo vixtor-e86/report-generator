@@ -73,6 +73,19 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Failed to update transaction' }, { status: 500 });
     }
 
+    // ✅ NEW: Process Referral Logic
+    try {
+      // Call the stored procedure to handle referral commissions
+      await supabaseAdmin.rpc('process_referral_purchase', {
+        p_referred_id: updatedTx.user_id,
+        p_amount: updatedTx.amount,
+        p_transaction_id: updatedTx.id
+      });
+    } catch (refError) {
+      console.error('Referral processing error:', refError);
+      // We don't fail the transaction if referral processing fails
+    }
+
     // ✅ NEW: Unlock project if applicable
     // We check the reference string for the project ID (embedded as W3WL_UNLOCK_UUID_TIMESTAMP)
     let projectIdToUnlock = null;

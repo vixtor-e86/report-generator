@@ -298,9 +298,12 @@ export default function Sidebar({
             <Icons.MessageSquare />
             <span>Feedback</span>
           </Link>
-          <button className="footer-item">
+          <button 
+            className={`footer-item ${activeView === 'referral' ? 'active' : ''}`}
+            onClick={() => onViewChange('referral')}
+          >
             <Icons.Users />
-            <span>Invite People</span>
+            <span>Refer & Earn</span>
           </button>
         </div>
 
