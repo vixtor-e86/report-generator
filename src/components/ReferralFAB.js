@@ -140,6 +140,10 @@ export default function ReferralFAB({ userId }) {
                     <p className="text-sm text-slate-600 leading-relaxed">
                       Share your link and earn <span className="font-bold text-slate-900">{stats.role === 'vip' ? '15%' : '10%'}</span> of every purchase your friends make.
                     </p>
+                    <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-full">
+                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Referrals:</span>
+                       <span className="text-sm font-black text-emerald-600">{stats.referralCount}</span>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
