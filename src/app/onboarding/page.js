@@ -32,7 +32,7 @@ export default function Onboarding() {
       }
       setUser(user);
 
-      // Check for stored referral code
+      // Check for stored referral code from URL
       const savedRef = localStorage.getItem('referred_by_code');
       if (savedRef) {
         setReferralCode(savedRef);
@@ -75,43 +75,48 @@ export default function Onboarding() {
 
     try {
       let referredBy = null;
+      
+      // If there is a referral code, find the referrer's ID
       if (referralCode) {
-        const { data: referrer } = await supabase
+        const cleanedCode = referralCode.trim().toUpperCase();
+        const { data: referrer, error: refError } = await supabase
           .from('user_profiles')
           .select('id')
-          .eq('referral_code', referralCode.trim().toUpperCase())
-          .single();
+          .eq('referral_code', cleanedCode)
+          .maybeSingle(); // Use maybeSingle to avoid crash if code is invalid
         
         if (referrer) {
           referredBy = referrer.id;
           
-          // Increment the referrer's count safely
+          // Increment the referrer's count safely via RPC
           await supabase.rpc('increment_referral_count', { referrer_uuid: referredBy });
         }
       }
 
+      // Create the user profile
       const { error } = await supabase
         .from('user_profiles')
         .upsert({
           id: user.id,
-          full_name: user.user_metadata.full_name,
+          full_name: user.user_metadata.full_name || username,
           username: username,
           university_id: university.id === 'other' ? null : university.id,
           custom_institution: university.id === 'other' ? university.name : null,
           faculty: faculty,
           department: department,
           created_at: new Date().toISOString(),
-          referred_by: referredBy,
+          referred_by: referredBy, // Links the users
         });
 
       if (error) throw error;
 
+      // Clean up storage and go to dashboard
       localStorage.removeItem('referred_by_code');
       router.push('/dashboard');
 
     } catch (error) {
-      console.error('Error creating profile:', error);
-      alert(`Failed to create profile: ${error.message}`);
+      console.error('Onboarding error:', error);
+      alert(`Error: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -149,12 +154,10 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <div>
-               <UniversitySelector 
-                 onSelect={(uni) => setUniversity(uni)} 
-                 selectedId={university?.id}
-               />
-            </div>
+            <UniversitySelector 
+              onSelect={(uni) => setUniversity(uni)} 
+              selectedId={university?.id}
+            />
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Faculty</label>
@@ -204,7 +207,6 @@ export default function Onboarding() {
               </div>
             </div>
 
-            {/* Referral Code Field */}
             <div className="pt-4 border-t border-gray-100">
               <label className="block text-sm font-bold text-gray-700">
                 Referral Code {isRefLocked ? 'Applied ✨' : '(Optional)'}
@@ -217,13 +219,13 @@ export default function Onboarding() {
                   readOnly={isRefLocked}
                   className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none text-base sm:text-sm uppercase font-bold tracking-widest ${
                     isRefLocked 
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700' 
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 cursor-not-allowed' 
                     : 'bg-white border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-indigo-500'
                   }`}
                   placeholder="ENTER CODE"
                 />
                 {isRefLocked && (
-                  <p className="mt-1 text-[10px] text-emerald-600 font-medium">You are being referred by a friend!</p>
+                  <p className="mt-1 text-[10px] text-emerald-600 font-medium">Referral discount will be applied!</p>
                 )}
               </div>
             </div>
