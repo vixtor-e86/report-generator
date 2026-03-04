@@ -47,6 +47,7 @@ export default function ContentArea({
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 }); 
   const [copied, setCopied] = useState(false);  
+  const [codeCopied, setCodeCopied] = useState(false);
   const textareaRef = useRef(null);
 
   const [commissions, setCommissions] = useState([]);
@@ -74,6 +75,12 @@ export default function ContentArea({
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(userProfile?.referral_code || '');
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
   };
 
   const activeChapter = activeView.startsWith('chapter-') 
@@ -174,12 +181,15 @@ export default function ContentArea({
         <div className="content-layout-wrapper" style={{ alignItems: 'flex-start', maxWidth: '900px', margin: '0 auto' }}>
           <div style={{ marginBottom: '40px', width: '100%', textAlign: 'center' }}>
             <h1 style={{ fontSize: '36px', fontWeight: '900', color: '#111827', margin: '0 0 12px 0', letterSpacing: '-1px' }}>Affiliate Dashboard</h1>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
                <span style={{ padding: '4px 12px', borderRadius: '100px', background: isVip ? '#f3e8ff' : '#f1f5f9', color: isVip ? '#7e22ce' : '#475569', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase' }}>
                  {isVip ? 'VIP Partner' : 'Standard Partner'}
                </span>
                <span style={{ padding: '4px 12px', borderRadius: '100px', background: '#ecfdf5', color: '#059669', fontSize: '12px', fontWeight: '800' }}>
                  {isVip ? '15% Commission' : '10% Commission'}
+               </span>
+               <span style={{ padding: '4px 12px', borderRadius: '100px', background: '#eff6ff', color: '#1d4ed8', fontSize: '12px', fontWeight: '800' }}>
+                 Total Referrals: {userProfile?.referral_count || 0}
                </span>
             </div>
           </div>
@@ -189,13 +199,27 @@ export default function ContentArea({
               <div style={{ background: 'white', borderRadius: '32px', border: '1px solid #e5e7eb', padding: '40px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
                 <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#111827', marginBottom: '24px' }}>Invite Friends</h3>
                 <p style={{ fontSize: '15px', color: '#6b7280', marginBottom: '24px', lineHeight: '1.6' }}>
-                  Share your link. When they upgrade, you earn. Simple as that.
+                  Share your link or code. When they upgrade, you earn. Simple as that.
                 </p>
-                <div style={{ display: 'flex', gap: '12px', background: '#f9fafb', padding: '8px', borderRadius: '16px', border: '1px solid #e5e7eb' }}>
-                  <input type="text" readOnly value={referralLink} style={{ flex: 1, background: 'none', border: 'none', padding: '12px 16px', fontSize: '14px', fontWeight: '600', color: '#4b5563', outline: 'none' }} />
-                  <button onClick={handleCopy} style={{ padding: '12px 24px', borderRadius: '12px', border: 'none', background: copied ? '#ecfdf5' : '#111827', color: copied ? '#059669' : 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>
-                    {copied ? 'Copied!' : 'Copy'}
-                  </button>
+                
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px', marginLeft: '4px' }}>Referral Link</label>
+                  <div style={{ display: 'flex', gap: '12px', background: '#f9fafb', padding: '8px', borderRadius: '16px', border: '1px solid #e5e7eb' }}>
+                    <input type="text" readOnly value={referralLink} style={{ flex: 1, background: 'none', border: 'none', padding: '12px 16px', fontSize: '14px', fontWeight: '600', color: '#4b5563', outline: 'none' }} />
+                    <button onClick={handleCopy} style={{ padding: '12px 24px', borderRadius: '12px', border: 'none', background: copied ? '#ecfdf5' : '#111827', color: copied ? '#059669' : 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>
+                      {copied ? 'Copied!' : 'Copy Link'}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px', marginLeft: '4px' }}>Referral Code</label>
+                  <div style={{ display: 'flex', gap: '12px', background: '#f9fafb', padding: '8px', borderRadius: '16px', border: '1px solid #e5e7eb' }}>
+                    <input type="text" readOnly value={userProfile?.referral_code} style={{ flex: 1, background: 'none', border: 'none', padding: '12px 16px', fontSize: '14px', fontWeight: '800', color: '#6366f1', outline: 'none', letterSpacing: '2px' }} />
+                    <button onClick={handleCopyCode} style={{ padding: '12px 24px', borderRadius: '12px', border: 'none', background: codeCopied ? '#eef2ff' : 'white', color: codeCopied ? '#4338ca' : '#111827', border: '1px solid #e5e7eb', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>
+                      {codeCopied ? 'Copied!' : 'Copy Code'}
+                    </button>
+                  </div>
                 </div>
               </div>
 

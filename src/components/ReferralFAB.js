@@ -65,10 +65,18 @@ export default function ReferralFAB({ userId }) {
     ? `${window.location.origin}?ref=${stats.referralCode}`
     : '';
 
-  const handleCopy = () => {
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  const handleCopyLink = () => {
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(stats.referralCode);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
   };
 
   const redeemThreshold = 5;
@@ -146,23 +154,45 @@ export default function ReferralFAB({ userId }) {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Your Referral Link</label>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        readOnly 
-                        value={referralLink}
-                        className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 outline-none"
-                      />
-                      <button 
-                        onClick={handleCopy}
-                        className={`px-4 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
-                          copied ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'
-                        }`}
-                      >
-                        {copied ? 'Copied' : 'Copy'}
-                      </button>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Your Referral Link</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          readOnly 
+                          value={referralLink}
+                          className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 outline-none"
+                        />
+                        <button 
+                          onClick={handleCopyLink}
+                          className={`px-4 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
+                            copied ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'
+                          }`}
+                        >
+                          {copied ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Your Referral Code</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          readOnly 
+                          value={stats.referralCode}
+                          className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold tracking-widest text-indigo-600 outline-none"
+                        />
+                        <button 
+                          onClick={handleCopyCode}
+                          className={`px-4 py-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
+                            codeCopied ? 'bg-indigo-100 text-indigo-700' : 'bg-white border border-slate-200 text-slate-900'
+                          }`}
+                        >
+                          {codeCopied ? 'Copied' : 'Copy Code'}
+                        </button>
+                      </div>
                     </div>
                   </div>
 

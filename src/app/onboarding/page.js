@@ -13,20 +13,18 @@ export default function Onboarding() {
   // Form States
   const [username, setUsername] = useState('');
   const [university, setUniversity] = useState(null);
-  
-  // ✅ NEW: Faculty & Department States
   const [faculty, setFaculty] = useState('');
   const [department, setDepartment] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [isRefLocked, setIsReferralLocked] = useState(false);
   
-  // ✅ NEW: Data Management States
-  const [universityData, setUniversityData] = useState({}); // Stores full JSON
-  const [facultiesList, setFacultiesList] = useState([]);   // Stores ["Engineering", "Science"...]
-  const [departmentsList, setDepartmentsList] = useState([]); // Stores active department list
+  // Data Management States
+  const [universityData, setUniversityData] = useState({});
+  const [facultiesList, setFacultiesList] = useState([]);
+  const [departmentsList, setDepartmentsList] = useState([]);
 
-  // 1. Check Auth & Load Departments
   useEffect(() => {
     async function init() {
-      // Check if logged in
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/');
@@ -34,13 +32,18 @@ export default function Onboarding() {
       }
       setUser(user);
 
-      // ✅ FIX: Load departments and handle Object structure
+      // Check for stored referral code
+      const savedRef = localStorage.getItem('referred_by_code');
+      if (savedRef) {
+        setReferralCode(savedRef);
+        setIsReferralLocked(true);
+      }
+
       try {
         const res = await fetch('/api/departments');
         const data = await res.json();
-        
         setUniversityData(data);
-        setFacultiesList(Object.keys(data)); // Extract Faculty names
+        setFacultiesList(Object.keys(data));
       } catch (error) {
         console.error("Failed to load departments:", error);
       }
@@ -50,15 +53,10 @@ export default function Onboarding() {
     init();
   }, [router]);
 
-  // ✅ NEW: Handle Faculty Change
   const handleFacultyChange = (e) => {
     const selectedFaculty = e.target.value;
     setFaculty(selectedFaculty);
-    
-    // Reset department
     setDepartment('');
-    
-    // Update department list based on selected faculty
     if (selectedFaculty && Array.isArray(universityData[selectedFaculty])) {
       setDepartmentsList(universityData[selectedFaculty]);
     } else {
@@ -66,7 +64,6 @@ export default function Onboarding() {
     }
   };
 
-  // 2. Handle Form Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !university || !faculty || !department) {
@@ -77,33 +74,31 @@ export default function Onboarding() {
     setSubmitting(true);
 
     try {
-      // Get referral info
-      const refCode = localStorage.getItem('referred_by_code');
       let referredBy = null;
-      if (refCode) {
+      if (referralCode) {
         const { data: referrer } = await supabase
           .from('user_profiles')
           .select('id')
-          .eq('referral_code', refCode)
+          .eq('referral_code', referralCode.trim().toUpperCase())
           .single();
         
         if (referrer) {
           referredBy = referrer.id;
-          // Clean up to prevent reuse/confusion
-          localStorage.removeItem('referred_by_code');
+          
+          // Increment the referrer's count safely
+          await supabase.rpc('increment_referral_count', { referrer_uuid: referredBy });
         }
       }
 
-      // Insert into user_profiles table
       const { error } = await supabase
         .from('user_profiles')
         .upsert({
-          id: user.id, // Links to the Auth User
+          id: user.id,
           full_name: user.user_metadata.full_name,
           username: username,
           university_id: university.id === 'other' ? null : university.id,
           custom_institution: university.id === 'other' ? university.name : null,
-          faculty: faculty, // ✅ SAVE FACULTY
+          faculty: faculty,
           department: department,
           created_at: new Date().toISOString(),
           referred_by: referredBy,
@@ -111,7 +106,7 @@ export default function Onboarding() {
 
       if (error) throw error;
 
-      // Success! Go to dashboard
+      localStorage.removeItem('referred_by_code');
       router.push('/dashboard');
 
     } catch (error) {
@@ -134,16 +129,12 @@ export default function Onboarding() {
         <h2 className="mt-6 text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
           Complete Your Profile
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Tell us a bit about yourself to personalize your reports.
-        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             
-            {/* Username */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Username</label>
               <div className="mt-1">
@@ -152,13 +143,12 @@ export default function Onboarding() {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-600 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
                   placeholder="e.g. Vixtor_Engr"
                 />
               </div>
             </div>
 
-            {/* University Selector */}
             <div>
                <UniversitySelector 
                  onSelect={(uni) => setUniversity(uni)} 
@@ -166,7 +156,6 @@ export default function Onboarding() {
                />
             </div>
 
-            {/* ✅ NEW: Faculty Selector */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Faculty</label>
               <div className="mt-1">
@@ -185,22 +174,19 @@ export default function Onboarding() {
               </div>
             </div>
 
-            {/* Department Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Department</label>
               <div className="mt-1">
                 {faculty === 'Other' ? (
-                  // Text input if Faculty is Other
                   <input
                     type="text"
                     required
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-600 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
                     placeholder="Enter Department Name"
                   />
                 ) : (
-                  // Dropdown if Faculty is selected
                   <select
                     required
                     value={department}
@@ -209,7 +195,6 @@ export default function Onboarding() {
                     className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
                   >
                     <option value="">Select Department</option>
-                    {/* ✅ Safety Check Added */}
                     {Array.isArray(departmentsList) && departmentsList.map((dept, index) => (
                       <option key={index} value={dept}>{dept}</option>
                     ))}
@@ -219,7 +204,30 @@ export default function Onboarding() {
               </div>
             </div>
 
-            {/* Submit Button */}
+            {/* Referral Code Field */}
+            <div className="pt-4 border-t border-gray-100">
+              <label className="block text-sm font-bold text-gray-700">
+                Referral Code {isRefLocked ? 'Applied ✨' : '(Optional)'}
+              </label>
+              <div className="mt-1">
+                <input
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  readOnly={isRefLocked}
+                  className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none text-base sm:text-sm uppercase font-bold tracking-widest ${
+                    isRefLocked 
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700' 
+                    : 'bg-white border-gray-300 text-gray-900 focus:ring-indigo-500 focus:border-indigo-500'
+                  }`}
+                  placeholder="ENTER CODE"
+                />
+                {isRefLocked && (
+                  <p className="mt-1 text-[10px] text-emerald-600 font-medium">You are being referred by a friend!</p>
+                )}
+              </div>
+            </div>
+
             <div>
               <button
                 type="submit"
