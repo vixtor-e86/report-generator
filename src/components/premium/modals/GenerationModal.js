@@ -3,6 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const Icons = {
   X: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
@@ -351,7 +353,17 @@ export default function GenerationModal({
                 </div>
                 <div>
                   <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#111827', marginBottom: '8px', textTransform: 'uppercase' }}>Summary / Key Data</h4>
-                  <p style={{ fontSize: '14px', color: '#4b5563', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>{scrapePreview.summary}</p>
+                  <div className="scrape-markdown-preview" style={{ fontSize: '14px', color: '#4b5563', lineHeight: '1.8' }}>
+                    <style>{`
+                      .scrape-markdown-preview h1, .scrape-markdown-preview h2, .scrape-markdown-preview h3 { color: #111827; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+                      .scrape-markdown-preview p { margin-bottom: 1rem; }
+                      .scrape-markdown-preview ul, .scrape-markdown-preview ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+                      .scrape-markdown-preview li { margin-bottom: 0.5rem; }
+                    `}</style>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {scrapePreview.summary}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </div>
 
