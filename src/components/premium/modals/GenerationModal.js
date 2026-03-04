@@ -21,7 +21,7 @@ export default function GenerationModal({
 }) {
   const [localData, setLocalData] = useState({
     projectTitle: '', projectDescription: '', componentsUsed: '', researchBooks: '',
-    researchUrl: '', // NEW: URL field
+    researchUrl: '', scrapedContext: '', // NEW: URL field and cache
     userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
   });
 
@@ -30,6 +30,11 @@ export default function GenerationModal({
   const [previewFile, setPreviewFile] = useState(null);
   const [extractedPreview, setExtractedPreview] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  // NEW: Scraping States
+  const [scraping, setScraping] = useState(false);
+  const [scrapePreview, setScrapePreview] = useState(null);
+  const [showScrapePreview, setShowScrapePreview] = useState(false);
 
   const currentChapterNumber = activeChapter?.number || activeChapter?.id || 0;
   const isChapter4 = currentChapterNumber === 4;
@@ -74,35 +79,32 @@ export default function GenerationModal({
     setPreviewFile(null);
   };
 
+  const handleFetchUrl = async () => {
+    if (!localData.researchUrl?.trim()) return;
+    setScraping(true);
+    try {
+      const res = await fetch('/api/premium/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: localData.researchUrl, projectId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch content');
+      setScrapePreview(data);
+      setShowScrapePreview(true);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setScraping(false);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!activeChapter) return;
     setGenerating(true);
     
     try {
-      let scrapedContext = "";
-      
-      // 1. Optional Scraping Step
-      if (localData.researchUrl?.trim()) {
-        if (setIsGlobalLoading) {
-          setGlobalLoadingText(`System is scraping research data from the provided URL...`);
-          setIsGlobalLoading(true);
-        }
-        
-        const scrapeRes = await fetch('/api/premium/scrape', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: localData.researchUrl, projectId })
-        });
-        
-        const scrapeData = await scrapeRes.json();
-        if (scrapeRes.ok) {
-          scrapedContext = scrapeData.summary;
-        } else {
-          console.warn('Scraping failed, proceeding without it:', scrapeData.error);
-        }
-      }
-
-      // 2. Final Generation Step
+      // 1. Final Generation Step
       if (setIsGlobalLoading) {
         setGlobalLoadingText(`System Architect is designing Chapter ${currentChapterNumber}...`);
         setIsGlobalLoading(true);
@@ -114,7 +116,7 @@ export default function GenerationModal({
         body: JSON.stringify({
           projectId, userId, chapterNumber: currentChapterNumber, chapterTitle: activeChapter?.title,
           ...localData,
-          scrapedContext, // Pass the result of scraping
+          // scrapedContext is already in localData if confirmed
           referenceStyle: stickyData.referenceStyle,
           maxReferences: stickyData.maxReferences,
           selectedImages: uploadedImages.filter(img => localData.selectedImages.includes(img.id)),
@@ -193,13 +195,33 @@ export default function GenerationModal({
                     <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>
                       <Icons.Globe /> Research URL / Journal Link (Optional)
                     </label>
-                    <input 
-                      type="url" 
-                      placeholder="https://ieeexplore.ieee.org/document/..." 
-                      value={localData.researchUrl} 
-                      onChange={(e) => setLocalData({...localData, researchUrl: e.target.value})} 
-                      style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }} 
-                    />
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input 
+                        type="url" 
+                        placeholder="https://ieeexplore.ieee.org/document/..." 
+                        value={localData.researchUrl} 
+                        onChange={(e) => setLocalData({...localData, researchUrl: e.target.value})} 
+                        style={{ flex: 1, padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }} 
+                      />
+                      {localData.researchUrl?.trim() && (
+                        <button 
+                          onClick={handleFetchUrl}
+                          disabled={scraping}
+                          style={{ padding: '0 20px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', fontSize: '13px', cursor: 'pointer', opacity: scraping ? 0.7 : 1 }}
+                        >
+                          {scraping ? 'Fetching...' : 'Fetch Content'}
+                        </button>
+                      )}
+                    </div>
+                    {localData.scrapedContext && (
+                      <div style={{ marginTop: '10px', padding: '10px 14px', background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ color: '#059669' }}><Icons.Check /></div>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#065f46' }}>Journal content successfully linked!</span>
+                        </div>
+                        <button onClick={() => setLocalData({...localData, scrapedContext: ''})} style={{ background: 'none', border: 'none', color: '#059669', fontSize: '11px', fontWeight: '800', cursor: 'pointer', textDecoration: 'underline' }}>Remove</button>
+                      </div>
+                    )}
                     <p style={{ margin: '6px 0 0 4px', fontSize: '11px', color: '#6b7280' }}>The system will scrape and analyze technical data from this link before generating.</p>
                   </div>
 
@@ -308,6 +330,39 @@ export default function GenerationModal({
               </div>
               <button onClick={() => toggleContextFile(previewFile)} style={{ padding: '16px', background: '#111827', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>
                 {localData.selectedContextFiles.find(f => f.id === previewFile.id) ? 'Deselect File' : 'Confirm & Use Data'}
+              </button>
+            </motion.div>
+          )}
+
+          {showScrapePreview && scrapePreview && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, background: 'white', zIndex: 1100, display: 'flex', flexDirection: 'column', padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ margin: 0 }}>Review Scraped Content</h3>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#6b7280' }}>Details extracted from {localData.researchUrl}</p>
+                </div>
+                <button onClick={() => setShowScrapePreview(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Icons.X /></button>
+              </div>
+              
+              <div style={{ flex: 1, background: '#f9fafb', padding: '24px', borderRadius: '16px', overflowY: 'auto', marginBottom: '24px', border: '1px solid #e5e7eb' }}>
+                <div style={{ marginBottom: '20px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#111827', marginBottom: '8px', textTransform: 'uppercase' }}>Title</h4>
+                  <p style={{ fontSize: '15px', color: '#374151', lineHeight: '1.6' }}>{scrapePreview.title}</p>
+                </div>
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#111827', marginBottom: '8px', textTransform: 'uppercase' }}>Summary / Key Data</h4>
+                  <p style={{ fontSize: '14px', color: '#4b5563', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>{scrapePreview.summary}</p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => {
+                  setLocalData({ ...localData, scrapedContext: scrapePreview.summary });
+                  setShowScrapePreview(false);
+                }} 
+                style={{ padding: '18px', background: '#111827', color: 'white', border: 'none', borderRadius: '14px', fontWeight: '800', cursor: 'pointer', fontSize: '15px' }}
+              >
+                Confirm & Use This Journal
               </button>
             </motion.div>
           )}
