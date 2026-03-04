@@ -40,7 +40,7 @@ export default function ReferralFAB({ userId }) {
 
       const { data: comms } = await supabase
         .from('referral_commissions')
-        .select('*, referred:auth.users(email)')
+        .select('*, referred:user_profiles(username)')
         .eq('referrer_id', userId)
         .order('created_at', { ascending: false })
         .limit(10);
