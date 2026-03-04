@@ -76,6 +76,92 @@ export default function ContentArea({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const activeChapter = activeView.startsWith('chapter-') 
+    ? chapters.find(ch => `chapter-${ch.id}` === activeView || `chapter-${ch.number}` === activeView)
+    : null;
+
+  const updateCursorPosition = () => {
+    if (textareaRef.current) {
+      setCursorPosition({
+        start: textareaRef.current.selectionStart,
+        end: textareaRef.current.selectionEnd
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (activeChapter) {
+      setLocalContent(activeChapter.content || '');
+    }
+  }, [activeChapter?.id, activeChapter?.number]);
+
+  useEffect(() => {
+    if (activeView === 'history') {
+      async function fetchAllHistory() {
+        setLoadingHistory(true);
+        const { data } = await supabase
+          .from('premium_chapter_history')
+          .select('*, premium_chapters(title, chapter_number)')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        
+        const chapterIds = chapters.map(c => c.id);
+        const projectHistory = data?.filter(h => chapterIds.includes(h.chapter_id)) || [];
+        
+        setAllHistory(projectHistory);
+        setLoadingHistory(false);
+      }
+      fetchAllHistory();
+    }
+  }, [activeView, chapters]);
+
+  const handleSaveEdit = async () => {
+    if (!activeChapter) return;
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/premium/save-edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chapterId: activeChapter.id,
+          content: localContent,
+          projectId: projectData.id,
+          userId: projectData.user_id
+        })
+      });
+      if (response.ok) {
+        onUpdateChapter(activeChapter.id, localContent);
+      }
+    } catch (err) { console.error(err); }
+    finally { setIsSaving(false); }
+  };
+
+  const insertImageTag = (img) => {
+    const tag = `\n![${img.caption || img.original_name}](${img.file_url})\n`;
+    const { start, end } = cursorPosition;
+    const before = localContent.substring(0, start);
+    const after = localContent.substring(end, localContent.length);
+    const newText = before + tag + after;
+    setLocalContent(newText);
+    setShowImageSelector(false);
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const newCursorPos = start + tag.length;
+        textareaRef.current.selectionStart = textareaRef.current.selectionEnd = newCursorPos;
+        setCursorPosition({ start: newCursorPos, end: newCursorPos });
+      }
+    }, 10);
+  };
+
+  const handleSaveChapterTemplate = (updatedChapter) => {
+    const currentStructure = projectData.template?.structure || { chapters: [] };
+    const newChapters = currentStructure.chapters.map(ch => 
+      (ch.chapter || ch.number) === (updatedChapter.chapter || updatedChapter.number) ? updatedChapter : ch
+    );
+    onUpdateTemplate({ ...currentStructure, chapters: newChapters });
+  };
+
   if (activeView === 'referral') {
     const weeklyPurchases = userProfile?.referral_weekly_purchases || 0;
     const weeklyEarnings = userProfile?.referral_weekly_earnings || 0;
@@ -163,92 +249,6 @@ export default function ContentArea({
       </div>
     );
   }
-
-  const activeChapter = activeView.startsWith('chapter-') 
-    ? chapters.find(ch => `chapter-${ch.id}` === activeView || `chapter-${ch.number}` === activeView)
-    : null;
-
-  const updateCursorPosition = () => {
-    if (textareaRef.current) {
-      setCursorPosition({
-        start: textareaRef.current.selectionStart,
-        end: textareaRef.current.selectionEnd
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (activeChapter) {
-      setLocalContent(activeChapter.content || '');
-    }
-  }, [activeChapter?.id, activeChapter?.number]);
-
-  useEffect(() => {
-    if (activeView === 'history') {
-      async function fetchAllHistory() {
-        setLoadingHistory(true);
-        const { data } = await supabase
-          .from('premium_chapter_history')
-          .select('*, premium_chapters(title, chapter_number)')
-          .order('created_at', { ascending: false })
-          .limit(20);
-        
-        const chapterIds = chapters.map(c => c.id);
-        const projectHistory = data?.filter(h => chapterIds.includes(h.chapter_id)) || [];
-        
-        setAllHistory(projectHistory);
-        setLoadingHistory(false);
-      }
-      fetchAllHistory();
-    }
-  }, [activeView, chapters]);
-
-  const handleSaveEdit = async () => {
-    if (!activeChapter) return;
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/premium/save-edit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chapterId: activeChapter.id,
-          content: localContent,
-          projectId: projectData.id,
-          userId: projectData.user_id
-        })
-      });
-      if (response.ok) {
-        onUpdateChapter(activeChapter.id, localContent);
-      }
-    } catch (err) { console.error(err); }
-    finally { setIsSaving(false); }
-  };
-
-  const insertImageTag = (img) => {
-    const tag = `\n![${img.caption || img.original_name}](${img.file_url})\n`;
-    const { start, end } = cursorPosition;
-    const before = localContent.substring(0, start);
-    const after = localContent.substring(end, localContent.length);
-    const newText = before + tag + after;
-    setLocalContent(newText);
-    setShowImageSelector(false);
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        const newCursorPos = start + tag.length;
-        textareaRef.current.selectionStart = textareaRef.current.selectionEnd = newCursorPos;
-        setCursorPosition({ start: newCursorPos, end: newCursorPos });
-      }
-    }, 10);
-  };
-
-  const handleSaveChapterTemplate = (updatedChapter) => {
-    const currentStructure = projectData.template?.structure || { chapters: [] };
-    const newChapters = currentStructure.chapters.map(ch => 
-      (ch.chapter || ch.number) === (updatedChapter.chapter || updatedChapter.number) ? updatedChapter : ch
-    );
-    onUpdateTemplate({ ...currentStructure, chapters: newChapters });
-  };
 
   if (activeView === 'edit-template') {
     return (
