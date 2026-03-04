@@ -209,7 +209,7 @@ export default function Onboarding() {
 
             <div className="pt-4 border-t border-gray-100">
               <label className="block text-sm font-bold text-gray-700">
-                Referral Code {isRefLocked ? 'Applied ✨' : '(Optional)'}
+                Referral Code {isRefLocked ? 'Applied' : '(Optional)'}
               </label>
               <div className="mt-1">
                 <input
