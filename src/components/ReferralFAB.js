@@ -79,8 +79,8 @@ export default function ReferralFAB({ userId }) {
     setTimeout(() => setCodeCopied(false), 2000);
   };
 
-  const redeemThreshold = 5;
-  const canRedeem = stats.weeklyPurchases >= redeemThreshold;
+  const redeemThresholdAmount = 10000;
+  const canRedeem = stats.weeklyEarnings >= redeemThresholdAmount;
 
   if (loading && !stats.referralCode) return null;
 
@@ -199,23 +199,19 @@ export default function ReferralFAB({ userId }) {
                   <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
                     <h4 className="font-bold text-amber-900 text-xs mb-1">Important Payout Rules:</h4>
                     <ul className="text-[11px] text-amber-800 space-y-1 list-disc ml-3">
-                      <li>Withdrawals are processed every <span className="font-bold">Friday</span>.</li>
-                      <li>You need at least <span className="font-bold">5 purchases</span> from referrals in a week to redeem.</li>
-                      <li>Unredeemed bonuses reset every Friday at 11:59 PM.</li>
+                      <li>Accumulated bonuses reset every <span className="font-bold">Friday</span> at 11:59 PM.</li>
+                      <li>You must accumulate at least <span className="font-bold">₦10,000</span> to redeem.</li>
+                      <li>Payouts for redeemed bonuses happen every <span className="font-bold">Monday</span>.</li>
                     </ul>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-6">
                   {/* Progress Stats */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
                       <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Weekly Earnings</p>
-                      <p className="text-2xl font-black text-slate-900">₦{stats.weeklyEarnings.toLocaleString()}</p>
-                    </div>
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Purchases</p>
-                      <p className="text-2xl font-black text-slate-900">{stats.weeklyPurchases}<span className="text-sm text-slate-400 font-bold">/{redeemThreshold}</span></p>
+                      <p className="text-3xl font-black text-slate-900">₦{stats.weeklyEarnings.toLocaleString()}<span className="text-sm text-slate-400 font-bold">/₦{redeemThresholdAmount.toLocaleString()}</span></p>
                     </div>
                   </div>
 
@@ -223,16 +219,16 @@ export default function ReferralFAB({ userId }) {
                   <div className="space-y-2">
                     <div className="flex justify-between items-end">
                        <span className="text-xs font-bold text-slate-600">Redemption Progress</span>
-                       <span className="text-xs font-bold text-emerald-600">{Math.min(100, (stats.weeklyPurchases/redeemThreshold)*100).toFixed(0)}%</span>
+                       <span className="text-xs font-bold text-emerald-600">{Math.min(100, (stats.weeklyEarnings/redeemThresholdAmount)*100).toFixed(0)}%</span>
                     </div>
                     <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
                        <div 
                          className={`h-full transition-all duration-500 ${canRedeem ? 'bg-emerald-500' : 'bg-emerald-400'}`}
-                         style={{ width: `${Math.min(100, (stats.weeklyPurchases/redeemThreshold)*100)}%` }}
+                         style={{ width: `${Math.min(100, (stats.weeklyEarnings/redeemThresholdAmount)*100)}%` }}
                        />
                     </div>
                     <p className="text-[10px] text-slate-400 text-center">
-                      {canRedeem ? '✅ Threshold reached! Ready for Friday payout.' : `${redeemThreshold - stats.weeklyPurchases} more purchases needed this week to unlock redemption.`}
+                      {canRedeem ? '✅ Threshold reached! Redeem by Friday for Monday payout.' : `₦{(redeemThresholdAmount - stats.weeklyEarnings).toLocaleString()} more needed this week to unlock redemption.`}
                     </p>
                   </div>
 
@@ -245,7 +241,7 @@ export default function ReferralFAB({ userId }) {
                       : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                     }`}
                   >
-                    {canRedeem ? 'Redeem Payout (Friday)' : 'Redeem Locked'}
+                    {canRedeem ? 'Redeem Bonus (Paid Monday)' : 'Redeem Locked'}
                   </button>
 
                   {/* Recent Commissions */}
@@ -280,7 +276,7 @@ export default function ReferralFAB({ userId }) {
 
             <div className="p-4 bg-slate-50 border-t border-slate-100">
                <p className="text-[10px] text-slate-400 text-center">
-                 Accumulated bonuses reset every Friday at 11:59 PM.
+                 Unredeemed bonuses reset every Friday at 11:59 PM.
                </p>
             </div>
           </div>

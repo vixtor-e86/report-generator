@@ -173,8 +173,8 @@ export default function ContentArea({
     const weeklyPurchases = userProfile?.referral_weekly_purchases || 0;
     const weeklyEarnings = userProfile?.referral_weekly_earnings || 0;
     const isVip = userProfile?.role === 'vip';
-    const redeemThreshold = 5;
-    const canRedeem = weeklyPurchases >= redeemThreshold;
+    const redeemThreshold = 10000;
+    const canRedeem = weeklyEarnings >= redeemThreshold;
 
     return (
       <div className="content-area">
@@ -247,10 +247,10 @@ export default function ContentArea({
                 <div style={{ marginBottom: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '8px' }}>
                     <span>Redeem Goal</span>
-                    <span>{weeklyPurchases}/{redeemThreshold} Purchases</span>
+                    <span>₦{weeklyEarnings.toLocaleString()}/₦{redeemThreshold.toLocaleString()}</span>
                   </div>
                   <div style={{ height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '100px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${Math.min(100, (weeklyPurchases/redeemThreshold)*100)}%`, background: '#10b981' }} />
+                    <div style={{ height: '100%', width: `${Math.min(100, (weeklyEarnings/redeemThreshold)*100)}%`, background: '#10b981' }} />
                   </div>
                 </div>
 
@@ -262,9 +262,9 @@ export default function ContentArea({
               <div style={{ padding: '32px', background: '#fffbeb', borderRadius: '32px', border: '1px solid #fef3c7' }}>
                 <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '800', color: '#92400e' }}>Weekly Rules</h4>
                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Payouts every Friday</li>
-                  <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Min. 5 purchases to redeem</li>
-                  <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Balance resets Saturday 00:00</li>
+                  <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Reset every Friday 23:59</li>
+                  <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Min. ₦10,000 to redeem</li>
+                  <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Payouts every Monday</li>
                 </ul>
               </div>
             </div>
