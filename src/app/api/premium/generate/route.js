@@ -17,7 +17,8 @@ export async function POST(request) {
       projectTitle, projectDescription, componentsUsed, researchBooks,
       userPrompt, referenceStyle, maxReferences, targetWordCount = 2000,
       selectedImages = [], selectedPapers = [], skipReferences = false,
-      scrapedContext = ""
+      scrapedContext = "",
+      isModification = false, modificationType = "whole_chapter", fullContent = "", targetContent = ""
     } = body;
 
     if (!projectId || chapterNumber === undefined || !userId) {
@@ -29,6 +30,39 @@ export async function POST(request) {
 
     const provider = process.env.PREMIUM_AI_PROVIDER || 'deepseek';
     const model = process.env.PREMIUM_AI_MODEL || 'deepseek-chat';
+
+    // Check for surgical modification
+    if (isModification && modificationType === 'partial' && targetContent) {
+      const surgicalPrompt = `You are a high-end academic system architect.
+      TASK: Rewrite ONLY the following section(s) of Chapter ${chapterNumber} for the project "${projectTitle || project.title}".
+      
+      ## ORIGINAL SECTIONS TO BE REPLACED:
+      ${targetContent}
+
+      ## USER INSTRUCTIONS FOR MODIFICATION:
+      ${userPrompt}
+
+      ## REQUIREMENTS:
+      1. ONLY return the rewritten text for the specified section(s).
+      2. Keep the same Markdown formatting (headings, sub-headings).
+      3. Ensure the new content integrates perfectly with the rest of the chapter.
+      4. Do NOT output anything else (no conversational filler).
+      5. Maintain the original tone and technical accuracy.`;
+
+      const aiResponse = await callAI(surgicalPrompt, { provider, model, maxTokens: 4000, temperature: 0.5 });
+      
+      // Merge back into full content
+      const updatedFullContent = fullContent.replace(targetContent, aiResponse.content);
+
+      // Save merged content
+      const { data: chapter } = await supabaseAdmin.from('premium_chapters').select('id').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
+      if (chapter) {
+        await supabaseAdmin.from('premium_chapters').update({ content: updatedFullContent, updated_at: new Date().toISOString() }).eq('id', chapter.id);
+        await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: updatedFullContent, prompt_used: userPrompt, model_used: aiResponse.model });
+      }
+
+      return NextResponse.json({ success: true, content: updatedFullContent });
+    }
 
     // 1. Data Extraction (DOCX & TXT ONLY)
     let contextualSourceData = "";

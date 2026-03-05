@@ -84,8 +84,6 @@ function ProjectDescriptionContent() {
     
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
-    } else if (formData.description.length > 500) {
-      newErrors.description = 'Description must be 500 characters or less';
     }
     
     if (!formData.faculty) {
@@ -250,7 +248,7 @@ function ProjectDescriptionContent() {
               id="description"
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Provide a brief overview of your project (max 500 characters)"
+              placeholder="Provide a detailed overview of your project"
               className={`form-textarea ${errors.description ? 'error' : ''}`}
               rows={5}
             />
@@ -258,9 +256,6 @@ function ProjectDescriptionContent() {
               {errors.description && (
                 <span className="error-message">{errors.description}</span>
               )}
-              <span className={`character-count ${isOverLimit ? 'over-limit' : ''}`}>
-                {characterCount}/500
-              </span>
             </div>
           </div>
 
