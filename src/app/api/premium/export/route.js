@@ -85,7 +85,6 @@ export async function POST(request) {
     const { data: project } = await supabaseAdmin.from('premium_projects').select('*, custom_templates(*)').eq('id', projectId).single();
     const { data: chapters } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).order('chapter_number', { ascending: true });
     
-    // Fetch ALL references for the entire project, sorted by chapter and order
     const { data: references } = await supabaseAdmin.from('project_references')
       .select('*')
       .eq('project_id', projectId)
@@ -118,23 +117,7 @@ export async function POST(request) {
 
     if (type === 'docx') {
       const sections = [];
-      
-      const numbering = {
-        config: [
-          {
-            reference: "numeric-list",
-            levels: [
-              { level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT }
-            ]
-          },
-          {
-            reference: "bullet-list",
-            levels: [
-              { level: 0, format: LevelFormat.BULLET, text: "\u2022", alignment: AlignmentType.LEFT }
-            ]
-          }
-        ]
-      };
+      const numbering = { config: [{ reference: "numeric-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT }] }, { reference: "bullet-list", levels: [{ level: 0, format: LevelFormat.BULLET, text: "\u2022", alignment: AlignmentType.LEFT }] }] };
 
       if (abstract) {
         sections.push({ children: [new Paragraph({ text: 'ABSTRACT', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 400 } }), new Paragraph({ children: [new TextRun({ text: parseTechnicalText(abstract), font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED })] });
@@ -147,22 +130,20 @@ export async function POST(request) {
         });
         sections.push({ children: tocItems });
       }
+
       for (const ch of chapters) {
         const chapterChildren = [
-          new Paragraph({ 
-            children: [new TextRun({ text: `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`, font: 'Times New Roman', size: 32, bold: true })], 
-            alignment: AlignmentType.CENTER, 
-            spacing: { before: 400, after: 400 } 
-          })
+          new Paragraph({ children: [new TextRun({ text: `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`, font: 'Times New Roman', size: 32, bold: true })], alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } })
         ];
 
         const contentBody = (ch.content || "").split(/### References|## References/i)[0];
-        const lines = contentBody.split('\n');
+        const rawLines = contentBody.split('\n');
         
-        const filteredLines = lines.filter((line, index) => {
-          const trimmed = line.trim().toUpperCase();
-          if (!trimmed) return true;
-          if (index < 5 && (trimmed.startsWith(`CHAPTER ${ch.chapter_number}`) || trimmed === ch.title.toUpperCase())) return false;
+        // Refined Filter: Remove repeated chapter header only
+        const filteredLines = rawLines.filter((line, index) => {
+          const t = line.trim().toUpperCase();
+          if (!t) return true;
+          if (index < 5 && (t.startsWith(`CHAPTER ${ch.chapter_number}`) || t === ch.title.toUpperCase())) return false;
           if (line.startsWith('## ')) {
             const clean = line.replace(/^##\s+/, '').toUpperCase();
             if (clean.includes(`CHAPTER ${ch.chapter_number}`) || clean === ch.title.toUpperCase()) return false;
@@ -175,19 +156,18 @@ export async function POST(request) {
           
           if (line.startsWith('|')) {
             const tableRows = [];
-            while (i < filteredLines.length && filteredLines[i].trim().startsWith('|')) {
-              const r = filteredLines[i].trim();
+            let j = i;
+            while (j < filteredLines.length && filteredLines[j].trim().startsWith('|')) {
+              const r = filteredLines[j].trim();
               if (!r.includes('---')) {
-                const cells = r.split('|').slice(1, -1).map(c => new TableCell({ 
-                  children: [new Paragraph({ children: parseInlineFormatting(c.trim() || "\u00A0", 20), alignment: AlignmentType.CENTER })], 
-                  borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } } 
-                }));
+                const cells = r.split('|').slice(1, -1).map(c => new TableCell({ children: [new Paragraph({ children: parseInlineFormatting(c.trim() || "\u00A0", 20), alignment: AlignmentType.CENTER })], borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } } }));
                 tableRows.push(new TableRow({ children: cells }));
               }
-              i++;
+              j++;
             }
             chapterChildren.push(new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } }));
-            chapterChildren.push(new Paragraph({ text: "" })); continue;
+            chapterChildren.push(new Paragraph({ text: "" })); 
+            i = j - 1; continue;
           }
 
           const imgMatch = line.match(/!\[.*?\]\((.*?)\)/);
@@ -204,14 +184,11 @@ export async function POST(request) {
             chapterChildren.push(new Paragraph({ children: [new TextRun({ text: line.replace('### ', ''), font: 'Times New Roman', size: 28, bold: true })], heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 200 } }));
           } else if (line.startsWith('#### ')) {
             chapterChildren.push(new Paragraph({ children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 26, bold: true })], heading: HeadingLevel.HEADING_3, spacing: { before: 150, after: 150 } }));
-          }
-          else if (/^\d+\.\s/.test(line)) {
+          } else if (/^\d+\.\s/.test(line)) {
             chapterChildren.push(new Paragraph({ children: parseInlineFormatting(line.replace(/^\d+\.\s/, ''), 24), numbering: { reference: "numeric-list", level: 0 }, alignment: AlignmentType.JUSTIFIED, spacing: { after: 120, line: 360 } }));
-          }
-          else if (line.startsWith('- ') || line.startsWith('* ')) {
+          } else if (line.startsWith('- ') || line.startsWith('* ')) {
             chapterChildren.push(new Paragraph({ children: parseInlineFormatting(line.substring(2), 24), numbering: { reference: "bullet-list", level: 0 }, alignment: AlignmentType.JUSTIFIED, spacing: { after: 120, line: 360 } }));
-          }
-          else {
+          } else {
             chapterChildren.push(new Paragraph({ children: parseInlineFormatting(line), alignment: AlignmentType.JUSTIFIED, spacing: { after: 200, line: 360 } }));
           }
         }
@@ -226,6 +203,7 @@ export async function POST(request) {
       const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
       let currPage = 1;
       const footer = () => { if (options.includePageNumbers) { pdf.setFontSize(10); pdf.setTextColor(150, 150, 150); pdf.text("Page " + currPage, 105, 285, { align: 'center' }); pdf.setTextColor(0, 0, 0); } };
+      
       if (abstract) {
         pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.text("ABSTRACT", 105, 40, { align: 'center' });
         pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); pdf.text(pdf.splitTextToSize(parseTechnicalText(abstract), 170), 20, 60);
@@ -241,18 +219,23 @@ export async function POST(request) {
         });
         footer(); pdf.addPage(); currPage++;
       }
+
       for (const ch of chapters) {
         pdf.setFont("helvetica", "bold"); pdf.setFontSize(20); pdf.text(`CHAPTER ${ch.chapter_number}: ${(ch.title || "").toUpperCase()}`, 20, 30);
         pdf.setFont("helvetica", "normal"); pdf.setFontSize(11);
-        const contentLines = (ch.content || "").split(/### References|## References/i)[0].split('\n').filter((line, index) => {
+        
+        const rawLines = (ch.content || "").split(/### References|## References/i)[0].split('\n');
+        const filteredLines = rawLines.filter((line, index) => {
           const t = line.trim().toUpperCase();
           if (index < 5 && (t.startsWith(`CHAPTER ${ch.chapter_number}`) || t === ch.title.toUpperCase())) return false;
           if (line.trim().startsWith('## ')) return false;
           return true;
         });
+
         let y = 45;
-        for (let i = 0; i < contentLines.length; i++) {
-          const line = contentLines[i].trim(); if (!line) continue;
+        for (let i = 0; i < filteredLines.length; i++) {
+          const line = filteredLines[i].trim(); if (!line) continue;
+          
           if (line.startsWith('### ')) {
             pdf.setFont("helvetica", "bold"); pdf.setFontSize(14);
             if (y > 270) { footer(); pdf.addPage(); currPage++; y = 30; }
@@ -267,13 +250,14 @@ export async function POST(request) {
           }
           if (line.startsWith('|')) {
             const rows = [];
-            while (i < contentLines.length && contentLines[i].trim().startsWith('|')) {
-              const r = contentLines[i].trim();
+            let j = i;
+            while (j < filteredLines.length && filteredLines[j].trim().startsWith('|')) {
+              const r = filteredLines[j].trim();
               if (!r.includes('---')) rows.push(r.split('|').slice(1, -1).map(c => parseTechnicalText(c.trim() || "\u00A0")));
-              i++;
+              j++;
             }
             autoTable(pdf, { startY: y, head: [rows[0]], body: rows.slice(1), theme: 'grid', styles: { fontSize: 9, cellPadding: 2 }, headStyles: { fillColor: [15, 23, 42] }, margin: { left: 20, right: 20 } });
-            y = pdf.lastAutoTable.finalY + 10; continue;
+            y = pdf.lastAutoTable.finalY + 10; i = j - 1; continue;
           }
           const imgMatch = line.match(/!\[.*?\]\((.*?)\)/);
           if (imgMatch) {
