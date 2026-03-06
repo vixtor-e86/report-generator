@@ -228,7 +228,7 @@ export default function ContentArea({
     const weeklyPurchases = userProfile?.referral_weekly_purchases || 0;
     const weeklyEarnings = userProfile?.referral_weekly_earnings || 0;
     const isVip = userProfile?.role === 'vip';
-    const redeemThreshold = 0;
+    const redeemThreshold = 10000;
     const canRedeem = weeklyEarnings >= redeemThreshold && !pendingPayout;
 
     return (

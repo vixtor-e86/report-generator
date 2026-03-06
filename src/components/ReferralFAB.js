@@ -152,7 +152,7 @@ export default function ReferralFAB({ userId }) {
     }
   };
 
-  const redeemThresholdAmount = 0;
+  const redeemThresholdAmount = 10000;
   const canRedeem = stats.weeklyEarnings >= redeemThresholdAmount && !stats.pendingPayout;
 
   if (loading && !stats.referralCode) return null;
