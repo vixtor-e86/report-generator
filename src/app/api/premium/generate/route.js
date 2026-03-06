@@ -14,8 +14,8 @@ export async function POST(request) {
     const { 
       projectId, chapterNumber, userId, 
       selectedContextFiles = [],
-      projectTitle, projectDescription, componentsUsed, researchBooks,
-      userPrompt, referenceStyle, maxReferences, targetWordCount = 2000,
+      projectTitle = "", projectDescription = "", componentsUsed = "", researchBooks = "",
+      userPrompt = "", referenceStyle = "APA", maxReferences = 10, targetWordCount = 2000,
       selectedImages = [], selectedPapers = [], skipReferences = false,
       scrapedContext = "",
       isModification = false, modificationType = "whole_chapter", fullContent = "", targetContent = ""
