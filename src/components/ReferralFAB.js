@@ -28,6 +28,7 @@ export default function ReferralFAB({ userId }) {
   });
 
   const [commissions, setCommissions] = useState([]);
+  const [payoutHistory, setPayoutHistory] = useState([]);
 
   async function loadReferralData() {
     if (!userId) return;
@@ -75,6 +76,17 @@ export default function ReferralFAB({ userId }) {
       .limit(10);
     
     if (comms) setCommissions(comms);
+
+    // Fetch payout history
+    const { data: payouts } = await supabase
+      .from('referral_payouts')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    
+    if (payouts) setPayoutHistory(payouts);
+
     setLoading(false);
   }
 

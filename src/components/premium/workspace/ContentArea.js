@@ -55,6 +55,7 @@ export default function ContentArea({
   const textareaRef = useRef(null);
 
   const [commissions, setCommissions] = useState([]);
+  const [payoutHistory, setPayoutHistory] = useState([]);
 
   useEffect(() => {
     if (activeView === 'referral' && projectData?.user_id) {
@@ -66,6 +67,15 @@ export default function ContentArea({
           .order('created_at', { ascending: false })
           .limit(5);
         if (comms) setCommissions(comms);
+
+        // Fetch Payouts
+        const { data: payouts } = await supabase
+          .from('referral_payouts')
+          .select('*')
+          .eq('user_id', projectData.user_id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        if (payouts) setPayoutHistory(payouts);
 
         const { data: pending } = await supabase
           .from('referral_payouts')
