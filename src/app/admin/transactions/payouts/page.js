@@ -10,17 +10,28 @@ const Icons = {
 export default function PayoutsPage() {
   const [payouts, setPayouts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filter, setFilter] = useState('pending');
   const [updatingId, setUpdatingId] = useState(null);
 
   const fetchPayouts = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/admin/payouts');
       const data = await res.json();
-      setPayouts(data || []);
+      
+      if (!res.ok) throw new Error(data.error || 'Failed to load payouts');
+      
+      if (Array.isArray(data)) {
+        setPayouts(data);
+      } else {
+        setPayouts([]);
+      }
     } catch (err) {
       console.error(err);
+      setError(err.message);
+      setPayouts([]);
     } finally {
       setLoading(false);
     }
@@ -38,7 +49,7 @@ export default function PayoutsPage() {
         body: JSON.stringify({ payoutId: id, status: 'paid' })
       });
       if (res.ok) {
-        setPayouts(prev => prev.map(p => p.id === id ? { ...p, status: 'paid', paid_at: new Date().toISOString() } : p));
+        setPayouts(prev => Array.isArray(prev) ? prev.map(p => p.id === id ? { ...p, status: 'paid', paid_at: new Date().toISOString() } : p) : []);
       }
     } catch (err) {
       alert('Update failed');
@@ -47,30 +58,28 @@ export default function PayoutsPage() {
     }
   };
 
-  const filtered = payouts.filter(p => filter === 'all' ? true : p.status === filter);
+  const filtered = Array.isArray(payouts) ? payouts.filter(p => filter === 'all' ? true : p.status === filter) : [];
 
   return (
     <div className="p-4 sm:p-8">
-      <div className="mb-8 flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900">Affiliate Payouts</h1>
-          <p className="text-slate-500 text-sm">Review and process referral withdrawal requests</p>
+      {/* ... existing header code ... */}
+      
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm font-bold">
+          ⚠️ Error: {error}
         </div>
-        <div className="flex bg-slate-100 p-1 rounded-xl">
-          {['pending', 'paid', 'all'].map(f => (
-            <button key={f} onClick={() => setFilter(f)} className={`px-4 py-2 text-xs font-bold uppercase rounded-lg transition-all ${filter === f ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-              {f}
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6">
         {loading ? (
           <div className="py-20 text-center animate-pulse text-slate-400 font-bold">Loading requests...</div>
+        ) : error ? (
+          <div className="py-20 text-center bg-white border-2 border-red-100 rounded-3xl text-red-400 font-medium">Failed to fetch data. Please try again.</div>
         ) : filtered.length === 0 ? (
           <div className="py-20 text-center bg-white border-2 border-dashed border-slate-200 rounded-3xl text-slate-400">No {filter} payout requests found.</div>
-        ) : filtered.map(p => (
+        ) : (
+          filtered.map(p => (
+            // ... rest of mapping code ...
           <div key={p.id} className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
             <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
               
