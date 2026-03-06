@@ -35,18 +35,29 @@ export default function ModifyModal({
   const parseChapterIntoSections = (content) => {
     if (!content) return [];
     
-    // Split by ### heading, but keep the delimiter
-    const parts = content.split(/(?=### )/);
+    // Split by ### heading that starts at the beginning of a line
+    // This ensures #### 1.3.1 (sub-sections) are NOT split into separate blocks
+    // We use a multi-line regex (?m) ^### 
+    const parts = content.split(/\n(?=### )/);
     
-    return parts.map((part, index) => {
-      const match = part.match(/^### (.*)/m);
+    // Handle the very first part if it doesn't start with \n###
+    let initialSplit = parts;
+    if (parts.length === 1 && !content.startsWith('### ')) {
+       // Maybe try ## if no ### exists? (Standard chapters use ### for sections)
+       const altParts = content.split(/\n(?=## )/);
+       if (altParts.length > 1) initialSplit = altParts;
+    }
+    
+    return initialSplit.map((part, index) => {
+      // Extract title from the first heading in this part
+      const match = part.match(/^#{2,3} (.*)/m);
       const title = match ? match[1].trim() : (index === 0 ? "Introduction/Overview" : `Section ${index + 1}`);
       return {
         id: index.toString(),
         title,
         content: part
       };
-    });
+    }).filter(s => s.content.trim().length > 0);
   };
 
   const toggleSection = (id) => {
