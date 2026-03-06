@@ -48,6 +48,10 @@ export default function ContentArea({
   const [cursorPosition, setCursorPosition] = useState({ start: 0, end: 0 }); 
   const [copied, setCopied] = useState(false);  
   const [codeCopied, setCodeCopied] = useState(false);
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [isSubmittingPayout, setIsSubmittingPayout] = useState(false);
+  const [pendingPayout, setPendingPayout] = useState(false);
+  const [bankDetails, setBankDetails] = useState({ accountNumber: '', bankName: '', accountName: '' });
   const textareaRef = useRef(null);
 
   const [commissions, setCommissions] = useState([]);
@@ -55,17 +59,58 @@ export default function ContentArea({
   useEffect(() => {
     if (activeView === 'referral' && projectData?.user_id) {
       async function fetchReferralData() {
-        const { data } = await supabase
+        const { data: comms } = await supabase
           .from('referral_commissions')
           .select('*')
           .eq('referrer_id', projectData.user_id)
           .order('created_at', { ascending: false })
           .limit(5);
-        if (data) setCommissions(data);
+        if (comms) setCommissions(comms);
+
+        const { data: pending } = await supabase
+          .from('referral_payouts')
+          .select('id')
+          .eq('user_id', projectData.user_id)
+          .eq('status', 'pending')
+          .limit(1);
+        setPendingPayout(pending && pending.length > 0);
+
+        if (userProfile) {
+          setBankDetails({
+            accountNumber: userProfile.bank_account_number || '',
+            bankName: userProfile.bank_name || '',
+            accountName: userProfile.bank_account_name || ''
+          });
+        }
       }
       fetchReferralData();
     }
-  }, [activeView, projectData?.user_id]);
+  }, [activeView, projectData?.user_id, userProfile]);
+
+  const handleRequestPayout = async (e) => {
+    e.preventDefault();
+    setIsSubmittingPayout(true);
+    try {
+      await supabase.from('user_profiles').update({
+        bank_account_number: bankDetails.accountNumber,
+        bank_name: bankDetails.bankName,
+        bank_account_name: bankDetails.accountName
+      }).eq('id', projectData.user_id);
+
+      const { error: payoutError } = await supabase.rpc('request_referral_payout', {
+        p_user_id: projectData.user_id
+      });
+      if (payoutError) throw payoutError;
+
+      alert('Success! Your request has been sent for Monday payout.');
+      setShowBankModal(false);
+      setPendingPayout(true);
+    } catch (err) {
+      alert(err.message || 'Failed to request payout');
+    } finally {
+      setIsSubmittingPayout(false);
+    }
+  };
 
   const referralLink = typeof window !== 'undefined' 
     ? `${window.location.origin}?ref=${userProfile?.referral_code}`
