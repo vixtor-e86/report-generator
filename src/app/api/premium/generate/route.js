@@ -115,13 +115,63 @@ export async function POST(request) {
       : '';
 
     // 3. Citation Logic (FORCEFUL)
-    const citationStyleInst = referenceStyle === 'IEEE'
+    const citationStyleInst = referenceStyle.toUpperCase() === 'IEEE'
       ? `### CITATION STYLE: STRICT IEEE\n` +
         `1. IN-TEXT: Use numbers in square brackets like [1], [2]. Sequential order only.\n` +
         `2. BIBLIOGRAPHY: List at end under "## References" in numerical order.`
+      : referenceStyle.toUpperCase() === 'HARVARD'
+      ? `### CITATION STYLE: STRICT HARVARD\n` +
+        `1. IN-TEXT: Use (Author Year) format without comma.\n` +
+        `2. BIBLIOGRAPHY: List at end under "## References" in alphabetical order by author. Format: Author, A.A. (Year) Title. City: Publisher.`
       : `### CITATION STYLE: STRICT APA\n` +
         `1. IN-TEXT: Use (Author, Year) format.\n` +
-        `2. BIBLIOGRAPHY: List at end under "## References" in alphabetical order.`;
+        `2. BIBLIOGRAPHY: List at end under "## References" in alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
+
+    // --- ENHANCED REFERENCE SOURCING ---
+    let finalReferencesList = [...selectedPapers];
+    const totalNeeded = maxReferences || 10;
+    
+    // 1. If we still need more references, try to fetch recent ones (2022+) from web
+    if (finalReferencesList.length < totalNeeded && !skipReferences) {
+      try {
+        const query = projectTitle || project.title;
+        const currentYear = new Date().getFullYear();
+        const yearRange = `2022-${currentYear}`;
+        
+        const searchUrl = new URL('https://api.semanticscholar.org/graph/v1/paper/search', 'https://api.semanticscholar.org');
+        searchUrl.searchParams.set('query', query);
+        searchUrl.searchParams.set('year', yearRange);
+        searchUrl.searchParams.set('limit', (totalNeeded - finalReferencesList.length + 5).toString());
+        searchUrl.searchParams.set('fields', 'title,authors,year,venue,url');
+
+        const searchRes = await fetch(searchUrl.toString(), {
+          headers: process.env.SEMANTIC_SCHOLAR_API_KEY ? { 'x-api-key': process.env.SEMANTIC_SCHOLAR_API_KEY } : {}
+        });
+
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          if (searchData.data) {
+            const existingTitles = new Set(finalReferencesList.map(p => p.title.toLowerCase()));
+            for (const paper of searchData.data) {
+              if (!existingTitles.has(paper.title.toLowerCase()) && finalReferencesList.length < totalNeeded) {
+                finalReferencesList.push(paper);
+              }
+            }
+          }
+        }
+      } catch (searchErr) {
+        console.error('Auto-reference search failed:', searchErr);
+      }
+    }
+
+    const finalReferencesMapping = !skipReferences && finalReferencesList.length > 0
+      ? `\n\n### CORE RESEARCH REFERENCES (MANDATORY):\n` +
+        `You MUST use these specific sources for your citations. Use EXACTLY ${Math.min(finalReferencesList.length, totalNeeded)} references from this list.\n` +
+        finalReferencesList.slice(0, totalNeeded).map((p, idx) => {
+          const auths = Array.isArray(p.authors) ? p.authors.map(a => typeof a === 'object' ? a.name : a).join(', ') : (p.authors || 'Unknown');
+          return `SOURCE [${idx + 1}]: ${auths} (${p.year}). "${p.title}". ${p.venue || 'Research Journal'}.`;
+        }).join('\n\n')
+      : '';
 
     // 4. Construct Structured System Prompt
     const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
@@ -132,15 +182,19 @@ export async function POST(request) {
     - TECHNICAL COMPONENTS: ${componentsUsed || project.components_used}
     - RESEARCH CONTEXT: ${researchBooks || project.research_papers_context}
 
-    ${scrapedContext ? `## SCRAPED RESEARCH DATA (MANDATORY)\n${scrapedContext}\n` : ''}
+    ${scrapedContext ? `## PRIMARY JOURNAL DATA (PRIORITIZE FOR CITATIONS)\n${scrapedContext}\n` : ''}
 
     ${mandatorySections}
 
     ${contextualSourceData ? `## MANDATORY EXPERIMENTAL DATA ANALYSIS\n${contextualSourceData}\nSTRICT REQUIREMENT: Perform detailed technical evaluation and result discussion based ONLY on the data provided above.` : ''}
 
     ${imageMapping}
-    ${referencesMapping}
+    ${finalReferencesMapping}
+    
+    ## CITATION AND REFERENCE REQUIREMENTS
     ${citationStyleInst}
+    - COUNT: You must include EXACTLY ${Math.min(finalReferencesList.length, totalNeeded)} unique references in your bibliography.
+    - RECENTCY: Ensure all web-sourced citations are from 2022 to date.
 
     ## WRITING REQUIREMENTS
     - LANGUAGE: Professional, formal, objective academic English.
