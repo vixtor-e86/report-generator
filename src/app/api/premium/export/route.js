@@ -119,7 +119,6 @@ export async function POST(request) {
     if (type === 'docx') {
       const sections = [];
       
-      // Define numbering for Microsoft Word style lists
       const numbering = {
         config: [
           {
@@ -149,17 +148,35 @@ export async function POST(request) {
         sections.push({ children: tocItems });
       }
       for (const ch of chapters) {
-        const chapterChildren = [new Paragraph({ children: [new TextRun({ text: `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`, font: 'Times New Roman', size: 28, bold: true })], alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } })];
+        const chapterChildren = [
+          new Paragraph({ 
+            children: [new TextRun({ text: `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`, font: 'Times New Roman', size: 32, bold: true })], 
+            alignment: AlignmentType.CENTER, 
+            spacing: { before: 400, after: 400 } 
+          })
+        ];
+
         const contentBody = (ch.content || "").split(/### References|## References/i)[0];
         const lines = contentBody.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim(); if (!line) continue;
+        
+        const filteredLines = lines.filter((line, index) => {
+          const trimmed = line.trim().toUpperCase();
+          if (!trimmed) return true;
+          if (index < 5 && (trimmed.startsWith(`CHAPTER ${ch.chapter_number}`) || trimmed === ch.title.toUpperCase())) return false;
+          if (line.startsWith('## ')) {
+            const clean = line.replace(/^##\s+/, '').toUpperCase();
+            if (clean.includes(`CHAPTER ${ch.chapter_number}`) || clean === ch.title.toUpperCase()) return false;
+          }
+          return true;
+        });
+
+        for (let i = 0; i < filteredLines.length; i++) {
+          const line = filteredLines[i].trim(); if (!line) continue;
           
-          // Tables
           if (line.startsWith('|')) {
             const tableRows = [];
-            while (i < lines.length && lines[i].trim().startsWith('|')) {
-              const r = lines[i].trim();
+            while (i < filteredLines.length && filteredLines[i].trim().startsWith('|')) {
+              const r = filteredLines[i].trim();
               if (!r.includes('---')) {
                 const cells = r.split('|').slice(1, -1).map(c => new TableCell({ 
                   children: [new Paragraph({ children: parseInlineFormatting(c.trim() || "\u00A0", 20), alignment: AlignmentType.CENTER })], 
@@ -173,7 +190,6 @@ export async function POST(request) {
             chapterChildren.push(new Paragraph({ text: "" })); continue;
           }
 
-          // Images
           const imgMatch = line.match(/!\[.*?\]\((.*?)\)/);
           if (imgMatch) {
             const asset = assets.find(a => a.file_url === imgMatch[1]);
@@ -184,39 +200,17 @@ export async function POST(request) {
             }
           }
 
-          // Sub-headings (Bold)
           if (line.startsWith('### ')) {
-            chapterChildren.push(new Paragraph({ 
-              children: [new TextRun({ text: line.replace('### ', ''), font: 'Times New Roman', size: 26, bold: true })], 
-              heading: HeadingLevel.HEADING_2,
-              spacing: { before: 200, after: 200 } 
-            }));
+            chapterChildren.push(new Paragraph({ children: [new TextRun({ text: line.replace('### ', ''), font: 'Times New Roman', size: 28, bold: true })], heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 200 } }));
           } else if (line.startsWith('#### ')) {
-            chapterChildren.push(new Paragraph({ 
-              children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 24, bold: true })], 
-              heading: HeadingLevel.HEADING_3,
-              spacing: { before: 150, after: 150 } 
-            }));
+            chapterChildren.push(new Paragraph({ children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 26, bold: true })], heading: HeadingLevel.HEADING_3, spacing: { before: 150, after: 150 } }));
           }
-          // Numbered Lists
           else if (/^\d+\.\s/.test(line)) {
-            chapterChildren.push(new Paragraph({
-              children: parseInlineFormatting(line.replace(/^\d+\.\s/, ''), 24),
-              numbering: { reference: "numeric-list", level: 0 },
-              alignment: AlignmentType.JUSTIFIED,
-              spacing: { after: 120, line: 360 }
-            }));
+            chapterChildren.push(new Paragraph({ children: parseInlineFormatting(line.replace(/^\d+\.\s/, ''), 24), numbering: { reference: "numeric-list", level: 0 }, alignment: AlignmentType.JUSTIFIED, spacing: { after: 120, line: 360 } }));
           }
-          // Bullet Lists
           else if (line.startsWith('- ') || line.startsWith('* ')) {
-            chapterChildren.push(new Paragraph({
-              children: parseInlineFormatting(line.substring(2), 24),
-              numbering: { reference: "bullet-list", level: 0 },
-              alignment: AlignmentType.JUSTIFIED,
-              spacing: { after: 120, line: 360 }
-            }));
+            chapterChildren.push(new Paragraph({ children: parseInlineFormatting(line.substring(2), 24), numbering: { reference: "bullet-list", level: 0 }, alignment: AlignmentType.JUSTIFIED, spacing: { after: 120, line: 360 } }));
           }
-          // Paragraphs
           else {
             chapterChildren.push(new Paragraph({ children: parseInlineFormatting(line), alignment: AlignmentType.JUSTIFIED, spacing: { after: 200, line: 360 } }));
           }
@@ -248,12 +242,29 @@ export async function POST(request) {
         footer(); pdf.addPage(); currPage++;
       }
       for (const ch of chapters) {
-        pdf.setFont("helvetica", "bold"); pdf.setFontSize(16); pdf.text(`CHAPTER ${ch.chapter_number}`, 20, 30);
-        pdf.text((ch.title || "").toUpperCase(), 20, 40); pdf.setFont("helvetica", "normal"); pdf.setFontSize(11);
-        const contentLines = (ch.content || "").split(/### References|## References/i)[0].split('\n');
-        let y = 55;
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(20); pdf.text(`CHAPTER ${ch.chapter_number}: ${(ch.title || "").toUpperCase()}`, 20, 30);
+        pdf.setFont("helvetica", "normal"); pdf.setFontSize(11);
+        const contentLines = (ch.content || "").split(/### References|## References/i)[0].split('\n').filter((line, index) => {
+          const t = line.trim().toUpperCase();
+          if (index < 5 && (t.startsWith(`CHAPTER ${ch.chapter_number}`) || t === ch.title.toUpperCase())) return false;
+          if (line.trim().startsWith('## ')) return false;
+          return true;
+        });
+        let y = 45;
         for (let i = 0; i < contentLines.length; i++) {
           const line = contentLines[i].trim(); if (!line) continue;
+          if (line.startsWith('### ')) {
+            pdf.setFont("helvetica", "bold"); pdf.setFontSize(14);
+            if (y > 270) { footer(); pdf.addPage(); currPage++; y = 30; }
+            pdf.text(line.replace('### ', ''), 20, y); y += 10;
+            pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); continue;
+          }
+          if (line.startsWith('#### ')) {
+            pdf.setFont("helvetica", "bold"); pdf.setFontSize(12.5);
+            if (y > 270) { footer(); pdf.addPage(); currPage++; y = 30; }
+            pdf.text(line.replace('#### ', ''), 20, y); y += 8;
+            pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); continue;
+          }
           if (line.startsWith('|')) {
             const rows = [];
             while (i < contentLines.length && contentLines[i].trim().startsWith('|')) {

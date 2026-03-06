@@ -89,7 +89,7 @@ export async function generateDocx(data) {
               new TextRun({
                 text: `CHAPTER ${chapter.chapter_number}: ${chapter.title.toUpperCase()}`,
                 font: 'Times New Roman',
-                size: 28,
+                size: 32,
                 bold: true
               })
             ],
@@ -336,19 +336,33 @@ function convertToSuperscript(char) {
 async function convertMarkdownToDocx(markdown, images, chapterNumber) {
   const lines = markdown.split('\n');
   const paragraphs = [];
-  let skipNextHeading = false;
+  
+  // ✅ FIX: Filter out lines that repeat the Chapter Number or Title
+  const filteredLines = lines.filter((line, index) => {
+    const trimmed = line.trim().toUpperCase();
+    if (!trimmed) return true;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+    // 1. Skip lines starting with # or ## that repeat the chapter number
+    if (line.startsWith('## ') || line.startsWith('# ')) {
+      const clean = line.replace(/^#+\s+/, '').toUpperCase();
+      if (clean.includes(`CHAPTER ${chapterNumber}`) || clean.includes(`CHAPTER${chapterNumber}`)) return false;
+      // If it's exactly the chapter name (fuzzy check), skip it
+      if (index < 5 && clean.length < 50 && (clean.includes('LITERATURE REVIEW') || clean.includes('INTRODUCTION') || clean.includes('METHODOLOGY'))) return false; 
+    }
+
+    // 2. Skip plain text lines in the first few lines that repeat "CHAPTER X"
+    if (index < 5 && (trimmed.startsWith(`CHAPTER ${chapterNumber}`) || trimmed === `CHAPTER ${chapterNumber}`)) {
+      return false;
+    }
+
+    return true;
+  });
+
+  for (let i = 0; i < filteredLines.length; i++) {
+    const line = filteredLines[i].trim();
 
     if (!line) {
       paragraphs.push(new Paragraph({ text: '', spacing: { after: 200 } }));
-      continue;
-    }
-
-    // Skip the first ## heading
-    if (line.startsWith('## ') && !skipNextHeading) {
-      skipNextHeading = true;
       continue;
     }
 
@@ -413,20 +427,20 @@ async function convertMarkdownToDocx(markdown, images, chapterNumber) {
     // Standard Headings
     if (line.startsWith('## ')) {
       paragraphs.push(new Paragraph({
-        children: [new TextRun({ text: line.replace('## ', '').toUpperCase(), font: 'Times New Roman', size: 28, bold: true })],
+        children: [new TextRun({ text: line.replace('## ', '').toUpperCase(), font: 'Times New Roman', size: 30, bold: true })],
         heading: HeadingLevel.HEADING_1,
         alignment: AlignmentType.CENTER,
         spacing: { before: 400, after: 400 },
       }));
     } else if (line.startsWith('### ')) {
       paragraphs.push(new Paragraph({
-        children: [new TextRun({ text: line.replace('### ', ''), font: 'Times New Roman', size: 26, bold: true })],
+        children: [new TextRun({ text: line.replace('### ', ''), font: 'Times New Roman', size: 28, bold: true })],
         heading: HeadingLevel.HEADING_2,
         spacing: { before: 300, after: 300 },
       }));
     } else if (line.startsWith('#### ')) {
       paragraphs.push(new Paragraph({
-        children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 24, bold: true })],
+        children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 26, bold: true })],
         heading: HeadingLevel.HEADING_3,
         spacing: { before: 200, after: 200 },
       }));

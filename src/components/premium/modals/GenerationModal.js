@@ -178,7 +178,7 @@ export default function GenerationModal({
                   
                   <div>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Title</label>
-                    <input type="text" value={localData.projectTitle} onChange={(e) => setLocalData({...localData, projectTitle: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }} />
+                    <input type="text" value={localData.projectTitle} readOnly style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: '#f9fafb', color: '#6b7280', cursor: 'not-allowed' }} />
                   </div>
 
                   <div>

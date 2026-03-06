@@ -8,7 +8,9 @@ const TOUR_STEPS = [
   { target: '#step-sidebar', title: 'Project Structure', content: 'This is your project outline. Select a chapter here to start writing or editing.', position: 'right' },
   { target: '#step-generate', title: 'AI Architect', content: 'Click here to generate content. You can upload experimental data for the AI to analyze!', position: 'bottom' },
   { target: '#step-visuals', title: 'Diagram Studio', content: 'Need a flowchart or technical illustration? Open the Visual Studio to draw with AI.', position: 'left' },
+  { target: '#step-references', title: 'Reference Finder', content: 'Search for academic papers and automatically fetch citations for your project.', position: 'left' },
   { target: '#step-humanizer', title: 'Bypass Detectors', content: 'Use the Humanizer to ensure your project sounds natural and bypasses AI detection.', position: 'left' },
+  { target: '#step-presentation', title: 'Presentation Builder', content: 'Ready to present? Generate professional PowerPoint slides based on your report.', position: 'left' },
   { target: '#step-export', title: 'Final Export', content: 'When ready, export your project as a professional PDF or an editable Word document.', position: 'bottom' }
 ];
 
