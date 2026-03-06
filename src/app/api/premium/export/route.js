@@ -48,7 +48,6 @@ function cleanMarkdownStrict(text) {
     .replace(/__(.*?)__/g, '$1')
     .replace(/_(.*?)_/g, '$1')
     .replace(/`{1,3}.*?`{1,3}/g, '') 
-    .replace(/###/g, '').replace(/##/g, '').replace(/#/g, '') 
     .trim();
 }
 
@@ -139,14 +138,15 @@ export async function POST(request) {
         const contentBody = (ch.content || "").split(/### References|## References/i)[0];
         const rawLines = contentBody.split('\n');
         
-        // Refined Filter: Remove repeated chapter header only
         const filteredLines = rawLines.filter((line, index) => {
           const t = line.trim().toUpperCase();
           if (!t) return true;
-          if (index < 5 && (t.startsWith(`CHAPTER ${ch.chapter_number}`) || t === ch.title.toUpperCase())) return false;
-          if (line.startsWith('## ')) {
-            const clean = line.replace(/^##\s+/, '').toUpperCase();
-            if (clean.includes(`CHAPTER ${ch.chapter_number}`) || clean === ch.title.toUpperCase()) return false;
+          // Only remove if it's the exact chapter title repeating
+          const isTitle = t === `CHAPTER ${ch.chapter_number}` || t === ch.title.toUpperCase() || t === `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`;
+          if (index < 5 && isTitle) return false;
+          if (line.startsWith('#')) {
+            const clean = line.replace(/^#+\s+/, '').toUpperCase();
+            if (clean === `CHAPTER ${ch.chapter_number}` || clean === ch.title.toUpperCase() || clean === `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`) return false;
           }
           return true;
         });
@@ -180,10 +180,22 @@ export async function POST(request) {
             }
           }
 
-          if (line.startsWith('### ')) {
-            chapterChildren.push(new Paragraph({ children: [new TextRun({ text: line.replace('### ', ''), font: 'Times New Roman', size: 28, bold: true })], heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 200 } }));
-          } else if (line.startsWith('#### ')) {
-            chapterChildren.push(new Paragraph({ children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 26, bold: true })], heading: HeadingLevel.HEADING_3, spacing: { before: 150, after: 150 } }));
+          // Format Sections (## or ###)
+          if (line.startsWith('## ') || line.startsWith('### ')) {
+            const cleanText = line.replace(/^#+\s+/, '');
+            chapterChildren.push(new Paragraph({ 
+              children: [new TextRun({ text: cleanText, font: 'Times New Roman', size: 28, bold: true })], 
+              heading: HeadingLevel.HEADING_2, 
+              spacing: { before: 200, after: 200 } 
+            }));
+          } 
+          // Format Sub-sections (####)
+          else if (line.startsWith('#### ')) {
+            chapterChildren.push(new Paragraph({ 
+              children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 26, bold: true })], 
+              heading: HeadingLevel.HEADING_3, 
+              spacing: { before: 150, after: 150 } 
+            }));
           } else if (/^\d+\.\s/.test(line)) {
             chapterChildren.push(new Paragraph({ children: parseInlineFormatting(line.replace(/^\d+\.\s/, ''), 24), numbering: { reference: "numeric-list", level: 0 }, alignment: AlignmentType.JUSTIFIED, spacing: { after: 120, line: 360 } }));
           } else if (line.startsWith('- ') || line.startsWith('* ')) {
@@ -227,8 +239,13 @@ export async function POST(request) {
         const rawLines = (ch.content || "").split(/### References|## References/i)[0].split('\n');
         const filteredLines = rawLines.filter((line, index) => {
           const t = line.trim().toUpperCase();
-          if (index < 5 && (t.startsWith(`CHAPTER ${ch.chapter_number}`) || t === ch.title.toUpperCase())) return false;
-          if (line.trim().startsWith('## ')) return false;
+          if (!t) return true;
+          const isTitle = t === `CHAPTER ${ch.chapter_number}` || t === ch.title.toUpperCase() || t === `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`;
+          if (index < 5 && isTitle) return false;
+          if (line.startsWith('#')) {
+            const clean = line.replace(/^#+\s+/, '').toUpperCase();
+            if (clean === `CHAPTER ${ch.chapter_number}` || clean === ch.title.toUpperCase() || clean === `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`) return false;
+          }
           return true;
         });
 
@@ -236,10 +253,10 @@ export async function POST(request) {
         for (let i = 0; i < filteredLines.length; i++) {
           const line = filteredLines[i].trim(); if (!line) continue;
           
-          if (line.startsWith('### ')) {
+          if (line.startsWith('## ') || line.startsWith('### ')) {
             pdf.setFont("helvetica", "bold"); pdf.setFontSize(14);
             if (y > 270) { footer(); pdf.addPage(); currPage++; y = 30; }
-            pdf.text(line.replace('### ', ''), 20, y); y += 10;
+            pdf.text(line.replace(/^#+\s+/, ''), 20, y); y += 10;
             pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); continue;
           }
           if (line.startsWith('#### ')) {
@@ -288,10 +305,9 @@ export async function POST(request) {
       const generatedDoc = await PDFDocument.load(pdf.output('arraybuffer'));
       const finalPdf = await PDFDocument.create();
       if (orderedDocIds?.length > 0) {
-        const sorted = orderedDocIds.map(id => assets.find(a => a.id === id)).filter(Boolean);
+        const sorted = orderedDocIds.map(id => assets.find(a => id === id)).filter(Boolean);
         for (const a of sorted) {
           try {
-            const res = await fetch(a.file_url);
             const docToMerge = await PDFDocument.load(await (await fetch(a.file_url)).arrayBuffer());
             const pages = await finalPdf.copyPages(docToMerge, docToMerge.getPageIndices());
             pages.forEach(p => finalPdf.addPage(p));
