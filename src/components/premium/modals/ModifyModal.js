@@ -35,29 +35,62 @@ export default function ModifyModal({
   const parseChapterIntoSections = (content) => {
     if (!content) return [];
     
-    // Split by ### heading that starts at the beginning of a line
-    // This ensures #### 1.3.1 (sub-sections) are NOT split into separate blocks
-    // We use a multi-line regex (?m) ^### 
-    const parts = content.split(/\n(?=### )/);
+    // Normalize line endings and trim
+    const normalized = content.replace(/\r\n/g, '\n');
     
-    // Handle the very first part if it doesn't start with \n###
-    let initialSplit = parts;
-    if (parts.length === 1 && !content.startsWith('### ')) {
-       // Maybe try ## if no ### exists? (Standard chapters use ### for sections)
-       const altParts = content.split(/\n(?=## )/);
-       if (altParts.length > 1) initialSplit = altParts;
+    // Identify the top-level heading style used in this chapter
+    // AI is instructed to use ## for Sections and ### for Sub-sections
+    const hasH2 = /^## /m.test(normalized);
+    const headingRegex = hasH2 ? /^## (.*)/gm : /^### (.*)/gm;
+    
+    const parsedSections = [];
+    let match;
+    let lastIndex = 0;
+    
+    while ((match = headingRegex.exec(normalized)) !== null) {
+      // If there is text before the very first heading, capture it as Introduction
+      if (parsedSections.length === 0 && match.index > 0) {
+        const introContent = normalized.substring(0, match.index).trim();
+        if (introContent) {
+          parsedSections.push({
+            id: "intro",
+            title: "Introduction / Overview",
+            content: introContent
+          });
+        }
+      }
+      
+      // If we already have a section, update its content with everything up to this match
+      if (parsedSections.length > 0 && parsedSections[parsedSections.length - 1].id !== "intro") {
+        const prevSection = parsedSections[parsedSections.length - 1];
+        prevSection.content = normalized.substring(lastIndex, match.index).trim();
+      } else if (parsedSections.length > 0 && parsedSections[parsedSections.length - 1].id === "intro") {
+        // If we just had an intro, we don't need to fill it, just move on
+      }
+      
+      parsedSections.push({
+        id: `sec-${parsedSections.length}`,
+        title: match[1].trim(),
+        content: "" // To be filled by next match or end of string
+      });
+      
+      lastIndex = match.index;
     }
     
-    return initialSplit.map((part, index) => {
-      // Extract title from the first heading in this part
-      const match = part.match(/^#{2,3} (.*)/m);
-      const title = match ? match[1].trim() : (index === 0 ? "Introduction/Overview" : `Section ${index + 1}`);
-      return {
-        id: index.toString(),
-        title,
-        content: part
-      };
-    }).filter(s => s.content.trim().length > 0);
+    // Fill the content for the very last section found
+    if (parsedSections.length > 0) {
+      const lastSection = parsedSections[parsedSections.length - 1];
+      lastSection.content = normalized.substring(lastIndex).trim();
+    } else {
+      // No headings found at all, treat entire block as one
+      parsedSections.push({
+        id: "whole",
+        title: "Entire Chapter Content",
+        content: normalized
+      });
+    }
+    
+    return parsedSections.filter(s => s.content.length > 0);
   };
 
   const toggleSection = (id) => {
