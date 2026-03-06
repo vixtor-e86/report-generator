@@ -299,8 +299,11 @@ export default function ContentArea({
                   </div>
                 </div>
 
-                <button disabled={!canRedeem} style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: canRedeem ? '#10b981' : 'rgba(255,255,255,0.05)', color: canRedeem ? 'white' : '#4b5563', fontWeight: '800', cursor: canRedeem ? 'pointer' : 'not-allowed' }}>
-                  {canRedeem ? 'Redeem Payout' : 'Redeem Locked'}
+                <button 
+                  onClick={() => setShowBankModal(true)}
+                  disabled={!canRedeem} 
+                  style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: canRedeem ? '#10b981' : 'rgba(255,255,255,0.05)', color: canRedeem ? 'white' : '#4b5563', fontWeight: '800', cursor: canRedeem ? 'pointer' : 'not-allowed' }}>
+                  {pendingPayout ? 'Payout Pending' : canRedeem ? 'Redeem Payout' : 'Redeem Locked'}
                 </button>
               </div>
 
@@ -315,6 +318,38 @@ export default function ContentArea({
             </div>
           </div>
         </div>
+
+        {/* BANK MODAL FOR PREMIUM */}
+        {showBankModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: 'white', borderRadius: '32px', padding: '40px', maxWidth: '450px', width: '100%', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+              <h3 style={{ fontSize: '24px', fontWeight: '900', color: '#111827', marginBottom: '8px' }}>Withdraw Funds 🏦</h3>
+              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '32px' }}>Enter where we should send your <strong>₦{weeklyEarnings.toLocaleString()}</strong>.</p>
+              
+              <form onSubmit={handleRequestPayout} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px', marginLeft: '4px' }}>Bank Name</label>
+                  <input required type="text" value={bankDetails.bankName} onChange={e => setBankDetails({...bankDetails, bankName: e.target.value})} placeholder="e.g. Zenith, Kuda, GTBank" style={{ width: '100%', padding: '14px 18px', borderRadius: '14px', border: '1px solid #e5e7eb', fontSize: '14px', fontWeight: '700', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px', marginLeft: '4px' }}>Account Number</label>
+                  <input required type="text" maxLength="10" value={bankDetails.accountNumber} onChange={e => setBankDetails({...bankDetails, accountNumber: e.target.value.replace(/\D/g, '')})} placeholder="10-digit number" style={{ width: '100%', padding: '14px 18px', borderRadius: '14px', border: '1px solid #e5e7eb', fontSize: '14px', fontWeight: '700', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px', marginLeft: '4px' }}>Account Holder Name</label>
+                  <input required type="text" value={bankDetails.accountName} onChange={e => setBankDetails({...bankDetails, accountName: e.target.value})} placeholder="Full legal name" style={{ width: '100%', padding: '14px 18px', borderRadius: '14px', border: '1px solid #e5e7eb', fontSize: '14px', fontWeight: '700', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+
+                <div style={{ marginTop: '12px' }}>
+                  <button disabled={isSubmittingPayout} type="submit" style={{ width: '100%', padding: '18px', borderRadius: '16px', border: 'none', background: '#059669', color: 'white', fontWeight: '800', fontSize: '15px', cursor: 'pointer' }}>
+                    {isSubmittingPayout ? 'Processing...' : 'Confirm Withdrawal'}
+                  </button>
+                  <button type="button" onClick={() => setShowBankModal(false)} style={{ width: '100%', padding: '14px', marginTop: '8px', border: 'none', background: 'none', color: '#9ca3af', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
