@@ -957,6 +957,56 @@
   }
 }
 
+/* Print Styles */
+@media print {
+  /* Hide EVERY root and high-level element */
+  html, body, #__next, [data-reactroot] {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  /* Target everything except the print area */
+  body > *:not(.premium-print-area),
+  .workspace > *:not(.main-workspace),
+  .main-workspace > *:not(.workspace-content),
+  .workspace-content > *:not(.content-area),
+  .top-toolbar, .sidebar, .right-sidebar, .mobile-menu-btn, .toolbar-actions {
+    display: none !important;
+  }
+
+  /* Force the print area to be the only thing visible and positioned at top */
+  .premium-print-area {
+    visibility: visible !important;
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    z-index: 99999 !important;
+  }
+
+  .premium-print-area * {
+    visibility: visible !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+
+  /* Formatting */
+  .premium-print-area h1 { font-size: 22pt; margin-bottom: 20pt; color: black; }
+  .premium-print-area h2 { font-size: 18pt; margin-top: 24pt; margin-bottom: 12pt; border-bottom: 1pt solid #eee; padding-bottom: 5pt; }
+  .premium-print-area h3 { font-size: 14pt; margin-top: 18pt; margin-bottom: 10pt; }
+  .premium-print-area p { font-size: 12pt; line-height: 1.6; margin-bottom: 12pt; text-align: justify; }
+  .premium-print-area img { max-width: 100%; height: auto; display: block; margin: 20pt auto; }
+}
+
 @media (max-width: 480px) {
   .history-stats-grid {
     grid-template-columns: 1fr;
