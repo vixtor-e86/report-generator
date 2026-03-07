@@ -31,7 +31,7 @@ export async function POST(request) {
     const provider = process.env.PREMIUM_AI_PROVIDER || 'deepseek';
     const model = process.env.PREMIUM_AI_MODEL || 'deepseek-chat';
 
-    // Check for surgical modification
+    // --- 1. Surgical Modification Logic ---
     if (isModification && modificationType === 'partial' && targetContent) {
       const surgicalPrompt = `You are a high-end academic system architect.
       TASK: Rewrite ONLY the following section(s) of Chapter ${chapterNumber} for the project "${projectTitle || project.title}".
@@ -51,10 +51,8 @@ export async function POST(request) {
 
       const aiResponse = await callAI(surgicalPrompt, { provider, model, maxTokens: 4000, temperature: 0.5 });
       
-      // Merge back into full content
       const updatedFullContent = fullContent.replace(targetContent, aiResponse.content);
 
-      // Save merged content
       const { data: chapter } = await supabaseAdmin.from('premium_chapters').select('id').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
       if (chapter) {
         await supabaseAdmin.from('premium_chapters').update({ content: updatedFullContent, updated_at: new Date().toISOString() }).eq('id', chapter.id);
@@ -64,12 +62,15 @@ export async function POST(request) {
       return NextResponse.json({ success: true, content: updatedFullContent });
     }
 
-    // 1. Data Extraction (DOCX & TXT ONLY)
+    // --- 2. Data Extraction (DOCX & TXT ONLY) ---
     let contextualSourceData = "";
     if (selectedContextFiles.length > 0) {
       for (const file of selectedContextFiles) {
         try {
-          const res = await fetch(file.file_url || file.src);
+          const fileUrl = file.file_url || file.src;
+          if (!fileUrl) continue;
+          
+          const res = await fetch(fileUrl);
           const buffer = Buffer.from(await res.arrayBuffer());
           let extractedText = "";
           const fileName = file.name || file.original_name || "File";
@@ -81,14 +82,13 @@ export async function POST(request) {
             extractedText = buffer.toString('utf-8');
           } else continue;
 
-          const words = extractedText.trim().split(/\s+/);
-          const snippet = words.slice(0, 500).join(" ");
+          const snippet = extractedText.trim().split(/\s+/).slice(0, 500).join(" ");
           contextualSourceData += `\n--- EXPERIMENTAL DATA FROM: ${fileName} ---\n${snippet}\n`;
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error('Data extraction failed:', e); }
       }
     }
 
-    // 2. Resource Mapping
+    // --- 3. Resource Mapping ---
     const currentChapterData = project.custom_templates?.structure?.chapters?.find(ch => (ch.number || ch.chapter) === chapterNumber);
     const chapterTitle = currentChapterData?.title || `Chapter ${chapterNumber}`;
     
@@ -104,34 +104,39 @@ export async function POST(request) {
         selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", URL: ${img.file_url}`).join('\n')
       : '';
 
-    // 3. Citation Logic (FORCEFUL)
+    // --- 4. Citation Logic ---
     const citationStyleInst = referenceStyle.toUpperCase() === 'IEEE'
-      ? `### CITATION STYLE: STRICT IEEE\n` +
-        `1. IN-TEXT: Use numbers in square brackets like [1], [2]. Sequential order only.\n` +
-        `2. BIBLIOGRAPHY: List at end under "## References" in numerical order.`
+      ? `### CITATION STYLE: STRICT IEEE\n1. IN-TEXT: Use numbers in square brackets like [1], [2]. Sequential order.\n2. BIBLIOGRAPHY: Numerical order.`
       : referenceStyle.toUpperCase() === 'HARVARD'
-      ? `### CITATION STYLE: STRICT HARVARD\n` +
-        `1. IN-TEXT: Use (Author Year) format without comma.\n` +
-        `2. BIBLIOGRAPHY: List at end under "## References" in alphabetical order by author. Format: Author, A.A. (Year) Title. City: Publisher.`
-      : `### CITATION STYLE: STRICT APA\n` +
-        `1. IN-TEXT: Use (Author, Year) format.\n` +
-        `2. BIBLIOGRAPHY: List at end under "## References" in alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
+      ? `### CITATION STYLE: STRICT HARVARD\n1. IN-TEXT: (Author Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A.A. (Year) Title. City: Publisher.`
+      : `### CITATION STYLE: STRICT APA\n1. IN-TEXT: (Author, Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
 
-    // --- ENHANCED REFERENCE SOURCING ---
+    // --- 5. Aims & Objectives Logic ---
+    let objectiveInstruction = "";
+    if (chapterNumber === 1) {
+      if (useManualObjectives && Array.isArray(manualObjectives) && manualObjectives.length > 0) {
+        const list = manualObjectives.filter(o => o.trim()).map((o, i) => `${i + 1}. ${o}`).join('\n');
+        objectiveInstruction = `\n\n### MANDATORY RESEARCH OBJECTIVES (USER DEFINED):\n` +
+          `Include these EXACT objectives under the 'Objectives' sub-heading:\n${list}`;
+      } else {
+        objectiveInstruction = `\n\n### AIMS & OBJECTIVES REQUIREMENT:\n` +
+          `You MUST generate EXACTLY ${objectiveCount} specific research objectives under the 'Objectives' sub-heading.`;
+      }
+    }
+
+    // --- 6. Enhanced Reference Sourcing ---
     let finalReferencesList = [...selectedPapers];
     const totalNeeded = maxReferences || 10;
     
     if (finalReferencesList.length < totalNeeded && !skipReferences) {
       try {
         const query = projectTitle || project.title;
-        const currentYear = new Date().getFullYear();
-        const yearRange = `2022-${currentYear}`;
         const searchUrl = new URL('https://api.semanticscholar.org/graph/v1/paper/search', 'https://api.semanticscholar.org');
         searchUrl.searchParams.set('query', query);
-        searchUrl.searchParams.set('year', yearRange);
+        searchUrl.searchParams.set('year', '2022-2026');
         searchUrl.searchParams.set('limit', (totalNeeded - finalReferencesList.length + 5).toString());
         searchUrl.searchParams.set('fields', 'title,authors,year,venue,url');
-        const searchRes = await fetch(searchUrl.toString(), { headers: process.env.SEMANTIC_SCHOLAR_API_KEY ? { 'x-api-key': process.env.SEMANTIC_SCHOLAR_API_KEY } : {} });
+        const searchRes = await fetch(searchUrl.toString());
         if (searchRes.ok) {
           const searchData = await searchRes.json();
           if (searchData.data) {
@@ -145,20 +150,14 @@ export async function POST(request) {
     }
 
     const finalReferencesMapping = !skipReferences && finalReferencesList.length > 0
-      ? `\n\n### CORE RESEARCH REFERENCES (MANDATORY):\n` +
-        `You MUST use these specific sources for your citations. Use EXACTLY ${Math.min(finalReferencesList.length, totalNeeded)} references from this list.\n` +
+      ? `\n\n### CORE RESEARCH REFERENCES:\n` +
         finalReferencesList.slice(0, totalNeeded).map((p, idx) => {
           const auths = Array.isArray(p.authors) ? p.authors.map(a => typeof a === 'object' ? a.name : a).join(', ') : (p.authors || 'Unknown');
           return `SOURCE [${idx + 1}]: ${auths} (${p.year}). "${p.title}". ${p.venue || 'Research Journal'}.`;
         }).join('\n\n')
       : '';
 
-    // 4. Construct Structured System Prompt
-    const objectiveInstruction = chapterNumber === 1 
-      ? `\n\n### AIMS & OBJECTIVES REQUIREMENT:\n` +
-        `You MUST generate EXACTLY ${objectiveCount} specific, technically-focused research objectives under the 'Objectives' sub-heading. Each objective should start with an action verb.`
-      : '';
-
+    // --- 7. Construct Structured System Prompt ---
     const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
     TASK: Author a comprehensive Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${projectTitle || project.title}".
 
@@ -169,30 +168,26 @@ export async function POST(request) {
     ${objectiveInstruction}
 
     ${mandatorySections}
-
-    ${contextualSourceData ? `## MANDATORY EXPERIMENTAL DATA ANALYSIS\n${contextualSourceData}\nSTRICT REQUIREMENT: Perform detailed technical evaluation and result discussion based ONLY on the data provided above.` : ''}
-
+    ${contextualSourceData ? `## MANDATORY EXPERIMENTAL DATA ANALYSIS\n${contextualSourceData}\nSTRICT REQUIREMENT: Perform detailed technical evaluation and result discussion.` : ''}
     ${imageMapping}
     ${finalReferencesMapping}
     
     ## CITATION AND REFERENCE REQUIREMENTS
     ${citationStyleInst}
-    - COUNT: You must include EXACTLY ${Math.min(finalReferencesList.length, totalNeeded)} unique references in your bibliography.
-    - RECENTCY: Ensure all web-sourced citations are from 2022 to date.
+    - COUNT: Exactly ${Math.min(finalReferencesList.length, totalNeeded)} references.
+    - RECENTCY: Web-sourced citations must be 2022-2026.
 
     ## WRITING REQUIREMENTS
-    - LANGUAGE: Professional, formal, objective academic English.
-    - FORMAT: Markdown (## Headings, ### Sub-headings, **bold**, lists).
-    - LENGTH: Highly detailed. TARGET: ${targetWordCount} words.
-    - CURRENCY: All costs in Nigerian Naira (₦).
-    - USER SPECIFIC INSTRUCTIONS: ${userPrompt || 'Deliver an elite technical chapter.'}
+    - FORMAT: Markdown (## Headings, ### Sub-headings).
+    - TARGET: ${targetWordCount} words.
+    - CURRENCY: Nigerian Naira (₦).
+    - USER SPECIFIC INSTRUCTIONS: ${userPrompt || 'Deliver elite technical content.'}
 
-    ${skipReferences ? '--- DO NOT INCLUDE ANY CITATIONS OR REFERENCES.' : '--- MANDATORY: Include a "## References" section at the very end.'}`;
+    ${skipReferences ? '--- NO CITATIONS.' : '--- MANDATORY: Include a "## References" section at the end.'}`;
 
-    // 5. Call AI
+    // --- 8. Call AI & Save ---
     const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 8000, temperature: 0.6 });
 
-    // 6. DB Persistence
     let { data: chapter } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
     if (!chapter) {
       const { data: nc } = await supabaseAdmin.from('premium_chapters').insert({ project_id: projectId, chapter_number: chapterNumber, title: chapterTitle, content: aiResponse.content, status: 'draft' }).select().single();
@@ -203,19 +198,13 @@ export async function POST(request) {
 
     await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: aiResponse.content, prompt_used: userPrompt, model_used: aiResponse.model });
 
-    // Extract and Save Project-Wide References
-    const refSection = aiResponse.content.split(/## References|# References/i)[1];
-    if (refSection) {
-      const lines = refSection.split('\n').filter(l => l.trim() && (l.trim().startsWith('[') || l.match(/^\d+\./)));
-      if (lines.length > 0) {
-        await supabaseAdmin.from('project_references').delete().eq('project_id', projectId).eq('chapter_number', chapterNumber);
-        await supabaseAdmin.from('project_references').insert(lines.map((l, i) => ({ project_id: projectId, user_id: userId, reference_text: l.trim(), order_number: i + 1, chapter_number: chapterNumber })));
-      }
-    }
-
-    await supabaseAdmin.from('premium_projects').update({ tokens_used: (project.tokens_used || 0) + aiResponse.tokensUsed.total, updated_at: new Date().toISOString() }).eq('id', projectId);
+    const tokensUsed = aiResponse.tokensUsed?.total || 0;
+    await supabaseAdmin.from('premium_projects').update({ tokens_used: (project.tokens_used || 0) + tokensUsed, updated_at: new Date().toISOString() }).eq('id', projectId);
 
     return NextResponse.json({ success: true, content: aiResponse.content });
 
-  } catch (error) { console.error('Gen Error:', error); return NextResponse.json({ error: error.message }, { status: 500 }); }
+  } catch (error) { 
+    console.error('Gen Error:', error); 
+    return NextResponse.json({ error: error.message }, { status: 500 }); 
+  }
 }
