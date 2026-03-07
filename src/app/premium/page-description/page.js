@@ -20,6 +20,7 @@ function ProjectDescriptionContent() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [userProfile, setUserProfile] = useState(null);
   
   // Data for dropdowns
   const [universityData, setUniversityData] = useState({});
@@ -29,6 +30,12 @@ function ProjectDescriptionContent() {
   useEffect(() => {
     async function fetchData() {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
+          setUserProfile(profile);
+        }
+
         const res = await fetch('/api/departments');
         const data = await res.json();
         setUniversityData(data);
@@ -161,6 +168,7 @@ function ProjectDescriptionContent() {
         sessionStorage.removeItem('custom_template_structure');
 
         // 3. Create Premium Project
+        const isAdmin = userProfile?.role === 'admin';
         const { data: newProject, error: projectError } = await supabase
           .from('premium_projects')
           .insert({
@@ -174,8 +182,8 @@ function ProjectDescriptionContent() {
             current_chapter: 1,
             tokens_limit: 300000,
             tokens_used: 0,
-            payment_status: 'paid',
-            amount_paid: 20000,
+            payment_status: isAdmin ? 'admin_bypass' : 'paid',
+            amount_paid: isAdmin ? 0 : 20000,
             template_id: newCustomTemplate.id // Link to the NEW custom template
           })
           .select()
