@@ -13,7 +13,7 @@ const Icons = {
   Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
 };
 
-export default function VisualToolsModal({ isOpen, onClose, projectId, userId, onImageSaved }) {
+export default function VisualToolsModal({ isOpen, onClose, projectId, userId, onImageSaved, showNotification }) {
   const [activeTool, setActiveTool] = useState('diagram');
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,7 +40,10 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
       } else {
         setResult({ type: 'image', imageUrl: data.imageUrl });
       }
-    } catch (err) { setError(err.message); }
+    } catch (err) { 
+      setError(err.message); 
+      if (showNotification) showNotification('Generation Failed', err.message, 'error');
+    }
     finally { setLoading(false); }
   };
 
@@ -54,10 +57,14 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
         body: JSON.stringify({ imageUrl: result.imageUrl, projectId, userId, name: `${activeTool === 'diagram' ? 'Diagram' : 'Illustration'}: ${prompt.substring(0, 20)}...`, type: activeTool })
       });
       if (!response.ok) throw new Error(data.error || 'Failed to save');
-      alert('Visual added to your project assets!');
+      if (showNotification) showNotification('Success', 'Visual added to your project assets!', 'success');
+      else alert('Visual added to your project assets!');
       onImageSaved();
       onClose();
-    } catch (err) { alert('Failed to save image: ' + err.message); }
+    } catch (err) { 
+      if (showNotification) showNotification('Save Error', err.message, 'error');
+      else alert('Failed to save image: ' + err.message); 
+    }
     finally { setLoading(false); }
   };
 

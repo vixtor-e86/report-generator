@@ -11,7 +11,6 @@ import TopToolbar from '@/components/premium/workspace/TopToolbar';
 import RightSidebar from '@/components/premium/workspace/RightSidebar';
 import ContentArea from '@/components/premium/workspace/ContentArea';
 
-import ErrorModal from '@/components/premium/modals/ErrorModal';
 import FilePreviewModal from '@/components/premium/modals/FilePreviewModal';
 import GenerationModal from '@/components/premium/modals/GenerationModal';
 import ResearchSearchModal from '@/components/premium/modals/ResearchSearchModal';
@@ -21,6 +20,7 @@ import LoadingModal from '@/components/premium/modals/LoadingModal';
 import PresentationModal from '@/components/premium/modals/PresentationModal';
 import HumanizerModal from '@/components/premium/modals/HumanizerModal';
 import ExportModal from '@/components/premium/modals/ExportModal';
+import CustomModal from '@/components/premium/modals/CustomModal';
 import TourGuide from '@/components/premium/workspace/TourGuide';
 
 import '@/styles/workspace.css';
@@ -52,8 +52,6 @@ function WorkspaceContent() {
   const [currentUser, setCurrentUser] = useState(null);
 
   // Modal States
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [isGenerationModalOpen, setIsGenerationModalOpen] = useState(false);
   const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
@@ -63,6 +61,19 @@ function WorkspaceContent() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportType, setExportType] = useState('pdf');
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+
+  // NEW: Custom Notification State
+  const [notification, setNotification] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: null
+  });
+
+  const showNotification = (title, message, type = 'info', onConfirm = null) => {
+    setNotification({ isOpen: true, title, message, type, onConfirm });
+  };
 
   const handleExportClick = (type) => {
     setExportType(type);
@@ -156,8 +167,14 @@ function WorkspaceContent() {
   };
 
   const handleDelete = async (file) => {
-    if (!confirm('Delete this file?')) return;
-    if (await deleteFile(file.file_key, file.id)) loadWorkspaceData();
+    showNotification(
+      'Confirm Deletion',
+      `Are you sure you want to delete "${file.original_name || file.name}"? This action cannot be undone.`,
+      'confirm',
+      async () => {
+        if (await deleteFile(file.file_key, file.id)) loadWorkspaceData();
+      }
+    );
   };
 
   return (
@@ -165,7 +182,8 @@ function WorkspaceContent() {
       <Sidebar
         projectData={projectData} chapters={chapters} images={images} projectDocs={projectDocs} userProfile={userProfile}
         activeView={activeView} onViewChange={setActiveView} onUpload={handleUpload} uploading={uploading}
-        onDelete={handleDelete} deleting={deleting} onFileClick={setPreviewFile} onError={(m) => { setErrorMessage(m); setIsErrorModalOpen(true); }}
+        onDelete={handleDelete} deleting={deleting} onFileClick={setPreviewFile} 
+        onError={(m) => showNotification('Upload Error', m, 'error')}
         storageUsed={projectStorageUsed} isOpen={isLeftSidebarOpen} onClose={() => setIsLeftSidebarOpen(false)}
       />
 
@@ -187,6 +205,7 @@ function WorkspaceContent() {
               if (!error) loadWorkspaceData();
             }}
             onVisualToolsClick={() => setIsVisualToolsModalOpen(true)}
+            showNotification={showNotification}
           />
 
           <AnimatePresence>
@@ -202,20 +221,21 @@ function WorkspaceContent() {
         </div>
       </div>
 
-      <ErrorModal isOpen={isErrorModalOpen} onClose={() => setIsErrorModalOpen(false)} message={errorMessage} />
       <FilePreviewModal isOpen={!!previewFile} onClose={() => setPreviewFile(null)} file={previewFile} />
-      <ResearchSearchModal isOpen={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} projectId={projectId} onPaperSaved={loadWorkspaceData} />
-      <VisualToolsModal isOpen={isVisualToolsModalOpen} onClose={() => setIsVisualToolsModalOpen(false)} projectId={projectId} userId={currentUser?.id} onImageSaved={loadWorkspaceData} />
-      <PresentationModal isOpen={isPresentationModalOpen} onClose={() => setIsPresentationModalOpen(false)} chapters={chapters} projectId={projectId} userId={currentUser?.id} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />
+      <ResearchSearchModal isOpen={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} projectId={projectId} onPaperSaved={loadWorkspaceData} showNotification={showNotification} />
+      <VisualToolsModal isOpen={isVisualToolsModalOpen} onClose={() => setIsVisualToolsModalOpen(false)} projectId={projectId} userId={currentUser?.id} onImageSaved={loadWorkspaceData} showNotification={showNotification} />
+      <PresentationModal isOpen={isPresentationModalOpen} onClose={() => setIsPresentationModalOpen(false)} chapters={chapters} projectId={projectId} userId={currentUser?.id} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} showNotification={showNotification} />
       <HumanizerModal 
         isOpen={isHumanizerModalOpen} 
         onClose={() => setIsHumanizerModalOpen(false)} 
         chapters={chapters} 
         projectId={projectId}
         userId={currentUser?.id} 
+        projectData={projectData}
         setIsGlobalLoading={setIsGlobalLoading} 
         setGlobalLoadingText={setGlobalLoadingText} 
         onSaved={loadWorkspaceData} 
+        showNotification={showNotification}
       />
 
       <ExportModal
@@ -226,11 +246,12 @@ function WorkspaceContent() {
         chapters={chapters}
         projectId={projectId}
         userId={currentUser?.id}
-        setIsGlobalLoading={setIsGlobalLoading}
-        setGlobalLoadingText={setGlobalLoadingText}
+        setIsGlobalLoading={setIsGlobalLoading} 
+        setGlobalLoadingText={setGlobalLoadingText} 
         onSaved={loadWorkspaceData}
+        showNotification={showNotification}
       />
-      <ModifyModal isOpen={isModifyModalOpen} onClose={() => setIsModifyModalOpen(false)} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} />
+      <ModifyModal isOpen={isModifyModalOpen} onClose={() => setIsModifyModalOpen(false)} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} showNotification={showNotification} />
       <GenerationModal 
         isOpen={isGenerationModalOpen} 
         onClose={() => setIsGenerationModalOpen(false)} 
@@ -246,9 +267,19 @@ function WorkspaceContent() {
         setGlobalLoadingText={setGlobalLoadingText} 
         formData={stickyGenSettings}
         setFormData={setStickyGenSettings}
+        showNotification={showNotification}
       />
       <LoadingModal isOpen={isGlobalLoading} loadingText={globalLoadingText} />
       
+      <CustomModal 
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+        onConfirm={notification.onConfirm}
+      />
+
       <TourGuide projectId={projectId} />
     </div>
   );

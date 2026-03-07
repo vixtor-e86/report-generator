@@ -37,7 +37,8 @@ export default function ContentArea({
   images = [],
   workspaceMode = 'editor',
   setWorkspaceMode,
-  userProfile
+  userProfile,
+  showNotification
 }) {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [localContent, setLocalContent] = useState('');
@@ -68,7 +69,6 @@ export default function ContentArea({
           .limit(5);
         if (comms) setCommissions(comms);
 
-        // Fetch Payouts
         const { data: payouts } = await supabase
           .from('referral_payouts')
           .select('*')
@@ -112,11 +112,14 @@ export default function ContentArea({
       });
       if (payoutError) throw payoutError;
 
-      alert('Success! Your request has been sent for Monday payout.');
+      if (showNotification) showNotification('Success', 'Your request has been sent for Monday payout.', 'success');
+      else alert('Success! Your request has been sent for Monday payout.');
+      
       setShowBankModal(false);
       setPendingPayout(true);
     } catch (err) {
-      alert(err.message || 'Failed to request payout');
+      if (showNotification) showNotification('Payout Error', err.message, 'error');
+      else alert(err.message || 'Failed to request payout');
     } finally {
       setIsSubmittingPayout(false);
     }
@@ -193,9 +196,39 @@ export default function ContentArea({
       });
       if (response.ok) {
         onUpdateChapter(activeChapter.id, localContent);
+        if (showNotification) showNotification('Success', 'Changes saved successfully!', 'success');
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+        console.error(err);
+        if (showNotification) showNotification('Error', 'Failed to save changes.', 'error');
+    }
     finally { setIsSaving(false); }
+  };
+
+  const handleRestoreVersion = async (item) => {
+    const performRestore = async () => {
+        onUpdateChapter(item.chapter_id, item.content);
+        try {
+          await fetch('/api/premium/save-edit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chapterId: item.chapter_id, content: item.content, projectId: projectData.id, userId: projectData.user_id, isAiAction: false })
+          });
+          if (showNotification) showNotification('Restored', 'Version restored successfully!', 'success');
+          else alert('Version restored!');
+        } catch (err) { console.error(err); }
+    };
+
+    if (showNotification) {
+        showNotification(
+            'Restore Version',
+            'Are you sure you want to restore this previous version? Current unsaved changes will be lost.',
+            'confirm',
+            performRestore
+        );
+    } else if (confirm(`Restore this version?`)) {
+        performRestore();
+    }
   };
 
   const insertImageTag = (img) => {
@@ -225,7 +258,6 @@ export default function ContentArea({
   };
 
   if (activeView === 'referral') {
-    const weeklyPurchases = userProfile?.referral_weekly_purchases || 0;
     const weeklyEarnings = userProfile?.referral_weekly_earnings || 0;
     const isVip = userProfile?.role === 'vip';
     const redeemThreshold = 10000;
@@ -279,7 +311,26 @@ export default function ContentArea({
               </div>
 
               <div style={{ background: 'white', borderRadius: '32px', border: '1px solid #e5e7eb', padding: '40px' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#111827', marginBottom: '24px' }}>Recent Commissions</h3>
+                <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#111827', marginBottom: '24px' }}>History</h3>
+                
+                {payoutHistory.length > 0 && (
+                  <div style={{ marginBottom: '32px' }}>
+                    <h4 style={{ fontSize: '11px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '16px', letterSpacing: '0.05em' }}>Redeemed Rewards</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {payoutHistory.map(p => (
+                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f0fdf4', borderRadius: '16px', border: '1px solid #dcfce7' }}>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: '800', color: '#111827', fontSize: '14px' }}>₦{p.amount.toLocaleString()}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: '#059669', fontWeight: '600' }}>{new Date(p.created_at).toLocaleDateString()}</p>
+                          </div>
+                          <span style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', padding: '4px 10px', borderRadius: '8px', background: p.status === 'paid' ? '#059669' : '#d97706', color: 'white' }}>{p.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <h4 style={{ fontSize: '11px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '16px', letterSpacing: '0.05em' }}>Recent Commissions</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {commissions.length > 0 ? commissions.map(comm => (
                     <div key={comm.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f9fafb', borderRadius: '16px' }}>
@@ -449,19 +500,7 @@ export default function ContentArea({
                       <td style={{ padding: '16px 24px', color: '#6b7280' }}>{new Date(item.created_at).toLocaleString()}</td>
                       <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                         <button 
-                          onClick={async () => {
-                            if (confirm(`Restore this version?`)) {
-                              onUpdateChapter(item.chapter_id, item.content);
-                              try {
-                                await fetch('/api/premium/save-edit', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ chapterId: item.chapter_id, content: item.content, projectId: projectData.id, userId: projectData.user_id, isAiAction: false })
-                                });
-                                alert('Version restored!');
-                              } catch (err) { console.error(err); }
-                            }
-                          }}
+                          onClick={() => handleRestoreVersion(item)}
                           style={{ background: '#6366f1', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
                         >
                           Restore

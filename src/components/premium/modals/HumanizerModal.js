@@ -14,11 +14,15 @@ const Icons = {
   Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
 };
 
-export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, onSaved }) {
+export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, projectData, setIsGlobalLoading, setGlobalLoadingText, onSaved }) {
   const [step, setStep] = useState('select'); // select | compare
   const [selectedChapterId, setSelectedChapterId] = useState(null);
   const [results, setResults] = useState({ original: '', humanized: '' });
   const [isProcessing, setIsGenerating] = useState(false);
+
+  const wordsUsed = projectData?.humanizer_words_used || 0;
+  const wordsLimit = projectData?.humanizer_words_limit || 10000;
+  const percentage = Math.min((wordsUsed / wordsLimit) * 100, 100);
 
   const handleHumanize = async () => {
     const chapter = chapters.find(c => c.id === selectedChapterId);
@@ -39,35 +43,42 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
           projectId: projectId 
         })
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Humanization failed');
-      setResults({ original: data.original, humanized: data.humanized });
-      setStep('compare');
-    } catch (err) { alert(err.message); }
-    finally {
-      setIsGenerating(false);
-      setIsGlobalLoading(false);
-    }
-  };
+      export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, projectData, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification }) {
+      ...
+            setResults({ original: data.original, humanized: data.humanized });
+            setStep('compare');
+          } catch (err) { 
+            if (showNotification) showNotification('Humanization Failed', err.message, 'error');
+            else alert(err.message); 
+          }
+          finally {
+            setIsGenerating(false);
+            setIsGlobalLoading(false);
+          }
+        };
 
-  const handleSave = async () => {
-    if (setIsGlobalLoading) {
-      setGlobalLoadingText('Updating chapter and creating version history...');
-      setIsGlobalLoading(true);
-    }
-    try {
-      const response = await fetch('/api/premium/save-edit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chapterId: selectedChapterId, content: results.humanized, userId: userId, isAiAction: true })
-      });
-      if (!response.ok) throw new Error('Failed to save humanized version');
-      if (onSaved) onSaved();
-      onClose();
-      alert('Humanized version saved successfully to history.');
-    } catch (err) { alert(err.message); }
-    finally { if (setIsGlobalLoading) setIsGlobalLoading(false); }
-  };
+        const handleSave = async () => {
+          if (setIsGlobalLoading) {
+            setGlobalLoadingText('Updating chapter and creating version history...');
+            setIsGlobalLoading(true);
+          }
+          try {
+            const response = await fetch('/api/premium/save-edit', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chapterId: selectedChapterId, content: results.humanized, userId: userId, isAiAction: true })
+            });
+            if (!response.ok) throw new Error('Failed to save humanized version');
+            if (onSaved) onSaved();
+            onClose();
+            if (showNotification) showNotification('Saved Successfully', 'Humanized version saved successfully to history.', 'success');
+            else alert('Humanized version saved successfully to history.');
+          } catch (err) { 
+            if (showNotification) showNotification('Save Failed', err.message, 'error');
+            else alert(err.message); 
+          }
+          finally { if (setIsGlobalLoading) setIsGlobalLoading(false); }
+        };
 
   if (!isOpen) return null;
 
@@ -96,6 +107,21 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
           {step === 'select' ? (
             <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-10 bg-slate-50 overflow-hidden">
               <div className="w-full max-w-md flex flex-col h-full max-h-[600px] space-y-6">
+                
+                {/* Word Usage Bar */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm shrink-0">
+                  <div className="flex justify-between items-end mb-2">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Humanizer Word Limit</p>
+                      <p className="text-sm font-black text-slate-900">{wordsUsed.toLocaleString()} / {wordsLimit.toLocaleString()} words</p>
+                    </div>
+                    <span className={`text-xs font-black ${percentage > 90 ? 'text-red-500' : 'text-slate-900'}`}>{percentage.toFixed(0)}%</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`h-full transition-all duration-500 ${percentage > 90 ? 'bg-red-500' : 'bg-slate-900'}`} style={{ width: `${percentage}%` }} />
+                  </div>
+                </div>
+
                 <div className="text-center shrink-0">
                   <h3 className="text-xl md:text-2xl font-black text-slate-900">Select a Chapter</h3>
                   <p className="text-sm text-slate-500 mt-1">Bypass detectors and improve academic flow with strict engineering rules.</p>

@@ -176,7 +176,7 @@ const SlideRenderer = ({ slide, template }) => {
 };
 
 // --- Main Component ---
-export default function PresentationModal({ isOpen, onClose, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText }) {
+export default function PresentationModal({ isOpen, onClose, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, showNotification }) {
   const [step, setStep] = useState('selection');
   const [selectedChapters, setSelectedChapters] = useState([1, 2, 3]);
   const [slides, setSlides] = useState([]);

@@ -21,7 +21,8 @@ export default function GenerationModal({
   isOpen, onClose, uploadedImages = [], researchPapers = [], dataFiles = [],
   activeChapter, projectId, userId, projectData, onGenerateSuccess,
   setIsGlobalLoading, setGlobalLoadingText,
-  formData: stickyData, setFormData: setStickyData 
+  formData: stickyData, setFormData: setStickyData,
+  showNotification
 }) {
   const [localData, setLocalData] = useState({
     projectTitle: '', projectDescription: '', componentsUsed: '', researchBooks: '',
@@ -130,7 +131,8 @@ export default function GenerationModal({
       if (onGenerateSuccess) onGenerateSuccess();
       onClose();
     } catch (error) { 
-      alert(error.message); 
+      if (showNotification) showNotification('Generation Error', error.message, 'error');
+      else alert(error.message); 
     } finally { 
       setGenerating(false); 
       if (setIsGlobalLoading) setIsGlobalLoading(false); 
@@ -275,9 +277,18 @@ export default function GenerationModal({
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                         <label style={{ fontSize: '13px', fontWeight: '700' }}>Target Word Count</label>
-                        <span style={{ fontSize: '14px', fontWeight: '800', color: '#6366f1' }}>~{localData.targetWordCount.toLocaleString()} words</span>
+                        <span style={{ fontSize: '14px', fontWeight: '800', color: localData.targetWordCount > 2000 ? '#ef4444' : '#6366f1' }}>~{localData.targetWordCount.toLocaleString()} words</span>
                       </div>
-                      <input type="range" min="1500" max="4000" step="100" value={localData.targetWordCount} onChange={(e) => setLocalData({...localData, targetWordCount: parseInt(e.target.value)})} style={{ width: '100%', cursor: 'pointer', accentColor: '#111827' }} />
+                      <input type="range" min="1500" max="4000" step="100" value={localData.targetWordCount} onChange={(e) => setLocalData({...localData, targetWordCount: parseInt(e.target.value)})} style={{ width: '100%', cursor: 'pointer', accentColor: localData.targetWordCount > 2000 ? '#ef4444' : '#111827' }} />
+                      
+                      {localData.targetWordCount > 2000 && (
+                        <div style={{ marginTop: '10px', padding: '10px', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '8px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                          <Icons.Info style={{ color: '#ef4444', shrink: 0, marginTop: '2px' }} />
+                          <p style={{ fontSize: '10px', color: '#991b1b', margin: 0, lineHeight: '1.4' }}>
+                            <strong>Caution:</strong> High word counts significantly increase Humanizer usage. You may exceed your 10,000 word project limit quickly.
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', opacity: localData.skipReferences ? 0.4 : 1, pointerEvents: localData.skipReferences ? 'none' : 'auto' }}>
                       <div>

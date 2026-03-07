@@ -10,7 +10,7 @@ const Icons = {
   Check: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
 };
 
-export default function ResearchSearchModal({ isOpen, onClose, projectId, onPaperSaved }) {
+export default function ResearchSearchModal({ isOpen, onClose, projectId, onPaperSaved, showNotification }) {
   const [query, setQuery] = useState('');
   const [yearStart, setYearStart] = useState('2018');
   const [yearEnd, setYearEnd] = useState(new Date().getFullYear().toString());
@@ -28,7 +28,8 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
       const data = await res.json();
       setResults(data.data || []);
     } catch (err) {
-      alert('Search failed. Try again.');
+      if (showNotification) showNotification('Search Error', 'Failed to fetch research papers. Please try again.', 'error');
+      else alert('Search failed. Try again.');
     } finally {
       setLoading(false);
     }
@@ -54,9 +55,11 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
 
       if (error) throw error;
       onPaperSaved(); // Refresh workspace list
-      alert('Paper saved to project context!');
+      if (showNotification) showNotification('Success', 'Paper saved to project context!', 'success');
+      else alert('Paper saved to project context!');
     } catch (err) {
-      alert('Failed to save paper.');
+      if (showNotification) showNotification('Save Failed', err.message, 'error');
+      else alert('Failed to save paper.');
     } finally {
       setSavingId(null);
     }

@@ -88,35 +88,43 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
         body: JSON.stringify({ projectId, userId, type, orderedDocIds: isDocx ? [] : orderedDocs.map(d => d.id), options })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Export failed');
-      setExportUrl(data.fileUrl);
-      setExportSize(data.fileSize); // Added state for size
-      setExportState('ready');
-    } catch (err) { alert(err.message); setExportState('idle'); }
-    finally { setIsGlobalLoading(false); }
-  };
+      export default function ExportModal({ isOpen, onClose, type, projectDocs, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification }) {
+      ...
+            setExportSize(data.fileSize); // Added state for size
+            setExportState('ready');
+          } catch (err) { 
+            if (showNotification) showNotification('Export Failed', err.message, 'error');
+            else alert(err.message); 
+            setExportState('idle'); 
+          }
+          finally { setIsGlobalLoading(false); }
+        };
 
-  const handleSaveToAssets = async () => {
-    setIsSavingToFiles(true);
-    try {
-      const response = await fetch('/api/premium/save-visual', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageUrl: exportUrl,
-          projectId,
-          userId,
-          name: `Full_Project_${type.toUpperCase()}_${new Date().toLocaleDateString().replace(/\//g, '-')}.${isDocx ? 'docx' : 'pdf'}`,
-          type: 'general', // Changed from project_component
-          sizeBytes: exportSize // Pass the real size for the meter
-        })
-      });
-      if (!response.ok) throw new Error('Failed to add to files');
-      if (onSaved) onSaved();
-      alert('Project export added to your files tab!');
-    } catch (err) { alert(err.message); }
-    finally { setIsSavingToFiles(false); }
-  };
+        const handleSaveToAssets = async () => {
+          setIsSavingToFiles(true);
+          try {
+            const response = await fetch('/api/premium/save-visual', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                imageUrl: exportUrl,
+                projectId,
+                userId,
+                name: `Full_Project_${type.toUpperCase()}_${new Date().toLocaleDateString().replace(/\//g, '-')}.${isDocx ? 'docx' : 'pdf'}`,
+                type: 'general', // Changed from project_component
+                sizeBytes: exportSize // Pass the real size for the meter
+              })
+            });
+            if (!response.ok) throw new Error('Failed to add to files');
+            if (onSaved) onSaved();
+            if (showNotification) showNotification('Saved Successfully', 'Project export added to your files tab!', 'success');
+            else alert('Project export added to your files tab!');
+          } catch (err) { 
+            if (showNotification) showNotification('Error Saving', err.message, 'error');
+            else alert(err.message); 
+          }
+          finally { setIsSavingToFiles(false); }
+        };
 
   if (!isOpen) return null;
 

@@ -17,7 +17,8 @@ export default function ModifyModal({
   userId, 
   onGenerateSuccess,
   setIsGlobalLoading,
-  setGlobalLoadingText
+  setGlobalLoadingText,
+  showNotification
 }) {
   const [instruction, setInstruction] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,7 +40,6 @@ export default function ModifyModal({
     const normalized = content.replace(/\r\n/g, '\n');
     
     // Identify the top-level heading style used in this chapter
-    // AI is instructed to use ## for Sections and ### for Sub-sections
     const hasH2 = /^## /m.test(normalized);
     const headingRegex = hasH2 ? /^## (.*)/gm : /^### (.*)/gm;
     
@@ -48,7 +48,6 @@ export default function ModifyModal({
     let lastIndex = 0;
     
     while ((match = headingRegex.exec(normalized)) !== null) {
-      // If there is text before the very first heading, capture it as Introduction
       if (parsedSections.length === 0 && match.index > 0) {
         const introContent = normalized.substring(0, match.index).trim();
         if (introContent) {
@@ -60,29 +59,24 @@ export default function ModifyModal({
         }
       }
       
-      // If we already have a section, update its content with everything up to this match
       if (parsedSections.length > 0 && parsedSections[parsedSections.length - 1].id !== "intro") {
         const prevSection = parsedSections[parsedSections.length - 1];
         prevSection.content = normalized.substring(lastIndex, match.index).trim();
-      } else if (parsedSections.length > 0 && parsedSections[parsedSections.length - 1].id === "intro") {
-        // If we just had an intro, we don't need to fill it, just move on
       }
       
       parsedSections.push({
         id: `sec-${parsedSections.length}`,
         title: match[1].trim(),
-        content: "" // To be filled by next match or end of string
+        content: "" 
       });
       
       lastIndex = match.index;
     }
     
-    // Fill the content for the very last section found
     if (parsedSections.length > 0) {
       const lastSection = parsedSections[parsedSections.length - 1];
       lastSection.content = normalized.substring(lastIndex).trim();
     } else {
-      // No headings found at all, treat entire block as one
       parsedSections.push({
         id: "whole",
         title: "Entire Chapter Content",
@@ -112,7 +106,8 @@ export default function ModifyModal({
 
   const handleModify = async () => {
     if (!instruction.trim()) {
-      alert('Please enter modification instructions.');
+      if (showNotification) showNotification('Missing Input', 'Please enter modification instructions.', 'warning');
+      else alert('Please enter modification instructions.');
       return;
     }
 
@@ -159,7 +154,8 @@ export default function ModifyModal({
       if (onGenerateSuccess) onGenerateSuccess();
       onClose();
     } catch (err) {
-      alert(err.message);
+      if (showNotification) showNotification('Error', err.message, 'error');
+      else alert(err.message);
     } finally {
       setLoading(false);
       if (setIsGlobalLoading) setIsGlobalLoading(false);
