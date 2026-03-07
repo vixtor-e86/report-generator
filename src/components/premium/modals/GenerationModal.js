@@ -151,7 +151,7 @@ export default function GenerationModal({
                       </label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <input 
-                          type="range" min="1" max="6" step="1" 
+                          type="range" min="1" max="8" step="1" 
                           value={localData.objectiveCount} 
                           onChange={(e) => setLocalData({...localData, objectiveCount: parseInt(e.target.value)})}
                           style={{ flex: 1, accentColor: '#7c3aed', cursor: 'pointer' }}
