@@ -17,7 +17,7 @@ export async function POST(request) {
       projectTitle = "", projectDescription = "", componentsUsed = "", researchBooks = "",
       userPrompt = "", referenceStyle = "APA", maxReferences = 10, targetWordCount = 2000,
       selectedImages = [], selectedPapers = [], skipReferences = false,
-      objectiveCount = 3, // NEW: Capture objective count
+      objectiveCount = 3, useManualObjectives = false, manualObjectives = [],
       isModification = false, modificationType = "whole_chapter", fullContent = "", targetContent = ""
     } = body;
 
