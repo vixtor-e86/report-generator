@@ -12,7 +12,7 @@ const Icons = {
   FileText: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>,
   Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
   Info: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>,
-  Globe: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+  Target: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
 };
 
 export default function GenerationModal({ 
@@ -23,8 +23,8 @@ export default function GenerationModal({
 }) {
   const [localData, setLocalData] = useState({
     projectTitle: '', projectDescription: '', componentsUsed: '', researchBooks: '',
-    researchUrl: '', scrapedContext: '', // NEW: URL field and cache
-    userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
+    userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000,
+    objectiveCount: 3 // Default for Chapter 1
   });
 
   const [activeTab, setActiveTab] = useState('details');
@@ -33,12 +33,8 @@ export default function GenerationModal({
   const [extractedPreview, setExtractedPreview] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
 
-  // NEW: Scraping States
-  const [scraping, setScraping] = useState(false);
-  const [scrapePreview, setScrapePreview] = useState(null);
-  const [showScrapePreview, setShowScrapePreview] = useState(false);
-
   const currentChapterNumber = activeChapter?.number || activeChapter?.id || 0;
+  const isChapter1 = currentChapterNumber === 1;
   const isChapter4 = currentChapterNumber === 4;
   const isSubsequentChapter = currentChapterNumber > 1;
 
@@ -49,8 +45,8 @@ export default function GenerationModal({
         projectDescription: projectData.description || '',
         componentsUsed: projectData.components_used || '',
         researchBooks: projectData.research_papers_context || '',
-        researchUrl: '',
-        userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
+        userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000,
+        objectiveCount: 3
       });
       setActiveTab(isSubsequentChapter ? 'materials' : 'details');
     }
@@ -81,32 +77,11 @@ export default function GenerationModal({
     setPreviewFile(null);
   };
 
-  const handleFetchUrl = async () => {
-    if (!localData.researchUrl?.trim()) return;
-    setScraping(true);
-    try {
-      const res = await fetch('/api/premium/scrape', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: localData.researchUrl, projectId })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch content');
-      setScrapePreview(data);
-      setShowScrapePreview(true);
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setScraping(false);
-    }
-  };
-
   const handleGenerate = async () => {
     if (!activeChapter) return;
     setGenerating(true);
     
     try {
-      // 1. Final Generation Step
       if (setIsGlobalLoading) {
         setGlobalLoadingText(`System Architect is designing Chapter ${currentChapterNumber}...`);
         setIsGlobalLoading(true);
@@ -118,7 +93,6 @@ export default function GenerationModal({
         body: JSON.stringify({
           projectId, userId, chapterNumber: currentChapterNumber, chapterTitle: activeChapter?.title,
           ...localData,
-          // scrapedContext is already in localData if confirmed
           referenceStyle: stickyData.referenceStyle,
           maxReferences: stickyData.maxReferences,
           selectedImages: uploadedImages.filter(img => localData.selectedImages.includes(img.id)),
@@ -169,13 +143,27 @@ export default function GenerationModal({
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
               {activeTab === 'details' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  {isSubsequentChapter && (
-                    <div style={{ padding: '16px', background: '#eff6ff', borderRadius: '12px', border: '1px solid #dbeafe', marginBottom: '8px' }}>
-                      <p style={{ margin: 0, fontSize: '14px', color: '#1e40af', fontWeight: '600' }}>Refining Technical Context</p>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#3b82f6' }}>You can update your project components and research context for this chapter below.</p>
+                  
+                  {isChapter1 && (
+                    <div style={{ padding: '16px', background: '#f5f3ff', borderRadius: '12px', border: '1px solid #ddd6fe', marginBottom: '8px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '800', color: '#5b21b6', textTransform: 'uppercase', marginBottom: '12px' }}>
+                        <Icons.Target /> Project Objectives
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <input 
+                          type="range" min="1" max="6" step="1" 
+                          value={localData.objectiveCount} 
+                          onChange={(e) => setLocalData({...localData, objectiveCount: parseInt(e.target.value)})}
+                          style={{ flex: 1, accentColor: '#7c3aed', cursor: 'pointer' }}
+                        />
+                        <span style={{ fontSize: '14px', fontWeight: '900', color: '#7c3aed', background: 'white', padding: '4px 12px', borderRadius: '8px', border: '1px solid #ddd6fe' }}>
+                          {localData.objectiveCount} Objectives
+                        </span>
+                      </div>
+                      <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: '#7c3aed' }}>Select how many specific research objectives the AI should generate for Chapter 1.</p>
                     </div>
                   )}
-                  
+
                   <div>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Title</label>
                     <input type="text" value={localData.projectTitle} readOnly style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: '#f9fafb', color: '#6b7280', cursor: 'not-allowed' }} />
@@ -195,41 +183,6 @@ export default function GenerationModal({
                       <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Research Context / Journals</label>
                       <textarea placeholder="e.g. IEEE Journal, Academic Journals" value={localData.researchBooks} onChange={(e) => setLocalData({...localData, researchBooks: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '80px' }} />
                     </div>
-                  </div>
-
-                  {/* NEW: Research URL Input */}
-                  <div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>
-                      <Icons.Globe /> Research URL / Journal Link (Optional)
-                    </label>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <input 
-                        type="url" 
-                        placeholder="https://ieeexplore.ieee.org/document/..." 
-                        value={localData.researchUrl} 
-                        onChange={(e) => setLocalData({...localData, researchUrl: e.target.value})} 
-                        style={{ flex: 1, padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px' }} 
-                      />
-                      {localData.researchUrl?.trim() && (
-                        <button 
-                          onClick={handleFetchUrl}
-                          disabled={scraping}
-                          style={{ padding: '0 20px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', fontSize: '13px', cursor: 'pointer', opacity: scraping ? 0.7 : 1 }}
-                        >
-                          {scraping ? 'Fetching...' : 'Fetch Content'}
-                        </button>
-                      )}
-                    </div>
-                    {localData.scrapedContext && (
-                      <div style={{ marginTop: '10px', padding: '10px 14px', background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ color: '#059669' }}><Icons.Check /></div>
-                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#065f46' }}>Journal content successfully linked!</span>
-                        </div>
-                        <button onClick={() => setLocalData({...localData, scrapedContext: ''})} style={{ background: 'none', border: 'none', color: '#059669', fontSize: '11px', fontWeight: '800', cursor: 'pointer', textDecoration: 'underline' }}>Remove</button>
-                      </div>
-                    )}
-                    <p style={{ margin: '6px 0 0 4px', fontSize: '11px', color: '#6b7280' }}>The system will scrape and analyze technical data from this link before generating.</p>
                   </div>
 
                   <div>
@@ -337,49 +290,6 @@ export default function GenerationModal({
               </div>
               <button onClick={() => toggleContextFile(previewFile)} style={{ padding: '16px', background: '#111827', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>
                 {localData.selectedContextFiles.find(f => f.id === previewFile.id) ? 'Deselect File' : 'Confirm & Use Data'}
-              </button>
-            </motion.div>
-          )}
-
-          {showScrapePreview && scrapePreview && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, background: 'white', zIndex: 1100, display: 'flex', flexDirection: 'column', padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <div>
-                  <h3 style={{ margin: 0 }}>Review Scraped Content</h3>
-                  <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#6b7280' }}>Details extracted from {localData.researchUrl}</p>
-                </div>
-                <button onClick={() => setShowScrapePreview(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Icons.X /></button>
-              </div>
-              
-              <div style={{ flex: 1, background: '#f9fafb', padding: '24px', borderRadius: '16px', overflowY: 'auto', marginBottom: '24px', border: '1px solid #e5e7eb' }}>
-                <div style={{ marginBottom: '20px' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#111827', marginBottom: '8px', textTransform: 'uppercase' }}>Title</h4>
-                  <p style={{ fontSize: '15px', color: '#374151', lineHeight: '1.6' }}>{scrapePreview.title}</p>
-                </div>
-                <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: '800', color: '#111827', marginBottom: '8px', textTransform: 'uppercase' }}>Summary / Key Data</h4>
-                  <div className="scrape-markdown-preview" style={{ fontSize: '14px', color: '#4b5563', lineHeight: '1.8' }}>
-                    <style>{`
-                      .scrape-markdown-preview h1, .scrape-markdown-preview h2, .scrape-markdown-preview h3 { color: #111827; margin-top: 1.5rem; margin-bottom: 0.5rem; }
-                      .scrape-markdown-preview p { margin-bottom: 1rem; }
-                      .scrape-markdown-preview ul, .scrape-markdown-preview ol { margin-bottom: 1rem; padding-left: 1.5rem; }
-                      .scrape-markdown-preview li { margin-bottom: 0.5rem; }
-                    `}</style>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {scrapePreview.summary}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-              </div>
-
-              <button 
-                onClick={() => {
-                  setLocalData({ ...localData, scrapedContext: scrapePreview.summary });
-                  setShowScrapePreview(false);
-                }} 
-                style={{ padding: '18px', background: '#111827', color: 'white', border: 'none', borderRadius: '14px', fontWeight: '800', cursor: 'pointer', fontSize: '15px' }}
-              >
-                Confirm & Use This Journal
               </button>
             </motion.div>
           )}

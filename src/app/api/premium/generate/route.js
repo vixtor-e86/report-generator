@@ -17,7 +17,7 @@ export async function POST(request) {
       projectTitle = "", projectDescription = "", componentsUsed = "", researchBooks = "",
       userPrompt = "", referenceStyle = "APA", maxReferences = 10, targetWordCount = 2000,
       selectedImages = [], selectedPapers = [], skipReferences = false,
-      scrapedContext = "",
+      objectiveCount = 3, // NEW: Capture objective count
       isModification = false, modificationType = "whole_chapter", fullContent = "", targetContent = ""
     } = body;
 
@@ -88,11 +88,10 @@ export async function POST(request) {
       }
     }
 
-    // 2. Resource Mapping (Force the AI to see these)
+    // 2. Resource Mapping
     const currentChapterData = project.custom_templates?.structure?.chapters?.find(ch => (ch.number || ch.chapter) === chapterNumber);
     const chapterTitle = currentChapterData?.title || `Chapter ${chapterNumber}`;
     
-    // FETCH LATEST STRUCTURE: Explicitly tell the AI which sections to include
     const mandatorySections = currentChapterData?.sections?.length > 0 
       ? `## MANDATORY CHAPTER SECTIONS\n` +
         `You MUST include the following specific sections as sub-headings (###) in your response:\n` +
@@ -103,15 +102,6 @@ export async function POST(request) {
       ? `\n\n### MANDATORY IMAGE ATTACHMENTS (STRICT RULES):\n` +
         `You MUST include the following images in your technical explanation. To insert an image, use this EXACT syntax: ![Caption](URL)\n` +
         selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", URL: ${img.file_url}`).join('\n')
-      : '';
-
-    const referencesMapping = !skipReferences && selectedPapers.length > 0
-      ? `\n\n### CORE RESEARCH REFERENCES:\n` +
-        `Use these specific sources for your citations. Do NOT invent bibliography details.\n` +
-        selectedPapers.map((p, idx) => {
-          const auths = Array.isArray(p.authors) ? p.authors.map(a => typeof a === 'object' ? a.name : a).join(', ') : (p.authors || 'Unknown');
-          return `SOURCE [${idx + 1}]: ${auths} (${p.year}). "${p.title}". ${p.venue}.`;
-        }).join('\n\n')
       : '';
 
     // 3. Citation Logic (FORCEFUL)
@@ -131,37 +121,27 @@ export async function POST(request) {
     let finalReferencesList = [...selectedPapers];
     const totalNeeded = maxReferences || 10;
     
-    // 1. If we still need more references, try to fetch recent ones (2022+) from web
     if (finalReferencesList.length < totalNeeded && !skipReferences) {
       try {
         const query = projectTitle || project.title;
         const currentYear = new Date().getFullYear();
         const yearRange = `2022-${currentYear}`;
-        
         const searchUrl = new URL('https://api.semanticscholar.org/graph/v1/paper/search', 'https://api.semanticscholar.org');
         searchUrl.searchParams.set('query', query);
         searchUrl.searchParams.set('year', yearRange);
         searchUrl.searchParams.set('limit', (totalNeeded - finalReferencesList.length + 5).toString());
         searchUrl.searchParams.set('fields', 'title,authors,year,venue,url');
-
-        const searchRes = await fetch(searchUrl.toString(), {
-          headers: process.env.SEMANTIC_SCHOLAR_API_KEY ? { 'x-api-key': process.env.SEMANTIC_SCHOLAR_API_KEY } : {}
-        });
-
+        const searchRes = await fetch(searchUrl.toString(), { headers: process.env.SEMANTIC_SCHOLAR_API_KEY ? { 'x-api-key': process.env.SEMANTIC_SCHOLAR_API_KEY } : {} });
         if (searchRes.ok) {
           const searchData = await searchRes.json();
           if (searchData.data) {
             const existingTitles = new Set(finalReferencesList.map(p => p.title.toLowerCase()));
             for (const paper of searchData.data) {
-              if (!existingTitles.has(paper.title.toLowerCase()) && finalReferencesList.length < totalNeeded) {
-                finalReferencesList.push(paper);
-              }
+              if (!existingTitles.has(paper.title.toLowerCase()) && finalReferencesList.length < totalNeeded) finalReferencesList.push(paper);
             }
           }
         }
-      } catch (searchErr) {
-        console.error('Auto-reference search failed:', searchErr);
-      }
+      } catch (searchErr) { console.error('Auto-reference search failed:', searchErr); }
     }
 
     const finalReferencesMapping = !skipReferences && finalReferencesList.length > 0
@@ -174,6 +154,11 @@ export async function POST(request) {
       : '';
 
     // 4. Construct Structured System Prompt
+    const objectiveInstruction = chapterNumber === 1 
+      ? `\n\n### AIMS & OBJECTIVES REQUIREMENT:\n` +
+        `You MUST generate EXACTLY ${objectiveCount} specific, technically-focused research objectives under the 'Objectives' sub-heading. Each objective should start with an action verb.`
+      : '';
+
     const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
     TASK: Author a comprehensive Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${projectTitle || project.title}".
 
@@ -181,8 +166,7 @@ export async function POST(request) {
     - DESCRIPTION: ${projectDescription || project.description}
     - TECHNICAL COMPONENTS: ${componentsUsed || project.components_used}
     - RESEARCH CONTEXT: ${researchBooks || project.research_papers_context}
-
-    ${scrapedContext ? `## PRIMARY JOURNAL DATA (PRIORITIZE FOR CITATIONS)\n${scrapedContext}\n` : ''}
+    ${objectiveInstruction}
 
     ${mandatorySections}
 

@@ -141,7 +141,6 @@ export async function POST(request) {
         const filteredLines = rawLines.filter((line, index) => {
           const t = line.trim().toUpperCase();
           if (!t) return true;
-          // Only remove if it's the exact chapter title repeating
           const isTitle = t === `CHAPTER ${ch.chapter_number}` || t === ch.title.toUpperCase() || t === `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`;
           if (index < 5 && isTitle) return false;
           if (line.startsWith('#')) {
@@ -180,7 +179,7 @@ export async function POST(request) {
             }
           }
 
-          // Format Sections (## or ###)
+          // Hierarchy: Section 14pt (28), Sub-section 12pt (24)
           if (line.startsWith('## ') || line.startsWith('### ')) {
             const cleanText = line.replace(/^#+\s+/, '');
             chapterChildren.push(new Paragraph({ 
@@ -189,10 +188,9 @@ export async function POST(request) {
               spacing: { before: 200, after: 200 } 
             }));
           } 
-          // Format Sub-sections (####)
           else if (line.startsWith('#### ')) {
             chapterChildren.push(new Paragraph({ 
-              children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 26, bold: true })], 
+              children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 24, bold: true })], 
               heading: HeadingLevel.HEADING_3, 
               spacing: { before: 150, after: 150 } 
             }));
@@ -260,7 +258,7 @@ export async function POST(request) {
             pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); continue;
           }
           if (line.startsWith('#### ')) {
-            pdf.setFont("helvetica", "bold"); pdf.setFontSize(12.5);
+            pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); // Smaller for sub-sections
             if (y > 270) { footer(); pdf.addPage(); currPage++; y = 30; }
             pdf.text(line.replace('#### ', ''), 20, y); y += 8;
             pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); continue;
@@ -308,6 +306,7 @@ export async function POST(request) {
         const sorted = orderedDocIds.map(id => assets.find(a => id === id)).filter(Boolean);
         for (const a of sorted) {
           try {
+            const res = await fetch(a.file_url);
             const docToMerge = await PDFDocument.load(await (await fetch(a.file_url)).arrayBuffer());
             const pages = await finalPdf.copyPages(docToMerge, docToMerge.getPageIndices());
             pages.forEach(p => finalPdf.addPage(p));
