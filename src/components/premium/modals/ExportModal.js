@@ -46,7 +46,7 @@ function SortableItem({ id, file }) {
   );
 }
 
-export default function ExportModal({ isOpen, onClose, type, projectDocs, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, onSaved }) {
+export default function ExportModal({ isOpen, onClose, type, projectDocs, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification }) {
   const [orderedDocs, setOrderedDocs] = useState([]);
   const [options, setFormData] = useState({ includeAbstract: true, includeTOC: true, includePageNumbers: true });
   const [exportState, setExportState] = useState('idle'); // idle | processing | ready
@@ -88,43 +88,44 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
         body: JSON.stringify({ projectId, userId, type, orderedDocIds: isDocx ? [] : orderedDocs.map(d => d.id), options })
       });
       const data = await response.json();
-      export default function ExportModal({ isOpen, onClose, type, projectDocs, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification }) {
-      ...
-            setExportSize(data.fileSize); // Added state for size
-            setExportState('ready');
-          } catch (err) { 
-            if (showNotification) showNotification('Export Failed', err.message, 'error');
-            else alert(err.message); 
-            setExportState('idle'); 
-          }
-          finally { setIsGlobalLoading(false); }
-        };
+      if (!response.ok) throw new Error(data.error || 'Export failed');
+      
+      setExportUrl(data.fileUrl);
+      setExportSize(data.fileSize);
+      setExportState('ready');
+    } catch (err) { 
+      if (showNotification) showNotification('Export Failed', err.message, 'error');
+      else alert(err.message); 
+      setExportState('idle'); 
+    }
+    finally { setIsGlobalLoading(false); }
+  };
 
-        const handleSaveToAssets = async () => {
-          setIsSavingToFiles(true);
-          try {
-            const response = await fetch('/api/premium/save-visual', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                imageUrl: exportUrl,
-                projectId,
-                userId,
-                name: `Full_Project_${type.toUpperCase()}_${new Date().toLocaleDateString().replace(/\//g, '-')}.${isDocx ? 'docx' : 'pdf'}`,
-                type: 'general', // Changed from project_component
-                sizeBytes: exportSize // Pass the real size for the meter
-              })
-            });
-            if (!response.ok) throw new Error('Failed to add to files');
-            if (onSaved) onSaved();
-            if (showNotification) showNotification('Saved Successfully', 'Project export added to your files tab!', 'success');
-            else alert('Project export added to your files tab!');
-          } catch (err) { 
-            if (showNotification) showNotification('Error Saving', err.message, 'error');
-            else alert(err.message); 
-          }
-          finally { setIsSavingToFiles(false); }
-        };
+  const handleSaveToAssets = async () => {
+    setIsSavingToFiles(true);
+    try {
+      const response = await fetch('/api/premium/save-visual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: exportUrl,
+          projectId,
+          userId,
+          name: `Full_Project_${type.toUpperCase()}_${new Date().toLocaleDateString().replace(/\//g, '-')}.${isDocx ? 'docx' : 'pdf'}`,
+          type: 'general',
+          sizeBytes: exportSize
+        })
+      });
+      if (!response.ok) throw new Error('Failed to add to files');
+      if (onSaved) onSaved();
+      if (showNotification) showNotification('Saved Successfully', 'Project export added to your files tab!', 'success');
+      else alert('Project export added to your files tab!');
+    } catch (err) { 
+      if (showNotification) showNotification('Error Saving', err.message, 'error');
+      else alert(err.message); 
+    }
+    finally { setIsSavingToFiles(false); }
+  };
 
   if (!isOpen) return null;
 
@@ -146,7 +147,6 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
         </div>
 
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-          {/* File Ordering (Only for PDF) */}
           {!isDocx && (
             <div className="flex-1 flex flex-col bg-slate-50 border-r border-slate-100 overflow-hidden">
               <div className="p-6 border-b border-slate-100 bg-white/50 shrink-0">
@@ -171,7 +171,6 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
             </div>
           )}
 
-          {/* Options & Settings */}
           <div className={`${isDocx ? 'w-full' : 'w-full md:w-96'} p-8 flex flex-col bg-white overflow-y-auto`}>
             <div className="space-y-10">
               <section>

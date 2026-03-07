@@ -14,7 +14,7 @@ const Icons = {
   Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
 };
 
-export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, projectData, setIsGlobalLoading, setGlobalLoadingText, onSaved }) {
+export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, projectData, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification }) {
   const [step, setStep] = useState('select'); // select | compare
   const [selectedChapterId, setSelectedChapterId] = useState(null);
   const [results, setResults] = useState({ original: '', humanized: '' });
@@ -43,42 +43,43 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
           projectId: projectId 
         })
       });
-      export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, projectData, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification }) {
-      ...
-            setResults({ original: data.original, humanized: data.humanized });
-            setStep('compare');
-          } catch (err) { 
-            if (showNotification) showNotification('Humanization Failed', err.message, 'error');
-            else alert(err.message); 
-          }
-          finally {
-            setIsGenerating(false);
-            setIsGlobalLoading(false);
-          }
-        };
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Humanization failed');
+      
+      setResults({ original: data.original, humanized: data.humanized });
+      setStep('compare');
+    } catch (err) { 
+      if (showNotification) showNotification('Humanization Failed', err.message, 'error');
+      else alert(err.message); 
+    }
+    finally {
+      setIsGenerating(false);
+      setIsGlobalLoading(false);
+    }
+  };
 
-        const handleSave = async () => {
-          if (setIsGlobalLoading) {
-            setGlobalLoadingText('Updating chapter and creating version history...');
-            setIsGlobalLoading(true);
-          }
-          try {
-            const response = await fetch('/api/premium/save-edit', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chapterId: selectedChapterId, content: results.humanized, userId: userId, isAiAction: true })
-            });
-            if (!response.ok) throw new Error('Failed to save humanized version');
-            if (onSaved) onSaved();
-            onClose();
-            if (showNotification) showNotification('Saved Successfully', 'Humanized version saved successfully to history.', 'success');
-            else alert('Humanized version saved successfully to history.');
-          } catch (err) { 
-            if (showNotification) showNotification('Save Failed', err.message, 'error');
-            else alert(err.message); 
-          }
-          finally { if (setIsGlobalLoading) setIsGlobalLoading(false); }
-        };
+  const handleSave = async () => {
+    if (setIsGlobalLoading) {
+      setGlobalLoadingText('Updating chapter and creating version history...');
+      setIsGlobalLoading(true);
+    }
+    try {
+      const response = await fetch('/api/premium/save-edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chapterId: selectedChapterId, content: results.humanized, userId: userId, isAiAction: true })
+      });
+      if (!response.ok) throw new Error('Failed to save humanized version');
+      if (onSaved) onSaved();
+      onClose();
+      if (showNotification) showNotification('Saved Successfully', 'Humanized version saved successfully to history.', 'success');
+      else alert('Humanized version saved successfully to history.');
+    } catch (err) { 
+      if (showNotification) showNotification('Save Failed', err.message, 'error');
+      else alert(err.message); 
+    }
+    finally { if (setIsGlobalLoading) setIsGlobalLoading(false); }
+  };
 
   if (!isOpen) return null;
 
