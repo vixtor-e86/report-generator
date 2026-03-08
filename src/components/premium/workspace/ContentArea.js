@@ -155,7 +155,7 @@ export default function ContentArea({
     if (activeChapter) {
       setLocalContent(activeChapter.content || '');
     }
-  }, [activeChapter?.id, activeChapter?.number]);
+  }, [activeChapter?.id, activeChapter?.number, activeChapter?.content]);
 
   useEffect(() => {
     if (activeView === 'history') {
