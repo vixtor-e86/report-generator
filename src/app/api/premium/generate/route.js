@@ -30,110 +30,83 @@ export async function POST(request) {
     const provider = process.env.PREMIUM_AI_PROVIDER || 'deepseek';
     const model = process.env.PREMIUM_AI_MODEL || 'deepseek-chat';
 
-    // --- 1. Surgical Modification Logic ---
-    if (isModification && modificationType === 'partial' && targetContent) {
-      const surgicalPrompt = `You are a high-end academic system architect.
-      TASK: Rewrite ONLY the following section(s) of Chapter ${chapterNumber} for the project "${projectTitle || project.title}".
+    // --- 1. Surgical Modification Logic (ENHANCED) ---
+    if (isModification && targetContent) {
+      const isPartial = modificationType === 'partial';
       
-      ## ORIGINAL SECTIONS TO BE REPLACED:
+      const surgicalPrompt = `You are a high-end academic system architect and expert editor.
+      TASK: ${isPartial ? 'Rewrite ONLY the specific section(s) provided.' : 'Rewrite the entire chapter based on user instructions.'}
+      PROJECT: "${project.title}"
+      CHAPTER: ${chapterNumber}
+
+      ## ORIGINAL CONTENT TO BE FIXED:
       ${targetContent}
+
+      ${isPartial ? `## CONTEXT (DO NOT REWRITE THIS PART): 
+      Note: This section exists within a larger chapter. Ensure your tone and technical depth match the existing report flow.` : ''}
 
       ## USER INSTRUCTIONS FOR MODIFICATION:
       ${userPrompt}
 
-      ## REQUIREMENTS:
-      1. ONLY return the rewritten text for the specified section(s).
+      ## STRICT REQUIREMENTS:
+      1. ONLY return the rewritten text. No introductory or closing remarks.
       2. Keep the same Markdown formatting (headings, sub-headings).
-      3. Ensure the new content integrates perfectly with the rest of the chapter.
-      4. Do NOT output anything else (no conversational filler).
-      5. Maintain the original tone and technical accuracy.`;
+      3. ${isPartial ? 'Your output will be surgically pasted back into the document. It must integrate perfectly.' : 'Return the full rewritten chapter.'}
+      4. Maintain high technical accuracy and formal academic tone.
+      5. Respect the ${referenceStyle.toUpperCase()} citation style if any references are present in the target content.`;
 
-      const aiResponse = await callAI(surgicalPrompt, { provider, model, maxTokens: 4000, temperature: 0.5 });
+      const aiResponse = await callAI(surgicalPrompt, { provider, model, maxTokens: 4000, temperature: 0.4 });
       
-      const updatedFullContent = fullContent.replace(targetContent, aiResponse.content);
+      // Merge logic: If partial, replace the segment. If whole, use the new content entirely.
+      const updatedFullContent = isPartial ? fullContent.replace(targetContent, aiResponse.content) : aiResponse.content;
 
+      // Save version
       const { data: chapter } = await supabaseAdmin.from('premium_chapters').select('id').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
       if (chapter) {
         await supabaseAdmin.from('premium_chapters').update({ content: updatedFullContent, updated_at: new Date().toISOString() }).eq('id', chapter.id);
-        await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: updatedFullContent, prompt_used: userPrompt, model_used: aiResponse.model });
+        await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: updatedFullContent, prompt_used: `MODIFICATION [${modificationType}]: ${userPrompt}`, model_used: aiResponse.model });
       }
 
       return NextResponse.json({ success: true, content: updatedFullContent });
     }
 
-    // --- 2. Data Extraction (DOCX & TXT ONLY) ---
+    // --- 2. Data Extraction ---
     let contextualSourceData = "";
     if (selectedContextFiles.length > 0) {
       for (const file of selectedContextFiles) {
         try {
-          const fileUrl = file.file_url || file.src;
-          if (!fileUrl) continue;
-          
-          const res = await fetch(fileUrl);
+          const res = await fetch(file.file_url || file.src);
           const buffer = Buffer.from(await res.arrayBuffer());
           let extractedText = "";
-          const fileName = file.name || file.original_name || "File";
-          
-          if (fileName.toLowerCase().endsWith('.docx')) {
+          if ((file.name || file.original_name || "").toLowerCase().endsWith('.docx')) {
             const result = await mammoth.extractRawText({ buffer });
             extractedText = result.value;
-          } else if (fileName.toLowerCase().endsWith('.txt')) {
+          } else {
             extractedText = buffer.toString('utf-8');
-          } else continue;
-
-          const snippet = extractedText.trim().split(/\s+/).slice(0, 500).join(" ");
-          contextualSourceData += `\n--- EXPERIMENTAL DATA FROM: ${fileName} ---\n${snippet}\n`;
-        } catch (e) { console.error('Data extraction failed:', e); }
+          }
+          contextualSourceData += `\n--- DATA FROM: ${file.name || "File"} ---\n${extractedText.split(/\s+/).slice(0, 500).join(" ")}\n`;
+        } catch (e) {}
       }
     }
 
-    // --- 3. Resource Mapping ---
-    const currentChapterData = project.custom_templates?.structure?.chapters?.find(ch => (ch.number || ch.chapter) === chapterNumber);
-    const chapterTitle = currentChapterData?.title || `Chapter ${chapterNumber}`;
-    
-    const mandatorySections = currentChapterData?.sections?.length > 0 
-      ? `## MANDATORY CHAPTER SECTIONS\n` +
-        `You MUST include the following specific sections as sub-headings (###) in your response:\n` +
-        currentChapterData.sections.map(s => `- ${s}`).join('\n')
-      : '';
-
-    const imageMapping = selectedImages.length > 0
-      ? `\n\n### MANDATORY IMAGE ATTACHMENTS (STRICT RULES):\n` +
-        `You MUST include the following images in your technical explanation. To insert an image, use this EXACT syntax: ![Caption](URL)\n` +
-        selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", URL: ${img.file_url}`).join('\n')
-      : '';
-
-    // --- 4. Citation Logic ---
+    // --- 3. Citation & Reference Logic ---
     const citationStyleInst = referenceStyle.toUpperCase() === 'IEEE'
-      ? `### CITATION STYLE: STRICT IEEE\n1. IN-TEXT: Use numbers in square brackets like [1], [2]. Sequential order.\n2. BIBLIOGRAPHY: Numerical order.`
+      ? `### CITATION STYLE: STRICT IEEE\n1. IN-TEXT: Use numbers in square brackets like [1], [2]. Sequential order.\n2. BIBLIOGRAPHY: List at end under "## References" in numerical order.`
       : referenceStyle.toUpperCase() === 'HARVARD'
-      ? `### CITATION STYLE: STRICT HARVARD\n1. IN-TEXT: (Author Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A.A. (Year) Title. City: Publisher.`
-      : `### CITATION STYLE: STRICT APA\n1. IN-TEXT: (Author, Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
+      ? `### CITATION STYLE: STRICT HARVARD\n1. IN-TEXT: Use (Author Year) format without comma.\n2. BIBLIOGRAPHY: List at end under "## References" in alphabetical order by author. Format: Author, A.A. (Year) Title. City: Publisher.`
+      : `### CITATION STYLE: STRICT APA\n1. IN-TEXT: Use (Author, Year) format.\n2. BIBLIOGRAPHY: List at end under "## References" in alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
 
-    // --- 5. Aims & Objectives Logic (PROJECT-WIDE) ---
-    let objectiveInstruction = "";
-    if (chapterNumber === 1) {
-      if (project.use_manual_objectives && Array.isArray(project.manual_objectives) && project.manual_objectives.length > 0) {
-        const list = project.manual_objectives.map((o, i) => `${i + 1}. ${o}`).join('\n');
-        objectiveInstruction = `\n\n### MANDATORY RESEARCH OBJECTIVES (USER DEFINED):\n` +
-          `The user has specified the exact objectives for this project. You MUST include these EXACT objectives under the 'Objectives' sub-heading:\n${list}`;
-      } else {
-        objectiveInstruction = `\n\n### AIMS & OBJECTIVES REQUIREMENT:\n` +
-          `You MUST generate technically-focused research objectives under the 'Objectives' sub-heading based on the project description. Each objective should start with an action verb.`;
-      }
-    }
-
-    // --- 6. Enhanced Reference Sourcing ---
+    // --- 4. Enhanced Reference Sourcing (Web Search Integration) ---
     let finalReferencesList = [...selectedPapers];
     const totalNeeded = maxReferences || 10;
     
     if (finalReferencesList.length < totalNeeded && !skipReferences) {
       try {
-        const query = projectTitle || project.title;
+        const query = (project.title + " " + project.description).substring(0, 200);
         const searchUrl = new URL('https://api.semanticscholar.org/graph/v1/paper/search', 'https://api.semanticscholar.org');
         searchUrl.searchParams.set('query', query);
         searchUrl.searchParams.set('year', '2022-2026');
-        searchUrl.searchParams.set('limit', (totalNeeded - finalReferencesList.length + 5).toString());
+        searchUrl.searchParams.set('limit', '15');
         searchUrl.searchParams.set('fields', 'title,authors,year,venue,url');
         const searchRes = await fetch(searchUrl.toString());
         if (searchRes.ok) {
@@ -145,46 +118,60 @@ export async function POST(request) {
             }
           }
         }
-      } catch (searchErr) { console.error('Auto-reference search failed:', searchErr); }
+      } catch (err) {}
     }
 
-    const finalReferencesMapping = !skipReferences && finalReferencesList.length > 0
-      ? `\n\n### CORE RESEARCH REFERENCES:\n` +
+    const referencesMapping = !skipReferences && finalReferencesList.length > 0
+      ? `\n\n### CORE RESEARCH REFERENCES (MANDATORY):\n` +
         finalReferencesList.slice(0, totalNeeded).map((p, idx) => {
           const auths = Array.isArray(p.authors) ? p.authors.map(a => typeof a === 'object' ? a.name : a).join(', ') : (p.authors || 'Unknown');
           return `SOURCE [${idx + 1}]: ${auths} (${p.year}). "${p.title}". ${p.venue || 'Research Journal'}.`;
         }).join('\n\n')
       : '';
 
-    // --- 7. Construct Structured System Prompt ---
+    // --- 5. Aims & Objectives Logic ---
+    let objectiveInstruction = "";
+    if (chapterNumber === 1) {
+      if (project.use_manual_objectives && project.manual_objectives?.length > 0) {
+        const list = project.manual_objectives.map((o, i) => `${i + 1}. ${o}`).join('\n');
+        objectiveInstruction = `\n\n### MANDATORY RESEARCH OBJECTIVES:\nInclude these EXACT objectives:\n${list}`;
+      } else {
+        objectiveInstruction = `\n\n### AIMS & OBJECTIVES REQUIREMENT:\nGenerate technically-focused research objectives using action verbs.`;
+      }
+    }
+
+    // --- 6. Construct Structured System Prompt ---
+    const currentChapterData = project.custom_templates?.structure?.chapters?.find(ch => (ch.number || ch.chapter) === chapterNumber);
+    const chapterTitle = currentChapterData?.title || `Chapter ${chapterNumber}`;
+    const mandatorySections = currentChapterData?.sections?.length > 0 ? `## MANDATORY SECTIONS\n` + currentChapterData.sections.map(s => `- ${s}`).join('\n') : '';
+
     const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
-    TASK: Author a comprehensive Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${projectTitle || project.title}".
+    TASK: Author a detailed Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${project.title}".
 
     ## PROJECT CONTEXT
-    - DESCRIPTION: ${projectDescription || project.description}
-    - TECHNICAL COMPONENTS: ${componentsUsed || project.components_used}
+    - DESCRIPTION: ${project.description}
+    - COMPONENTS: ${componentsUsed || project.components_used}
     - RESEARCH CONTEXT: ${researchBooks || project.research_papers_context}
     ${objectiveInstruction}
 
     ${mandatorySections}
-    ${contextualSourceData ? `## MANDATORY EXPERIMENTAL DATA ANALYSIS\n${contextualSourceData}\nSTRICT REQUIREMENT: Perform detailed technical evaluation and result discussion.` : ''}
-    ${imageMapping}
-    ${finalReferencesMapping}
+    ${contextualSourceData ? `## MANDATORY EXPERIMENTAL DATA ANALYSIS\n${contextualSourceData}` : ''}
+    ${referencesMapping}
     
     ## CITATION AND REFERENCE REQUIREMENTS
     ${citationStyleInst}
-    - COUNT: Exactly ${Math.min(finalReferencesList.length, totalNeeded)} references.
-    - RECENTCY: Web-sourced citations must be 2022-2026.
+    - COUNT: You MUST include EXACTLY ${totalNeeded} references in your bibliography. 
+    - SOURCING: If the 'CORE RESEARCH REFERENCES' list above is shorter than ${totalNeeded}, you MUST use your internal search/knowledge to find additional REAL academic papers from 2022-2026 to reach the exact count.
+    - RECENTCY: Every citation must be from 2022 to 2026. No older sources allowed.
 
     ## WRITING REQUIREMENTS
-    - FORMAT: Markdown (## Headings, ### Sub-headings).
+    - FORMAT: Markdown.
     - TARGET: ${targetWordCount} words.
-    - CURRENCY: Nigerian Naira (₦).
-    - USER SPECIFIC INSTRUCTIONS: ${userPrompt || 'Deliver elite technical content.'}
+    - USER INSTRUCTIONS: ${userPrompt || 'Deliver elite technical content.'}
 
-    ${skipReferences ? '--- NO CITATIONS.' : '--- MANDATORY: Include a "## References" section at the end.'}`;
+    ${skipReferences ? '--- NO REFERENCES.' : '--- MANDATORY: Include a "## References" section at the end.'}`;
 
-    // --- 8. Call AI & Save ---
+    // --- 7. Call AI & Save ---
     const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 8000, temperature: 0.6 });
 
     let { data: chapter } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
@@ -196,9 +183,7 @@ export async function POST(request) {
     }
 
     await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: aiResponse.content, prompt_used: userPrompt, model_used: aiResponse.model });
-
-    const tokensUsed = aiResponse.tokensUsed?.total || 0;
-    await supabaseAdmin.from('premium_projects').update({ tokens_used: (project.tokens_used || 0) + tokensUsed, updated_at: new Date().toISOString() }).eq('id', projectId);
+    await supabaseAdmin.from('premium_projects').update({ tokens_used: (project.tokens_used || 0) + (aiResponse.tokensUsed?.total || 0), updated_at: new Date().toISOString() }).eq('id', projectId);
 
     return NextResponse.json({ success: true, content: aiResponse.content });
 

@@ -144,12 +144,16 @@ export default function GenerationModal({
                   
                   <div>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Title</label>
-                    <input type="text" value={localData.projectTitle} readOnly style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: '#f9fafb', color: '#6b7280', cursor: 'not-allowed' }} />
+                    <div style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: '#f9fafb', color: '#6b7280', fontWeight: '600', cursor: 'default' }}>
+                      {localData.projectTitle}
+                    </div>
                   </div>
 
                   <div>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Description (Full Scope)</label>
-                    <textarea value={localData.projectDescription} onChange={(e) => setLocalData({...localData, projectDescription: e.target.value})} placeholder="Describe the full scope of your project..." style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '100px' }} />
+                    <div style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '100px', maxHeight: '200px', background: '#f9fafb', color: '#6b7280', cursor: 'default', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
+                      {localData.projectDescription}
+                    </div>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
