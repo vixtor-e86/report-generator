@@ -1,7 +1,7 @@
 // src/components/premium/modals/PresentationModal.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import pptxgen from "pptxgenjs";
 import { SLIDE_TEMPLATES } from '@/lib/slideTemplates';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -178,13 +178,31 @@ const SlideRenderer = ({ slide, template }) => {
 // --- Main Component ---
 export default function PresentationModal({ isOpen, onClose, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, showNotification }) {
   const [step, setStep] = useState('selection');
-  const [selectedChapters, setSelectedChapters] = useState([1, 2, 3]);
+  const [selectedChapters, setSelectedChapters] = useState([]);
   const [slides, setSlides] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(SLIDE_TEMPLATES[0]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Ready threshold (characters)
+  const READY_THRESHOLD = 300;
+
+  // Initialize selection based on content availability
+  useEffect(() => {
+    if (isOpen) {
+      setStep('selection');
+      setSlides([]);
+      setSelectedChapters([]); // Always start with a clean, empty selection
+    }
+  }, [isOpen]);
+
   const toggleChapter = (num) => {
+    const chapter = chapters.find(ch => ch.number === num);
+    if (!chapter || !chapter.content || chapter.content.trim().length < READY_THRESHOLD) {
+      if (showNotification) showNotification('Chapter Not Ready', `Chapter ${num} doesn't have enough technical content to build slides yet.`, 'warning');
+      return;
+    }
+
     setSelectedChapters(prev => prev.includes(num) ? prev.filter(n => n !== num) : [...prev, num].sort((a,b) => a-b));
   };
 
@@ -229,6 +247,7 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
   };
 
   const handleDownload = () => {
+    if (slides.length === 0) return;
     const filename = `${slides[0].title.replace(/\s+/g, '_')}_Presentation.pptx`;
     exportSlidesToPPTX(slides, selectedTemplate, filename);
   };
@@ -264,17 +283,33 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
                 </div>
                 <div className="grid gap-3">
                   {chapters.map(ch => {
-                    const hasContent = ch.content && ch.content.length > 50;
+                    const hasContent = ch.content && ch.content.trim().length >= READY_THRESHOLD;
                     const isSelected = selectedChapters.includes(ch.number);
+                    
                     return (
-                      <button key={ch.id} disabled={!hasContent} onClick={() => toggleChapter(ch.number)}
-                        className={`flex items-center justify-between p-4 md:p-5 rounded-2xl md:rounded-3xl border-2 transition-all text-left ${isSelected ? 'border-slate-900 bg-white shadow-xl ring-4 md:ring-8 ring-slate-100' : 'border-slate-100 bg-white opacity-60'}`}>
+                      <button 
+                        key={ch.id} 
+                        disabled={!hasContent} 
+                        onClick={() => toggleChapter(ch.number)}
+                        style={{ pointerEvents: hasContent ? 'auto' : 'none' }}
+                        className={`flex items-center justify-between p-4 md:p-5 rounded-2xl md:rounded-3xl border-2 transition-all text-left ${
+                          isSelected 
+                            ? 'border-slate-900 bg-white shadow-xl ring-4 md:ring-8 ring-slate-100' 
+                            : hasContent 
+                              ? 'border-slate-100 bg-white hover:border-slate-200' 
+                              : 'border-slate-100 bg-slate-50 opacity-40 grayscale cursor-not-allowed'
+                        }`}
+                      >
                         <div className="flex-1 min-w-0 pr-4">
                           <div className="flex items-center gap-2">
-                            <span className="font-black text-slate-900">Chapter {ch.number}</span>
-                            {!hasContent && <span className="text-[9px] font-black bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full">NOT READY</span>}
+                            <span className={`font-black ${hasContent ? 'text-slate-900' : 'text-slate-400'}`}>Chapter {ch.number}</span>
+                            {!hasContent && (
+                              <span className="text-[9px] font-black bg-white text-slate-400 px-2 py-0.5 rounded-full border border-slate-100 uppercase tracking-tighter">
+                                Content Missing
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs text-slate-400 font-bold truncate mt-1">{ch.title}</p>
+                          <p className={`text-xs font-bold truncate mt-1 ${hasContent ? 'text-slate-400' : 'text-slate-300'}`}>{ch.title}</p>
                         </div>
                         {isSelected && <div className="w-6 h-6 md:w-8 md:h-8 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-lg shrink-0"><Icons.Check /></div>}
                       </button>

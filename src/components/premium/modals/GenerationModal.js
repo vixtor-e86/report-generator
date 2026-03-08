@@ -12,9 +12,7 @@ const Icons = {
   FileText: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>,
   Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
   Info: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>,
-  Target: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>,
-  Plus: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
-  Trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+  Target: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
 };
 
 export default function GenerationModal({ 
@@ -26,10 +24,7 @@ export default function GenerationModal({
 }) {
   const [localData, setLocalData] = useState({
     projectTitle: '', projectDescription: '', componentsUsed: '', researchBooks: '',
-    userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000,
-    objectiveCount: 3,
-    useManualObjectives: false,
-    manualObjectives: ['']
+    userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
   });
 
   const [activeTab, setActiveTab] = useState('details');
@@ -39,7 +34,6 @@ export default function GenerationModal({
   const [previewLoading, setPreviewLoading] = useState(false);
 
   const currentChapterNumber = activeChapter?.number || activeChapter?.id || 0;
-  const isChapter1 = currentChapterNumber === 1;
   const isChapter4 = currentChapterNumber === 4;
   const isSubsequentChapter = currentChapterNumber > 1;
 
@@ -50,10 +44,7 @@ export default function GenerationModal({
         projectDescription: projectData.description || '',
         componentsUsed: projectData.components_used || '',
         researchBooks: projectData.research_papers_context || '',
-        userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000,
-        objectiveCount: 3,
-        useManualObjectives: false,
-        manualObjectives: ['']
+        userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
       });
       setActiveTab(isSubsequentChapter ? 'materials' : 'details');
     }
@@ -82,26 +73,6 @@ export default function GenerationModal({
         : [...prev.selectedContextFiles, file]
     }));
     setPreviewFile(null);
-  };
-
-  const handleAddObjective = () => {
-    setLocalData(prev => ({
-      ...prev,
-      manualObjectives: [...prev.manualObjectives, '']
-    }));
-  };
-
-  const handleRemoveObjective = (index) => {
-    setLocalData(prev => ({
-      ...prev,
-      manualObjectives: prev.manualObjectives.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleObjectiveChange = (index, value) => {
-    const newObjs = [...localData.manualObjectives];
-    newObjs[index] = value;
-    setLocalData(prev => ({ ...prev, manualObjectives: newObjs }));
   };
 
   const handleGenerate = async () => {
@@ -171,73 +142,6 @@ export default function GenerationModal({
               {activeTab === 'details' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   
-                  {isChapter1 && (
-                    <div style={{ padding: '20px', background: '#f5f3ff', borderRadius: '16px', border: '1px solid #ddd6fe', marginBottom: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '800', color: '#5b21b6', textTransform: 'uppercase' }}>
-                          <Icons.Target /> Project Objectives
-                        </label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#7c3aed' }}>Manual Entry</span>
-                          <button 
-                            onClick={() => setLocalData({...localData, useManualObjectives: !localData.useManualObjectives})}
-                            style={{ 
-                              width: '44px', height: '22px', borderRadius: '20px', background: localData.useManualObjectives ? '#7c3aed' : '#d1d5db', 
-                              position: 'relative', border: 'none', cursor: 'pointer', transition: 'all 0.2s' 
-                            }}
-                          >
-                            <div style={{ 
-                              width: '18px', height: '18px', background: 'white', borderRadius: '50%', position: 'absolute', 
-                              top: '2px', left: localData.useManualObjectives ? '24px' : '2px', transition: 'all 0.2s',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                            }} />
-                          </button>
-                        </div>
-                      </div>
-
-                      {localData.useManualObjectives ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                          {localData.manualObjectives.map((obj, idx) => (
-                            <div key={idx} style={{ display: 'flex', gap: '8px' }}>
-                              <div style={{ padding: '10px', background: 'white', borderRadius: '8px', border: '1px solid #ddd6fe', fontSize: '12px', fontWeight: '800', color: '#7c3aed' }}>{idx + 1}</div>
-                              <input 
-                                type="text" 
-                                value={obj} 
-                                onChange={(e) => handleObjectiveChange(idx, e.target.value)}
-                                placeholder="e.g. To design a smart irrigation system..."
-                                style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1px solid #ddd6fe', fontSize: '13px', outline: 'none' }}
-                              />
-                              {localData.manualObjectives.length > 1 && (
-                                <button onClick={() => handleRemoveObjective(idx)} style={{ background: '#fee2e2', border: 'none', color: '#ef4444', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}><Icons.Trash /></button>
-                              )}
-                            </div>
-                          ))}
-                          <button 
-                            onClick={handleAddObjective}
-                            style={{ marginTop: '6px', padding: '10px', background: 'white', border: '1px dashed #7c3aed', color: '#7c3aed', borderRadius: '10px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                          >
-                            <Icons.Plus /> Add Another Objective
-                          </button>
-                        </div>
-                      ) : (
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <input 
-                              type="range" min="1" max="8" step="1" 
-                              value={localData.objectiveCount} 
-                              onChange={(e) => setLocalData({...localData, objectiveCount: parseInt(e.target.value)})}
-                              style={{ flex: 1, accentColor: '#7c3aed', cursor: 'pointer' }}
-                            />
-                            <span style={{ fontSize: '14px', fontWeight: '900', color: '#7c3aed', background: 'white', padding: '4px 12px', borderRadius: '8px', border: '1px solid #ddd6fe' }}>
-                              {localData.objectiveCount} Objectives
-                            </span>
-                          </div>
-                          <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: '#7c3aed' }}>The AI will generate specific research objectives based on your project details.</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   <div>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Title</label>
                     <input type="text" value={localData.projectTitle} readOnly style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: '#f9fafb', color: '#6b7280', cursor: 'not-allowed' }} />

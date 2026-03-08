@@ -17,7 +17,6 @@ export async function POST(request) {
       projectTitle = "", projectDescription = "", componentsUsed = "", researchBooks = "",
       userPrompt = "", referenceStyle = "APA", maxReferences = 10, targetWordCount = 2000,
       selectedImages = [], selectedPapers = [], skipReferences = false,
-      objectiveCount = 3, useManualObjectives = false, manualObjectives = [],
       isModification = false, modificationType = "whole_chapter", fullContent = "", targetContent = ""
     } = body;
 
@@ -111,16 +110,16 @@ export async function POST(request) {
       ? `### CITATION STYLE: STRICT HARVARD\n1. IN-TEXT: (Author Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A.A. (Year) Title. City: Publisher.`
       : `### CITATION STYLE: STRICT APA\n1. IN-TEXT: (Author, Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
 
-    // --- 5. Aims & Objectives Logic ---
+    // --- 5. Aims & Objectives Logic (PROJECT-WIDE) ---
     let objectiveInstruction = "";
     if (chapterNumber === 1) {
-      if (useManualObjectives && Array.isArray(manualObjectives) && manualObjectives.length > 0) {
-        const list = manualObjectives.filter(o => o.trim()).map((o, i) => `${i + 1}. ${o}`).join('\n');
+      if (project.use_manual_objectives && Array.isArray(project.manual_objectives) && project.manual_objectives.length > 0) {
+        const list = project.manual_objectives.map((o, i) => `${i + 1}. ${o}`).join('\n');
         objectiveInstruction = `\n\n### MANDATORY RESEARCH OBJECTIVES (USER DEFINED):\n` +
-          `Include these EXACT objectives under the 'Objectives' sub-heading:\n${list}`;
+          `The user has specified the exact objectives for this project. You MUST include these EXACT objectives under the 'Objectives' sub-heading:\n${list}`;
       } else {
         objectiveInstruction = `\n\n### AIMS & OBJECTIVES REQUIREMENT:\n` +
-          `You MUST generate EXACTLY ${objectiveCount} specific research objectives under the 'Objectives' sub-heading.`;
+          `You MUST generate technically-focused research objectives under the 'Objectives' sub-heading based on the project description. Each objective should start with an action verb.`;
       }
     }
 
