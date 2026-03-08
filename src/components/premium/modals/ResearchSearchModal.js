@@ -29,7 +29,6 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
       setResults(data.data || []);
     } catch (err) {
       if (showNotification) showNotification('Search Error', 'Failed to fetch research papers. Please try again.', 'error');
-      else alert('Search failed. Try again.');
     } finally {
       setLoading(false);
     }
@@ -56,10 +55,8 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
       if (error) throw error;
       onPaperSaved(); // Refresh workspace list
       if (showNotification) showNotification('Success', 'Paper saved to project context!', 'success');
-      else alert('Paper saved to project context!');
     } catch (err) {
       if (showNotification) showNotification('Save Failed', err.message, 'error');
-      else alert('Failed to save paper.');
     } finally {
       setSavingId(null);
     }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import LoadingModal from '@/components/premium/modals/LoadingModal';
+import CustomModal from '@/components/premium/modals/CustomModal';
 import '@/styles/project-description.css';
 
 function ProjectDescriptionContent() {
@@ -21,6 +22,18 @@ function ProjectDescriptionContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [userProfile, setUserProfile] = useState(null);
+
+  // NEW: Custom Notification State
+  const [notification, setNotification] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showNotification = (title, message, type = 'info') => {
+    setNotification({ isOpen: true, title, message, type });
+  };
   
   // Data for dropdowns
   const [universityData, setUniversityData] = useState({});
@@ -195,14 +208,11 @@ function ProjectDescriptionContent() {
         router.push(`/premium/workspace?id=${newProject.id}`);
       } catch (err) {
         console.error('Error creating project:', err);
-        alert(err.message || 'Failed to create project. Please try again.');
+        showNotification('Creation Error', err.message || 'Failed to create project. Please try again.', 'error');
         setIsLoading(false);
       }
     }
   };
-
-  const characterCount = formData.description.length;
-  const isOverLimit = characterCount > 500;
 
   return (
     <div className="project-description-page">
@@ -363,6 +373,14 @@ function ProjectDescriptionContent() {
       <LoadingModal 
         isOpen={isLoading} 
         loadingText="Setting up your workspace..." 
+      />
+
+      <CustomModal 
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
       />
     </div>
   );

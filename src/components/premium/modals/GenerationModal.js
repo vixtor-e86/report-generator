@@ -132,7 +132,6 @@ export default function GenerationModal({
       onClose();
     } catch (error) { 
       if (showNotification) showNotification('Generation Error', error.message, 'error');
-      else alert(error.message); 
     } finally { 
       setGenerating(false); 
       if (setIsGlobalLoading) setIsGlobalLoading(false); 

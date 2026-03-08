@@ -63,7 +63,8 @@ export default function Sidebar({
 
   const handleSaveWithCaption = () => {
     if (!imageCaption.trim()) {
-      alert('Please enter a caption for the image.');
+      if (onError) onError('Please enter a caption for the image.');
+      else alert('Please enter a caption for the image.');
       return;
     }
     onUpload(pendingFile, 'project_image', null, imageCaption.trim());

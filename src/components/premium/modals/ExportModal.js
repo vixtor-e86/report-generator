@@ -95,7 +95,6 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
       setExportState('ready');
     } catch (err) { 
       if (showNotification) showNotification('Export Failed', err.message, 'error');
-      else alert(err.message); 
       setExportState('idle'); 
     }
     finally { setIsGlobalLoading(false); }
@@ -119,10 +118,8 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
       if (!response.ok) throw new Error('Failed to add to files');
       if (onSaved) onSaved();
       if (showNotification) showNotification('Saved Successfully', 'Project export added to your files tab!', 'success');
-      else alert('Project export added to your files tab!');
     } catch (err) { 
       if (showNotification) showNotification('Error Saving', err.message, 'error');
-      else alert(err.message); 
     }
     finally { setIsSavingToFiles(false); }
   };

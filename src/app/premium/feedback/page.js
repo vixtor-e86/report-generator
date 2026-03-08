@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useFileUpload } from '@/hooks/useFileUpload';
+import CustomModal from '@/components/premium/modals/CustomModal';
 import Link from 'next/link';
 
 const Icons = {
@@ -26,6 +27,18 @@ function FeedbackContent() {
   const [attachments, setAttachments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // NEW: Custom Notification State
+  const [notification, setNotification] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showNotification = (title, message, type = 'info') => {
+    setNotification({ isOpen: true, title, message, type });
+  };
 
   const { uploadFile, uploading } = useFileUpload(projectId);
 
@@ -56,7 +69,7 @@ function FeedbackContent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!comment.trim()) return alert('Please enter a message');
+    if (!comment.trim()) return showNotification('Message Required', 'Please enter a message before sending.', 'warning');
     
     setIsSubmitting(true);
     try {
@@ -83,7 +96,7 @@ function FeedbackContent() {
         throw new Error(data.error || 'Failed to send feedback');
       }
     } catch (err) {
-      alert(err.message);
+      showNotification('Submission Error', err.message, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -200,6 +213,14 @@ function FeedbackContent() {
           </form>
         </div>
       </div>
+
+      <CustomModal 
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+      />
     </div>
   );
 }

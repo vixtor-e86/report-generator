@@ -58,12 +58,10 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
       });
       if (!response.ok) throw new Error(data.error || 'Failed to save');
       if (showNotification) showNotification('Success', 'Visual added to your project assets!', 'success');
-      else alert('Visual added to your project assets!');
       onImageSaved();
       onClose();
     } catch (err) { 
       if (showNotification) showNotification('Save Error', err.message, 'error');
-      else alert('Failed to save image: ' + err.message); 
     }
     finally { setLoading(false); }
   };

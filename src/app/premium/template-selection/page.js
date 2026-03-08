@@ -16,6 +16,18 @@ export default function TemplateSelection() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Processing...');
 
+  // NEW: Custom Notification State
+  const [notification, setNotification] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showNotification = (title, message, type = 'info') => {
+    setNotification({ isOpen: true, title, message, type });
+  };
+
   const templates = [
     {
       id: '5-chapter',
@@ -44,49 +56,52 @@ export default function TemplateSelection() {
   ];
 
   const handleProceed = async (templateType, additionalData = {}) => {
-    console.log('Proceeding with:', templateType, additionalData);
-    
-    // Close any open modal
-    setActiveModal(null);
-    setIsLoading(true);
+    try {
+      // Close any open modal
+      setActiveModal(null);
+      setIsLoading(true);
 
-    // Helper for delay
-    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-    
-    // Step 1: Initialization
-    if (templateType === '5-chapter') {
-      setLoadingText(`Initializing ${additionalData.faculty?.name} template...`);
-    } else if (templateType === 'thesis') {
-      setLoadingText(`Configuring ${additionalData.department?.name} thesis...`);
-    } else if (templateType === 'custom') {
-      setLoadingText('Initializing custom builder...');
+      // Helper for delay
+      const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+      
+      // Step 1: Initialization
+      if (templateType === '5-chapter') {
+        setLoadingText(`Initializing ${additionalData.faculty?.name || 'Selected'} template...`);
+      } else if (templateType === 'thesis') {
+        setLoadingText(`Configuring ${additionalData.department?.name || 'Selected'} thesis...`);
+      } else if (templateType === 'custom') {
+        setLoadingText('Initializing custom builder...');
+      }
+
+      await wait(1500);
+
+      // Step 2: Compiling
+      setLoadingText('Compiling document structure...');
+      await wait(1500);
+
+      // Step 3: Optimization
+      setLoadingText('Optimizing project assets...');
+      await wait(1000);
+      
+      // Store custom structure if present
+      if (templateType === 'custom' && additionalData.chapters) {
+        sessionStorage.setItem('custom_template_structure', JSON.stringify({ chapters: additionalData.chapters }));
+      } else {
+        sessionStorage.removeItem('custom_template_structure');
+      }
+
+      // Build query params
+      const params = new URLSearchParams();
+      if (templateType) params.set('type', templateType);
+      if (additionalData.faculty) params.set('faculty', additionalData.faculty.name || additionalData.faculty);
+      if (additionalData.department) params.set('department', additionalData.department.name || additionalData.department);
+      
+      // Navigate
+      router.push(`/premium/page-description?${params.toString()}`);
+    } catch (err) {
+      setIsLoading(false);
+      showNotification('Error', 'An unexpected error occurred. Please try again.', 'error');
     }
-
-    await wait(1500);
-
-    // Step 2: Compiling
-    setLoadingText('Compiling document structure...');
-    await wait(1500);
-
-    // Step 3: Optimization
-    setLoadingText('Optimizing project assets...');
-    await wait(1000);
-    
-    // Store custom structure if present
-    if (templateType === 'custom' && additionalData.chapters) {
-      sessionStorage.setItem('custom_template_structure', JSON.stringify({ chapters: additionalData.chapters }));
-    } else {
-      sessionStorage.removeItem('custom_template_structure');
-    }
-
-    // Build query params
-    const params = new URLSearchParams();
-    if (templateType) params.set('type', templateType);
-    if (additionalData.faculty) params.set('faculty', additionalData.faculty.name || additionalData.faculty);
-    if (additionalData.department) params.set('department', additionalData.department.name || additionalData.department);
-    
-    // Navigate
-    router.push(`/premium/page-description?${params.toString()}`);
   };
 
   return (
@@ -139,11 +154,11 @@ export default function TemplateSelection() {
       />
 
       <CustomModal
-        isOpen={activeModal === 'custom'}
-        onClose={() => setActiveModal(null)}
-        onProceed={(data) => {
-          handleProceed('custom', data);
-        }}
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
       />
 
       <LoadingModal isOpen={isLoading} loadingText={loadingText} />

@@ -50,7 +50,6 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       setStep('compare');
     } catch (err) { 
       if (showNotification) showNotification('Humanization Failed', err.message, 'error');
-      else alert(err.message); 
     }
     finally {
       setIsGenerating(false);
@@ -73,10 +72,8 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       if (onSaved) onSaved();
       onClose();
       if (showNotification) showNotification('Saved Successfully', 'Humanized version saved successfully to history.', 'success');
-      else alert('Humanized version saved successfully to history.');
     } catch (err) { 
       if (showNotification) showNotification('Save Failed', err.message, 'error');
-      else alert(err.message); 
     }
     finally { if (setIsGlobalLoading) setIsGlobalLoading(false); }
   };

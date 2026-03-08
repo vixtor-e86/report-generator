@@ -33,41 +33,45 @@ const Icons = {
   X: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
 };
 
+// Unified theme color (Dark Blue / Slate 900)
+const BRAND_DARK_BLUE = '#111827';
+const BRAND_HOVER_BLUE = '#000000';
+
 const typeConfigs = {
   success: {
     icon: <Icons.Success />,
-    color: '#10b981',
+    color: BRAND_DARK_BLUE,
     bgColor: '#f0fdf4',
-    buttonColor: '#10b981',
-    hoverColor: '#059669'
+    buttonColor: BRAND_DARK_BLUE,
+    hoverColor: BRAND_HOVER_BLUE
   },
   error: {
     icon: <Icons.Error />,
     color: '#ef4444',
     bgColor: '#fef2f2',
-    buttonColor: '#ef4444',
-    hoverColor: '#dc2626'
+    buttonColor: BRAND_DARK_BLUE,
+    hoverColor: BRAND_HOVER_BLUE
   },
   warning: {
     icon: <Icons.Warning />,
     color: '#f59e0b',
     bgColor: '#fffbe6',
-    buttonColor: '#f59e0b',
-    hoverColor: '#d97706'
+    buttonColor: BRAND_DARK_BLUE,
+    hoverColor: BRAND_HOVER_BLUE
   },
   info: {
     icon: <Icons.Info />,
-    color: '#3b82f6',
+    color: BRAND_DARK_BLUE,
     bgColor: '#eff6ff',
-    buttonColor: '#3b82f6',
-    hoverColor: '#2563eb'
+    buttonColor: BRAND_DARK_BLUE,
+    hoverColor: BRAND_HOVER_BLUE
   },
   confirm: {
     icon: <Icons.Warning />,
     color: '#6366f1',
     bgColor: '#f5f3ff',
-    buttonColor: '#6366f1',
-    hoverColor: '#4f46e5'
+    buttonColor: BRAND_DARK_BLUE,
+    hoverColor: BRAND_HOVER_BLUE
   }
 };
 
@@ -205,7 +209,7 @@ export default function CustomModal({
                 fontSize: '14px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: `0 10px 15px -3px ${config.color}33`
+                boxShadow: `0 10px 15px -3px rgba(15, 23, 42, 0.2)`
               }}
               onMouseEnter={(e) => e.target.style.background = config.hoverColor}
               onMouseLeave={(e) => e.target.style.background = config.buttonColor}

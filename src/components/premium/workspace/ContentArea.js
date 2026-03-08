@@ -112,14 +112,11 @@ export default function ContentArea({
       });
       if (payoutError) throw payoutError;
 
-      if (showNotification) showNotification('Success', 'Your request has been sent for Monday payout.', 'success');
-      else alert('Success! Your request has been sent for Monday payout.');
-      
+      showNotification('Payout Requested', 'Your withdrawal request has been submitted for Monday payout.', 'success');
       setShowBankModal(false);
       setPendingPayout(true);
     } catch (err) {
-      if (showNotification) showNotification('Payout Error', err.message, 'error');
-      else alert(err.message || 'Failed to request payout');
+      showNotification('Request Failed', err.message || 'Failed to submit payout request.', 'error');
     } finally {
       setIsSubmittingPayout(false);
     }
@@ -196,17 +193,21 @@ export default function ContentArea({
       });
       if (response.ok) {
         onUpdateChapter(activeChapter.id, localContent);
-        if (showNotification) showNotification('Success', 'Changes saved successfully!', 'success');
+        showNotification('Saved', 'Your changes have been saved successfully.', 'success');
       }
     } catch (err) { 
         console.error(err);
-        if (showNotification) showNotification('Error', 'Failed to save changes.', 'error');
+        showNotification('Error', 'Failed to save your changes. Please try again.', 'error');
     }
     finally { setIsSaving(false); }
   };
 
   const handleRestoreVersion = async (item) => {
-    const performRestore = async () => {
+    showNotification(
+      'Restore Version',
+      'Are you sure you want to restore this previous version? Any unsaved changes in the current editor will be lost.',
+      'confirm',
+      async () => {
         onUpdateChapter(item.chapter_id, item.content);
         try {
           await fetch('/api/premium/save-edit', {
@@ -214,21 +215,10 @@ export default function ContentArea({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chapterId: item.chapter_id, content: item.content, projectId: projectData.id, userId: projectData.user_id, isAiAction: false })
           });
-          if (showNotification) showNotification('Restored', 'Version restored successfully!', 'success');
-          else alert('Version restored!');
+          showNotification('Version Restored', 'The selected version has been restored to your editor.', 'success');
         } catch (err) { console.error(err); }
-    };
-
-    if (showNotification) {
-        showNotification(
-            'Restore Version',
-            'Are you sure you want to restore this previous version? Current unsaved changes will be lost.',
-            'confirm',
-            performRestore
-        );
-    } else if (confirm(`Restore this version?`)) {
-        performRestore();
-    }
+      }
+    );
   };
 
   const insertImageTag = (img) => {
@@ -402,7 +392,7 @@ export default function ContentArea({
                 </div>
 
                 <div style={{ marginTop: '12px' }}>
-                  <button disabled={isSubmittingPayout} type="submit" style={{ width: '100%', padding: '18px', borderRadius: '16px', border: 'none', background: '#059669', color: 'white', fontWeight: '800', fontSize: '15px', cursor: 'pointer' }}>
+                  <button disabled={isSubmittingPayout} type="submit" style={{ width: '100%', padding: '18px', borderRadius: '16px', border: 'none', background: '#111827', color: 'white', fontWeight: '800', fontSize: '15px', cursor: 'pointer' }}>
                     {isSubmittingPayout ? 'Processing...' : 'Confirm Withdrawal'}
                   </button>
                   <button type="button" onClick={() => setShowBankModal(false)} style={{ width: '100%', padding: '14px', marginTop: '8px', border: 'none', background: 'none', color: '#9ca3af', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
