@@ -183,7 +183,7 @@ export default function ChapterView({ chapter, images, generating }) {
         text-gray-900 
         prose-p:text-justify prose-p:leading-relaxed prose-p:mb-4 sm:prose-p:mb-6
         prose-headings:font-bold prose-headings:text-gray-900 
-        prose-h2:text-xl sm:prose-h2:text-2xl lg:prose-h2:text-3xl prose-h2:text-center prose-h2:uppercase prose-h2:tracking-wide prose-h2:mb-6 sm:prose-h2:mb-10 prose-h2:mt-0
+        prose-h2:text-xl sm:prose-h2:text-2xl lg:prose-h2:text-3xl prose-h2:text-left prose-h2:uppercase prose-h2:tracking-wide prose-h2:mb-6 sm:prose-h2:mb-10 prose-h2:mt-0
         prose-h3:text-base sm:prose-h3:text-lg lg:prose-h3:text-xl prose-h3:mt-6 sm:prose-h3:mt-8 prose-h3:mb-3 sm:prose-h3:mb-4 prose-h3:border-b prose-h3:border-gray-200 prose-h3:pb-2
         prose-h4:text-sm sm:prose-h4:text-base lg:prose-h4:text-lg prose-h4:mt-4 prose-h4:mb-2
         prose-li:text-gray-800 prose-li:mb-2

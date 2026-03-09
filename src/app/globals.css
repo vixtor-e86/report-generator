@@ -137,10 +137,17 @@ body {
     color: #000 !important;
   }
 
-  h1, h2 {
-    font-size: 14pt !important;
+  h1 {
+    font-size: 16pt !important;
     text-align: center !important;
     margin: 24pt 0 18pt 0 !important;
+    text-transform: uppercase !important;
+  }
+
+  h2 {
+    font-size: 14pt !important;
+    text-align: left !important;
+    margin: 20pt 0 12pt 0 !important;
     text-transform: uppercase !important;
   }
 
