@@ -102,27 +102,24 @@ export default function ChapterView({ chapter, images, generating }) {
   // If chapter not generated yet
   if (!chapter || chapter.status === 'not_generated') {
     return (
-      <div className="max-w-4xl mx-auto bg-white p-8 sm:p-12 text-center rounded-xl sm:rounded-2xl border-2 border-dashed border-gray-300 print:hidden">
-        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
-          <svg className="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+      <div className="max-w-4xl mx-auto bg-white p-8 sm:p-16 text-center rounded-[40px] border border-slate-200 shadow-xl print:hidden">
+        <div className="w-20 h-20 bg-slate-50 text-slate-900 rounded-[24px] flex items-center justify-center mx-auto mb-8 shadow-inner border border-slate-100">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
         </div>
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
-          Ready to Generate
+        <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">
+          System Draft Not Initialized
         </h3>
-        <p className="text-sm sm:text-base text-gray-600 mb-6">
-          Click "Generate {itemLabel}" in the top bar to create this {itemLabel.toLowerCase()} using AI.
+        <p className="text-slate-500 font-medium mb-10 max-w-sm mx-auto leading-relaxed">
+          The AI Architect is waiting for your signal to begin drafting this {itemLabel.toLowerCase()}.
         </p>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left max-w-md mx-auto">
-          <p className="text-sm font-semibold text-blue-900 mb-2">What will be generated:</p>
-          <ul className="text-xs sm:text-sm text-blue-800 space-y-1">
-            <li>✓ 2000-3000 words of content</li>
-            <li>✓ Properly structured sections</li>
-            <li>✓ Based on your {isSIWES ? 'training experience' : 'project details'}</li>
-            <li>✓ Professional academic tone</li>
+        <div className="bg-slate-50 border border-slate-100 rounded-3xl p-8 text-left max-w-lg mx-auto">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Drafting Scope:</p>
+          <ul className="text-sm font-bold text-slate-600 space-y-3">
+            <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 bg-slate-900 rounded-full"></div> 2,000+ words of technical content</li>
+            <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 bg-slate-900 rounded-full"></div> Formal academic report structure</li>
+            <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 bg-slate-900 rounded-full"></div> Nigerian engineering standards</li>
             {images && images.length > 0 && (
-              <li>✓ References to your {images.length} uploaded image{images.length > 1 ? 's' : ''}</li>
+              <li className="flex items-center gap-3"><div className="w-1.5 h-1.5 bg-slate-900 rounded-full"></div> Smart figure referencing (Fig. 1.1)</li>
             )}
           </ul>
         </div>
@@ -133,69 +130,71 @@ export default function ChapterView({ chapter, images, generating }) {
   // If currently generating
   if (generating || chapter.status === 'generating') {
     return (
-      <div className="max-w-4xl mx-auto bg-white p-8 sm:p-12 text-center rounded-xl sm:rounded-2xl border-2 border-blue-200 bg-blue-50 print:hidden">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-600 border-t-transparent mx-auto mb-6"></div>
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
-          Generating {itemLabel} {chapter.chapter_number}...
-        </h3>
-        <p className="text-sm sm:text-base text-gray-600 mb-6">
-          This may take 30-60 seconds. Please wait...
-        </p>
-        <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></div>
-          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+      <div className="max-w-4xl mx-auto bg-white p-8 sm:p-16 text-center rounded-[40px] border border-slate-200 shadow-xl print:hidden overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-slate-100 overflow-hidden">
+          <div className="h-full bg-slate-900 animate-progress origin-left w-full"></div>
         </div>
+        <div className="w-20 h-20 bg-slate-900 text-white rounded-[24px] flex items-center justify-center mx-auto mb-8 shadow-xl animate-pulse">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-white/20 border-t-white"></div>
+        </div>
+        <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">
+          Drafting {itemLabel} {chapter.chapter_number}
+        </h3>
+        <p className="text-slate-500 font-medium mb-2 leading-relaxed">
+          Our AI System Architect is compiling technical data...
+        </p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Estimated time: 45s</p>
       </div>
     );
   }
 
   // Display generated content
   return (
-    <div className="max-w-4xl mx-auto bg-white p-6 sm:p-8 lg:p-12 shadow-sm border border-gray-200 rounded-xl min-h-[600px] sm:min-h-[800px] print:shadow-none print:border-0 print:p-0 print:rounded-none">
+    <div className="max-w-4xl mx-auto bg-white p-8 sm:p-12 lg:p-20 shadow-xl border border-slate-200 rounded-[40px] min-h-[800px] print:shadow-none print:border-0 print:p-0 print:rounded-none">
       {/* Chapter Header Info - Hidden on print */}
-      <div className="mb-6 pb-4 border-b border-gray-200 print:hidden">
-        <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="mb-12 pb-8 border-b border-slate-100 print:hidden">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-              {itemLabel} {chapter.chapter_number}: {chapter.title}
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2 block">
+              {itemLabel} {chapter.chapter_number}
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {chapter.title}
             </h2>
-            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Generated {chapter.generated_at ? new Date(chapter.generated_at).toLocaleDateString() : 'recently'}
-              </span>
-              <span>Version {chapter.version}</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                chapter.status === 'edited' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
+            <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                {chapter.generated_at ? new Date(chapter.generated_at).toLocaleDateString() : 'Draft'}
+              </div>
+              <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+              <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                chapter.status === 'edited' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
               }`}>
-                {chapter.status === 'edited' ? 'Edited' : 'AI Generated'}
+                {chapter.status === 'edited' ? 'Manual Edit' : 'System Verified'}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Chapter Content with Image Rendering - Print Friendly */}
-      <div className="chapter-content prose prose-sm sm:prose-base lg:prose-lg max-w-none 
-        text-gray-900 
-        prose-p:text-justify prose-p:leading-relaxed prose-p:mb-4 sm:prose-p:mb-6
-        prose-headings:font-bold prose-headings:text-gray-900 
-        prose-h2:text-xl sm:prose-h2:text-2xl lg:prose-h2:text-3xl prose-h2:text-left prose-h2:uppercase prose-h2:tracking-wide prose-h2:mb-6 sm:prose-h2:mb-10 prose-h2:mt-0
-        prose-h3:text-base sm:prose-h3:text-lg lg:prose-h3:text-xl prose-h3:mt-6 sm:prose-h3:mt-8 prose-h3:mb-3 sm:prose-h3:mb-4 prose-h3:border-b prose-h3:border-gray-200 prose-h3:pb-2
-        prose-h4:text-sm sm:prose-h4:text-base lg:prose-h4:text-lg prose-h4:mt-4 prose-h4:mb-2
-        prose-li:text-gray-800 prose-li:mb-2
-        prose-strong:text-black prose-strong:font-bold
-        prose-table:text-xs sm:prose-table:text-sm lg:prose-table:text-base
-        prose-code:text-indigo-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-        prose-blockquote:border-l-4 prose-blockquote:border-indigo-500 prose-blockquote:pl-4 prose-blockquote:italic
+      {/* Chapter Content */}
+      <div className="chapter-content prose prose-slate max-w-none 
+        text-slate-900 
+        prose-p:text-justify prose-p:leading-[1.8] prose-p:mb-8
+        prose-headings:font-black prose-headings:text-slate-900 prose-headings:tracking-tight
+        prose-h2:text-2xl sm:prose-h2:text-3xl prose-h2:uppercase prose-h2:mb-10 prose-h2:mt-0 prose-h2:text-left
+        prose-h3:text-xl prose-h3:mt-12 prose-h3:mb-6 prose-h3:border-b-2 prose-h3:border-slate-100 prose-h3:pb-2
+        prose-h4:text-lg prose-h4:mt-8 prose-h4:mb-4
+        prose-li:text-slate-700 prose-li:mb-3 prose-li:font-medium
+        prose-strong:text-slate-900 prose-strong:font-black
+        prose-table:border prose-table:border-slate-200 prose-table:rounded-xl prose-table:overflow-hidden
+        prose-thead:bg-slate-50 prose-thead:text-slate-900
+        prose-blockquote:border-l-4 prose-blockquote:border-slate-900 prose-blockquote:bg-slate-50 prose-blockquote:py-4 prose-blockquote:pr-4
         print:prose-p:font-serif print:prose-p:text-[12pt] print:prose-p:leading-[1.5]
         print:prose-headings:font-serif
         print:prose-h2:text-[14pt] print:prose-h2:font-bold
         print:prose-h3:text-[13pt] print:prose-h3:font-bold print:prose-h3:border-b-0
-        print:prose-h4:text-[12pt] print:prose-h4:font-bold
+        print:prose-h4:text-[12pt] print:prose-h4:font-bold">
         print:prose-li:font-serif print:prose-li:text-[12pt]
         print:prose-strong:font-bold print:prose-strong:text-black
         print:prose-table:text-[11pt]">

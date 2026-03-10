@@ -25,95 +25,78 @@ export default function ChapterEdit({ chapter, onSave, onCancel }) {
   const charCount = content.length;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       {/* Header */}
-      <div className="bg-white rounded-t-xl border border-b-0 border-gray-200 p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-t-3xl border border-slate-200 p-6 sm:p-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-              Editing Chapter {chapter.chapter_number}
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">
+              Edit Technical Draft
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">
-              Make your changes below. Use Markdown formatting if needed.
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+              Chapter {chapter.chapter_number} • Precise Manual Control
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={onCancel}
-              className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition text-sm"
+              className="px-4 py-2 text-slate-400 hover:text-slate-900 font-black text-[11px] uppercase tracking-widest transition-all"
             >
-              Cancel
+              Discard
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 flex items-center gap-2 text-sm"
+              className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center gap-2"
             >
               {saving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  Saving...
-                </>
+                <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white"></div>
               ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Save Changes
-                </>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               )}
+              Save Changes
             </button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-6 text-xs sm:text-sm text-gray-600">
-          <span className="flex items-center gap-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            {wordCount.toLocaleString()} words
-          </span>
-          <span className="flex items-center gap-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-            </svg>
-            {charCount.toLocaleString()} characters
-          </span>
-          {/* <span className="hidden sm:flex items-center gap-1 text-indigo-600">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Manual edits don't use tokens
-          </span> */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Words</span>
+            <span className="text-xs font-black text-slate-900">{wordCount.toLocaleString()}</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Chars</span>
+            <span className="text-xs font-black text-slate-900">{charCount.toLocaleString()}</span>
+          </div>
         </div>
       </div>
 
       {/* Editor */}
-      <div className="bg-white border border-gray-200 p-4 sm:p-6">
+      <div className="bg-white border-x border-slate-200">
+        <div className="px-8 sm:px-12 py-3 bg-slate-50 border-b border-slate-100 flex flex-wrap gap-4 items-center">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Editor Guide:</span>
+          <div className="flex gap-3">
+            <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold"># Header 1</code>
+            <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">## Header 2</code>
+            <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">**Bold**</code>
+            <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">- List</code>
+            <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">1. Numbered</code>
+          </div>
+        </div>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full h-[600px] sm:h-[700px] p-4 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none font-mono"
-          placeholder="Start typing your chapter content here..."
+          className="w-full h-[600px] sm:h-[750px] p-8 sm:p-12 outline-none text-slate-900 text-base sm:text-lg leading-relaxed transition-all resize-none font-sans"
+          placeholder="Start typing your technical content here..."
           spellCheck="true"
+          style={{ border: 'none' }}
         />
       </div>
 
       {/* Footer Tips */}
-      <div className="bg-white rounded-b-xl border border-t-0 border-gray-200 p-4 sm:p-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="text-sm font-semibold text-blue-900 mb-2">
-            💡 Editing Tips:
-          </h4>
-          <ul className="text-xs sm:text-sm text-blue-800 space-y-1">
-            <li>• Use <code className="bg-blue-100 px-1 py-0.5 rounded">**bold**</code> for bold text</li>
-            <li>• Use <code className="bg-blue-100 px-1 py-0.5 rounded">### Heading</code> for section headings</li>
-            <li>• Use <code className="bg-blue-100 px-1 py-0.5 rounded">- item</code> for bullet points</li>
-            <li>• Keep <code className="bg-blue-100 px-1 py-0.5 rounded">{'{{figureX.Y}}'}</code> placeholders as&apos;is for images</li>
-            <li>• Manual edits are tracked but don't consume your token limit</li>
-          </ul>
-        </div>
+      <div className="bg-slate-50 rounded-b-3xl border border-slate-200 p-6">
+        <p className="text-[10px] font-bold text-slate-400 italic text-center">Manual edits are tracked but do not consume your AI token limit.</p>
       </div>
     </div>
   );

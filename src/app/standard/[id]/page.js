@@ -314,10 +314,10 @@ export default function StandardWorkspace({ params }) {
   // Loading state
   if (loading || !project) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading workspace...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-900 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Initialising Workspace...</p>
         </div>
       </div>
     );
@@ -326,7 +326,7 @@ export default function StandardWorkspace({ params }) {
   const currentChapter = chapters.find(ch => ch.chapter_number === selectedChapter);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-[#f8f9fc] flex flex-col lg:flex-row font-sans selection:bg-slate-900 selection:text-white">
       {/* Sidebar */}
       <Sidebar
         project={project}
@@ -340,7 +340,7 @@ export default function StandardWorkspace({ params }) {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Bar */}
         <TopBar
           chapter={currentChapter}
@@ -353,17 +353,17 @@ export default function StandardWorkspace({ params }) {
           onRegenerate={() => handleRegenerate()}
           onModifyRegenerate={() => setShowModifyModal(true)}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          onPrintCurrentChapter={handlePrintCurrentChapter} // ✅ NEW
-          onPreviewBeforeGenerate={handlePreviewBeforeGenerate} // ✅ NEW
-          onSuggestImprovements={handleSuggestImprovements} // ✅ NEW
+          onPrintCurrentChapter={handlePrintCurrentChapter}
+          onPreviewBeforeGenerate={handlePreviewBeforeGenerate}
+          onSuggestImprovements={handleSuggestImprovements}
         />
 
         {/* Chapter Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-10 lg:p-12 custom-scrollbar">
           {!currentChapter ? (
-            <div className="max-w-4xl mx-auto bg-white p-8 sm:p-12 text-center rounded-xl border-2 border-dashed border-gray-300">
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">Chapter not found</h3>
-              <p className="text-gray-600">Please select a valid chapter from the sidebar.</p>
+            <div className="max-w-4xl mx-auto bg-white p-12 text-center rounded-[40px] border-2 border-dashed border-slate-200">
+              <h3 className="text-2xl font-black text-slate-900 mb-3">Chapter Context Missing</h3>
+              <p className="text-slate-500 font-medium leading-relaxed">Please select a valid chapter from the navigation sidebar to begin technical documentation.</p>
             </div>
           ) : isEditing ? (
             <ChapterEdit
@@ -380,6 +380,29 @@ export default function StandardWorkspace({ params }) {
           )}
         </div>
       </div>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #e2e8f0;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #cbd5e1;
+        }
+        @keyframes progress {
+          0% { transform: scaleX(0); }
+          100% { transform: scaleX(1); }
+        }
+        .animate-progress {
+          animation: progress 45s linear forwards;
+        }
+      `}</style>
 
       {/* Modify Modal */}
       {showModifyModal && (

@@ -81,282 +81,173 @@ export default function TopBar({
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 print:hidden">
-      <div className="flex justify-between items-center gap-2">
+    <div className="bg-white border-b border-slate-200 px-4 sm:px-8 py-4 print:hidden">
+      <div className="flex justify-between items-center gap-4">
         {/* Left: Chapter Info */}
-        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
           <button
             onClick={onToggleSidebar}
-            className="text-gray-600 hover:text-gray-900 flex-shrink-0"
+            className="text-slate-400 hover:text-slate-900 transition-colors flex-shrink-0"
           >
-            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
           </button>
           
           <div className="min-w-0 flex-1">
-            <h1 className="text-base sm:text-xl font-bold text-gray-900 truncate">
-              {chapter ? (
-                <>
-                  <span className="hidden sm:inline">Chapter {chapter.chapter_number}</span>
-                  <span className="sm:hidden">Ch. {chapter.chapter_number}</span>
-                  {chapter.title && <span className="hidden md:inline"> - {chapter.title}</span>}
-                </>
-              ) : (
-                'Select a Chapter'
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg sm:text-xl font-black text-slate-900 truncate tracking-tight">
+                {chapter ? (
+                  <>
+                    <span className="hidden sm:inline">{chapter.title || `Chapter ${chapter.chapter_number}`}</span>
+                    <span className="sm:hidden">Chapter {chapter.chapter_number}</span>
+                  </>
+                ) : (
+                  'Technical Workspace'
+                )}
+              </h1>
+              {chapter && (
+                <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded uppercase tracking-widest">
+                  v{chapter.version}
+                </span>
               )}
-            </h1>
+            </div>
             {chapter && isGenerated && (
-              <p className="text-xs text-gray-500 mt-0.5 hidden sm:block">
-                Version {chapter.version} • {chapter.edit_count || 0} edits • {chapter.regeneration_count || 0} regens
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 hidden sm:block">
+                Academic Report Draft • {chapter.edit_count || 0} Edits
               </p>
             )}
           </div>
         </div>
 
         {/* Right: Action Buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0">
           {!chapter ? (
-            <div className="text-xs sm:text-sm text-gray-500">Select a chapter</div>
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full border border-slate-100 italic">Initialization Required</div>
           ) : isEditing ? (
             // EDITING MODE
             <>
               <button
                 onClick={onSave}
-                className="bg-gray-100 text-gray-700 px-3 sm:px-4 py-2 rounded-lg font-semibold hover:bg-gray-200 transition text-xs sm:text-sm"
+                className="text-slate-400 hover:text-slate-900 px-4 py-2 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all"
               >
                 Discard
               </button>
               <button
-                className="bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition text-xs sm:text-sm"
+                className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95"
               >
-                <span className="hidden sm:inline">Save Changes</span>
-                <span className="sm:hidden">Save</span>
+                Save Draft
               </button>
             </>
           ) : !isGenerated ? (
-            // NOT GENERATED - Show primary action + mobile menu
+            // NOT GENERATED
             <>
-              {/* Generate Button - Always visible */}
               <button
                 onClick={onGenerate}
                 disabled={generating}
-                className="bg-indigo-600 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 flex items-center gap-2 text-sm sm:text-base"
+                className="bg-slate-900 text-white px-6 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95 disabled:opacity-50 flex items-center gap-2"
               >
                 {generating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    <span className="hidden sm:inline">Generating...</span>
-                    <span className="sm:hidden">Gen...</span>
-                  </>
+                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white"></div>
                 ) : (
-                  <>
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span className="hidden sm:inline">Generate Chapter</span>
-                    <span className="sm:hidden">Generate</span>
-                  </>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                 )}
+                Generate Content
               </button>
 
-              {/* Preview Button - Desktop only */}
               <button
                 onClick={onPreviewBeforeGenerate}
                 disabled={generating}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition disabled:opacity-50 items-center gap-2 text-sm hidden lg:flex"
+                className="bg-white border-2 border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all hidden lg:flex items-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                Preview
+                Preview Structure
               </button>
             </>
           ) : (
-            // GENERATED - Show key buttons + more menu
+            // GENERATED
             <>
-              {/* Desktop: Show all buttons */}
               <div className="hidden lg:flex items-center gap-2">
                 <button
                   onClick={onEdit}
-                  className="bg-gray-900 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-800 transition flex items-center gap-1.5 text-sm"
+                  className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all flex items-center gap-2 shadow-sm"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Edit
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                  Manual Edit
                 </button>
 
                 <button
                   onClick={onSuggestImprovements}
                   disabled={generating}
-                  className="bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-700 transition flex items-center gap-1.5 disabled:opacity-50 text-sm"
+                  className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                  Suggest
+                  Analyze
                 </button>
 
                 <button
                   onClick={onRegenerate}
                   disabled={!canRegenerate || generating}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-40"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
                   Regen
                 </button>
 
                 <button
                   onClick={onModifyRegenerate}
                   disabled={!canRegenerate || generating}
-                  className="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-40"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                  </svg>
                   Modify
                 </button>
 
+                <div className="w-px h-6 bg-slate-200 mx-2"></div>
+
                 <button
                   onClick={handlePrintCurrentChapter}
-                  className="bg-gray-800 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-900 transition flex items-center gap-1.5 text-sm"
+                  className="p-2 text-slate-400 hover:text-slate-900 transition-colors"
+                  title="Print Report"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  Print
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                 </button>
 
                 <button
                   onClick={handleExportDOCX}
                   disabled={exporting}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition flex items-center gap-1.5 text-sm disabled:opacity-50"
+                  className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 flex items-center gap-2"
                 >
                   {exporting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      Exporting...
-                    </>
+                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white"></div>
                   ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      Export
-                    </>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                   )}
+                  Export Report
                 </button>
               </div>
 
-              {/* Mobile/Tablet: Show essential buttons + menu */}
-              <div className="flex lg:hidden items-center gap-2">
-                {/* Edit Button - Always show */}
+              {/* Mobile Menu Button */}
+              <div className="relative lg:hidden">
                 <button
-                  onClick={onEdit}
-                  className="bg-gray-900 text-white px-3 py-2 rounded-lg font-semibold hover:bg-gray-800 transition flex items-center gap-1.5 text-xs"
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  className="p-2 bg-slate-100 rounded-lg text-slate-600 active:bg-slate-200 transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  <span className="hidden sm:inline">Edit</span>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                 </button>
 
-                {/* Export Button - Always show */}
-                <button
-                  onClick={handleExportDOCX}
-                  disabled={exporting}
-                  className="bg-green-600 text-white px-3 py-2 rounded-lg font-semibold hover:bg-green-700 transition flex items-center gap-1.5 text-xs disabled:opacity-50"
-                >
-                  {exporting ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      <span className="hidden sm:inline">Export</span>
-                    </>
-                  )}
-                </button>
-
-                {/* More Menu Button */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowMobileMenu(!showMobileMenu)}
-                    className="bg-gray-600 text-white px-3 py-2 rounded-lg font-semibold hover:bg-gray-700 transition text-xs"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                    </svg>
-                  </button>
-
-                  {/* Mobile Menu Dropdown */}
-                  {showMobileMenu && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => setShowMobileMenu(false)}
-                      ></div>
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-20">
-                        <button
-                          onClick={() => {
-                            onSuggestImprovements();
-                            setShowMobileMenu(false);
-                          }}
-                          disabled={generating}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 transition flex items-center gap-3 text-sm disabled:opacity-50"
-                        >
-                          <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                          </svg>
-                          <span className="font-semibold text-gray-900">Suggestions</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            onRegenerate();
-                            setShowMobileMenu(false);
-                          }}
-                          disabled={!canRegenerate || generating}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 transition flex items-center gap-3 text-sm disabled:opacity-50"
-                        >
-                          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                          <span className="font-semibold text-gray-900">Regenerate</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            onModifyRegenerate();
-                            setShowMobileMenu(false);
-                          }}
-                          disabled={!canRegenerate || generating}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 transition flex items-center gap-3 text-sm disabled:opacity-50"
-                        >
-                          <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                          </svg>
-                          <span className="font-semibold text-gray-900">Modify & Regen</span>
-                        </button>
-
-                        <button
-                          onClick={handlePrintCurrentChapter}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 transition flex items-center gap-3 text-sm"
-                        >
-                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                          </svg>
-                          <span className="font-semibold text-gray-900">Print Chapter</span>
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
+                {showMobileMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowMobileMenu(false)}></div>
+                    <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-20 overflow-hidden animate-in fade-in zoom-in duration-200">
+                      <button onClick={() => { onEdit(); setShowMobileMenu(false); }} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-slate-900">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        Edit
+                      </button>
+                      <button onClick={() => { onSuggestImprovements(); setShowMobileMenu(false); }} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-slate-900">
+                        Analyze
+                      </button>
+                      <button onClick={() => { handleExportDOCX(); setShowMobileMenu(false); }} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-900">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Export
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </>
           )}

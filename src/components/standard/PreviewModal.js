@@ -71,49 +71,45 @@ export default function PreviewModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-[40px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-100">
         {/* Header */}
-        <div className="p-6 sm:p-8 border-b border-gray-200">
+        <div className="p-8 sm:p-10 border-b border-slate-50">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
-              📋 Chapter Preview
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-tighter">
+              Structural Preview
             </h3>
             <button
               onClick={handleCancel}
-              className="text-gray-400 hover:text-gray-600 transition"
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-900"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
-          <p className="text-sm text-gray-600">
-            Chapter {chapter?.chapter_number}: {chapter?.title}
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+            Chapter {chapter?.chapter_number} • Architectural Blueprint
           </p>
         </div>
 
         {/* Body */}
-        <div className="p-6 sm:p-8">
+        <div className="p-8 sm:p-10">
           {/* Loading State */}
           {previewLoading && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
-              <p className="text-gray-600">Generating preview...</p>
-              <p className="text-xs text-gray-500 mt-2">This uses only ~500 tokens</p>
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-900 border-t-transparent mx-auto mb-6"></div>
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Drafting outline...</p>
+              <p className="text-[10px] text-slate-400 mt-2 italic">Minimal token impact</p>
             </div>
           )}
 
           {/* Error State */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <div className="bg-red-50 border border-red-100 rounded-2xl p-5 mb-6">
+              <div className="flex items-start gap-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-red-600 mt-0.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                 <div>
-                  <p className="text-sm font-semibold text-red-900">Preview Failed</p>
-                  <p className="text-xs text-red-700 mt-1">{error}</p>
+                  <p className="text-xs font-black text-red-900 uppercase tracking-widest">Preview Failed</p>
+                  <p className="text-[11px] text-red-700 mt-1 font-medium leading-relaxed">{error}</p>
                 </div>
               </div>
             </div>
@@ -123,68 +119,57 @@ export default function PreviewModal({
           {outline && !previewLoading && (
             <>
               {/* Token Savings Badge */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-green-800">
-                  <strong>Preview cost: {tokensUsed} tokens</strong> · Full generation would cost ~{estimatedTokens.toLocaleString()} tokens
+              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mb-6 flex items-center gap-3">
+                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-50">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wide">
+                  Preview Generated: <span className="font-black text-emerald-900">{tokensUsed} tokens used</span>
                 </p>
               </div>
 
               {/* Outline Display */}
-              <div className="bg-gray-50 rounded-lg p-4 sm:p-6 mb-4">
-                <h4 className="text-sm font-bold text-gray-700 mb-3">
-                  This chapter will cover:
+              <div className="bg-slate-50 rounded-3xl p-6 sm:p-8 mb-8 border border-slate-100">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                  Structural Map
                 </h4>
-                <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                <div className="text-xs sm:text-sm text-slate-900 whitespace-pre-wrap font-medium leading-relaxed">
                   {outline}
                 </div>
               </div>
 
               {/* Info Box */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="text-sm text-blue-800">
-                    <p className="font-semibold mb-1">Next steps:</p>
-                    <ul className="text-xs space-y-1 ml-4 list-disc">
-                      <li>If this outline looks good, proceed to generate the full chapter (~{estimatedTokens.toLocaleString()} tokens)</li>
-                      <li>If not satisfied, cancel and adjust your project details or images</li>
-                      <li>You can always regenerate later if needed</li>
-                    </ul>
-                  </div>
+              <div className="bg-slate-900 rounded-[32px] p-6 sm:p-8 mb-10 text-white shadow-xl relative overflow-hidden">
+                <div className="relative z-10">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Architectural Notes:</p>
+                  <ul className="text-[11px] space-y-3 font-bold text-slate-300">
+                    <li className="flex items-start gap-3"><span className="text-slate-500">•</span> If this structure aligns with your goals, proceed to full generation.</li>
+                    <li className="flex items-start gap-3"><span className="text-slate-500">•</span> Full generation will require ~{estimatedTokens.toLocaleString()} tokens.</li>
+                    <li className="flex items-start gap-3"><span className="text-slate-500">•</span> You can refine project details to adjust this outline.</li>
+                  </ul>
                 </div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={handleCancel}
-                  className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition text-sm sm:text-base"
+                  className="flex-1 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all"
                 >
-                  Cancel
+                  Discard Outline
                 </button>
                 <button
                   onClick={handleProceed}
                   disabled={loading}
-                  className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base"
+                  className="flex-[2] bg-slate-900 text-white px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95 disabled:opacity-40 flex items-center justify-center gap-3"
                 >
                   {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                      Generating...
-                    </>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white"></div>
                   ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      Generate Full Chapter ({estimatedTokens.toLocaleString()} tokens)
-                    </>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                   )}
+                  Initialize Full Report
                 </button>
               </div>
             </>

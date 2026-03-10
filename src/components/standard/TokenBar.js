@@ -15,16 +15,16 @@ export default function TokenBar({ used, limit }) {
 
   const colorClasses = {
     green: {
-      bg: 'bg-green-500',
-      text: 'text-green-700',
-      lightBg: 'bg-green-50',
-      border: 'border-green-200'
+      bg: 'bg-slate-900',
+      text: 'text-slate-900',
+      lightBg: 'bg-slate-50',
+      border: 'border-slate-100'
     },
     yellow: {
-      bg: 'bg-yellow-500',
-      text: 'text-yellow-700',
-      lightBg: 'bg-yellow-50',
-      border: 'border-yellow-200'
+      bg: 'bg-amber-500',
+      text: 'text-amber-700',
+      lightBg: 'bg-amber-50',
+      border: 'border-amber-100'
     },
     red: {
       bg: 'bg-red-500',
@@ -35,30 +35,30 @@ export default function TokenBar({ used, limit }) {
   };
 
   return (
-    <div>
+    <div className="py-1">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-gray-700">Token Usage</span>
-        <span className="text-xs text-gray-500">
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Tokens Used</span>
+        <span className="text-[10px] font-black text-slate-900">
           {percentage.toFixed(0)}%
         </span>
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden">
+      <div className="w-full bg-slate-200 rounded-full h-1.5 mb-3 overflow-hidden">
         <div
-          className={`h-2.5 rounded-full transition-all duration-300 ${colorClasses[color].bg}`}
+          className={`h-full rounded-full transition-all duration-500 ${colorClasses[color].bg}`}
           style={{ width: `${percentage}%` }}
         ></div>
       </div>
 
       {/* Stats */}
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-gray-600">
+      <div className="flex items-center justify-between text-[10px] font-bold">
+        <span className="text-slate-400">
           {used.toLocaleString()} / {limit.toLocaleString()}
         </span>
-        <span className={`font-semibold ${colorClasses[color].text}`}>
-          {remaining.toLocaleString()} left
+        <span className={`${colorClasses[color].text}`}>
+          {remaining.toLocaleString()} Left
         </span>
       </div>
 

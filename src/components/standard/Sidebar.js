@@ -115,76 +115,76 @@ export default function Sidebar({
         className={`
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           fixed lg:relative inset-y-0 left-0 z-50 w-80 lg:w-80
-          bg-white border-r border-gray-200 transition-transform duration-300 
+          bg-[#f8f9fc] border-r border-slate-200 transition-transform duration-300 
           flex flex-col print:hidden
         `}
       >
-        {/* Header & Token Bar (Unchanged) */}
-        <div className="p-4 sm:p-6 border-b border-gray-200">
+        {/* Header & Token Bar */}
+        <div className="p-4 sm:p-6 border-b border-slate-200">
           <div className="flex items-center gap-2 mb-6">
             <img src="/favicon.ico" alt="W3 WriteLab" className="w-9 h-9" />
-            <span className="text-lg font-bold text-indigo-600">W3 WriteLab</span>
+            <span className="text-lg font-black text-slate-900 tracking-tight">W3 WriteLab</span>
           </div>
           <div className="flex items-center justify-between mb-4">
-            <Link href="/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm">
+            <Link href="/dashboard" className="flex items-center gap-2 text-slate-500 hover:text-slate-900 text-xs font-bold uppercase tracking-wider">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
               Dashboard
             </Link>
-            <button onClick={onToggleSidebar} className="lg:hidden text-gray-600 hover:text-gray-900">
+            <button onClick={onToggleSidebar} className="lg:hidden text-slate-400 hover:text-slate-900">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="font-bold text-gray-900 truncate text-sm sm:text-base flex-1">{project.title}</h2>
-            <span className="text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ml-2 bg-indigo-100 text-indigo-700">STANDARD</span>
+            <h2 className="font-black text-slate-900 truncate text-sm sm:text-base flex-1">{project.title}</h2>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-black flex-shrink-0 ml-2 bg-slate-200 text-slate-700 uppercase tracking-widest">STANDARD</span>
           </div>
-          <p className="text-xs text-gray-500">{project.department}</p>
+          <p className="text-xs font-medium text-slate-400">{project.department}</p>
         </div>
-        <div className="px-4 py-3 border-b border-gray-200">
+        <div className="px-4 py-3 border-b border-slate-200 bg-white/50">
           <TokenBar used={project.tokens_used} limit={project.tokens_limit} />
         </div>
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto p-4">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{isSIWES ? 'Parts' : 'Chapters'}</h3>
-          <div className="space-y-2">
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-2">{isSIWES ? 'Parts' : 'Chapters'}</h3>
+          <div className="space-y-1.5">
             {chapters.map((chapter) => (
               <button
                 key={chapter.id}
                 onClick={() => onChapterSelect(chapter.chapter_number)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg transition ${
+                className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 ${
                   selectedChapter === chapter.chapter_number
-                    ? 'bg-indigo-50 border-2 border-indigo-500'
-                    : 'bg-gray-50 border-2 border-transparent hover:border-gray-300'
+                    ? 'bg-white border-2 border-slate-900 shadow-sm'
+                    : 'bg-transparent border-2 border-transparent hover:bg-slate-200/50 hover:border-slate-200'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-gray-900 text-xs sm:text-sm">{itemLabel} {chapter.chapter_number}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
-                      chapter.status === 'approved' || chapter.status === 'draft' || chapter.status === 'edited' ? 'bg-green-100 text-green-700' :
-                      chapter.status === 'generating' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
+                  <span className={`font-bold text-xs sm:text-sm ${selectedChapter === chapter.chapter_number ? 'text-slate-900' : 'text-slate-600'}`}>{itemLabel} {chapter.chapter_number}</span>
+                  <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter ${
+                      chapter.status === 'approved' || chapter.status === 'draft' || chapter.status === 'edited' ? 'bg-emerald-50 text-emerald-600' :
+                      chapter.status === 'generating' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'
                     }`}>
                     {chapter.status === 'not_generated' ? 'Not Started' : chapter.status === 'generating' ? 'Generating...' : chapter.status}
                   </span>
                 </div>
-                <div className="text-xs text-gray-600 truncate">{chapter.title}</div>
+                <div className={`text-[11px] font-medium truncate ${selectedChapter === chapter.chapter_number ? 'text-slate-500' : 'text-slate-400'}`}>{chapter.title}</div>
               </button>
             ))}
           </div>
 
           {/* Images Section */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Images</h3>
-              <span className="text-xs text-gray-500">{images.length}/{maxImages}</span>
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4 px-2">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Materials</h3>
+              <span className="text-[10px] font-black text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full">{images.length}/{maxImages}</span>
             </div>
 
             {images.length < maxImages && (
               <CldUploadWidget uploadPreset="reportgen_uploads" onSuccess={handleImageUpload}>
                 {({ open }) => (
-                  <button onClick={() => open()} className="w-full border-2 border-dashed border-gray-300 rounded-lg p-3 hover:border-indigo-400 hover:bg-indigo-50 transition text-center group mb-3">
-                    <svg className="w-6 h-6 text-gray-400 group-hover:text-indigo-500 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                    <span className="text-xs text-gray-600 group-hover:text-indigo-600">Upload Image</span>
+                  <button onClick={() => open()} className="w-full border-2 border-dashed border-slate-300 rounded-xl p-4 hover:border-slate-900 hover:bg-white transition-all text-center group mb-4">
+                    <svg className="w-5 h-5 text-slate-400 group-hover:text-slate-900 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-900 transition-colors">Add Image</span>
                   </button>
                 )}
               </CldUploadWidget>
@@ -192,19 +192,18 @@ export default function Sidebar({
 
             <div className="space-y-2">
               {images.map((img) => (
-                <div key={img.id} className="bg-gray-50 rounded-lg p-2.5 border border-gray-200 group relative">
-                  <div className="flex items-center gap-2">
-                    <div className="relative w-12 h-12 flex-shrink-0">
-                      <Image src={img.cloudinary_url} alt={img.caption} fill className="rounded object-cover" />
+                <div key={img.id} className="bg-white rounded-xl p-2.5 border border-slate-200 shadow-sm group relative hover:border-slate-400 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 flex-shrink-0">
+                      <Image src={img.cloudinary_url} alt={img.caption} fill className="rounded-lg object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-900 truncate">{img.caption}</p>
-                      {/* ✅ Display Tag: Global or Chapter X */}
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-bold ${img.chapter_number ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-200 text-gray-600'}`}>
+                      <p className="text-[11px] font-bold text-slate-900 truncate">{img.caption}</p>
+                      <span className={`text-[8px] px-1.5 py-0.5 rounded-full uppercase font-black tracking-tighter ${img.chapter_number ? 'bg-slate-100 text-slate-600' : 'bg-slate-100 text-slate-400'}`}>
                         {img.chapter_number ? `${itemLabel} ${img.chapter_number}` : 'Global'}
                       </span>
                     </div>
-                    <button onClick={() => handleDeleteImage(img.id)} className="text-red-500 p-1 text-xl opacity-0 group-hover:opacity-100 transition flex-shrink-0">×</button>
+                    <button onClick={() => handleDeleteImage(img.id)} className="text-slate-400 hover:text-red-500 p-1 text-lg opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">×</button>
                   </div>
                 </div>
               ))}

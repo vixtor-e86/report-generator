@@ -86,49 +86,45 @@ export default function SuggestionsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-[40px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-100">
         {/* Header */}
-        <div className="p-6 sm:p-8 border-b border-gray-200">
+        <div className="p-8 sm:p-10 border-b border-slate-50">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
-              💡 AI Suggestions
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-tighter">
+              AI Analysis
             </h3>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 transition"
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-900"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
-          <p className="text-sm text-gray-600">
-            Chapter {chapter?.chapter_number}: {chapter?.title}
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+            Chapter {chapter?.chapter_number} • Technical Improvements
           </p>
         </div>
 
         {/* Body */}
-        <div className="p-6 sm:p-8">
+        <div className="p-8 sm:p-10">
           {/* Loading State */}
           {loading && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-600 border-t-transparent mx-auto mb-4"></div>
-              <p className="text-gray-600">Analyzing chapter...</p>
-              <p className="text-xs text-gray-500 mt-2">This uses only ~1,000 tokens</p>
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-900 border-t-transparent mx-auto mb-6"></div>
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Architect is scanning content...</p>
+              <p className="text-[10px] text-slate-400 mt-2 italic">Minimal token impact</p>
             </div>
           )}
 
           {/* Error State */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <div className="bg-red-50 border border-red-100 rounded-2xl p-5 mb-6">
+              <div className="flex items-start gap-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-red-600 mt-0.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                 <div>
-                  <p className="text-sm font-semibold text-red-900">Analysis Failed</p>
-                  <p className="text-xs text-red-700 mt-1">{error}</p>
+                  <p className="text-xs font-black text-red-900 uppercase tracking-widest">Analysis Failed</p>
+                  <p className="text-[11px] text-red-700 mt-1 font-medium leading-relaxed">{error}</p>
                 </div>
               </div>
             </div>
@@ -138,91 +134,48 @@ export default function SuggestionsModal({
           {suggestions && !loading && (
             <>
               {/* Token Savings Badge */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-green-800">
-                  <strong>Analysis cost: {tokensUsed} tokens</strong> · Saved ~9,000 tokens by not regenerating immediately
+              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mb-6 flex items-center gap-3">
+                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-50">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wide">
+                  Analysis Complete: <span className="font-black text-emerald-900">{tokensUsed} tokens used</span>
                 </p>
               </div>
 
               {/* Suggestions Display */}
-              <div className="bg-purple-50 rounded-lg p-4 sm:p-6 mb-4 border border-purple-200">
-                <h4 className="text-sm font-bold text-purple-900 mb-3 flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                  Recommended Improvements:
+              <div className="bg-slate-50 rounded-3xl p-6 sm:p-8 mb-8 border border-slate-100">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                  Recommended Technical Fixes
                 </h4>
-                <div className="text-sm text-purple-900 whitespace-pre-wrap leading-relaxed space-y-2">
+                <div className="text-sm text-slate-900 whitespace-pre-wrap leading-relaxed space-y-4">
                   {suggestions.split('\n').map((line, idx) => (
-                    <div key={idx} className={line.match(/^\d+\./) ? 'ml-0' : 'ml-4'}>
+                    <div key={idx} className={`${line.match(/^\d+\./) ? 'ml-0 font-black' : 'ml-6 font-medium text-slate-600'} text-xs sm:text-sm`}>
                       {line}
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Options Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="text-sm text-blue-800">
-                    <p className="font-semibold mb-2">Two options:</p>
-                    <div className="space-y-2 text-xs">
-                      <div className="bg-white rounded p-2">
-                        <p className="font-semibold text-green-700 mb-1">
-                          ✅ Manual Edit (FREE - 0 tokens)
-                        </p>
-                        <p className="text-blue-700">
-                          Make these changes yourself in the editor. Best for small tweaks and specific fixes.
-                        </p>
-                      </div>
-                      <div className="bg-white rounded p-2">
-                        <p className="font-semibold text-purple-700 mb-1">
-                          🔄 AI Regeneration (~10,000 tokens)
-                        </p>
-                        <p className="text-blue-700">
-                          Let AI apply all suggestions automatically. Use when major rewrites are needed.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={handleManualEdit}
-                  className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2 text-sm sm:text-base"
+                  className="flex-1 bg-white border border-slate-200 text-slate-600 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all shadow-sm active:scale-95"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Manual Edit (0 tokens)
+                  Manual Correction
                 </button>
                 <button
                   onClick={handleApplyAndRegenerate}
                   disabled={regenerating}
-                  className="flex-1 bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base"
+                  className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95 disabled:opacity-40 flex items-center justify-center gap-3"
                 >
                   {regenerating ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                      Regenerating...
-                    </>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white"></div>
                   ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      AI Regenerate (10k tokens)
-                    </>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                   )}
+                  Auto-Apply
                 </button>
               </div>
             </>
