@@ -97,9 +97,23 @@ export async function POST(request) {
       : `### CITATION STYLE: STRICT APA\n1. IN-TEXT: Use (Author, Year) format.\n2. BIBLIOGRAPHY: List at end under "## References" in alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
 
     // --- 4. Enhanced Reference Sourcing (Web Search Integration) ---
+    const { data: existingPapers } = await supabaseAdmin
+      .from('premium_research_papers')
+      .select('*')
+      .eq('project_id', projectId);
+
     let finalReferencesList = [...selectedPapers];
     const totalNeeded = maxReferences || 10;
     
+    if (existingPapers && !skipReferences) {
+      for (const ep of existingPapers) {
+        if (finalReferencesList.length >= totalNeeded) break;
+        if (!finalReferencesList.some(p => (p.external_id && p.external_id === ep.external_id) || p.title.toLowerCase() === ep.title.toLowerCase())) {
+          finalReferencesList.push(ep);
+        }
+      }
+    }
+
     if (finalReferencesList.length < totalNeeded && !skipReferences) {
       try {
         const query = (project.title + " " + project.description).substring(0, 200);
@@ -145,6 +159,20 @@ export async function POST(request) {
     const chapterTitle = currentChapterData?.title || `Chapter ${chapterNumber}`;
     const mandatorySections = currentChapterData?.sections?.length > 0 ? `## MANDATORY SECTIONS\n` + currentChapterData.sections.map(s => `- ${s}`).join('\n') : '';
 
+    const imageInstruction = selectedImages.length > 0
+      ? `\n\n### MANDATORY IMAGE ATTACHMENTS (STRICT RULES):\n` +
+        `You MUST include the following images in your technical explanation. To insert an image, use this EXACT syntax: ![Caption](URL)\n` +
+        `STRICT REQUIREMENT: You MUST refer to these images in your technical text (e.g., "as shown in Figure [X]...").\n` +
+        selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", URL: ${img.file_url}`).join('\n')
+      : '';
+
+    const referenceRequirements = !skipReferences ? `
+    ## CITATION AND REFERENCE REQUIREMENTS
+    ${citationStyleInst}
+    - COUNT: You MUST include EXACTLY ${totalNeeded} references in your bibliography. 
+    - SOURCING: If the 'CORE RESEARCH REFERENCES' list above is shorter than ${totalNeeded}, you MUST use your internal search/knowledge to find additional REAL academic papers from 2022-2026 to reach the exact count.
+    - RECENTCY: Every citation must be from 2022 to 2026. No older sources allowed.` : '';
+
     const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
     TASK: Author a detailed Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${project.title}".
 
@@ -156,20 +184,16 @@ export async function POST(request) {
 
     ${mandatorySections}
     ${contextualSourceData ? `## MANDATORY EXPERIMENTAL DATA ANALYSIS\n${contextualSourceData}` : ''}
+    ${imageInstruction}
     ${referencesMapping}
-    
-    ## CITATION AND REFERENCE REQUIREMENTS
-    ${citationStyleInst}
-    - COUNT: You MUST include EXACTLY ${totalNeeded} references in your bibliography. 
-    - SOURCING: If the 'CORE RESEARCH REFERENCES' list above is shorter than ${totalNeeded}, you MUST use your internal search/knowledge to find additional REAL academic papers from 2022-2026 to reach the exact count.
-    - RECENTCY: Every citation must be from 2022 to 2026. No older sources allowed.
+    ${referenceRequirements}
 
     ## WRITING REQUIREMENTS
     - FORMAT: Markdown.
     - TARGET: ${targetWordCount} words.
     - USER INSTRUCTIONS: ${userPrompt || 'Deliver elite technical content.'}
 
-    ${skipReferences ? '--- NO REFERENCES.' : '--- MANDATORY: Include a "## References" section at the end.'}`;
+    ${skipReferences ? '--- STRICT REQUIREMENT: DO NOT include a References section and DO NOT include any citations in the text. ---' : '--- MANDATORY: Include a "## References" section at the end. ---'}`;
 
     // --- 7. Call AI & Save ---
     const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 8000, temperature: 0.6 });

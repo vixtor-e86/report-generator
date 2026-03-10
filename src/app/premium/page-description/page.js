@@ -24,7 +24,6 @@ function ProjectDescriptionContent() {
     faculty: searchParams.get('faculty') || '',
     department: searchParams.get('department') || '',
     templateType: searchParams.get('type') || '5-chapter',
-    useManualObjectives: false,
     manualObjectives: ['']
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -77,6 +76,7 @@ function ProjectDescriptionContent() {
     const newObjs = [...formData.manualObjectives];
     newObjs[index] = value;
     setFormData(prev => ({ ...prev, manualObjectives: newObjs }));
+    if (errors.objectives) setErrors(prev => ({ ...prev, objectives: '' }));
   };
 
   const validateForm = () => {
@@ -85,6 +85,12 @@ function ProjectDescriptionContent() {
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (!formData.faculty) newErrors.faculty = 'Please select a faculty';
     if (!formData.department) newErrors.department = 'Please select a department';
+    
+    const validObjectives = formData.manualObjectives.filter(o => o.trim());
+    if (validObjectives.length === 0) {
+      newErrors.objectives = 'At least one research objective is required';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -142,8 +148,8 @@ function ProjectDescriptionContent() {
             payment_status: isAdmin ? 'admin_bypass' : 'paid',
             amount_paid: isAdmin ? 0 : 20000,
             template_id: newCustomTemplate.id,
-            use_manual_objectives: formData.useManualObjectives,
-            manual_objectives: formData.useManualObjectives ? formData.manualObjectives.filter(o => o.trim()) : []
+            use_manual_objectives: true,
+            manual_objectives: formData.manualObjectives.filter(o => o.trim())
           })
           .select()
           .single();
@@ -180,40 +186,33 @@ function ProjectDescriptionContent() {
             {errors.description && <span className="error-message">{errors.description}</span>}
           </div>
 
-          {/* NEW: Manual Objectives Section */}
+          {/* Mandatory Objectives Section */}
           <div className="form-group" style={{ marginTop: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ width: '32px', height: '32px', background: '#111827', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}><Icons.Target /></div>
                 <div>
-                  <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#111827' }}>Aims & Objectives</p>
+                  <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#111827' }}>Aims & Objectives <span style={{ color: '#ef4444' }}>*</span></p>
                   <p style={{ margin: 0, fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Define specific goals for your project</p>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: formData.useManualObjectives ? '#111827' : '#94a3b8' }}>Manual</span>
-                <button type="button" onClick={() => setFormData({...formData, useManualObjectives: !formData.useManualObjectives})} style={{ width: '44px', height: '22px', borderRadius: '20px', background: formData.useManualObjectives ? '#111827' : '#d1d5db', position: 'relative', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}>
-                  <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: formData.useManualObjectives ? '24px' : '2px', transition: 'all 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} />
-                </button>
-              </div>
             </div>
 
-            {formData.useManualObjectives && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '0 8px' }}>
-                {formData.manualObjectives.map((obj, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '8px' }}>
-                    <div style={{ padding: '10px', background: '#f1f5f9', borderRadius: '8px', fontSize: '12px', fontWeight: '800', color: '#111827', minWidth: '32px', textAlign: 'center' }}>{idx + 1}</div>
-                    <input type="text" value={obj} onChange={(e) => handleObjectiveChange(idx, e.target.value)} placeholder="e.g. To design a smart irrigation system..." style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '13px', outline: 'none' }} />
-                    {formData.manualObjectives.length > 1 && (
-                      <button type="button" onClick={() => handleRemoveObjective(idx)} style={{ background: '#fef2f2', border: 'none', color: '#ef4444', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}><Icons.Trash /></button>
-                    )}
-                  </div>
-                ))}
-                <button type="button" onClick={handleAddObjective} style={{ marginTop: '6px', padding: '12px', background: 'white', border: '1px dashed #111827', color: '#111827', borderRadius: '12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                  <Icons.Plus /> Add Another Objective
-                </button>
-              </motion.div>
-            )}
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '0 8px' }}>
+              {formData.manualObjectives.map((obj, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ padding: '10px', background: '#f1f5f9', borderRadius: '8px', fontSize: '12px', fontWeight: '800', color: '#111827', minWidth: '32px', textAlign: 'center' }}>{idx + 1}</div>
+                  <input type="text" value={obj} onChange={(e) => handleObjectiveChange(idx, e.target.value)} placeholder="e.g. To design a smart irrigation system..." style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '13px', outline: 'none' }} />
+                  {formData.manualObjectives.length > 1 && (
+                    <button type="button" onClick={() => handleRemoveObjective(idx)} style={{ background: '#fef2f2', border: 'none', color: '#ef4444', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}><Icons.Trash /></button>
+                  )}
+                </div>
+              ))}
+              {errors.objectives && <span className="error-message" style={{ marginLeft: '40px' }}>{errors.objectives}</span>}
+              <button type="button" onClick={handleAddObjective} style={{ marginTop: '6px', padding: '12px', background: 'white', border: '1px dashed #111827', color: '#111827', borderRadius: '12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Icons.Plus /> Add Another Objective
+              </button>
+            </motion.div>
           </div>
 
           <div className="form-row">

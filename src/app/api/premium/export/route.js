@@ -84,11 +84,10 @@ export async function POST(request) {
     const { data: project } = await supabaseAdmin.from('premium_projects').select('*, custom_templates(*)').eq('id', projectId).single();
     const { data: chapters } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).order('chapter_number', { ascending: true });
     
-    const { data: references } = await supabaseAdmin.from('project_references')
+    const { data: references } = await supabaseAdmin.from('premium_research_papers')
       .select('*')
       .eq('project_id', projectId)
-      .order('chapter_number', { ascending: true })
-      .order('order_number', { ascending: true });
+      .order('created_at', { ascending: true });
 
     const { data: assets } = await supabaseAdmin.from('premium_assets').select('*').eq('project_id', projectId);
 
@@ -179,7 +178,6 @@ export async function POST(request) {
             }
           }
 
-          // Hierarchy: Section 14pt (28), Sub-section 12pt (24)
           if (line.startsWith('## ') || line.startsWith('### ')) {
             const cleanText = line.replace(/^#+\s+/, '');
             chapterChildren.push(new Paragraph({ 
@@ -204,9 +202,19 @@ export async function POST(request) {
         }
         sections.push({ children: chapterChildren });
       }
+      
+      // References Page (Always at the end)
       if (references?.length > 0) {
-        sections.push({ children: [new Paragraph({ text: 'REFERENCES', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } }), ...references.map((r, i) => new Paragraph({ text: `${i + 1}. ${r.reference_text}`, alignment: AlignmentType.JUSTIFIED, spacing: { after: 150 } }))] });
+        sections.push({ children: [
+          new Paragraph({ text: 'REFERENCES', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } }), 
+          ...references.map((r, i) => {
+            const auths = Array.isArray(r.authors) ? r.authors.join(', ') : (r.authors || 'Unknown');
+            const refText = `${auths} (${r.year}). "${r.title}". ${r.venue || 'Research Journal'}.`;
+            return new Paragraph({ children: [new TextRun({ text: `${i + 1}. ${refText}`, font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED, spacing: { after: 150 } });
+          })
+        ] });
       }
+
       finalBuffer = await Packer.toBuffer(new Document({ sections, numbering }));
       contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     } else {
@@ -258,7 +266,7 @@ export async function POST(request) {
             pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); continue;
           }
           if (line.startsWith('#### ')) {
-            pdf.setFont("helvetica", "bold"); pdf.setFontSize(11); // Smaller for sub-sections
+            pdf.setFont("helvetica", "bold"); pdf.setFontSize(11);
             if (y > 270) { footer(); pdf.addPage(); currPage++; y = 30; }
             pdf.text(line.replace('#### ', ''), 20, y); y += 8;
             pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); continue;
@@ -290,24 +298,29 @@ export async function POST(request) {
         }
         footer(); pdf.addPage(); currPage++;
       }
+      
+      // References Page (PDF)
       if (references?.length > 0) {
         pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.text("REFERENCES", 105, 40, { align: 'center' });
         pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); let ry = 60;
         references.forEach((r, idx) => {
-          const split = pdf.splitTextToSize(`${idx + 1}. ${r.reference_text}`, 170);
+          const auths = Array.isArray(r.authors) ? r.authors.join(', ') : (r.authors || 'Unknown');
+          const refText = `${idx + 1}. ${auths} (${r.year}). "${r.title}". ${r.venue || 'Research Journal'}.`;
+          const split = pdf.splitTextToSize(refText, 170);
           if (ry + (split.length * 5) > 270) { footer(); pdf.addPage(); currPage++; ry = 30; }
           pdf.text(split, 20, ry); ry += (split.length * 5) + 5;
         });
         footer();
       }
+
       const generatedDoc = await PDFDocument.load(pdf.output('arraybuffer'));
       const finalPdf = await PDFDocument.create();
       if (orderedDocIds?.length > 0) {
-        const sorted = orderedDocIds.map(id => assets.find(a => id === id)).filter(Boolean);
+        const sorted = orderedDocIds.map(id => assets.find(a => a.id === id)).filter(Boolean);
         for (const a of sorted) {
           try {
             const res = await fetch(a.file_url);
-            const docToMerge = await PDFDocument.load(await (await fetch(a.file_url)).arrayBuffer());
+            const docToMerge = await PDFDocument.load(await res.arrayBuffer());
             const pages = await finalPdf.copyPages(docToMerge, docToMerge.getPageIndices());
             pages.forEach(p => finalPdf.addPage(p));
           } catch (e) {}

@@ -554,15 +554,28 @@ export default function ContentArea({
           </div>
           <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', minHeight: '700px', display: 'flex', flexDirection: 'column' }}>
             {workspaceMode === 'editor' ? (
-              <textarea
-                ref={textareaRef}
-                className="chapter-editor"
-                value={localContent}
-                onChange={(e) => { setLocalContent(e.target.value); updateCursorPosition(); }}
-                onSelect={updateCursorPosition} onClick={updateCursorPosition} onKeyUp={updateCursorPosition}
-                placeholder={`Write your ${activeChapter.title} here...`}
-                style={{ width: '100%', minHeight: '700px', border: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.8', color: '#111827', padding: '40px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'vertical', flex: 1 }}
-              />
+              <>
+                <div style={{ padding: '12px 40px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Markdown Guide:</span>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#4b5563' }}>
+                    <span><strong>#</strong> Header 1</span>
+                    <span><strong>##</strong> Header 2</span>
+                    <span><strong>**text**</strong> Bold</span>
+                    <span><strong>*text*</strong> Italic</span>
+                    <span><strong>-</strong> List</span>
+                    <span><strong>1.</strong> Numbered</span>
+                  </div>
+                </div>
+                <textarea
+                  ref={textareaRef}
+                  className="chapter-editor"
+                  value={localContent}
+                  onChange={(e) => { setLocalContent(e.target.value); updateCursorPosition(); }}
+                  onSelect={updateCursorPosition} onClick={updateCursorPosition} onKeyUp={updateCursorPosition}
+                  placeholder={`Write your ${activeChapter.title} here...`}
+                  style={{ width: '100%', minHeight: '700px', border: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.8', color: '#111827', padding: '40px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'vertical', flex: 1 }}
+                />
+              </>
             ) : (
               <div className="markdown-preview premium-print-area" style={{ padding: '60px', minHeight: '700px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                 <style>{`
