@@ -194,7 +194,7 @@ export default function ChapterView({ chapter, images, generating }) {
         print:prose-headings:font-serif
         print:prose-h2:text-[14pt] print:prose-h2:font-bold
         print:prose-h3:text-[13pt] print:prose-h3:font-bold print:prose-h3:border-b-0
-        print:prose-h4:text-[12pt] print:prose-h4:font-bold">
+        print:prose-h4:text-[12pt] print:prose-h4:font-bold
         print:prose-li:font-serif print:prose-li:text-[12pt]
         print:prose-strong:font-bold print:prose-strong:text-black
         print:prose-table:text-[11pt]">
