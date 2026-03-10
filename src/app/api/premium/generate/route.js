@@ -30,41 +30,62 @@ export async function POST(request) {
     const provider = process.env.PREMIUM_AI_PROVIDER || 'deepseek';
     const model = process.env.PREMIUM_AI_MODEL || 'deepseek-chat';
 
-    // --- 1. Surgical Modification Logic (ENHANCED) ---
+    // --- 1. Surgical Modification Logic (ROBUST) ---
     if (isModification && targetContent) {
       const isPartial = modificationType === 'partial';
       
+      // CRITICAL: Normalize newlines for reliable string replacement
+      const normalizedFull = fullContent.replace(/\r\n/g, '\n');
+      const normalizedTarget = targetContent.replace(/\r\n/g, '\n');
+
       const surgicalPrompt = `You are a high-end academic system architect and expert editor.
       TASK: ${isPartial ? 'Rewrite ONLY the specific section(s) provided.' : 'Rewrite the entire chapter based on user instructions.'}
       PROJECT: "${project.title}"
       CHAPTER: ${chapterNumber}
 
       ## ORIGINAL CONTENT TO BE FIXED:
-      ${targetContent}
+      ${normalizedTarget}
 
-      ${isPartial ? `## CONTEXT (DO NOT REWRITE THIS PART): 
-      Note: This section exists within a larger chapter. Ensure your tone and technical depth match the existing report flow.` : ''}
+      ${isPartial ? `## CONTEXT: 
+      This section is part of a larger report. Ensure your new content flows perfectly into the existing text.` : ''}
 
       ## USER INSTRUCTIONS FOR MODIFICATION:
       ${userPrompt}
 
-      ## STRICT REQUIREMENTS:
-      1. ONLY return the rewritten text. No introductory or closing remarks.
-      2. Keep the same Markdown formatting (headings, sub-headings).
-      3. ${isPartial ? 'Your output will be surgically pasted back into the document. It must integrate perfectly.' : 'Return the full rewritten chapter.'}
-      4. Maintain high technical accuracy and formal academic tone.
-      5. Respect the ${referenceStyle.toUpperCase()} citation style if any references are present in the target content.`;
+      ## STRICT REQUIREMENTS (FAILURE TO FOLLOW WILL BREAK THE DOCUMENT):
+      1. ONLY return the rewritten text. No conversational filler.
+      2. Keep the exact same Markdown formatting.
+      3. MANDATORY: You MUST include the same Section Headers (## or ###) that were in the original content. Do not omit them.
+      4. Maintain technical accuracy and respect the ${referenceStyle.toUpperCase()} citation style.`;
 
       const aiResponse = await callAI(surgicalPrompt, { provider, model, maxTokens: 4000, temperature: 0.4 });
       
-      // Merge logic: If partial, replace the segment. If whole, use the new content entirely.
-      const updatedFullContent = isPartial ? fullContent.replace(targetContent, aiResponse.content) : aiResponse.content;
+      let finalAiContent = aiResponse.content.trim();
+      
+      // Merge logic with normalization safety
+      let updatedFullContent;
+      if (isPartial) {
+        if (normalizedFull.includes(normalizedTarget)) {
+          updatedFullContent = normalizedFull.replace(normalizedTarget, finalAiContent);
+        } else {
+          // Fallback if exact match fails due to hidden whitespace
+          console.warn("Exact match failed, attempting trimmed match");
+          const trimmedTarget = normalizedTarget.trim();
+          if (normalizedFull.includes(trimmedTarget)) {
+            updatedFullContent = normalizedFull.replace(trimmedTarget, finalAiContent);
+          } else {
+            throw new Error("Could not locate the selected section in the document. Try selecting a different part.");
+          }
+        }
+      } else {
+        updatedFullContent = finalAiContent;
+      }
 
       // Save version
       const { data: chapter } = await supabaseAdmin.from('premium_chapters').select('id').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
       if (chapter) {
         await supabaseAdmin.from('premium_chapters').update({ content: updatedFullContent, updated_at: new Date().toISOString() }).eq('id', chapter.id);
-        await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: updatedFullContent, prompt_used: `MODIFICATION [${modificationType}]: ${userPrompt}`, model_used: aiResponse.model });
+        await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: updatedFullContent, prompt_used: `MODIFICATION: ${userPrompt.substring(0, 50)}...`, model_used: aiResponse.model });
       }
 
       return NextResponse.json({ success: true, content: updatedFullContent });
@@ -91,17 +112,13 @@ export async function POST(request) {
 
     // --- 3. Citation & Reference Logic ---
     const citationStyleInst = referenceStyle.toUpperCase() === 'IEEE'
-      ? `### CITATION STYLE: STRICT IEEE\n1. IN-TEXT: Use numbers in square brackets like [1], [2]. Sequential order.\n2. BIBLIOGRAPHY: List at end under "## References" in numerical order.`
+      ? `### CITATION STYLE: STRICT IEEE\n1. IN-TEXT: [1], [2].\n2. BIBLIOGRAPHY: Numerical order.`
       : referenceStyle.toUpperCase() === 'HARVARD'
-      ? `### CITATION STYLE: STRICT HARVARD\n1. IN-TEXT: Use (Author Year) format without comma.\n2. BIBLIOGRAPHY: List at end under "## References" in alphabetical order by author. Format: Author, A.A. (Year) Title. City: Publisher.`
-      : `### CITATION STYLE: STRICT APA\n1. IN-TEXT: Use (Author, Year) format.\n2. BIBLIOGRAPHY: List at end under "## References" in alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
+      ? `### CITATION STYLE: STRICT HARVARD\n1. IN-TEXT: (Author Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A.A. (Year) Title. City: Publisher.`
+      : `### CITATION STYLE: STRICT APA\n1. IN-TEXT: (Author, Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
 
-    // --- 4. Enhanced Reference Sourcing (Web Search Integration) ---
-    const { data: existingPapers } = await supabaseAdmin
-      .from('premium_research_papers')
-      .select('*')
-      .eq('project_id', projectId);
-
+    // --- 4. Enhanced Reference Sourcing ---
+    const { data: existingPapers } = await supabaseAdmin.from('premium_research_papers').select('*').eq('project_id', projectId);
     let finalReferencesList = [...selectedPapers];
     const totalNeeded = maxReferences || 10;
     
@@ -137,6 +154,7 @@ export async function POST(request) {
 
     const referencesMapping = !skipReferences && finalReferencesList.length > 0
       ? `\n\n### CORE RESEARCH REFERENCES (MANDATORY):\n` +
+        `STRICT RULE: Prioritize reusing these specific references. Consistency is required.\n\n` +
         finalReferencesList.slice(0, totalNeeded).map((p, idx) => {
           const auths = Array.isArray(p.authors) ? p.authors.map(a => typeof a === 'object' ? a.name : a).join(', ') : (p.authors || 'Unknown');
           return `SOURCE [${idx + 1}]: ${auths} (${p.year}). "${p.title}". ${p.venue || 'Research Journal'}.`;
@@ -160,18 +178,17 @@ export async function POST(request) {
     const mandatorySections = currentChapterData?.sections?.length > 0 ? `## MANDATORY SECTIONS\n` + currentChapterData.sections.map(s => `- ${s}`).join('\n') : '';
 
     const imageInstruction = selectedImages.length > 0
-      ? `\n\n### MANDATORY IMAGE ATTACHMENTS (STRICT RULES):\n` +
-        `You MUST include the following images in your technical explanation. To insert an image, use this EXACT syntax: ![Caption](URL)\n` +
-        `STRICT REQUIREMENT: You MUST refer to these images in your technical text (e.g., "as shown in Figure [X]...").\n` +
+      ? `\n\n### MANDATORY IMAGE ATTACHMENTS:\n` +
+        `Insert using: ![Caption](URL). Reference them in text (e.g. "see Fig X").\n` +
         selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", URL: ${img.file_url}`).join('\n')
       : '';
 
     const referenceRequirements = !skipReferences ? `
     ## CITATION AND REFERENCE REQUIREMENTS
     ${citationStyleInst}
-    - COUNT: You MUST include EXACTLY ${totalNeeded} references in your bibliography. 
-    - SOURCING: If the 'CORE RESEARCH REFERENCES' list above is shorter than ${totalNeeded}, you MUST use your internal search/knowledge to find additional REAL academic papers from 2022-2026 to reach the exact count.
-    - RECENTCY: Every citation must be from 2022 to 2026. No older sources allowed.` : '';
+    - COUNT: Exactly ${totalNeeded} references. 
+    - SOURCING: Fulfill missing count using 2022-2026 technical papers.
+    - RECENTCY: 2022-2026 only.` : '';
 
     const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
     TASK: Author a detailed Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${project.title}".
@@ -193,7 +210,7 @@ export async function POST(request) {
     - TARGET: ${targetWordCount} words.
     - USER INSTRUCTIONS: ${userPrompt || 'Deliver elite technical content.'}
 
-    ${skipReferences ? '--- STRICT REQUIREMENT: DO NOT include a References section and DO NOT include any citations in the text. ---' : '--- MANDATORY: Include a "## References" section at the end. ---'}`;
+    ${skipReferences ? '--- STRICT: NO REFERENCES OR CITATIONS. ---' : '--- MANDATORY: Include "## References" at the end. ---'}`;
 
     // --- 7. Call AI & Save ---
     const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 8000, temperature: 0.6 });
