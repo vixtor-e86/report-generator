@@ -76,6 +76,41 @@ function parseInlineFormatting(text, fontSize = 24, isBold = false) {
   return textRuns.length > 0 ? textRuns : [new TextRun({ text: processedText, font: 'Times New Roman', size: fontSize, bold: isBold })];
 }
 
+// --- NEW: Reference Extractor Logic ---
+function extractMasterReferences(chapters, dbReferences) {
+  const refSet = new Set();
+  
+  // 1. Add all DB references first (formatted)
+  if (dbReferences) {
+    dbReferences.forEach(r => {
+      const auths = Array.isArray(r.authors) ? r.authors.join(', ') : (r.authors || 'Unknown');
+      const refText = `${auths} (${r.year}). "${r.title}". ${r.venue || 'Research Journal'}.`;
+      refSet.add(refText.trim());
+    });
+  }
+
+  // 2. Scan chapter content for AI-generated references
+  chapters.forEach(ch => {
+    const content = ch.content || "";
+    // Find the references section
+    const parts = content.split(/## References|### References/i);
+    if (parts.length > 1) {
+      const refSection = parts[parts.length - 1].trim();
+      const lines = refSection.split('\n');
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        // Clean prefixes like "1. ", "[1] ", "- ", "* "
+        const cleaned = trimmed.replace(/^(\[?\d+\]?\.?|\-|\*)\s+/, '').trim();
+        if (cleaned.length > 30) { // Ignore short/broken lines
+          refSet.add(cleaned);
+        }
+      });
+    }
+  });
+
+  return Array.from(refSet).sort();
+}
+
 export async function POST(request) {
   try {
     const { projectId, userId, type, orderedDocIds, options } = await request.json();
@@ -84,10 +119,14 @@ export async function POST(request) {
     const { data: project } = await supabaseAdmin.from('premium_projects').select('*, custom_templates(*)').eq('id', projectId).single();
     const { data: chapters } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).order('chapter_number', { ascending: true });
     
-    const { data: references } = await supabaseAdmin.from('premium_research_papers')
+    // Fetch manual DB references
+    const { data: dbReferences } = await supabaseAdmin.from('premium_research_papers')
       .select('*')
       .eq('project_id', projectId)
       .order('created_at', { ascending: true });
+
+    // Combine DB + Content references for a master list
+    const finalMasterReferences = extractMasterReferences(chapters, dbReferences);
 
     const { data: assets } = await supabaseAdmin.from('premium_assets').select('*').eq('project_id', projectId);
 
@@ -134,6 +173,7 @@ export async function POST(request) {
           new Paragraph({ children: [new TextRun({ text: `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`, font: 'Times New Roman', size: 32, bold: true })], alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } })
         ];
 
+        // Ensure individual chapter references are stripped from body to avoid duplication
         const contentBody = (ch.content || "").split(/### References|## References/i)[0];
         const rawLines = contentBody.split('\n');
         
@@ -183,6 +223,7 @@ export async function POST(request) {
             chapterChildren.push(new Paragraph({ 
               children: [new TextRun({ text: cleanText, font: 'Times New Roman', size: 28, bold: true })], 
               heading: HeadingLevel.HEADING_2, 
+              alignment: AlignmentType.LEFT,
               spacing: { before: 200, after: 200 } 
             }));
           } 
@@ -203,14 +244,12 @@ export async function POST(request) {
         sections.push({ children: chapterChildren });
       }
       
-      // References Page (Always at the end)
-      if (references?.length > 0) {
+      // MASTER REFERENCES PAGE (Always at the end)
+      if (finalMasterReferences.length > 0) {
         sections.push({ children: [
           new Paragraph({ text: 'REFERENCES', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } }), 
-          ...references.map((r, i) => {
-            const auths = Array.isArray(r.authors) ? r.authors.join(', ') : (r.authors || 'Unknown');
-            const refText = `${auths} (${r.year}). "${r.title}". ${r.venue || 'Research Journal'}.`;
-            return new Paragraph({ children: [new TextRun({ text: `${i + 1}. ${refText}`, font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED, spacing: { after: 150 } });
+          ...finalMasterReferences.map((ref, i) => {
+            return new Paragraph({ children: [new TextRun({ text: `${i + 1}. ${ref}`, font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED, spacing: { after: 150 } });
           })
         ] });
       }
@@ -299,14 +338,12 @@ export async function POST(request) {
         footer(); pdf.addPage(); currPage++;
       }
       
-      // References Page (PDF)
-      if (references?.length > 0) {
+      // MASTER REFERENCES PAGE (PDF)
+      if (finalMasterReferences.length > 0) {
         pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.text("REFERENCES", 105, 40, { align: 'center' });
         pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); let ry = 60;
-        references.forEach((r, idx) => {
-          const auths = Array.isArray(r.authors) ? r.authors.join(', ') : (r.authors || 'Unknown');
-          const refText = `${idx + 1}. ${auths} (${r.year}). "${r.title}". ${r.venue || 'Research Journal'}.`;
-          const split = pdf.splitTextToSize(refText, 170);
+        finalMasterReferences.forEach((ref, idx) => {
+          const split = pdf.splitTextToSize(`${idx + 1}. ${ref}`, 170);
           if (ry + (split.length * 5) > 270) { footer(); pdf.addPage(); currPage++; ry = 30; }
           pdf.text(split, 20, ry); ry += (split.length * 5) + 5;
         });
@@ -316,7 +353,7 @@ export async function POST(request) {
       const generatedDoc = await PDFDocument.load(pdf.output('arraybuffer'));
       const finalPdf = await PDFDocument.create();
       if (orderedDocIds?.length > 0) {
-        const sorted = orderedDocIds.map(id => assets.find(a => a.id === id)).filter(Boolean);
+        const sorted = orderedDocIds.map(id => assets.find(a => id === id)).filter(Boolean);
         for (const a of sorted) {
           try {
             const res = await fetch(a.file_url);
