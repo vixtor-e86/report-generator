@@ -328,7 +328,7 @@ export default function Dashboard() {
               <span className="text-2xl font-bold text-slate-900">₦0</span>
             </div>
             <ul className="space-y-3 mb-8">
-              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> 1 Project Limit</li>
+              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> 2 Images Max</li>
               <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Basic AI Model</li>
               <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> PDF Export Only</li>
             </ul>

@@ -686,7 +686,7 @@ export default function ContentArea({
                 </h3>
                 <p style={{ color: '#6b7280', lineHeight: '1.8', fontSize: '16px', maxWidth: '800px' }}>
                   Did you know you can fund your research by referring others? Use the <strong>Affiliate Dashboard</strong> to copy your unique referral link. 
-                  You earn <strong>10% commission</strong> (Standard) or <strong>15% commission</strong> (VIP) on every successful upgrade. 
+                  You earn <strong>10% commission</strong> (Standard) on every successful upgrade. 
                   Balances reset every Friday, and payouts are processed directly to your bank every Monday once you reach ₦10,000.
                 </p>
               </div>
