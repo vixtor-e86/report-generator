@@ -11,7 +11,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  */
 export async function callAI(prompt, options = {}) {
   const {
-    provider = process.env.AI_PROVIDER || 'deepseek', // Defaults to 'deepseek' as requested
+    provider = process.env.AI_PROVIDER || 'deepseek',
+    model = null, // Optional model override
     maxTokens = 4000,
     temperature = 0.7,
     stopSequences = null,
@@ -19,11 +20,11 @@ export async function callAI(prompt, options = {}) {
   } = options;
 
   if (provider === 'gemini') {
-    return await callGemini(prompt, maxTokens, temperature, fileParts);
+    return await callGemini(prompt, maxTokens, temperature, fileParts, model);
   } else if (provider === 'claude') {
-    return await callClaude(prompt, maxTokens, temperature, stopSequences);
+    return await callClaude(prompt, maxTokens, temperature, stopSequences, model);
   } else if (provider === 'deepseek') {
-    return await callDeepSeek(prompt, maxTokens, temperature);
+    return await callDeepSeek(prompt, maxTokens, temperature, model);
   } else {
     throw new Error(`Invalid AI provider: ${provider}. Use 'gemini', 'claude', or 'deepseek'`);
   }
@@ -32,17 +33,17 @@ export async function callAI(prompt, options = {}) {
 /**
  * Call DeepSeek API
  */
-async function callDeepSeek(prompt, maxTokens, temperature) {
+async function callDeepSeek(prompt, maxTokens, temperature, modelOverride = null) {
   try {
-    // If prompt is array, join it (DeepSeek is text-only for now)
     const textPrompt = Array.isArray(prompt) 
       ? prompt.filter(p => typeof p === 'string').join('\n')
       : prompt;
 
-    // Check if API key exists
     if (!process.env.DEEPSEEK_API_KEY) {
       throw new Error('DEEPSEEK_API_KEY not found in environment variables');
     }
+
+    const modelName = modelOverride || process.env.DEEPSEEK_MODEL || process.env.AI_MODEL || "deepseek-chat";
 
     const response = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
@@ -51,7 +52,7 @@ async function callDeepSeek(prompt, maxTokens, temperature) {
         "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`
       },
       body: JSON.stringify({
-        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+        model: modelName,
         messages: [{ role: "user", content: textPrompt }],
         max_tokens: maxTokens,
         temperature: temperature,
@@ -87,12 +88,11 @@ async function callDeepSeek(prompt, maxTokens, temperature) {
 /**
  * Call Google Gemini API
  */
-async function callGemini(prompt, maxTokens, temperature, fileParts = null) {
+async function callGemini(prompt, maxTokens, temperature, fileParts = null, modelOverride = null) {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // Get model from environment variable (defaults to flash)
-    const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest';
+    const modelName = modelOverride || process.env.GEMINI_MODEL || process.env.AI_MODEL || 'gemini-1.5-pro';
     
     const model = genAI.getGenerativeModel({
       model: modelName,
@@ -102,7 +102,6 @@ async function callGemini(prompt, maxTokens, temperature, fileParts = null) {
       }
     });
 
-    // Prepare content parts
     let contentParts = [];
     if (Array.isArray(prompt)) {
       contentParts = prompt;
@@ -110,7 +109,6 @@ async function callGemini(prompt, maxTokens, temperature, fileParts = null) {
       contentParts.push(prompt);
     }
 
-    // Add file parts if provided
     if (fileParts && Array.isArray(fileParts)) {
       contentParts = [...contentParts, ...fileParts];
     }
@@ -119,7 +117,6 @@ async function callGemini(prompt, maxTokens, temperature, fileParts = null) {
     const response = result.response;
     const text = response.text();
 
-    // Calculate tokens
     const tokensInput = estimateTokens(JSON.stringify(contentParts));
     const tokensOutput = estimateTokens(text);
 
@@ -143,12 +140,13 @@ async function callGemini(prompt, maxTokens, temperature, fileParts = null) {
 /**
  * Call Anthropic Claude API
  */
-async function callClaude(prompt, maxTokens, temperature, stopSequences) {
+async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOverride = null) {
   try {
-    // Check if API key exists
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new Error('ANTHROPIC_API_KEY not found in environment variables');
     }
+
+    const modelName = modelOverride || process.env.CLAUDE_MODEL || process.env.AI_MODEL || "claude-3-5-sonnet-20240620";
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -158,7 +156,7 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences) {
         "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify({
-        model: process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514",
+        model: modelName,
         max_tokens: maxTokens,
         temperature: temperature,
         messages: [{ role: "user", content: prompt }],
@@ -173,7 +171,6 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences) {
 
     const data = await response.json();
     
-    // Extract text from response
     const text = data.content
       .filter(block => block.type === 'text')
       .map(block => block.text)
@@ -198,7 +195,6 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences) {
 
 /**
  * Estimate token count (rough approximation)
- * 1 token ≈ 4 characters for English text
  */
 function estimateTokens(text) {
   if (!text) return 0;
@@ -207,34 +203,23 @@ function estimateTokens(text) {
 
 /**
  * Get cost estimate in Naira
- * @param {number} inputTokens 
- * @param {number} outputTokens 
- * @param {string} provider 
- * @returns {number} Cost in Naira
  */
 export function calculateCost(inputTokens, outputTokens, provider = 'deepseek') {
-  const USD_TO_NGN = 1650; // Update this as needed
+  const USD_TO_NGN = 1650;
 
   if (provider === 'deepseek') {
-    // DeepSeek pricing (approximate)
-    // Chat (V3): $0.14 / 1M input, $0.28 / 1M output (cache miss prices)
     const inputCost = (inputTokens / 1_000_000) * 0.14;
     const outputCost = (outputTokens / 1_000_000) * 0.28;
     return (inputCost + outputCost) * USD_TO_NGN;
   }
 
   if (provider === 'gemini') {
-    // Gemini pricing (as of Dec 2024)
-    // Flash: Free tier (60 RPM)
-    // Pro: $0.125 per 1M input tokens, $0.50 per 1M output tokens
     const inputCost = (inputTokens / 1_000_000) * 0.125;
     const outputCost = (outputTokens / 1_000_000) * 0.50;
     return (inputCost + outputCost) * USD_TO_NGN;
   } 
   
   if (provider === 'claude') {
-    // Claude Sonnet 4 pricing
-    // $3 per 1M input tokens, $15 per 1M output tokens
     const inputCost = (inputTokens / 1_000_000) * 3;
     const outputCost = (outputTokens / 1_000_000) * 15;
     return (inputCost + outputCost) * USD_TO_NGN;
@@ -245,10 +230,6 @@ export function calculateCost(inputTokens, outputTokens, provider = 'deepseek') 
 
 /**
  * Check if we have enough tokens left in project limit
- * @param {number} tokensUsed 
- * @param {number} tokensLimit 
- * @param {number} estimatedNewTokens 
- * @returns {object} { allowed: boolean, remaining: number, percentage: number }
  */
 export function checkTokenLimit(tokensUsed, tokensLimit, estimatedNewTokens = 0) {
   const remaining = tokensLimit - tokensUsed;
@@ -267,39 +248,17 @@ export function checkTokenLimit(tokensUsed, tokensLimit, estimatedNewTokens = 0)
 
 /**
  * Get user-friendly warning level based on token usage
- * @param {number} percentage - Usage percentage (0-100)
- * @returns {object} { level: string, color: string, message: string }
  */
 export function getTokenWarningLevel(percentage) {
   if (percentage >= 100) {
-    return {
-      level: 'critical',
-      color: 'red',
-      message: 'Token limit reached! You can still edit manually or top up token.'
-    };
+    return { level: 'critical', color: 'red', message: 'Token limit reached! You can still edit manually or top up token.' };
   } else if (percentage >= 90) {
-    return {
-      level: 'danger',
-      color: 'red',
-      message: 'Only 10% tokens remaining. Use them wisely!'
-    };
+    return { level: 'danger', color: 'red', message: 'Only 10% tokens remaining. Use them wisely!' };
   } else if (percentage >= 80) {
-    return {
-      level: 'warning',
-      color: 'yellow',
-      message: '80% tokens used. Consider saving some for final adjustments.'
-    };
+    return { level: 'warning', color: 'yellow', message: '80% tokens used. Consider saving some for final adjustments.' };
   } else if (percentage >= 70) {
-    return {
-      level: 'caution',
-      color: 'yellow',
-      message: '70% tokens used. You\'re doing great!'
-    };
+    return { level: 'caution', color: 'yellow', message: '70% tokens used. You\'re doing great!' };
   } else {
-    return {
-      level: 'safe',
-      color: 'green',
-      message: 'Plenty of tokens available.'
-    };
+    return { level: 'safe', color: 'green', message: 'Plenty of tokens available.' };
   }
 }

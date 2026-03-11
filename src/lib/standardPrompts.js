@@ -28,7 +28,11 @@ CITATION RULES (${referenceStyle.toUpperCase()}):
 2. Sourcing: Use the provided project references. If more are needed, find REAL academic papers from 2022-2026.
 3. Fulfillment: You MUST include exactly 8-12 references in your technical analysis.
 ${existingRefsText}
-4. ${isLastChapter ? 'At the end, include a comprehensive "## References" list of ALL sources used in the entire project (max 40).' : 'Do NOT include a bibliography section; only in-text citations are needed for this draft.'}
+4. **MANDATORY**: At the end of THIS chapter, you MUST include a "## References" section. 
+   - List only the sources actually cited in this chapter.
+   - If this is the FINAL chapter, ensure the list is comprehensive for the whole project.
+   - Max 40 unique references for the entire project.
+   - RECENTCY: All sources must be between 2022-2026.
 `;
 }
 

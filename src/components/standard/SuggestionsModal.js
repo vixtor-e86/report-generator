@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function SuggestionsModal({ 
   isOpen, 
@@ -55,17 +57,12 @@ export default function SuggestionsModal({
   };
 
   const handleManualEdit = () => {
-    // Close modal and let user edit manually
     handleClose();
-    // Parent component should switch to edit mode
   };
 
   const handleApplyAndRegenerate = async () => {
     setRegenerating(true);
-    
-    // Build custom instruction from suggestions
     const instruction = `Apply these improvements:\n${suggestions}`;
-    
     try {
       await onApplyAndRegenerate(instruction);
       handleClose();
@@ -144,16 +141,14 @@ export default function SuggestionsModal({
               </div>
 
               {/* Suggestions Display */}
-              <div className="bg-slate-50 rounded-3xl p-6 sm:p-8 mb-8 border border-slate-100">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+              <div className="bg-slate-50 rounded-3xl p-6 sm:p-8 mb-8 border border-slate-100 prose prose-slate max-w-none prose-sm sm:prose-base">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2 not-prose">
                   Recommended Technical Fixes
                 </h4>
-                <div className="text-sm text-slate-900 whitespace-pre-wrap leading-relaxed space-y-4">
-                  {suggestions.split('\n').map((line, idx) => (
-                    <div key={idx} className={`${line.match(/^\d+\./) ? 'ml-0 font-black' : 'ml-6 font-medium text-slate-600'} text-xs sm:text-sm`}>
-                      {line}
-                    </div>
-                  ))}
+                <div className="text-slate-900 leading-relaxed">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {suggestions}
+                  </ReactMarkdown>
                 </div>
               </div>
 

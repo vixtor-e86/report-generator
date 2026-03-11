@@ -74,7 +74,6 @@ export async function POST(request) {
 
     const { data: template } = await supabase.from('templates').select('structure, faculty').eq('id', project.template_id).single();
     
-    // --- ENHANCED REFERENCE SEARCH (2022 - DATE) ---
     const { data: existingReferences } = await supabase
       .from('project_references')
       .select('*')
@@ -83,7 +82,6 @@ export async function POST(request) {
 
     let finalReferencesList = [...(existingReferences || [])];
     const totalMaxProjectRefs = 40;
-    const refsNeededThisChapter = 8;
 
     if (finalReferencesList.length < totalMaxProjectRefs && project.reference_style !== 'none') {
       try {
@@ -124,7 +122,10 @@ export async function POST(request) {
     });
 
     const startTime = Date.now();
+    
+    // Uses .env defaults: AI_PROVIDER and AI_MODEL
     const aiResult = await callAI(prompt, { maxTokens: 8000, temperature: 0.7 });
+    
     const durationSeconds = Math.round((Date.now() - startTime) / 1000);
 
     await supabase.from('standard_chapters').update({
@@ -139,7 +140,6 @@ export async function POST(request) {
       updated_at: new Date().toISOString()
     }).eq('id', chapter.id);
 
-    // Process and store extracted references
     if (project.reference_style && project.reference_style !== 'none') {
       try {
         const { extractFullReferences, storeReferences } = await import('@/lib/referenceExtractor');
