@@ -23,7 +23,8 @@ const Icons = {
   Eye: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
   ArrowRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>,
   Activity: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
-  Layers: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+  Layers: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>,
+  Upload: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
 };
 
 export default function ContentArea({ 
@@ -655,22 +656,40 @@ export default function ContentArea({
               bullets={["Specify project context", "IEEE & APA citations", "Mathematical formulas"]} />
             <GuideCard number="02" title="Technical Diagrams" icon={<Icons.Image />} description="Found in the tools bar. Generate technical illustrations or Mermaid flowcharts instantly."
               bullets={["Describe systems", "Professional styling", "One-click insertion"]} />
-            <GuideCard number="03" title="Bypass Detection" icon={<Icons.Shield />} description="Use the Humanizer to ensure your project sounds professional and bypasses AI detection tools."
+            <GuideCard number="03" title="Experimental Data" icon={<Icons.Upload />} description="Found in the Files Tab. Upload experimental readings (DOCX/TXT) for AI analysis."
+              bullets={["Upload raw data", "Automatic extraction", "Technical evaluation"]} />
+            <GuideCard number="04" title="Bypass Detection" icon={<Icons.Shield />} description="Use the Humanizer to ensure your project sounds professional and bypasses AI detection tools."
               bullets={["Removes AI patterns", "Natural sentence flow", "Preserves citations"]} />
-            <GuideCard number="04" title="Final Assembly" icon={<Icons.ArrowRight />} description="Assemble into high-quality PDF or editable Word files with automatic TOC and page numbering."
+            <GuideCard number="05" title="Final Assembly" icon={<Icons.ArrowRight />} description="Assemble into high-quality PDF or editable Word files with automatic TOC and page numbering."
               bullets={["Custom file order", "AI Abstract generation", "References page"]} />
           </div>
 
-          <div style={{ marginTop: '48px', background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)', borderRadius: '32px', padding: '40px', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <div style={{ position: 'absolute', top: 0, right: 0, padding: '20px', opacity: 0.1 }}><Icons.Activity /></div>
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ color: '#6366f1' }}>★</span> Pro Tip: Research Data Analysis
-              </h3>
-              <p style={{ color: '#9ca3af', lineHeight: '1.8', fontSize: '16px', maxWidth: '800px' }}>
-                Building <strong>Chapter 4</strong>? Upload your experimental readings (DOCX/TXT) to the <strong>Files Tab</strong>. 
-                In the Generator, select those files under "Materials." Our System Architect will read your real data and perform a customized technical evaluation for your project.
-              </p>
+          <div style={{ marginTop: '48px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)', borderRadius: '32px', padding: '40px', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+              <div style={{ position: 'absolute', top: 0, right: 0, padding: '20px', opacity: 0.1 }}><Icons.Activity /></div>
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ color: '#6366f1' }}>★</span> Pro Tip: Research Data Analysis
+                </h3>
+                <p style={{ color: '#9ca3af', lineHeight: '1.8', fontSize: '16px', maxWidth: '800px' }}>
+                  Building <strong>Chapter 4</strong>? Upload your experimental readings (DOCX/TXT) to the <strong>Files Tab</strong>. 
+                  In the Generator, select those files under "Materials." Our System Architect will read your real data and perform a customized technical evaluation for your project.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ background: 'white', borderRadius: '32px', padding: '40px', border: '1px solid #e5e7eb', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
+              <div style={{ position: 'absolute', top: 0, right: 0, padding: '20px', opacity: 0.05 }}><Icons.Zap /></div>
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px', color: '#111827' }}>
+                  <span style={{ color: '#10b981' }}>★</span> Pro Tip: Earn while you Research
+                </h3>
+                <p style={{ color: '#6b7280', lineHeight: '1.8', fontSize: '16px', maxWidth: '800px' }}>
+                  Did you know you can fund your research by referring others? Use the <strong>Affiliate Dashboard</strong> to copy your unique referral link. 
+                  You earn <strong>10% commission</strong> (Standard) or <strong>15% commission</strong> (VIP) on every successful upgrade. 
+                  Balances reset every Friday, and payouts are processed directly to your bank every Monday once you reach ₦10,000.
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import FacultyModal from '@/components/premium/modals/FacultyModal';
 import DepartmentModal from '@/components/premium/modals/DepartmentModal';
 import CustomModal from '@/components/premium/modals/CustomModal';
 import LoadingModal from '@/components/premium/modals/LoadingModal';
+import ManualBuilder from '@/components/premium/modals/ManualBuilder';
 import TemplateCard from '@/components/premium/TemplateCard';
 import '@/styles/template-selection.css';
 
@@ -152,6 +153,29 @@ export default function TemplateSelection() {
           handleProceed('thesis', { department: dept });
         }}
       />
+
+      {/* Manual Template Builder Modal */}
+      {activeModal === 'custom' && (
+        <div className="modal-backdrop" style={{ zIndex: 100 }}>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="modal-container"
+          >
+            <div className="modal-header">
+              <h2>Custom Structure</h2>
+              <p>Design your own chapter and section layout</p>
+              <button onClick={() => setActiveModal(null)} className="close-btn">×</button>
+            </div>
+            <ManualBuilder 
+              onBack={() => setActiveModal(null)}
+              onProceed={(data) => {
+                handleProceed('custom', data);
+              }}
+            />
+          </motion.div>
+        </div>
+      )}
 
       <CustomModal
         isOpen={notification.isOpen}

@@ -1,7 +1,7 @@
 // src/components/premium/modals/HumanizerModal.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -11,26 +11,94 @@ const Icons = {
   User: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>,
   Sparkles: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 0 01.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"></path></svg>,
   Save: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
-  Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+  Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>,
+  ChevronRight: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
 };
 
 export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, projectData, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification }) {
-  const [step, setStep] = useState('select'); // select | compare
+  const [step, setStep] = useState('select'); // select | sections | compare
   const [selectedChapterId, setSelectedChapterId] = useState(null);
-  const [results, setResults] = useState({ original: '', humanized: '' });
+  const [sections, setSections] = useState([]);
+  const [selectedSectionIds, setSelectedSectionIds] = useState(['all']);
+  const [results, setResults] = useState({ original: '', humanized: '', fullHumanized: '' });
   const [isProcessing, setIsGenerating] = useState(false);
 
   const wordsUsed = projectData?.humanizer_words_used || 0;
   const wordsLimit = projectData?.humanizer_words_limit || 10000;
   const percentage = Math.min((wordsUsed / wordsLimit) * 100, 100);
 
+  useEffect(() => {
+    if (selectedChapterId) {
+      const chapter = chapters.find(c => c.id === selectedChapterId);
+      if (chapter?.content) {
+        setSections(parseChapterIntoSections(chapter.content));
+        setSelectedSectionIds(['all']);
+      }
+    }
+  }, [selectedChapterId, chapters]);
+
+  const parseChapterIntoSections = (content) => {
+    if (!content) return [];
+    const normalized = content.replace(/\r\n/g, '\n');
+    const hasH2 = /^## /m.test(normalized);
+    const headingRegex = hasH2 ? /^## (.*)/gm : /^### (.*)/gm;
+    const parsedSections = [];
+    let match;
+    let lastIndex = 0;
+    while ((match = headingRegex.exec(normalized)) !== null) {
+      if (parsedSections.length === 0 && match.index > 0) {
+        const introContent = normalized.substring(0, match.index).trim();
+        if (introContent) parsedSections.push({ id: "intro", title: "Introduction", content: introContent });
+      }
+      if (parsedSections.length > 0 && parsedSections[parsedSections.length - 1].id !== "intro") {
+        const prevSection = parsedSections[parsedSections.length - 1];
+        prevSection.content = normalized.substring(lastIndex, match.index).trim();
+      }
+      parsedSections.push({ id: `sec-${parsedSections.length}`, title: match[1].trim(), content: "" });
+      lastIndex = match.index;
+    }
+    if (parsedSections.length > 0) {
+      const lastSection = parsedSections[parsedSections.length - 1];
+      lastSection.content = normalized.substring(lastIndex).trim();
+    } else {
+      parsedSections.push({ id: "whole", title: "Entire Chapter Content", content: normalized });
+    }
+    return parsedSections.filter(s => s.content.length > 0);
+  };
+
+  const toggleSection = (id) => {
+    if (id === 'all') {
+      setSelectedSectionIds(['all']);
+      return;
+    }
+    setSelectedSectionIds(prev => {
+      const filtered = prev.filter(i => i !== 'all');
+      if (filtered.includes(id)) {
+        const next = filtered.filter(i => i !== id);
+        return next.length === 0 ? ['all'] : next;
+      } else {
+        return [...filtered, id];
+      }
+    });
+  };
+
   const handleHumanize = async () => {
     const chapter = chapters.find(c => c.id === selectedChapterId);
     if (!chapter) return;
 
+    let contentToHumanize = "";
+    if (selectedSectionIds.includes('all')) {
+      contentToHumanize = chapter.content;
+    } else {
+      contentToHumanize = sections
+        .filter(s => selectedSectionIds.includes(s.id))
+        .map(s => s.content)
+        .join("\n\n");
+    }
+
     setIsGenerating(true);
-    setGlobalLoadingText('AI is rewriting your chapter for academic flow...');
-    setIsGlobalLoading(true);
+    if (setGlobalLoadingText) setGlobalLoadingText('AI is humanizing selected sections for academic flow...');
+    if (setIsGlobalLoading) setIsGlobalLoading(true);
 
     try {
       const response = await fetch('/api/premium/humanize', {
@@ -38,22 +106,28 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           chapterId: chapter.id, 
-          content: chapter.content, 
+          content: contentToHumanize, 
           userId: userId,
-          projectId: projectId 
+          projectId: projectId,
+          isPartial: !selectedSectionIds.includes('all'),
+          fullContent: chapter.content
         })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Humanization failed');
       
-      setResults({ original: data.original, humanized: data.humanized });
+      setResults({ 
+        original: data.original, 
+        humanized: data.humanized, 
+        fullHumanized: data.fullHumanized 
+      });
       setStep('compare');
     } catch (err) { 
       if (showNotification) showNotification('Humanization Failed', err.message, 'error');
     }
     finally {
       setIsGenerating(false);
-      setIsGlobalLoading(false);
+      if (setIsGlobalLoading) setIsGlobalLoading(false);
     }
   };
 
@@ -66,7 +140,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       const response = await fetch('/api/premium/save-edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chapterId: selectedChapterId, content: results.humanized, userId: userId, isAiAction: true })
+        body: JSON.stringify({ chapterId: selectedChapterId, content: results.fullHumanized, userId: userId, isAiAction: true })
       });
       if (!response.ok) throw new Error('Failed to save humanized version');
       if (onSaved) onSaved();
@@ -102,11 +176,9 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
         </div>
 
         <div className="flex-1 overflow-hidden flex flex-col">
-          {step === 'select' ? (
+          {step === 'select' && (
             <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-10 bg-slate-50 overflow-hidden">
               <div className="w-full max-w-md flex flex-col h-full max-h-[600px] space-y-6">
-                
-                {/* Word Usage Bar */}
                 <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm shrink-0">
                   <div className="flex justify-between items-end mb-2">
                     <div>
@@ -122,7 +194,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
 
                 <div className="text-center shrink-0">
                   <h3 className="text-xl md:text-2xl font-black text-slate-900">Select a Chapter</h3>
-                  <p className="text-sm text-slate-500 mt-1">Bypass detectors and improve academic flow with strict engineering rules.</p>
+                  <p className="text-sm text-slate-500 mt-1">Choose the chapter containing the content you want to humanize.</p>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -139,26 +211,74 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
                             <span className="font-black text-slate-900">Chapter {ch.number}</span>
                             <p className="text-xs text-slate-400 font-bold truncate">{ch.title}</p>
                           </div>
-                          {isSelected && <div className="w-6 h-6 md:w-8 md:h-8 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-lg shrink-0"><Icons.Check /></div>}
+                          <Icons.ChevronRight />
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                <button onClick={handleHumanize} disabled={!selectedChapterId || isProcessing}
+                <button onClick={() => setStep('sections')} disabled={!selectedChapterId}
                   className="w-full py-4 md:py-5 bg-slate-900 hover:bg-black text-white rounded-2xl md:rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 shrink-0">
-                  <Icons.Sparkles /> HUMANIZE
+                  NEXT: SELECT SECTIONS <Icons.ChevronRight />
                 </button>
               </div>
             </div>
-          ) : (
+          )}
+
+          {step === 'sections' && (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-10 bg-slate-50 overflow-hidden">
+              <div className="w-full max-w-md flex flex-col h-full max-h-[600px] space-y-6">
+                <div className="text-center shrink-0">
+                  <h3 className="text-xl md:text-2xl font-black text-slate-900">Refine Selection</h3>
+                  <p className="text-sm text-slate-500 mt-1">Select specific sections to humanize or process the whole chapter.</p>
+                </div>
+
+                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid gap-3 py-2">
+                    <button onClick={() => toggleSection('all')}
+                      className={`flex items-center justify-between p-4 md:p-5 rounded-2xl border-2 transition-all text-left ${
+                        selectedSectionIds.includes('all') ? 'border-slate-900 bg-white shadow-md' : 'border-slate-100 bg-white hover:border-slate-200'
+                      }`}>
+                      <span className="font-black text-slate-900">Whole Chapter</span>
+                      {selectedSectionIds.includes('all') && <Icons.Check />}
+                    </button>
+
+                    <div className="h-px bg-slate-200 my-2" />
+
+                    {sections.map(section => (
+                      <button key={section.id} onClick={() => toggleSection(section.id)}
+                        className={`flex items-center justify-between p-4 md:p-5 rounded-2xl border-2 transition-all text-left ${
+                          selectedSectionIds.includes(section.id) ? 'border-slate-900 bg-white shadow-md' : 'border-slate-100 bg-white hover:border-slate-200'
+                        }`}>
+                        <div className="flex-1 min-w-0 pr-4">
+                          <p className="text-xs font-black text-slate-900 truncate">{section.title}</p>
+                          <p className="text-[10px] text-slate-400 font-bold">{section.content.split(' ').length} words</p>
+                        </div>
+                        {selectedSectionIds.includes(section.id) && <Icons.Check />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 shrink-0">
+                  <button onClick={() => setStep('select')} className="flex-1 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black text-sm transition-all hover:text-slate-900">BACK</button>
+                  <button onClick={handleHumanize} disabled={isProcessing}
+                    className="flex-[2] py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3">
+                    <Icons.Sparkles /> HUMANIZE SELECTION
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 'compare' && (
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-100 gap-px">
                 {/* Original */}
                 <div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden border-b md:border-b-0">
                   <div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Original Draft</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedSectionIds.includes('all') ? 'Original Draft' : 'Original Selection'}</span>
                     <span className="text-[10px] font-bold text-slate-400">{results.original.split(' ').length} Words</span>
                   </div>
                   <div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-400 leading-relaxed font-medium markdown-view opacity-60">
@@ -169,7 +289,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
                 {/* Humanized */}
                 <div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden">
                   <div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
-                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Humanized Version</span>
+                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{selectedSectionIds.includes('all') ? 'Humanized Version' : 'Humanized Selection'}</span>
                     <span className="text-[10px] font-bold text-slate-900">{results.humanized.split(' ').length} Words</span>
                   </div>
                   <div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-900 leading-relaxed font-bold bg-slate-50/30 markdown-view">
@@ -180,7 +300,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
 
               {/* Action Bar */}
               <div className="p-5 md:p-6 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
-                <button onClick={() => setStep('select')} className="text-[9px] md:text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back / Reset</button>
+                <button onClick={() => setStep('sections')} className="text-[9px] md:text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back to Selection</button>
                 <button onClick={handleSave} className="px-6 md:px-10 py-3 md:py-4 bg-slate-900 hover:bg-black text-white rounded-xl md:rounded-2xl font-black text-[11px] md:text-sm shadow-xl transition-all active:scale-95 flex items-center gap-3">
                   <Icons.Save /> SAVE CHANGES
                 </button>

@@ -4,9 +4,9 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(request) {
   try {
-    const { content, projectId } = await request.json();
+    const { content, projectId, isPartial = false, fullContent = "" } = await request.json();
 
-    if (!content || content.length < 50 || !projectId) {
+    if (!content || content.length < 10 || !projectId) {
       return NextResponse.json({ error: 'Missing content or project ID.' }, { status: 400 });
     }
 
@@ -28,7 +28,7 @@ export async function POST(request) {
 
     if (wordsUsed + wordCount > wordsLimit) {
       return NextResponse.json({ 
-        error: `Word limit exceeded. You have ${wordsLimit - wordsUsed} words remaining, but this chapter is ${wordCount} words.` 
+        error: `Word limit exceeded. You have ${wordsLimit - wordsUsed} words remaining, but this selection is ${wordCount} words.` 
       }, { status: 403 });
     }
 
@@ -55,7 +55,7 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         text: processedContent,
-        mode: "enhanced" // Highest bypass power
+        mode: "enhanced" 
       })
     });
 
@@ -65,13 +65,17 @@ export async function POST(request) {
     }
 
     const data = await response.json();
-    // Assuming the API returns text in data.data.text or data.text based on standard patterns
-    // Ref: Some versions return { code: 200, data: { text: "..." } }
     let humanizedText = data.data?.text || data.text || "";
 
     if (!humanizedText) {
       throw new Error('Failed to retrieve humanized text from BypassGPT.');
     }
+
+    // RESTORE IMAGES
+    images.forEach((originalTag, index) => {
+      const placeholder = `{{IMAGE_PLACEHOLDER_${index}}}`;
+      humanizedText = humanizedText.replace(placeholder, originalTag);
+    });
 
     // --- 4. UPDATE WORD USAGE ---
     await supabaseAdmin
@@ -82,19 +86,26 @@ export async function POST(request) {
       })
       .eq('id', projectId);
 
-    // --- 5. RESTORE IMAGES ---
-    images.forEach((originalTag, index) => {
-      const placeholder = `{{IMAGE_PLACEHOLDER_${index}}}`;
-      humanizedText = humanizedText.replace(placeholder, originalTag);
-    });
-
-    if (images.length > 0 && !humanizedText.includes('![')) {
-        humanizedText += "\n\n" + images.join('\n\n');
+    // --- 5. MERGE LOGIC ---
+    let fullMergedOutput = humanizedText;
+    if (isPartial && fullContent) {
+      const normalizedFull = fullContent.replace(/\r\n/g, '\n');
+      const normalizedTarget = content.replace(/\r\n/g, '\n');
+      
+      if (normalizedFull.includes(normalizedTarget)) {
+        fullMergedOutput = normalizedFull.replace(normalizedTarget, humanizedText);
+      } else {
+        const trimmedTarget = normalizedTarget.trim();
+        if (normalizedFull.includes(trimmedTarget)) {
+          fullMergedOutput = normalizedFull.replace(trimmedTarget, humanizedText);
+        }
+      }
     }
 
     return NextResponse.json({ 
       success: true, 
-      humanized: humanizedText,
+      humanized: humanizedText, // Just the section
+      fullHumanized: fullMergedOutput, // The full merged chapter
       original: content,
       wordsUsed: wordsUsed + wordCount,
       wordsLimit
