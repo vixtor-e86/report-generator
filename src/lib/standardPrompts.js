@@ -29,7 +29,9 @@ CITATION RULES (${referenceStyle.toUpperCase()}):
 3. Fulfillment: You MUST include exactly 8-12 references in your technical analysis.
 ${existingRefsText}
 4. **MANDATORY**: At the end of THIS chapter, you MUST include a "## References" section. 
-   - List only the sources actually cited in this chapter.
+   - **STRICT FORMAT**: Use a Markdown numbered list (1. [Reference]).
+   - **CLEANLINESS**: Each reference must be its own list item. Ensure there is exactly one blank line between each numbered item to prevent text bunching.
+   - **CONTENT**: List only the sources actually cited in this chapter.
    - If this is the FINAL chapter, ensure the list is comprehensive for the whole project.
    - Max 40 unique references for the entire project.
    - RECENTCY: All sources must be between 2022-2026.

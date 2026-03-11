@@ -185,7 +185,8 @@ export default function ChapterView({ chapter, images, generating }) {
         prose-h2:text-2xl sm:prose-h2:text-3xl prose-h2:uppercase prose-h2:mb-10 prose-h2:mt-0 prose-h2:text-left
         prose-h3:text-xl prose-h3:mt-12 prose-h3:mb-6 prose-h3:border-b-2 prose-h3:border-slate-100 prose-h3:pb-2
         prose-h4:text-lg prose-h4:mt-8 prose-h4:mb-4
-        prose-li:text-slate-700 prose-li:mb-3 prose-li:font-medium
+        prose-li:text-slate-700 prose-li:mb-4 prose-li:font-medium
+        prose-ol:pl-6 prose-ul:pl-6
         prose-strong:text-slate-900 prose-strong:font-black
         prose-table:border prose-table:border-slate-200 prose-table:rounded-xl prose-table:overflow-hidden
         prose-thead:bg-slate-50 prose-thead:text-slate-900
