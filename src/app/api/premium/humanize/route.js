@@ -41,18 +41,21 @@ export async function POST(request) {
       return placeholder;
     });
 
-    // --- 3. CALL BYPASSGPT.AI (ASYNC WORKFLOW) ---
+    // --- 3. CALL BYPASSGPT.AI ---
     const apiKey = process.env.BYPASSGPT_API_KEY;
     if (!apiKey) {
       throw new Error('BYPASSGPT_API_KEY not found in environment variables.');
     }
 
-    // Step A: Initiate Generation
-    const genResponse = await fetch("https://www.bypassgpt.ai/api/bypassgpt/v1/generate", {
+    // Step A: Initiate Task
+    console.log('Initiating BypassGPT task for', wordCount, 'words...');
+    
+    // We try the standard API URL first
+    const genResponse = await fetch("https://api.bypassgpt.ai/v1/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "api-key": apiKey
+        "x-api-key": apiKey
       },
       body: JSON.stringify({
         input: processedContent,
@@ -60,51 +63,56 @@ export async function POST(request) {
       })
     });
 
-    if (!genResponse.ok) {
-      const errorText = await genResponse.text();
-      console.error('BypassGPT Gen Error:', errorText);
-      throw new Error(`BypassGPT API error (${genResponse.status}): ${errorText}`);
-    }
-
     const genData = await genResponse.json();
-    const taskId = genData.task_id;
+    console.log('BypassGPT Initial Response:', genData);
 
-    if (!taskId) {
-      throw new Error('No task_id returned from BypassGPT.');
+    if (!genResponse.ok) {
+      throw new Error(`BypassGPT Error (${genResponse.status}): ${genData.message || JSON.stringify(genData)}`);
     }
 
-    // Step B: Polling for Results
-    let humanizedText = "";
-    let attempts = 0;
-    const maxAttempts = 30; // 30 * 2s = 60s max wait
+    // Some versions of the API might return the text immediately if short, 
+    // but usually they return a task_id or an 'id'.
+    const taskId = genData.task_id || genData.id || genData.data?.task_id;
+    let humanizedText = genData.data?.output || genData.output || genData.text;
 
-    while (attempts < maxAttempts) {
-      attempts++;
-      // Wait 2 seconds between polls
-      await new Promise(resolve => setTimeout(resolve, 2000));
+    if (!taskId && !humanizedText) {
+      throw new Error(`No task_id or immediate output returned. Response: ${JSON.stringify(genData)}`);
+    }
 
-      const pollResponse = await fetch(`https://www.bypassgpt.ai/api/bypassgpt/v1/retrieval?task_id=${taskId}`, {
-        headers: { "api-key": apiKey }
-      });
+    // Step B: Polling if needed
+    if (taskId && !humanizedText) {
+      console.log('Polling for task:', taskId);
+      let attempts = 0;
+      const maxAttempts = 30; 
 
-      if (pollResponse.ok) {
-        const pollData = await pollResponse.json();
-        console.log('BypassGPT Poll Status:', pollData.status, pollData);
-        
-        // Try to find the output in common locations
-        const output = pollData.data?.output || pollData.output || pollData.text;
-        
-        if (pollData.status === 'success' && output) {
-          humanizedText = output;
-          break;
-        } else if (pollData.status === 'failed') {
-          throw new Error('BypassGPT task failed.');
+      while (attempts < maxAttempts) {
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const pollResponse = await fetch(`https://api.bypassgpt.ai/v1/retrieval?task_id=${taskId}`, {
+          headers: { "x-api-key": apiKey }
+        });
+
+        if (pollResponse.ok) {
+          const pollData = await pollResponse.json();
+          console.log(`Poll Attempt ${attempts}:`, pollData.status);
+          
+          const output = pollData.data?.output || pollData.output || pollData.text;
+          
+          if ((pollData.status === 'success' || pollData.status === 'completed') && output) {
+            humanizedText = output;
+            break;
+          } else if (pollData.status === 'failed' || pollData.status === 'error') {
+            throw new Error(`BypassGPT task failed: ${pollData.message || 'Unknown error'}`);
+          }
+        } else {
+            console.warn('Poll failed with status:', pollResponse.status);
         }
       }
     }
 
     if (!humanizedText) {
-      throw new Error('BypassGPT task timed out or failed to return text.');
+      throw new Error('BypassGPT processing timed out or returned empty content.');
     }
 
     // --- 4. RESTORE IMAGES ---
@@ -122,7 +130,7 @@ export async function POST(request) {
       })
       .eq('id', projectId);
 
-    // --- 6. MERGE LOGIC (IF PARTIAL) ---
+    // --- 6. MERGE LOGIC ---
     let fullMergedOutput = humanizedText;
     if (isPartial && fullContent) {
       const normalizedFull = fullContent.replace(/\r\n/g, '\n');
@@ -148,7 +156,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Humanizer Error:', error);
+    console.error('Humanizer Route Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
