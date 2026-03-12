@@ -2,8 +2,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-export const maxDuration = 60; // Increase Vercel execution time to 60s (Pro limit)
-
 export async function POST(request) {
   try {
     const { content, projectId, isPartial = false, fullContent = "" } = await request.json();
@@ -29,108 +27,47 @@ export async function POST(request) {
       return NextResponse.json({ error: `Limit exceeded. Remaining: ${wordsLimit - wordsUsed}.` }, { status: 403 });
     }
 
-    // Protection logic
-    const images = [];
-    const processedContent = content.replace(/!\[.*?\]\(.*?\)/g, (match) => {
-      const placeholder = ` {{IMG_${images.length}}} `;
-      images.push(match);
-      return placeholder;
-    });
-
     const apiKey = process.env.BYPASSGPT_API_KEY;
     if (!apiKey) throw new Error('API Key missing.');
 
-    const API_BASE = "https://www.bypassgpt.ai/api/bypassgpt/v1";
-    
-    // STEP A: SUBMIT
-    console.log('Humanizer: Submitting to BypassGPT...');
-    const submitRes = await fetch(`${API_BASE}/generate`, {
+    // 1. Submit Task to BypassGPT
+    const response = await fetch("https://www.bypassgpt.ai/api/bypassgpt/v1/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "api-key": apiKey,
-        "x-api-key": apiKey
+        "api-key": apiKey
       },
       body: JSON.stringify({
-        input: processedContent,
+        input: content,
         model_type: "Enhanced"
       })
     });
 
-    const submitText = await submitRes.text();
-    console.log('Humanizer: Submit Response:', submitText);
+    const data = await response.json();
+    console.log('Humanizer Initiation:', data);
 
-    if (!submitRes.ok) throw new Error(`BypassGPT Submit Error: ${submitText}`);
+    if (!response.ok) throw new Error(`BypassGPT Error: ${JSON.stringify(data)}`);
 
-    const submitData = JSON.parse(submitText);
-    const taskId = submitData.task_id || submitData.id || submitData.data?.task_id || submitData.data?.id;
-    let humanizedText = submitData.output || submitData.text || submitData.data?.output || submitData.data?.text;
+    const taskId = data.task_id || data.id || data.data?.task_id;
+    const immediateOutput = data.output || data.text || data.data?.output;
 
-    if (!taskId && !humanizedText) throw new Error('No task ID or result returned from server.');
-
-    // STEP B: POLL (Max 45 seconds to avoid Vercel timeout)
-    if (taskId && !humanizedText) {
-      console.log('Humanizer: Polling for results...', taskId);
-      let attempts = 0;
-      const startTime = Date.now();
-
-      while (Date.now() - startTime < 45000) { // 45s cap
-        attempts++;
-        await new Promise(r => setTimeout(r, 3000));
-
-        // Try retrieval with task_id
-        const pollRes = await fetch(`${API_BASE}/retrieval?task_id=${taskId}`, {
-          headers: { "api-key": apiKey, "x-api-key": apiKey }
-        });
-
-        if (pollRes.ok) {
-          const pollData = await pollRes.json();
-          console.log(`Poll ${attempts} Status:`, pollData.status || pollData.code);
-          
-          const output = pollData.output || pollData.text || pollData.data?.output || pollData.data?.text;
-          
-          // Check for various success signals
-          if (output && (pollData.status === 'success' || pollData.status === 'completed' || pollData.code === 200)) {
-            humanizedText = output;
-            break;
-          }
-        }
-      }
-    }
-
-    if (!humanizedText) throw new Error('Processing timed out. The content is saved in your BypassGPT history but took too long to return to the app.');
-
-    // Restore Images
-    images.forEach((tag, i) => {
-      humanizedText = humanizedText.replace(`{{IMG_${i}}}`, tag);
-    });
-
-    // Update DB
+    // 2. Log Word Usage early (since it's in their history)
     await supabaseAdmin.from('premium_projects').update({
       humanizer_words_used: wordsUsed + wordCount,
       last_generated_at: new Date().toISOString()
     }).eq('id', projectId);
 
-    // Merge if partial
-    let finalOutput = humanizedText;
-    if (isPartial && fullContent) {
-      const normalizedFull = fullContent.replace(/\r\n/g, '\n');
-      const normalizedTarget = content.replace(/\r\n/g, '\n');
-      if (normalizedFull.includes(normalizedTarget)) {
-        finalOutput = normalizedFull.replace(normalizedTarget, humanizedText);
-      }
-    }
-
     return NextResponse.json({ 
       success: true, 
-      humanized: humanizedText, 
-      fullHumanized: finalOutput,
-      wordsUsed: wordsUsed + wordCount,
-      wordsLimit
+      taskId, 
+      immediateOutput,
+      wordCount,
+      isPartial,
+      fullContent // Pass back for client-side merging
     });
 
   } catch (error) {
-    console.error('Humanizer Error:', error);
+    console.error('Humanizer Start Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
