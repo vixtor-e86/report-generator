@@ -16,7 +16,7 @@ const Icons = {
   Activity: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
 };
 
-export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, projectData, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification }) {
+export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, projectData, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification, onUpdateProjectData }) {
   const [step, setStep] = useState('select'); // select | sections | polling | compare
   const [selectedChapterId, setSelectedChapterId] = useState(null);
   const [sections, setSections] = useState([]);
@@ -25,10 +25,18 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   const [isProcessing, setIsGenerating] = useState(false);
   const [pollProgress, setPollProgress] = useState(0);
   const [statusText, setStatusText] = useState('Initializing architect...');
-
-  const wordsUsed = projectData?.humanizer_words_used || 0;
+  
+  // Local Usage Tracking
+  const [localWordsUsed, setLocalWordsUsed] = useState(projectData?.humanizer_words_used || 0);
   const wordsLimit = projectData?.humanizer_words_limit || 10000;
-  const percentage = Math.min((wordsUsed / wordsLimit) * 100, 100);
+
+  useEffect(() => {
+    if (projectData?.humanizer_words_used !== undefined) {
+      setLocalWordsUsed(projectData.humanizer_words_used);
+    }
+  }, [projectData?.humanizer_words_used]);
+
+  const percentage = Math.min((localWordsUsed / wordsLimit) * 100, 100);
 
   useEffect(() => {
     if (selectedChapterId) {
@@ -90,6 +98,9 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     if (!chapter) return;
 
     let contentToHumanize = "";
+    let fullChapterContent = chapter.content;
+    const isPartial = !selectedSectionIds.includes('all');
+
     if (selectedSectionIds.includes('all')) {
       contentToHumanize = chapter.content;
     } else {
@@ -105,41 +116,36 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     setStatusText('Handshaking with AI server...');
 
     try {
-      console.log('Humanizer: Initiating for chapter', selectedChapterId);
       const response = await fetch('/api/premium/humanize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          chapterId: chapter.id, 
-          content: contentToHumanize, 
-          userId: userId,
-          projectId: projectId,
-          isPartial: !selectedSectionIds.includes('all'),
-          fullContent: chapter.content
-        })
+        body: JSON.stringify({ projectId, content: contentToHumanize })
       });
       
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Humanization initiation failed');
       
-      console.log('Humanizer: Initiation success, taskId:', data.taskId);
+      // Update local and global word usage immediately
+      if (data.newUsed !== undefined) {
+        setLocalWordsUsed(data.newUsed);
+        if (onUpdateProjectData) onUpdateProjectData({ ...projectData, humanizer_words_used: data.newUsed });
+      }
+
       setPollProgress(15);
       setStatusText('Task submitted. AI is processing...');
 
       if (data.immediateOutput) {
-        console.log('Humanizer: Received immediate output');
-        handleSuccess(data.immediateOutput, contentToHumanize, data.fullContent, data.isPartial);
+        handleSuccess(data.immediateOutput, contentToHumanize, fullChapterContent, isPartial);
         return;
       }
 
       if (data.taskId) {
-        await pollForResult(data.taskId, contentToHumanize, data.fullContent, data.isPartial);
+        await pollForResult(data.taskId, contentToHumanize, fullChapterContent, isPartial);
       } else {
         throw new Error('No task ID returned from server.');
       }
 
     } catch (err) { 
-      console.error('Humanizer initiation error:', err);
       setStep('sections');
       if (showNotification) showNotification('Error', err.message, 'error');
     } finally {
@@ -150,7 +156,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   const pollForResult = async (taskId, originalContent, fullContent, isPartial) => {
     let completed = false;
     let attempts = 0;
-    const maxAttempts = 80; // ~4 minutes
+    const maxAttempts = 80; 
 
     while (!completed && attempts < maxAttempts) {
       attempts++;
@@ -170,22 +176,17 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
         });
         
         const data = await res.json();
-        console.log(`Poll ${attempts} response:`, data);
-
         if (res.ok && data.isCompleted && data.output) {
-          console.log('Humanizer: Task completed!');
           handleSuccess(data.output, originalContent, fullContent, isPartial);
           completed = true;
-        } else if (!res.ok) {
-          console.warn('Poll request failed, retrying...', data.error);
         }
       } catch (e) {
-        console.warn('Polling network error, retrying...', e);
+        console.warn('Polling error, retrying...');
       }
     }
 
     if (!completed) {
-      throw new Error('Humanization timed out after several attempts. BypassGPT is likely processing a very large section. Check your BypassGPT history in a few moments.');
+      throw new Error('Humanization timed out. Your request is processed in BypassGPT history, but retrieval failed.');
     }
   };
 
@@ -273,7 +274,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
                   <div className="flex justify-between items-end mb-2">
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Word Usage</p>
-                      <p className="text-sm font-black text-slate-900">{wordsUsed.toLocaleString()} / {wordsLimit.toLocaleString()}</p>
+                      <p className="text-sm font-black text-slate-900">{localWordsUsed.toLocaleString()} / {wordsLimit.toLocaleString()}</p>
                     </div>
                     <span className={`text-xs font-black ${percentage > 90 ? 'text-red-500' : 'text-slate-900'}`}>{percentage.toFixed(0)}%</span>
                   </div>

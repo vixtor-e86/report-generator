@@ -272,6 +272,28 @@ export default function Sidebar({
           </div>
         </div>
 
+        {/* Humanizer Usage Card */}
+        <div className="upgrade-card token-card" style={{ marginTop: '8px' }}>
+          <div className="upgrade-content">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ color: '#10b981' }}><Icons.Cpu /></div>
+              <span className="upgrade-title">Humanizer</span>
+            </div>
+            <span className="token-count">
+              {(projectData?.humanizer_words_used || 0).toLocaleString()} / {(projectData?.humanizer_words_limit || 10000).toLocaleString()}
+            </span>
+          </div>
+          <div className="upgrade-bar">
+             <div 
+               className="upgrade-progress" 
+               style={{ 
+                 width: `${Math.min(((projectData?.humanizer_words_used || 0) / (projectData?.humanizer_words_limit || 10000)) * 100, 100)}%`,
+                 background: '#10b981'
+               }}
+             ></div>
+          </div>
+        </div>
+
         {/* Storage Usage Card */}
         <div className="upgrade-card token-card" style={{ marginTop: '8px' }}>
           <div className="upgrade-content">
