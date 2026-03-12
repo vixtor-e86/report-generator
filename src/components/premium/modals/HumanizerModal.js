@@ -25,6 +25,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   const [isProcessing, setIsGenerating] = useState(false);
   const [pollProgress, setPollProgress] = useState(0);
   const [statusText, setStatusText] = useState('Initializing architect...');
+  const [protectedImages, setProtectedImages] = useState([]);
   
   // Local Usage Tracking
   const [localWordsUsed, setLocalWordsUsed] = useState(projectData?.humanizer_words_used || 0);
@@ -131,16 +132,18 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
         if (onUpdateProjectData) onUpdateProjectData({ humanizer_words_used: data.newUsed });
       }
 
+      if (data.protectedImages) setProtectedImages(data.protectedImages);
+
       setPollProgress(15);
       setStatusText('Task submitted. AI is processing...');
 
       if (data.immediateOutput) {
-        handleSuccess(data.immediateOutput, contentToHumanize, fullChapterContent, isPartial);
+        handleSuccess(data.immediateOutput, contentToHumanize, fullChapterContent, isPartial, data.protectedImages || []);
         return;
       }
 
       if (data.taskId) {
-        await pollForResult(data.taskId, contentToHumanize, fullChapterContent, isPartial);
+        await pollForResult(data.taskId, contentToHumanize, fullChapterContent, isPartial, data.protectedImages || []);
       } else {
         throw new Error('No task ID returned from server.');
       }
@@ -153,7 +156,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     }
   };
 
-  const pollForResult = async (taskId, originalContent, fullContent, isPartial) => {
+  const pollForResult = async (taskId, originalContent, fullContent, isPartial, imgs) => {
     let completed = false;
     let attempts = 0;
     const maxAttempts = 80; 
@@ -177,7 +180,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
         
         const data = await res.json();
         if (res.ok && data.isCompleted && data.output) {
-          handleSuccess(data.output, originalContent, fullContent, isPartial);
+          handleSuccess(data.output, originalContent, fullContent, isPartial, imgs);
           completed = true;
         }
       } catch (e) {
@@ -190,20 +193,28 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     }
   };
 
-  const handleSuccess = (humanizedText, originalContent, fullContent, isPartial) => {
-    let finalMergedOutput = humanizedText;
+  const handleSuccess = (humanizedText, originalContent, fullContent, isPartial, imgs) => {
+    let restoredText = humanizedText;
     
+    // Restore images if placeholders exist
+    if (imgs && imgs.length > 0) {
+      imgs.forEach((tag, i) => {
+        restoredText = restoredText.replace(new RegExp(`\\{\\{IMAGE_REF_${i}\\}\\}`, 'g'), tag);
+      });
+    }
+
+    let finalMergedOutput = restoredText;
     if (isPartial && fullContent) {
       const normalizedFull = fullContent.replace(/\r\n/g, '\n');
       const normalizedTarget = originalContent.replace(/\r\n/g, '\n');
       if (normalizedFull.includes(normalizedTarget)) {
-        finalMergedOutput = normalizedFull.replace(normalizedTarget, humanizedText);
+        finalMergedOutput = normalizedFull.replace(normalizedTarget, restoredText);
       }
     }
 
     setResults({ 
       original: originalContent, 
-      humanized: humanizedText, 
+      humanized: restoredText, 
       fullHumanized: finalMergedOutput 
     });
     setStep('compare');
@@ -241,6 +252,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     setResults({ original: '', humanized: '', fullHumanized: '' });
     setPollProgress(0);
     setStatusText('Initializing architect...');
+    setProtectedImages([]);
   };
 
   if (!isOpen) return null;

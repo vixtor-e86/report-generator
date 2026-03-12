@@ -13,6 +13,7 @@ export async function POST(request) {
     // --- 1. WORD COUNT & LIMIT CHECK ---
     const wordCount = content.trim().split(/\s+/).length;
     
+    // Fetch current usage
     const { data: project, error: projectError } = await supabaseAdmin
       .from('premium_projects')
       .select('humanizer_words_used, humanizer_words_limit')
@@ -31,12 +32,11 @@ export async function POST(request) {
     }
 
     // --- 2. IMAGE PROTECTION LOGIC ---
-    // Extract all Markdown images to prevent AI from breaking the syntax
-    const images = [];
+    const protectedImages = [];
     const imageRegex = /!\[.*?\]\(.*?\)/g;
     const processedContent = content.replace(imageRegex, (match) => {
-      const placeholder = ` {{IMAGE_REF_${images.length}}} `;
-      images.push(match);
+      const placeholder = ` {{IMAGE_REF_${protectedImages.length}}} `;
+      protectedImages.push(match);
       return placeholder;
     });
 
@@ -74,13 +74,12 @@ export async function POST(request) {
 
     if (updateError) {
       console.error('Database Update Error:', updateError);
-      // We still proceed since the AI task started, but we log the error
     }
 
-    // If output is immediate, we also need to restore images here
+    // If output is immediate, restore images
     let finalImmediateOutput = immediateOutput;
-    if (immediateOutput && images.length > 0) {
-      images.forEach((tag, i) => {
+    if (immediateOutput && protectedImages.length > 0) {
+      protectedImages.forEach((tag, i) => {
         finalImmediateOutput = finalImmediateOutput.replace(`{{IMAGE_REF_${i}}}`, tag);
       });
     }
@@ -91,7 +90,7 @@ export async function POST(request) {
       immediateOutput: finalImmediateOutput,
       newUsed, 
       wordCount,
-      protectedImages: images // Send to client for restoration during polling if needed
+      protectedImages // Send to client for restoration during polling if needed
     });
 
   } catch (error) {
