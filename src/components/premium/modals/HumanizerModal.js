@@ -24,6 +24,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   const [results, setResults] = useState({ original: '', humanized: '', fullHumanized: '' });
   const [isProcessing, setIsGenerating] = useState(false);
   const [pollProgress, setPollProgress] = useState(0);
+  const [statusText, setStatusText] = useState('Initializing architect...');
 
   const wordsUsed = projectData?.humanizer_words_used || 0;
   const wordsLimit = projectData?.humanizer_words_limit || 10000;
@@ -101,9 +102,10 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     setIsGenerating(true);
     setStep('polling');
     setPollProgress(5);
+    setStatusText('Handshaking with AI server...');
 
     try {
-      // 1. Initiation
+      console.log('Humanizer: Initiating for chapter', selectedChapterId);
       const response = await fetch('/api/premium/humanize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,15 +122,16 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Humanization initiation failed');
       
+      console.log('Humanizer: Initiation success, taskId:', data.taskId);
       setPollProgress(15);
+      setStatusText('Task submitted. AI is processing...');
 
-      // 2. Immediate Success Check
       if (data.immediateOutput) {
+        console.log('Humanizer: Received immediate output');
         handleSuccess(data.immediateOutput, contentToHumanize, data.fullContent, data.isPartial);
         return;
       }
 
-      // 3. Polling Loop (Client Side - No Timeouts)
       if (data.taskId) {
         await pollForResult(data.taskId, contentToHumanize, data.fullContent, data.isPartial);
       } else {
@@ -136,6 +139,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       }
 
     } catch (err) { 
+      console.error('Humanizer initiation error:', err);
       setStep('sections');
       if (showNotification) showNotification('Error', err.message, 'error');
     } finally {
@@ -146,12 +150,16 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   const pollForResult = async (taskId, originalContent, fullContent, isPartial) => {
     let completed = false;
     let attempts = 0;
-    const maxAttempts = 60; // 3 mins max
+    const maxAttempts = 80; // ~4 minutes
 
     while (!completed && attempts < maxAttempts) {
       attempts++;
-      setPollProgress(Math.min(95, 15 + (attempts * 2)));
+      setPollProgress(Math.min(98, 15 + (attempts * 1.2)));
       
+      if (attempts % 5 === 0) {
+        setStatusText(`Architect is deep in technical flow... (${attempts*3}s)`);
+      }
+
       await new Promise(r => setTimeout(r, 3000));
 
       try {
@@ -162,22 +170,28 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
         });
         
         const data = await res.json();
+        console.log(`Poll ${attempts} response:`, data);
+
         if (res.ok && data.isCompleted && data.output) {
+          console.log('Humanizer: Task completed!');
           handleSuccess(data.output, originalContent, fullContent, isPartial);
           completed = true;
+        } else if (!res.ok) {
+          console.warn('Poll request failed, retrying...', data.error);
         }
       } catch (e) {
-        console.warn('Polling error, retrying...', e);
+        console.warn('Polling network error, retrying...', e);
       }
     }
 
-    if (!completed) throw new Error('Humanization timed out after 3 minutes.');
+    if (!completed) {
+      throw new Error('Humanization timed out after several attempts. BypassGPT is likely processing a very large section. Check your BypassGPT history in a few moments.');
+    }
   };
 
   const handleSuccess = (humanizedText, originalContent, fullContent, isPartial) => {
     let finalMergedOutput = humanizedText;
     
-    // Perform merge on client if needed
     if (isPartial && fullContent) {
       const normalizedFull = fullContent.replace(/\r\n/g, '\n');
       const normalizedTarget = originalContent.replace(/\r\n/g, '\n');
@@ -225,6 +239,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     setSelectedChapterId(null);
     setResults({ original: '', humanized: '', fullHumanized: '' });
     setPollProgress(0);
+    setStatusText('Initializing architect...');
   };
 
   if (!isOpen) return null;
@@ -363,7 +378,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
                 
                 <div>
                   <h3 className="text-2xl font-black text-slate-900">Architect is Working...</h3>
-                  <p className="text-sm text-slate-500 mt-2">BypassGPT is rewriting your content for elite academic flow. This usually takes 60-90 seconds.</p>
+                  <p className="text-sm text-slate-500 mt-2">{statusText}</p>
                 </div>
 
                 <div className="space-y-2">
