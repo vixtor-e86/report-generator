@@ -6,7 +6,7 @@ export async function POST(request) {
   try {
     const { content, projectId, isPartial = false, fullContent = "" } = await request.json();
 
-    if (!content || content.length < 10 || !projectId) {
+    if (!content || content.length < 5 || !projectId) {
       return NextResponse.json({ error: 'Missing content or project ID.' }, { status: 400 });
     }
 
@@ -48,10 +48,12 @@ export async function POST(request) {
     }
 
     // Step A: Initiate Task
-    console.log('Initiating BypassGPT task for', wordCount, 'words...');
+    // We'll use the most common API endpoint documented
+    const genUrl = "https://www.bypassgpt.ai/api/bypassgpt/v1/generate";
     
-    // We try the standard API URL first
-    const genResponse = await fetch("https://api.bypassgpt.ai/v1/generate", {
+    console.log('Humanizer: Initiating request to', genUrl);
+    
+    const genResponse = await fetch(genUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -61,58 +63,66 @@ export async function POST(request) {
         input: processedContent,
         model_type: "Enhanced" 
       })
+    }).catch(err => {
+      console.error('Fetch Crash:', err);
+      throw new Error('Failed to connect to humanizer service. Check server network.');
     });
 
-    const genData = await genResponse.json();
-    console.log('BypassGPT Initial Response:', genData);
+    const genRawText = await genResponse.text();
+    console.log('Humanizer: Raw Response:', genRawText);
 
     if (!genResponse.ok) {
-      throw new Error(`BypassGPT Error (${genResponse.status}): ${genData.message || JSON.stringify(genData)}`);
+      throw new Error(`BypassGPT Error (${genResponse.status}): ${genRawText}`);
     }
 
-    // Some versions of the API might return the text immediately if short, 
-    // but usually they return a task_id or an 'id'.
-    const taskId = genData.task_id || genData.id || genData.data?.task_id;
-    let humanizedText = genData.data?.output || genData.output || genData.text;
+    let genData;
+    try {
+      genData = JSON.parse(genRawText);
+    } catch (e) {
+      throw new Error(`Invalid JSON response from humanizer: ${genRawText.substring(0, 100)}`);
+    }
+
+    // Capture task ID from any possible location
+    const taskId = genData.task_id || genData.id || genData.data?.task_id || (genData.data && genData.data.id);
+    let humanizedText = genData.data?.output || genData.output || genData.text || (genData.data && genData.data.text);
 
     if (!taskId && !humanizedText) {
-      throw new Error(`No task_id or immediate output returned. Response: ${JSON.stringify(genData)}`);
+      throw new Error(`No task identifier found in response. Contact support or check API logs.`);
     }
 
     // Step B: Polling if needed
     if (taskId && !humanizedText) {
-      console.log('Polling for task:', taskId);
+      console.log('Humanizer: Polling for task', taskId);
       let attempts = 0;
-      const maxAttempts = 30; 
+      const maxAttempts = 25; 
 
       while (attempts < maxAttempts) {
         attempts++;
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3s
 
-        const pollResponse = await fetch(`https://api.bypassgpt.ai/v1/retrieval?task_id=${taskId}`, {
+        const pollUrl = `https://www.bypassgpt.ai/api/bypassgpt/v1/retrieval?task_id=${taskId}`;
+        const pollResponse = await fetch(pollUrl, {
           headers: { "x-api-key": apiKey }
         });
 
         if (pollResponse.ok) {
           const pollData = await pollResponse.json();
-          console.log(`Poll Attempt ${attempts}:`, pollData.status);
+          console.log(`Humanizer: Poll ${attempts} Status:`, pollData.status);
           
-          const output = pollData.data?.output || pollData.output || pollData.text;
+          const output = pollData.data?.output || pollData.output || pollData.text || (pollData.data && pollData.data.text);
           
-          if ((pollData.status === 'success' || pollData.status === 'completed') && output) {
+          if ((pollData.status === 'success' || pollData.status === 'completed' || pollData.code === 200) && output) {
             humanizedText = output;
             break;
           } else if (pollData.status === 'failed' || pollData.status === 'error') {
-            throw new Error(`BypassGPT task failed: ${pollData.message || 'Unknown error'}`);
+            throw new Error(`Humanization task failed on server: ${pollData.message || 'Unknown error'}`);
           }
-        } else {
-            console.warn('Poll failed with status:', pollResponse.status);
         }
       }
     }
 
     if (!humanizedText) {
-      throw new Error('BypassGPT processing timed out or returned empty content.');
+      throw new Error('Humanizer timed out. Please try a shorter section or try again in a few minutes.');
     }
 
     // --- 4. RESTORE IMAGES ---
@@ -156,7 +166,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Humanizer Route Error:', error);
+    console.error('Humanizer Logic Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
