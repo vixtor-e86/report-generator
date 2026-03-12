@@ -10,9 +10,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing content or project ID.' }, { status: 400 });
     }
 
+    // --- 1. WORD COUNT & LIMIT CHECK ---
     const wordCount = content.trim().split(/\s+/).length;
     
-    // 1. Fetch current usage
     const { data: project, error: projectError } = await supabaseAdmin
       .from('premium_projects')
       .select('humanizer_words_used, humanizer_words_limit')
@@ -30,10 +30,20 @@ export async function POST(request) {
       }, { status: 403 });
     }
 
+    // --- 2. IMAGE PROTECTION LOGIC ---
+    // Extract all Markdown images to prevent AI from breaking the syntax
+    const images = [];
+    const imageRegex = /!\[.*?\]\(.*?\)/g;
+    const processedContent = content.replace(imageRegex, (match) => {
+      const placeholder = ` {{IMAGE_REF_${images.length}}} `;
+      images.push(match);
+      return placeholder;
+    });
+
     const apiKey = process.env.BYPASSGPT_API_KEY;
     if (!apiKey) throw new Error('BYPASSGPT_API_KEY not found.');
 
-    // 2. Submit Task to BypassGPT
+    // --- 3. CALL BYPASSGPT.AI ---
     const response = await fetch("https://www.bypassgpt.ai/api/bypassgpt/v1/generate", {
       method: "POST",
       headers: {
@@ -41,7 +51,7 @@ export async function POST(request) {
         "api-key": apiKey
       },
       body: JSON.stringify({
-        input: content,
+        input: processedContent,
         model_type: "Enhanced"
       })
     });
@@ -52,19 +62,36 @@ export async function POST(request) {
     const taskId = data.task_id || data.id || data.data?.task_id;
     const immediateOutput = data.output || data.text || data.data?.output;
 
-    // 3. Increment usage immediately (Charge for the attempt as requested)
+    // --- 4. PERSIST USAGE IMMEDIATELY ---
     const newUsed = currentUsed + wordCount;
-    await supabaseAdmin.from('premium_projects').update({
-      humanizer_words_used: newUsed,
-      last_generated_at: new Date().toISOString()
-    }).eq('id', projectId);
+    const { error: updateError } = await supabaseAdmin
+      .from('premium_projects')
+      .update({
+        humanizer_words_used: newUsed,
+        last_generated_at: new Date().toISOString()
+      })
+      .eq('id', projectId);
+
+    if (updateError) {
+      console.error('Database Update Error:', updateError);
+      // We still proceed since the AI task started, but we log the error
+    }
+
+    // If output is immediate, we also need to restore images here
+    let finalImmediateOutput = immediateOutput;
+    if (immediateOutput && images.length > 0) {
+      images.forEach((tag, i) => {
+        finalImmediateOutput = finalImmediateOutput.replace(`{{IMAGE_REF_${i}}}`, tag);
+      });
+    }
 
     return NextResponse.json({ 
       success: true, 
       taskId, 
-      immediateOutput,
+      immediateOutput: finalImmediateOutput,
       newUsed, 
-      wordCount
+      wordCount,
+      protectedImages: images // Send to client for restoration during polling if needed
     });
 
   } catch (error) {
