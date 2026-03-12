@@ -12,21 +12,24 @@ export async function POST(request) {
 
     console.log('Humanizer Check: Checking taskId', taskId);
 
-    // FIX: retrieval endpoint usually requires a POST with task_id in body
-    const response = await fetch(`https://www.bypassgpt.ai/api/bypassgpt/v1/retrieval`, {
-      method: "POST",
+    // If POST returned 405, it likely wants GET with a query parameter.
+    // We'll try the GET method which is standard for many "retrieval" operations.
+    const pollUrl = `https://www.bypassgpt.ai/api/bypassgpt/v1/retrieval?task_id=${taskId}`;
+    
+    const response = await fetch(pollUrl, {
+      method: "GET",
       headers: { 
-        "Content-Type": "application/json",
-        "api-key": apiKey 
-      },
-      body: JSON.stringify({ task_id: taskId })
+        "api-key": apiKey,
+        "x-api-key": apiKey
+      }
     });
 
     const rawText = await response.text();
     console.log('Humanizer Check: Raw Response:', rawText);
 
     if (!response.ok) {
-      throw new Error(`Retrieval Error (${response.status}): ${rawText}`);
+      // If GET also fails, we'll report the specific error
+      throw new Error(`Retrieval Error (${response.status}): ${rawText.substring(0, 100)}`);
     }
 
     let data;
@@ -36,17 +39,16 @@ export async function POST(request) {
       throw new Error('Invalid JSON from BypassGPT during retrieval.');
     }
 
-    // According to docs, data.output contains the result and data.status is 'completed'
-    // But we check multiple locations for robustness
-    const output = data.data?.output || data.output || data.text || data.data?.text;
-    const status = data.data?.status || data.status || data.msg;
+    // Capture output and status from multiple possible response structures
+    const output = data.data?.output || data.output || data.text || data.data?.text || (data.data && data.data.text);
+    const status = data.data?.status || data.status || data.msg || (data.code === 200 ? 'success' : '');
     
-    // Some versions use 'success' or 'completed' or '200' code
-    const isCompleted = status === 'success' || status === 'completed' || data.code === 200;
+    // Check for success/completed signals
+    const isCompleted = (status === 'success' || status === 'completed' || data.code === 200) && !!output;
 
     return NextResponse.json({ 
       success: true, 
-      isCompleted: isCompleted && !!output, 
+      isCompleted, 
       output,
       rawStatus: status
     });
