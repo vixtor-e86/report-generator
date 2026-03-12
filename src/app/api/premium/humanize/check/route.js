@@ -10,10 +10,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing task ID or API key' }, { status: 400 });
     }
 
-    console.log('Humanizer Check: Checking taskId', taskId);
-
-    // If POST returned 405, it likely wants GET with a query parameter.
-    // We'll try the GET method which is standard for many "retrieval" operations.
+    // BypassGPT Retrieval Endpoint
     const pollUrl = `https://www.bypassgpt.ai/api/bypassgpt/v1/retrieval?task_id=${taskId}`;
     
     const response = await fetch(pollUrl, {
@@ -24,33 +21,33 @@ export async function POST(request) {
       }
     });
 
-    const rawText = await response.text();
-    console.log('Humanizer Check: Raw Response:', rawText);
-
     if (!response.ok) {
-      // If GET also fails, we'll report the specific error
-      throw new Error(`Retrieval Error (${response.status}): ${rawText.substring(0, 100)}`);
+      const errorText = await response.text();
+      throw new Error(`Retrieval Error (${response.status}): ${errorText.substring(0, 100)}`);
     }
 
-    let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch (e) {
-      throw new Error('Invalid JSON from BypassGPT during retrieval.');
-    }
-
-    // Capture output and status from multiple possible response structures
-    const output = data.data?.output || data.output || data.text || data.data?.text || (data.data && data.data.text);
-    const status = data.data?.status || data.status || data.msg || (data.code === 200 ? 'success' : '');
+    const data = await response.json();
     
-    // Check for success/completed signals
-    const isCompleted = (status === 'success' || status === 'completed' || data.code === 200) && !!output;
+    // EXTRACT OUTPUT
+    // The console logs show that output is being found, but isCompleted remains false.
+    const output = data.data?.output || data.output || data.text || data.data?.text || (data.data && data.data.text);
+    
+    // EXTRACT STATUS
+    const status = data.data?.status || data.status || data.msg || "";
+    
+    // FLEXIBLE COMPLETION LOGIC
+    // If the 'output' field has content, the task is effectively done regardless of the 'status' field.
+    const hasOutput = typeof output === 'string' && output.trim().length > 10;
+    const statusSuccess = status === 'success' || status === 'completed' || data.code === 200;
+
+    const isCompleted = hasOutput || statusSuccess;
 
     return NextResponse.json({ 
       success: true, 
-      isCompleted, 
-      output,
-      rawStatus: status
+      isCompleted: !!isCompleted, 
+      output: output || null,
+      rawStatus: status,
+      fullResponse: data // For debugging if needed
     });
 
   } catch (error) {
