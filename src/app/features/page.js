@@ -61,7 +61,7 @@ export default function FeaturesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {[
-                  { name: "Content Target", free: "800 Words", std: "2,000+ Words", prem: "4,000+ Words", subPrem: "Elite Technical Depth" },
+                  { name: "Content Target", free: "1500 Words", std: "2,000+ Words", prem: "4,000+ Words", subPrem: "Elite Technical Depth" },
                   { name: "AI Architect", free: "Basic", std: "Advanced", prem: "System Architect", subPrem: "Deep Technical Logic" },
                   { name: "Academic Humanizer", free: "✗", std: "✗", prem: "✓ 10,000 Words", premClass: "text-emerald-500 font-black", subPrem: "Bypass AI Detectors" },
                   { name: "Modification Style", free: "None", std: "Whole Chapter", prem: "Surgical / Partial", subPrem: "Edit Specific Sections" },
@@ -69,7 +69,7 @@ export default function FeaturesPage() {
                   { name: "Research Data Analysis", free: "✗", std: "✗", prem: "✓ (Files Tab)", premClass: "text-emerald-500 font-black", subPrem: "Analyze DOCX/TXT Readings" },
                   { name: "Visual Tools", free: "✗", std: "✗", prem: "✓ (Flowcharts/Sys)", premClass: "text-emerald-500 font-black", subPrem: "Mermaid & Diagrams" },
                   { name: "Presentation Gen", free: "✗", std: "✗", prem: "✓ (AI Slides)", premClass: "text-emerald-500 font-black" },
-                  { name: "Project Limit", free: "1 Project", std: "Unlimited", prem: "Unlimited", stdClass: "font-bold", premClass: "text-emerald-500 font-black" },
+                  { name: "Project Limit", free: "1 Free Project ", std: "Scale with Usage", prem: "Scale with Usage", stdClass: "font-bold", premClass: "text-emerald-500 font-black" },
                   { name: "Token Limit", free: "30,000", std: "120,000", prem: "300,000 (Soft)", subPrem: "Top-up available" },
                   { name: "Affiliate Commission", free: "✗", std: "10% Reward", prem: "15% (VIP)", premClass: "text-emerald-500 font-black" },
                   { name: "Export Standards", free: "PDF", std: "DOCX + PDF", prem: "DOCX (Premium Build)", subPrem: "Custom Order + Master Refs" },
