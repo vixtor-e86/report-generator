@@ -99,9 +99,6 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     if (!chapter) return;
 
     let contentToHumanize = "";
-    let fullChapterContent = chapter.content;
-    const isPartial = !selectedSectionIds.includes('all');
-
     if (selectedSectionIds.includes('all')) {
       contentToHumanize = chapter.content;
     } else {
@@ -128,6 +125,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       
       // Update local and global word usage immediately
       if (data.newUsed !== undefined) {
+        console.log('Humanizer: Updating usage to', data.newUsed);
         setLocalWordsUsed(data.newUsed);
         if (onUpdateProjectData) onUpdateProjectData({ humanizer_words_used: data.newUsed });
       }
@@ -138,12 +136,12 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       setStatusText('Task submitted. AI is processing...');
 
       if (data.immediateOutput) {
-        handleSuccess(data.immediateOutput, contentToHumanize, fullChapterContent, isPartial, data.protectedImages || []);
+        handleSuccess(data.immediateOutput, contentToHumanize, data.protectedImages || []);
         return;
       }
 
       if (data.taskId) {
-        await pollForResult(data.taskId, contentToHumanize, fullChapterContent, isPartial, data.protectedImages || []);
+        await pollForResult(data.taskId, contentToHumanize, data.protectedImages || []);
       } else {
         throw new Error('No task ID returned from server.');
       }
@@ -156,7 +154,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     }
   };
 
-  const pollForResult = async (taskId, originalContent, fullContent, isPartial, imgs) => {
+  const pollForResult = async (taskId, originalContent, imgs) => {
     let completed = false;
     let attempts = 0;
     const maxAttempts = 80; 
@@ -180,7 +178,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
         
         const data = await res.json();
         if (res.ok && data.isCompleted && data.output) {
-          handleSuccess(data.output, originalContent, fullContent, isPartial, imgs);
+          handleSuccess(data.output, originalContent, imgs);
           completed = true;
         }
       } catch (e) {
@@ -193,29 +191,57 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     }
   };
 
-  const handleSuccess = (humanizedText, originalContent, fullContent, isPartial, imgs) => {
+  const handleSuccess = (humanizedText, originalContent, imgs) => {
     let restoredText = humanizedText;
     
     // Restore images if placeholders exist
     if (imgs && imgs.length > 0) {
       imgs.forEach((tag, i) => {
-        restoredText = restoredText.replace(new RegExp(`\\{\\{IMAGE_REF_${i}\\}\\}`, 'g'), tag);
+        const p = `[[[IMG_REF_${i}]]]`;
+        restoredText = restoredText.split(p).join(tag);
       });
     }
 
-    let finalMergedOutput = restoredText;
-    if (isPartial && fullContent) {
-      const normalizedFull = fullContent.replace(/\r\n/g, '\n');
-      const normalizedTarget = originalContent.replace(/\r\n/g, '\n');
-      if (normalizedFull.includes(normalizedTarget)) {
-        finalMergedOutput = normalizedFull.replace(normalizedTarget, restoredText);
+    // --- NEW ROBUST MERGE LOGIC ---
+    let finalChapterOutput = restoredText;
+    
+    if (!selectedSectionIds.includes('all')) {
+      // Reconstruct entire chapter from sections
+      finalChapterOutput = sections.map(sec => {
+        if (selectedSectionIds.includes(sec.id)) {
+          // Find this section in the humanized output
+          // This is complex if multiple sections were humanized together
+          // But since we joined them with \n\n, we can try to extract
+          // However, simpler is just to replace the humanized text into the chapter
+          return "PENDING_MERGE";
+        }
+        return sec.content;
+      }).join("\n\n");
+
+      // Robust merge: Replace the specific block of original text with the humanized block
+      const chapter = chapters.find(c => c.id === selectedChapterId);
+      const fullOriginal = chapter.content.replace(/\r\n/g, '\n');
+      const targetOriginal = originalContent.replace(/\r\n/g, '\n');
+      
+      if (fullOriginal.includes(targetOriginal)) {
+        finalChapterOutput = fullOriginal.replace(targetOriginal, restoredText);
+      } else {
+        // Fallback to trimmed match
+        const trimmedTarget = targetOriginal.trim();
+        if (fullOriginal.includes(trimmedTarget)) {
+          finalChapterOutput = fullOriginal.replace(trimmedTarget, restoredText);
+        } else {
+          // If all else fails, use the humanized block (this is the last resort)
+          console.warn('Merge failed, falling back to selection only');
+          finalChapterOutput = restoredText;
+        }
       }
     }
 
     setResults({ 
       original: originalContent, 
       humanized: restoredText, 
-      fullHumanized: finalMergedOutput 
+      fullHumanized: finalChapterOutput 
     });
     setStep('compare');
   };

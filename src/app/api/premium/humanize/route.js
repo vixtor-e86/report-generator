@@ -20,7 +20,10 @@ export async function POST(request) {
       .eq('id', projectId)
       .single();
 
-    if (projectError || !project) return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
+    if (projectError || !project) {
+      console.error('Humanizer: Project fetch error:', projectError);
+      return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
+    }
 
     const currentUsed = project.humanizer_words_used || 0;
     const limit = project.humanizer_words_limit || 10000;
@@ -35,7 +38,7 @@ export async function POST(request) {
     const protectedImages = [];
     const imageRegex = /!\[.*?\]\(.*?\)/g;
     const processedContent = content.replace(imageRegex, (match) => {
-      const placeholder = ` {{IMAGE_REF_${protectedImages.length}}} `;
+      const placeholder = `[[[IMG_REF_${protectedImages.length}]]]`;
       protectedImages.push(match);
       return placeholder;
     });
@@ -62,7 +65,7 @@ export async function POST(request) {
     const taskId = data.task_id || data.id || data.data?.task_id;
     const immediateOutput = data.output || data.text || data.data?.output;
 
-    // --- 4. PERSIST USAGE IMMEDIATELY ---
+    // --- 4. PERSIST USAGE IMMEDIATELY (VITAL) ---
     const newUsed = currentUsed + wordCount;
     const { error: updateError } = await supabaseAdmin
       .from('premium_projects')
@@ -73,14 +76,17 @@ export async function POST(request) {
       .eq('id', projectId);
 
     if (updateError) {
-      console.error('Database Update Error:', updateError);
+      console.error('CRITICAL: Database usage update failed:', updateError);
+    } else {
+      console.log('Humanizer usage updated successfully:', newUsed);
     }
 
     // If output is immediate, restore images
     let finalImmediateOutput = immediateOutput;
     if (immediateOutput && protectedImages.length > 0) {
       protectedImages.forEach((tag, i) => {
-        finalImmediateOutput = finalImmediateOutput.replace(`{{IMAGE_REF_${i}}}`, tag);
+        const p = `[[[IMG_REF_${i}]]]`;
+        finalImmediateOutput = finalImmediateOutput.split(p).join(tag);
       });
     }
 
@@ -90,7 +96,7 @@ export async function POST(request) {
       immediateOutput: finalImmediateOutput,
       newUsed, 
       wordCount,
-      protectedImages // Send to client for restoration during polling if needed
+      protectedImages 
     });
 
   } catch (error) {
