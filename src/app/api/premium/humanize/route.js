@@ -47,9 +47,8 @@ export async function POST(request) {
       throw new Error('BYPASSGPT_API_KEY not found in environment variables.');
     }
 
-    // Step A: Initiate Task
-    // We'll use the most common API endpoint documented
-    const genUrl = "https://www.bypassgpt.ai/api/bypassgpt/v1/generate";
+    // Attempting with the most standard API endpoint
+    const genUrl = "https://api.bypassgpt.ai/v1/generate";
     
     console.log('Humanizer: Initiating request to', genUrl);
     
@@ -57,19 +56,21 @@ export async function POST(request) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": apiKey
+        "x-api-key": apiKey,
+        "api-key": apiKey // Some versions use this without the x-
       },
       body: JSON.stringify({
         input: processedContent,
         model_type: "Enhanced" 
       })
-    }).catch(err => {
-      console.error('Fetch Crash:', err);
-      throw new Error('Failed to connect to humanizer service. Check server network.');
     });
 
     const genRawText = await genResponse.text();
-    console.log('Humanizer: Raw Response:', genRawText);
+    
+    if (genResponse.status === 403) {
+      console.error('BypassGPT 403 Forbidden:', genRawText);
+      throw new Error('BypassGPT API access denied (403). Please ensure: 1. Your API key is correct. 2. You have a paid subscription with API access enabled in your BypassGPT dashboard. 3. You are not on a free trial (API often requires a paid plan).');
+    }
 
     if (!genResponse.ok) {
       throw new Error(`BypassGPT Error (${genResponse.status}): ${genRawText}`);
@@ -79,50 +80,50 @@ export async function POST(request) {
     try {
       genData = JSON.parse(genRawText);
     } catch (e) {
-      throw new Error(`Invalid JSON response from humanizer: ${genRawText.substring(0, 100)}`);
+      throw new Error(`Invalid JSON response: ${genRawText.substring(0, 100)}`);
     }
 
-    // Capture task ID from any possible location
     const taskId = genData.task_id || genData.id || genData.data?.task_id || (genData.data && genData.data.id);
     let humanizedText = genData.data?.output || genData.output || genData.text || (genData.data && genData.data.text);
 
     if (!taskId && !humanizedText) {
-      throw new Error(`No task identifier found in response. Contact support or check API logs.`);
+      throw new Error(`No task identifier found. Response: ${genRawText}`);
     }
 
     // Step B: Polling if needed
     if (taskId && !humanizedText) {
       console.log('Humanizer: Polling for task', taskId);
       let attempts = 0;
-      const maxAttempts = 25; 
+      const maxAttempts = 30; 
 
       while (attempts < maxAttempts) {
         attempts++;
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3s
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        const pollUrl = `https://www.bypassgpt.ai/api/bypassgpt/v1/retrieval?task_id=${taskId}`;
+        const pollUrl = `https://api.bypassgpt.ai/v1/retrieval?task_id=${taskId}`;
         const pollResponse = await fetch(pollUrl, {
-          headers: { "x-api-key": apiKey }
+          headers: { 
+            "x-api-key": apiKey,
+            "api-key": apiKey
+          }
         });
 
         if (pollResponse.ok) {
           const pollData = await pollResponse.json();
-          console.log(`Humanizer: Poll ${attempts} Status:`, pollData.status);
-          
           const output = pollData.data?.output || pollData.output || pollData.text || (pollData.data && pollData.data.text);
           
           if ((pollData.status === 'success' || pollData.status === 'completed' || pollData.code === 200) && output) {
             humanizedText = output;
             break;
           } else if (pollData.status === 'failed' || pollData.status === 'error') {
-            throw new Error(`Humanization task failed on server: ${pollData.message || 'Unknown error'}`);
+            throw new Error(`Task failed: ${pollData.message || 'Unknown error'}`);
           }
         }
       }
     }
 
     if (!humanizedText) {
-      throw new Error('Humanizer timed out. Please try a shorter section or try again in a few minutes.');
+      throw new Error('Humanizer timed out. Try a shorter section.');
     }
 
     // --- 4. RESTORE IMAGES ---
