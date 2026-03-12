@@ -236,7 +236,7 @@ function WorkspaceContent() {
         setGlobalLoadingText={setGlobalLoadingText} 
         onSaved={loadWorkspaceData} 
         showNotification={showNotification}
-        onUpdateProjectData={(newData) => setProjectData(newData)}
+        onUpdateProjectData={(updates) => setProjectData(prev => ({ ...prev, ...updates }))}
       />
 
       <ExportModal

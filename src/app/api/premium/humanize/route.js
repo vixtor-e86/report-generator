@@ -6,8 +6,8 @@ export async function POST(request) {
   try {
     const { content, projectId } = await request.json();
 
-    if (!content || content.length < 10 || !projectId) {
-      return NextResponse.json({ error: 'Selection too short.' }, { status: 400 });
+    if (!content || content.length < 5 || !projectId) {
+      return NextResponse.json({ error: 'Missing content or project ID.' }, { status: 400 });
     }
 
     const wordCount = content.trim().split(/\s+/).length;
@@ -52,7 +52,7 @@ export async function POST(request) {
     const taskId = data.task_id || data.id || data.data?.task_id;
     const immediateOutput = data.output || data.text || data.data?.output;
 
-    // 3. Increment usage immediately (Charge for the attempt)
+    // 3. Increment usage immediately (Charge for the attempt as requested)
     const newUsed = currentUsed + wordCount;
     await supabaseAdmin.from('premium_projects').update({
       humanizer_words_used: newUsed,
@@ -63,7 +63,7 @@ export async function POST(request) {
       success: true, 
       taskId, 
       immediateOutput,
-      newUsed, // Return to frontend for instant UI update
+      newUsed, 
       wordCount
     });
 

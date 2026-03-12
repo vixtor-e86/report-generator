@@ -128,7 +128,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       // Update local and global word usage immediately
       if (data.newUsed !== undefined) {
         setLocalWordsUsed(data.newUsed);
-        if (onUpdateProjectData) onUpdateProjectData({ ...projectData, humanizer_words_used: data.newUsed });
+        if (onUpdateProjectData) onUpdateProjectData({ humanizer_words_used: data.newUsed });
       }
 
       setPollProgress(15);
