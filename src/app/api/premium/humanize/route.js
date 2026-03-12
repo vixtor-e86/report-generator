@@ -36,103 +36,90 @@ export async function POST(request) {
     const images = [];
     const imageRegex = /!\[.*?\]\(.*?\)/g;
     const processedContent = content.replace(imageRegex, (match) => {
-      const placeholder = `{{IMAGE_PLACEHOLDER_${images.length}}}`;
+      const placeholder = `{{IMG_${images.length}}}`;
       images.push(match);
       return placeholder;
     });
 
-    // --- 3. CALL BYPASSGPT.AI ---
+    // --- 3. CALL BYPASSGPT.AI (OFFICIAL SPEC) ---
     const apiKey = process.env.BYPASSGPT_API_KEY;
     if (!apiKey) {
       throw new Error('BYPASSGPT_API_KEY not found in environment variables.');
     }
 
-    // Use a consistent BASE URL
-    const BASE_URL = "https://www.bypassgpt.ai/api/bypassgpt/v1";
+    const API_BASE = "https://www.bypassgpt.ai/api/bypassgpt/v1";
     
-    console.log(`Humanizer: Sending ${wordCount} words to BypassGPT...`);
+    console.log(`Humanizer: Submitting task (${wordCount} words)`);
     
-    // Step A: Initiate Task
-    const genResponse = await fetch(`${BASE_URL}/generate`, {
+    // STEP A: SUBMIT TASK
+    const submitResponse = await fetch(`${API_BASE}/submit`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": apiKey
+        "api-key": apiKey,
+        "User-Agent": "W3-WriteLab-Researcher/1.0"
       },
       body: JSON.stringify({
         input: processedContent,
-        model_type: "Enhanced" 
+        mode: "Latest" // Official modes: Fast, Balanced, Aggressive, Latest
       })
-    }).catch(err => {
-      console.error('Humanizer Fetch Error (Gen):', err);
-      throw new Error(`Connection failed: ${err.message}`);
     });
 
-    const genRawText = await genResponse.text();
-    console.log('Humanizer Gen Raw Response:', genRawText);
+    const submitRaw = await submitResponse.text();
+    console.log('Humanizer: Submit Response:', submitRaw);
 
-    if (!genResponse.ok) {
-      if (genResponse.status === 403) {
-        throw new Error('BypassGPT 403: Unauthorized. Please check if your API key is correct and your plan has API access enabled.');
-      }
-      throw new Error(`BypassGPT Gen Error (${genResponse.status}): ${genRawText}`);
+    if (!submitResponse.ok) {
+      throw new Error(`BypassGPT Submit Error (${submitResponse.status}): ${submitRaw}`);
     }
 
-    let genData;
-    try {
-      genData = JSON.parse(genRawText);
-    } catch (e) {
-      throw new Error(`BypassGPT sent invalid JSON: ${genRawText.substring(0, 100)}`);
+    let submitData = JSON.parse(submitRaw);
+    const taskId = submitData.data?.task_id || submitData.task_id;
+
+    if (!taskId) {
+      throw new Error(`Failed to initialize task. Response: ${submitRaw}`);
     }
 
-    // Identify Task ID or immediate output
-    const taskId = genData.task_id || genData.id || genData.data?.task_id || (genData.data && genData.data.id);
-    let humanizedText = genData.data?.output || genData.output || genData.text || (genData.data && genData.data.text);
+    // STEP B: RETRIEVAL (POST with POLLING)
+    let humanizedText = "";
+    let attempts = 0;
+    const maxAttempts = 30; 
 
-    if (!taskId && !humanizedText) {
-      throw new Error(`No task identifier or result found. Response: ${genRawText}`);
-    }
+    console.log(`Humanizer: Polling task ${taskId}...`);
 
-    // Step B: Polling for results
-    if (taskId && !humanizedText) {
-      console.log('Humanizer: Polling task', taskId);
-      let attempts = 0;
-      const maxAttempts = 40; // Total 80 seconds
+    while (attempts < maxAttempts) {
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 3000)); // official recommendation is polling every few seconds
 
-      while (attempts < maxAttempts) {
-        attempts++;
-        await new Promise(resolve => setTimeout(resolve, 2000));
+      const pollResponse = await fetch(`${API_BASE}/retrieval`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": apiKey
+        },
+        body: JSON.stringify({ task_id: taskId })
+      });
 
-        const pollResponse = await fetch(`${BASE_URL}/retrieval?task_id=${taskId}`, {
-          headers: { "x-api-key": apiKey }
-        }).catch(err => {
-          console.error('Humanizer Polling Fetch Error:', err);
-          return null; // Continue loop if one fetch fails
-        });
-
-        if (pollResponse && pollResponse.ok) {
-          const pollData = await pollResponse.json();
-          console.log(`Poll ${attempts} Status:`, pollData.status);
-          
-          const output = pollData.data?.output || pollData.output || pollData.text || (pollData.data && pollData.data.text);
-          
-          if ((pollData.status === 'success' || pollData.status === 'completed' || pollData.code === 200) && output) {
-            humanizedText = output;
-            break;
-          } else if (pollData.status === 'failed' || pollData.status === 'error') {
-            throw new Error(`Humanizer server error: ${pollData.message || 'Unknown failure'}`);
-          }
+      if (pollResponse.ok) {
+        const pollData = await pollResponse.json();
+        console.log(`Humanizer: Poll ${attempts} Status:`, pollData.data?.status || pollData.msg);
+        
+        // Based on spec, it's inside data.output and status is 'completed'
+        if (pollData.data?.status === 'completed' && pollData.data?.output) {
+          humanizedText = pollData.data.output;
+          break;
+        } else if (pollData.data?.status === 'failed') {
+          throw new Error('BypassGPT server reported task failure.');
         }
       }
     }
 
     if (!humanizedText) {
-      throw new Error('Humanizer processing taking too long. Please check your history in the BypassGPT dashboard.');
+      throw new Error('Humanization timed out. The server is still processing your request. Please check your history on bypassgpt.ai.');
     }
 
     // --- 4. RESTORE IMAGES ---
     images.forEach((originalTag, index) => {
-      const placeholder = `{{IMAGE_PLACEHOLDER_${index}}}`;
+      const placeholder = `{{IMG_${index}}}`;
       humanizedText = humanizedText.replace(placeholder, originalTag);
     });
 
@@ -172,6 +159,6 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Humanizer Logic Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error during humanization' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Critical error during humanization' }, { status: 500 });
   }
 }
