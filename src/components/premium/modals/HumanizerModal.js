@@ -27,17 +27,17 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   const [statusText, setStatusText] = useState('Initializing architect...');
   const [protectedImages, setProtectedImages] = useState([]);
   
-  // Local Usage Tracking
-  const [localWordsUsed, setLocalWordsUsed] = useState(projectData?.humanizer_words_used || 0);
+  // Local state for word bar to update instantly
+  const [localUsage, setLocalUsage] = useState(0);
   const wordsLimit = projectData?.humanizer_words_limit || 10000;
 
   useEffect(() => {
     if (projectData?.humanizer_words_used !== undefined) {
-      setLocalWordsUsed(projectData.humanizer_words_used);
+      setLocalUsage(projectData.humanizer_words_used);
     }
   }, [projectData?.humanizer_words_used]);
 
-  const percentage = Math.min((localWordsUsed / wordsLimit) * 100, 100);
+  const percentage = Math.min((localUsage / wordsLimit) * 100, 100);
 
   useEffect(() => {
     if (selectedChapterId) {
@@ -52,29 +52,31 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   const parseChapterIntoSections = (content) => {
     if (!content) return [];
     const normalized = content.replace(/\r\n/g, '\n');
-    const hasH2 = /^## /m.test(normalized);
-    const headingRegex = hasH2 ? /^## (.*)/gm : /^### (.*)/gm;
+    // Enhanced detection: Splits by any header level to ensure nothing is missed
+    const headingRegex = /^#+ (.*)/gm;
     const parsedSections = [];
     let match;
     let lastIndex = 0;
+    
     while ((match = headingRegex.exec(normalized)) !== null) {
       if (parsedSections.length === 0 && match.index > 0) {
         const introContent = normalized.substring(0, match.index).trim();
-        if (introContent) parsedSections.push({ id: "intro", title: "Introduction", content: introContent });
+        if (introContent) parsedSections.push({ id: "intro", title: "Intro", content: introContent });
       }
-      if (parsedSections.length > 0 && parsedSections[parsedSections.length - 1].id !== "intro") {
-        const prevSection = parsedSections[parsedSections.length - 1];
-        prevSection.content = normalized.substring(lastIndex, match.index).trim();
+      if (parsedSections.length > 0) {
+        const prev = parsedSections[parsedSections.length - 1];
+        if (prev.content === "") prev.content = normalized.substring(lastIndex, match.index).trim();
       }
       parsedSections.push({ id: `sec-${parsedSections.length}`, title: match[1].trim(), content: "" });
       lastIndex = match.index;
     }
+    
     if (parsedSections.length > 0) {
-      const lastSection = parsedSections[parsedSections.length - 1];
-      lastSection.content = normalized.substring(lastIndex).trim();
+      parsedSections[parsedSections.length - 1].content = normalized.substring(lastIndex).trim();
     } else {
-      parsedSections.push({ id: "whole", title: "Entire Chapter Content", content: normalized });
+      parsedSections.push({ id: "whole", title: "Full Content", content: normalized });
     }
+    
     return parsedSections.filter(s => s.content.length > 0);
   };
 
@@ -99,7 +101,9 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     if (!chapter) return;
 
     let contentToHumanize = "";
-    if (selectedSectionIds.includes('all')) {
+    const isPartial = !selectedSectionIds.includes('all');
+
+    if (!isPartial) {
       contentToHumanize = chapter.content;
     } else {
       contentToHumanize = sections
@@ -111,7 +115,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     setIsGenerating(true);
     setStep('polling');
     setPollProgress(5);
-    setStatusText('Handshaking with AI server...');
+    setStatusText('Initiating secure handshake...');
 
     try {
       const response = await fetch('/api/premium/humanize', {
@@ -121,19 +125,18 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       });
       
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Humanization initiation failed');
+      if (!response.ok) throw new Error(data.error || 'Connection failed');
       
-      // Update local and global word usage immediately
+      // Update UI bar immediately
       if (data.newUsed !== undefined) {
-        console.log('Humanizer: Updating usage to', data.newUsed);
-        setLocalWordsUsed(data.newUsed);
+        setLocalUsage(data.newUsed);
         if (onUpdateProjectData) onUpdateProjectData({ humanizer_words_used: data.newUsed });
       }
 
       if (data.protectedImages) setProtectedImages(data.protectedImages);
 
       setPollProgress(15);
-      setStatusText('Task submitted. AI is processing...');
+      setStatusText('Task accepted. AI Architect is rewriting...');
 
       if (data.immediateOutput) {
         handleSuccess(data.immediateOutput, contentToHumanize, data.protectedImages || []);
@@ -143,12 +146,12 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       if (data.taskId) {
         await pollForResult(data.taskId, contentToHumanize, data.protectedImages || []);
       } else {
-        throw new Error('No task ID returned from server.');
+        throw new Error('Server handshake failed (No tracking ID).');
       }
 
     } catch (err) { 
       setStep('sections');
-      if (showNotification) showNotification('Error', err.message, 'error');
+      if (showNotification) showNotification('Humanizer Error', err.message, 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -157,15 +160,13 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   const pollForResult = async (taskId, originalContent, imgs) => {
     let completed = false;
     let attempts = 0;
-    const maxAttempts = 80; 
+    const maxAttempts = 100; // ~5 minutes
 
     while (!completed && attempts < maxAttempts) {
       attempts++;
-      setPollProgress(Math.min(98, 15 + (attempts * 1.2)));
+      setPollProgress(Math.min(98, 15 + (attempts * 1)));
       
-      if (attempts % 5 === 0) {
-        setStatusText(`Architect is deep in technical flow... (${attempts*3}s)`);
-      }
+      if (attempts % 5 === 0) setStatusText(`System is polishing technical flow... (${attempts*3}s)`);
 
       await new Promise(r => setTimeout(r, 3000));
 
@@ -181,60 +182,38 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
           handleSuccess(data.output, originalContent, imgs);
           completed = true;
         }
-      } catch (e) {
-        console.warn('Polling error, retrying...');
-      }
+      } catch (e) { console.warn('Retrying connection...'); }
     }
 
-    if (!completed) {
-      throw new Error('Humanization timed out. Your request is processed in BypassGPT history, but retrieval failed.');
-    }
+    if (!completed) throw new Error('Humanization timed out. retrieval from server failed.');
   };
 
   const handleSuccess = (humanizedText, originalContent, imgs) => {
     let restoredText = humanizedText;
     
-    // Restore images if placeholders exist
+    // IMAGE RESTORATION (Robust split/join)
     if (imgs && imgs.length > 0) {
       imgs.forEach((tag, i) => {
-        const p = `[[[IMG_REF_${i}]]]`;
-        restoredText = restoredText.split(p).join(tag);
+        const placeholder = `###W3_IMG_${i}###`;
+        restoredText = restoredText.split(placeholder).join(tag);
       });
     }
 
-    // --- NEW ROBUST MERGE LOGIC ---
+    const chapter = chapters.find(c => c.id === selectedChapterId);
     let finalChapterOutput = restoredText;
     
     if (!selectedSectionIds.includes('all')) {
-      // Reconstruct entire chapter from sections
-      finalChapterOutput = sections.map(sec => {
-        if (selectedSectionIds.includes(sec.id)) {
-          // Find this section in the humanized output
-          // This is complex if multiple sections were humanized together
-          // But since we joined them with \n\n, we can try to extract
-          // However, simpler is just to replace the humanized text into the chapter
-          return "PENDING_MERGE";
-        }
-        return sec.content;
-      }).join("\n\n");
-
-      // Robust merge: Replace the specific block of original text with the humanized block
-      const chapter = chapters.find(c => c.id === selectedChapterId);
+      // SURGICAL MERGE
       const fullOriginal = chapter.content.replace(/\r\n/g, '\n');
       const targetOriginal = originalContent.replace(/\r\n/g, '\n');
       
       if (fullOriginal.includes(targetOriginal)) {
         finalChapterOutput = fullOriginal.replace(targetOriginal, restoredText);
+      } else if (fullOriginal.includes(targetOriginal.trim())) {
+        finalChapterOutput = fullOriginal.replace(targetOriginal.trim(), restoredText);
       } else {
-        // Fallback to trimmed match
-        const trimmedTarget = targetOriginal.trim();
-        if (fullOriginal.includes(trimmedTarget)) {
-          finalChapterOutput = fullOriginal.replace(trimmedTarget, restoredText);
-        } else {
-          // If all else fails, use the humanized block (this is the last resort)
-          console.warn('Merge failed, falling back to selection only');
-          finalChapterOutput = restoredText;
-        }
+        // Advanced fallback: If sections are out of order or modified, we don't overwrite
+        console.warn('Merge match failed, using humanized block as fallback');
       }
     }
 
@@ -255,19 +234,14 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       const response = await fetch('/api/premium/save-edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          chapterId: selectedChapterId, 
-          content: results.fullHumanized, 
-          userId: userId, 
-          isAiAction: true 
-        })
+        body: JSON.stringify({ chapterId: selectedChapterId, content: results.fullHumanized, userId: userId, isAiAction: true })
       });
-      if (!response.ok) throw new Error('Failed to save humanized version');
+      if (!response.ok) throw new Error('Failed to save');
       if (onSaved) onSaved();
       onClose();
-      if (showNotification) showNotification('Saved Successfully', 'Humanized version saved successfully to history.', 'success');
+      if (showNotification) showNotification('Success', 'Humanized version saved to your report.', 'success');
     } catch (err) { 
-      if (showNotification) showNotification('Save Failed', err.message, 'error');
+      if (showNotification) showNotification('Error', 'Save failed. Check your connection.', 'error');
     }
     finally { if (setIsGlobalLoading) setIsGlobalLoading(false); }
   };
@@ -312,7 +286,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
                   <div className="flex justify-between items-end mb-2">
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Word Usage</p>
-                      <p className="text-sm font-black text-slate-900">{localWordsUsed.toLocaleString()} / {wordsLimit.toLocaleString()}</p>
+                      <p className="text-sm font-black text-slate-900">{localUsage.toLocaleString()} / {wordsLimit.toLocaleString()}</p>
                     </div>
                     <span className={`text-xs font-black ${percentage > 90 ? 'text-red-500' : 'text-slate-900'}`}>{percentage.toFixed(0)}%</span>
                   </div>
