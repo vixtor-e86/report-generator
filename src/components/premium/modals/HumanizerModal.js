@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -17,16 +17,13 @@ const Icons = {
 };
 
 export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, projectData, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification, onUpdateProjectData }) {
-  const [step, setStep] = useState('select'); 
+  const [step, setStep] = useState('select');
   const [selectedChapterId, setSelectedChapterId] = useState(null);
   const [sections, setSections] = useState([]);
   const [selectedSectionIds, setSelectedSectionIds] = useState(['all']);
   const [results, setResults] = useState({ original: '', humanized: '', fullHumanized: '' });
-  const [isProcessing, setIsGenerating] = useState(false);
-  const [pollProgress, setPollProgress] = useState(0);
-  const [statusText, setStatusText] = useState('Initializing architect...');
-  const [protectedImages, setProtectedImages] = useState([]);
-  
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const [localUsage, setLocalUsage] = useState(projectData?.humanizer_words_used || 0);
   const wordsLimit = projectData?.humanizer_words_limit || 10000;
 
@@ -55,7 +52,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     const parsedSections = [];
     let match;
     let lastIndex = 0;
-    
+
     while ((match = headingRegex.exec(normalized)) !== null) {
       if (parsedSections.length === 0 && match.index > 0) {
         const introContent = normalized.substring(0, match.index).trim();
@@ -68,13 +65,13 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       parsedSections.push({ id: `sec-${parsedSections.length}`, title: match[1].trim(), content: "" });
       lastIndex = match.index;
     }
-    
+
     if (parsedSections.length > 0) {
       parsedSections[parsedSections.length - 1].content = normalized.substring(lastIndex).trim();
     } else {
       parsedSections.push({ id: "whole", title: "Full Content", content: normalized });
     }
-    
+
     return parsedSections.filter(s => s.content.length > 0);
   };
 
@@ -108,10 +105,8 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
         .join("\n\n");
     }
 
-    setIsGenerating(true);
-    setStep('polling');
-    setPollProgress(5);
-    setStatusText('Initiating secure handshake...');
+    setIsProcessing(true);
+    setStep('processing');
 
     try {
       const response = await fetch('/api/premium/humanize', {
@@ -119,98 +114,41 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId, content: contentToHumanize })
       });
-      
+
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Connection failed');
-      
+      if (!response.ok) throw new Error(data.error || 'Humanization failed');
+
       if (data.newUsed !== undefined) {
         setLocalUsage(data.newUsed);
         if (onUpdateProjectData) onUpdateProjectData({ humanizer_words_used: data.newUsed });
       }
 
-      if (data.protectedImages) setProtectedImages(data.protectedImages);
+      handleSuccess(data.immediateOutput, contentToHumanize);
 
-      setPollProgress(15);
-      setStatusText('Task accepted. AI Architect is rewriting...');
-
-      if (data.immediateOutput) {
-        handleSuccess(data.immediateOutput, contentToHumanize, data.protectedImages || []);
-        return;
-      }
-
-      if (data.taskId) {
-        await pollForResult(data.taskId, contentToHumanize, data.protectedImages || []);
-      } else {
-        throw new Error('Server handshake failed.');
-      }
-
-    } catch (err) { 
+    } catch (err) {
       setStep('sections');
       if (showNotification) showNotification('Humanizer Error', err.message, 'error');
     } finally {
-      setIsGenerating(false);
+      setIsProcessing(false);
     }
   };
 
-  const pollForResult = async (taskId, originalContent, imgs) => {
-    let completed = false;
-    let attempts = 0;
-    const maxAttempts = 100;
-
-    while (!completed && attempts < maxAttempts) {
-      attempts++;
-      setPollProgress(Math.min(98, 15 + (attempts * 1)));
-      if (attempts % 5 === 0) setStatusText(`System is polishing technical flow... (${attempts*3}s)`);
-      await new Promise(r => setTimeout(r, 3000));
-
-      try {
-        const res = await fetch('/api/premium/humanize/check', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ taskId })
-        });
-        const data = await res.json();
-        if (res.ok && data.isCompleted && data.output) {
-          handleSuccess(data.output, originalContent, imgs);
-          completed = true;
-        }
-      } catch (e) { console.warn('Retrying connection...'); }
-    }
-
-    if (!completed) throw new Error('Retrieval timed out.');
-  };
-
-  const handleSuccess = (humanizedText, originalContent, imgs) => {
-    let restoredText = humanizedText;
-    if (imgs && imgs.length > 0) {
-      imgs.forEach((tag, i) => {
-        restoredText = restoredText.split(`###W3_IMG_${i}###`).join(tag);
-      });
-    }
-
+  const handleSuccess = (humanizedText, originalContent) => {
     const chapter = chapters.find(c => c.id === selectedChapterId);
-    let finalChapterOutput = restoredText;
-    
+    let finalChapterOutput = humanizedText;
+
     if (!selectedSectionIds.includes('all')) {
-      // THE NEW ROBUST RECONSTRUCTION LOGIC
-      // Instead of string replacement, we rebuild the whole chapter using the section state
       finalChapterOutput = sections.map(sec => {
         if (selectedSectionIds.includes(sec.id)) {
-          // If this section was selected, it's now part of the humanized output
-          // Since we joined them with \n\n, we need to match it correctly
-          // For now, the most robust way is to find the part of humanizedText that matches this section
-          // BUT, since the AI often merges them, we'll treat the humanizedText as the replacement for ALL selected sections
-          
-          // Identify if this is the FIRST selected section
           const firstSelectedId = sections.find(s => selectedSectionIds.includes(s.id))?.id;
-          if (sec.id === firstSelectedId) return restoredText;
-          return ""; // Remove other selected sections as they are now merged into the first one's position
+          if (sec.id === firstSelectedId) return humanizedText;
+          return "";
         }
         return sec.content;
       }).filter(content => content !== "").join("\n\n");
     }
 
-    setResults({ original: originalContent, humanized: restoredText, fullHumanized: finalChapterOutput });
+    setResults({ original: originalContent, humanized: humanizedText, fullHumanized: finalChapterOutput });
     setStep('compare');
   };
 
@@ -229,10 +167,11 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       if (onSaved) onSaved();
       onClose();
       if (showNotification) showNotification('Success', 'Humanized version saved.', 'success');
-    } catch (err) { 
+    } catch (err) {
       if (showNotification) showNotification('Error', 'Save failed.', 'error');
+    } finally {
+      if (setIsGlobalLoading) setIsGlobalLoading(false);
     }
-    finally { if (setIsGlobalLoading) setIsGlobalLoading(false); }
   };
 
   if (!isOpen) return null;
@@ -274,8 +213,8 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
               </div>
             </div>
           )}
-          {step === 'polling' && (
-            <div className="flex-1 flex flex-col items-center justify-center p-10 bg-slate-50"><div className="w-full max-w-md text-center space-y-8"><div className="relative w-32 h-32 mx-auto"><div className="absolute inset-0 border-4 border-slate-100 rounded-full" /><motion.div className="absolute inset-0 border-4 border-slate-900 rounded-full border-t-transparent" animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} /><div className="absolute inset-0 flex items-center justify-center text-slate-900"><Icons.Activity /></div></div><div><h3 className="text-2xl font-black text-slate-900">Architect is Working...</h3><p className="text-sm text-slate-500 mt-2">{statusText}</p></div><div className="space-y-2"><div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest"><span>Processing Engine</span><span>{pollProgress}%</span></div><div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden"><motion.div className="h-full bg-slate-900" initial={{ width: "0%" }} animate={{ width: `${pollProgress}%` }} /></div></div><div className="bg-white p-4 rounded-xl border border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">System Status: Handshake Verified • AI Active</div></div></div>
+          {step === 'processing' && (
+            <div className="flex-1 flex flex-col items-center justify-center p-10 bg-slate-50"><div className="w-full max-w-md text-center space-y-8"><div className="relative w-32 h-32 mx-auto"><div className="absolute inset-0 border-4 border-slate-100 rounded-full" /><motion.div className="absolute inset-0 border-4 border-slate-900 rounded-full border-t-transparent" animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} /><div className="absolute inset-0 flex items-center justify-center text-slate-900"><Icons.Activity /></div></div><div><h3 className="text-2xl font-black text-slate-900">Architect is Working...</h3><p className="text-sm text-slate-500 mt-2">AI is rewriting for academic authenticity...</p></div><div className="bg-white p-4 rounded-xl border border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">System Status: AI Active • Processing</div></div></div>
           )}
           {step === 'compare' && (
             <div className="flex-1 flex flex-col overflow-hidden"><div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-100 gap-px"><div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden border-b md:border-b-0"><div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Original Draft</span><span className="text-[10px] font-bold text-slate-400">{results.original.split(' ').length} Words</span></div><div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-400 leading-relaxed font-medium markdown-view opacity-60"><ReactMarkdown remarkPlugins={[remarkGfm]}>{results.original}</ReactMarkdown></div></div><div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden border-l border-slate-100"><div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0"><span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">AI Humanized Version</span><span className="text-[10px] font-bold text-slate-900">{results.humanized.split(' ').length} Words</span></div><div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-900 leading-relaxed font-bold bg-slate-50/30 markdown-view"><ReactMarkdown remarkPlugins={[remarkGfm]}>{results.humanized}</ReactMarkdown></div></div></div><div className="p-5 md:p-6 bg-white border-t border-slate-100 flex justify-between items-center shrink-0"><button onClick={() => setStep('select')} className="text-[9px] md:text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Reset Tool</button><button onClick={handleSave} className="px-6 md:px-10 py-3 md:py-4 bg-slate-900 hover:bg-black text-white rounded-xl md:rounded-2xl font-black text-[11px] md:text-sm shadow-xl transition-all active:scale-95 flex items-center gap-3"><Icons.Save /> SAVE TO CHAPTER</button></div></div>

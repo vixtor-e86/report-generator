@@ -10,10 +10,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing content or project ID.' }, { status: 400 });
     }
 
-    // Clean word count
     const wordCount = content.trim().split(/\s+/).filter(w => w.length > 0).length;
-    
-    // 1. Fetch current usage using Admin client
+
+    // 1. Fetch current usage
     const { data: project, error: fetchError } = await supabaseAdmin
       .from('premium_projects')
       .select('id, humanizer_words_used, humanizer_words_limit')
@@ -28,14 +27,13 @@ export async function POST(request) {
     const currentUsed = project.humanizer_words_used || 0;
     const limit = project.humanizer_words_limit || 10000;
 
-    // Check limit
     if (currentUsed + wordCount > limit) {
-      return NextResponse.json({ 
-        error: `Word limit exceeded. You have ${limit - currentUsed} words remaining, but this request is ${wordCount} words.` 
+      return NextResponse.json({
+        error: `Word limit exceeded. You have ${limit - currentUsed} words remaining, but this request is ${wordCount} words.`
       }, { status: 403 });
     }
 
-    // 2. IMAGE PROTECTION LOGIC (Robust)
+    // 2. Protect markdown images
     const protectedImages = [];
     const imageRegex = /!\[.*?\]\(.*?\)/g;
     const processedContent = content.replace(imageRegex, (match) => {
@@ -44,32 +42,39 @@ export async function POST(request) {
       return tag;
     });
 
-    const apiKey = process.env.BYPASSGPT_API_KEY;
-    if (!apiKey) throw new Error('BYPASSGPT_API_KEY not found in environment.');
+    const apiKey = process.env.RYNE_API_KEY;
+    if (!apiKey) throw new Error('RYNE_API_KEY not found in environment.');
 
-    // 3. START BYPASSGPT TASK
-    const response = await fetch("https://www.bypassgpt.ai/api/bypassgpt/v1/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "api-key": apiKey
-      },
+    // 3. Call Ryne API
+    const ryneResponse = await fetch('https://ryne.ai/api/humanizer/models/supernova', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        input: processedContent,
-        model_type: "Enhanced"
-      })
+        text: processedContent,
+        tone: 'professional',
+        purpose: 'academic writing',
+        language: 'english',
+        user_id: apiKey,
+        shouldStream: false,
+      }),
     });
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(`BypassGPT API error: ${JSON.stringify(data)}`);
+    const ryneData = await ryneResponse.json();
+    if (!ryneResponse.ok) throw new Error(`Ryne API error: ${JSON.stringify(ryneData)}`);
 
-    const taskId = data.task_id || data.id || data.data?.task_id;
-    const immediateOutput = data.output || data.text || data.data?.output;
+    const output = ryneData.content;
+    if (!output) throw new Error('Ryne API returned no content.');
 
-    // 4. PERSIST USAGE IMMEDIATELY (VITAL)
-    // We increment early because BypassGPT records the history immediately
+    // 4. Restore protected images
+    let finalOutput = output;
+    if (protectedImages.length > 0) {
+      protectedImages.forEach((tag, i) => {
+        finalOutput = finalOutput.split(`###W3_IMG_${i}###`).join(tag);
+      });
+    }
+
+    // 5. Persist usage
     const newUsedValue = currentUsed + wordCount;
-    
     const { data: updatedProject, error: updateError } = await supabaseAdmin
       .from('premium_projects')
       .update({
@@ -81,31 +86,18 @@ export async function POST(request) {
       .single();
 
     if (updateError) {
-      console.error('Humanizer: Database Update Error:', updateError);
-    } else {
-      console.log('Humanizer: DB Updated Successfully to', updatedProject.humanizer_words_used);
+      console.error('Humanizer: DB Update Error:', updateError);
     }
 
-    // Restore images if output was immediate
-    let finalImmediateOutput = immediateOutput;
-    if (immediateOutput && protectedImages.length > 0) {
-      protectedImages.forEach((tag, i) => {
-        const placeholder = `###W3_IMG_${i}###`;
-        finalImmediateOutput = finalImmediateOutput.split(placeholder).join(tag);
-      });
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      taskId, 
-      immediateOutput: finalImmediateOutput,
+    return NextResponse.json({
+      success: true,
+      immediateOutput: finalOutput,
       newUsed: updatedProject?.humanizer_words_used || newUsedValue,
       wordCount,
-      protectedImages 
     });
 
   } catch (error) {
-    console.error('Humanizer Initiation Error:', error);
+    console.error('Humanizer Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
