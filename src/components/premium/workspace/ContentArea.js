@@ -585,6 +585,9 @@ export default function ContentArea({
                   .markdown-preview h2 { font-size: 1.8rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1.2rem; color: #111827; }
                   .markdown-preview h3 { font-size: 1.4rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; color: #374151; }
                   .markdown-preview p { margin-bottom: 1.5rem; text-align: justify; }
+                  .markdown-preview ol { margin-bottom: 1.5rem; padding-left: 2rem; }
+                  .markdown-preview ul { margin-bottom: 1.5rem; padding-left: 2rem; }
+                  .markdown-preview li { margin-bottom: 0.5rem; }
                   .markdown-preview img { display: block; max-width: 100%; height: auto; margin: 2rem auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; }
                   .markdown-preview table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; table-layout: auto; }
                   .markdown-preview th, .markdown-preview td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; word-break: break-word; }

@@ -66,7 +66,7 @@ export default function RightSidebar({
     >
       <div className="rs-tabs">
         <button className={`rs-tab ${activeTab === 'tools' ? 'active' : ''}`} onClick={() => setActiveTab('tools')}>Tools</button>
-        <button className={`rs-tab ${activeTab === 'files' ? 'active' : ''}`} onClick={() => setActiveTab('files')}>Files</button>
+        <button id="step-files-tab" className={`rs-tab ${activeTab === 'files' ? 'active' : ''}`} onClick={() => setActiveTab('files')}>Files</button>
       </div>
 
       <div className="right-sidebar-content" style={{ padding: 0, overflowY: 'auto' }}>

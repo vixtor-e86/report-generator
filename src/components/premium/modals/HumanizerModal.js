@@ -23,15 +23,16 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   const [selectedSectionIds, setSelectedSectionIds] = useState(['all']);
   const [results, setResults] = useState({ original: '', humanized: '', fullHumanized: '' });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [hasHumanizedThisSession, setHasHumanizedThisSession] = useState(false);
 
   const [localUsage, setLocalUsage] = useState(projectData?.humanizer_words_used || 0);
   const wordsLimit = projectData?.humanizer_words_limit || 10000;
 
   useEffect(() => {
-    if (projectData?.humanizer_words_used !== undefined) {
+    if (projectData?.humanizer_words_used !== undefined && !hasHumanizedThisSession) {
       setLocalUsage(projectData.humanizer_words_used);
     }
-  }, [projectData?.humanizer_words_used]);
+  }, [projectData?.humanizer_words_used, hasHumanizedThisSession]);
 
   const percentage = Math.min((localUsage / wordsLimit) * 100, 100);
 
@@ -44,6 +45,12 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       }
     }
   }, [selectedChapterId, chapters]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHasHumanizedThisSession(false);
+    }
+  }, [isOpen]);
 
   const parseChapterIntoSections = (content) => {
     if (!content) return [];
@@ -107,6 +114,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
 
     setIsProcessing(true);
     setStep('processing');
+    setHasHumanizedThisSession(true);
 
     try {
       const response = await fetch('/api/premium/humanize', {
@@ -127,6 +135,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
 
     } catch (err) {
       setStep('sections');
+      setHasHumanizedThisSession(false);
       if (showNotification) showNotification('Humanizer Error', err.message, 'error');
     } finally {
       setIsProcessing(false);
@@ -165,7 +174,8 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       });
       if (!response.ok) throw new Error('Failed to save');
       if (onSaved) onSaved();
-      onClose();
+      setHasHumanizedThisSession(false);
+      setStep('sections');
       if (showNotification) showNotification('Success', 'Humanized version saved.', 'success');
     } catch (err) {
       if (showNotification) showNotification('Error', 'Save failed.', 'error');
@@ -209,7 +219,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
               <div className="w-full max-w-md flex flex-col h-full max-h-[600px] space-y-6">
                 <div className="text-center shrink-0"><h3 className="text-xl md:text-2xl font-black text-slate-900">Select Sections</h3><p className="text-sm text-slate-500 mt-1">Humanize specific parts or the whole chapter.</p></div>
                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar"><div className="grid gap-3 py-2"><button onClick={() => toggleSection('all')} className={`flex items-center justify-between p-4 md:p-5 rounded-2xl border-2 transition-all text-left ${selectedSectionIds.includes('all') ? 'border-slate-900 bg-white shadow-md' : 'border-slate-100 bg-white hover:border-slate-200'}`}><span className="font-black text-slate-900">Whole Chapter</span>{selectedSectionIds.includes('all') && <Icons.Check />}</button><div className="h-px bg-slate-200 my-2" />{sections.map(section => (<button key={section.id} onClick={() => toggleSection(section.id)} className={`flex items-center justify-between p-4 md:p-5 rounded-2xl border-2 transition-all text-left ${selectedSectionIds.includes(section.id) ? 'border-slate-900 bg-white shadow-md' : 'border-slate-100 bg-white hover:border-slate-200'}`}><div className="flex-1 min-w-0 pr-4"><p className="text-xs font-black text-slate-900 truncate">{section.title}</p><p className="text-[10px] text-slate-400 font-bold">{section.content.split(' ').length} words</p></div>{selectedSectionIds.includes(section.id) && <Icons.Check />}</button>))}</div></div>
-                <div className="flex gap-3 shrink-0"><button onClick={() => setStep('select')} className="flex-1 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black text-sm">BACK</button><button onClick={startHumanization} disabled={isProcessing} className="flex-[2] py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3"><Icons.Sparkles /> START AI BYPASS</button></div>
+                <div className="flex gap-3 shrink-0"><button onClick={() => setStep('select')} className="flex-1 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black text-sm">BACK</button><button onClick={startHumanization} disabled={isProcessing} className="flex-[2] py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3"><Icons.Sparkles /> START HUMMANIZING</button></div>
               </div>
             </div>
           )}
@@ -217,7 +227,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
             <div className="flex-1 flex flex-col items-center justify-center p-10 bg-slate-50"><div className="w-full max-w-md text-center space-y-8"><div className="relative w-32 h-32 mx-auto"><div className="absolute inset-0 border-4 border-slate-100 rounded-full" /><motion.div className="absolute inset-0 border-4 border-slate-900 rounded-full border-t-transparent" animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} /><div className="absolute inset-0 flex items-center justify-center text-slate-900"><Icons.Activity /></div></div><div><h3 className="text-2xl font-black text-slate-900">Architect is Working...</h3><p className="text-sm text-slate-500 mt-2">AI is rewriting for academic authenticity...</p></div><div className="bg-white p-4 rounded-xl border border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">System Status: AI Active • Processing</div></div></div>
           )}
           {step === 'compare' && (
-            <div className="flex-1 flex flex-col overflow-hidden"><div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-100 gap-px"><div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden border-b md:border-b-0"><div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Original Draft</span><span className="text-[10px] font-bold text-slate-400">{results.original.split(' ').length} Words</span></div><div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-400 leading-relaxed font-medium markdown-view opacity-60"><ReactMarkdown remarkPlugins={[remarkGfm]}>{results.original}</ReactMarkdown></div></div><div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden border-l border-slate-100"><div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0"><span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">AI Humanized Version</span><span className="text-[10px] font-bold text-slate-900">{results.humanized.split(' ').length} Words</span></div><div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-900 leading-relaxed font-bold bg-slate-50/30 markdown-view"><ReactMarkdown remarkPlugins={[remarkGfm]}>{results.humanized}</ReactMarkdown></div></div></div><div className="p-5 md:p-6 bg-white border-t border-slate-100 flex justify-between items-center shrink-0"><button onClick={() => setStep('select')} className="text-[9px] md:text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Reset Tool</button><button onClick={handleSave} className="px-6 md:px-10 py-3 md:py-4 bg-slate-900 hover:bg-black text-white rounded-xl md:rounded-2xl font-black text-[11px] md:text-sm shadow-xl transition-all active:scale-95 flex items-center gap-3"><Icons.Save /> SAVE TO CHAPTER</button></div></div>
+            <div className="flex-1 flex flex-col overflow-hidden"><div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-100 gap-px"><div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden border-b md:border-b-0"><div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Original Draft</span><span className="text-[10px] font-bold text-slate-400">{results.original.split(' ').length} Words</span></div><div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-400 leading-relaxed font-medium markdown-view opacity-60"><ReactMarkdown remarkPlugins={[remarkGfm]}>{results.original}</ReactMarkdown></div></div><div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden border-l border-slate-100"><div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0"><span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">AI Humanized Version</span><span className="text-[10px] font-bold text-slate-900">{results.humanized.split(' ').length} Words</span></div><div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-900 leading-relaxed font-bold bg-slate-50/30 markdown-view"><ReactMarkdown remarkPlugins={[remarkGfm]}>{results.humanized}</ReactMarkdown></div></div></div><div className="p-5 md:p-6 bg-white border-t border-slate-100 flex justify-between items-center shrink-0"><button onClick={() => setStep('sections')} className="text-[9px] md:text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back</button><button onClick={handleSave} className="px-6 md:px-10 py-3 md:py-4 bg-slate-900 hover:bg-black text-white rounded-xl md:rounded-2xl font-black text-[11px] md:text-sm shadow-xl transition-all active:scale-95 flex items-center gap-3"><Icons.Save /> SAVE TO CHAPTER</button></div></div>
           )}
         </div>
         <style jsx global>{` .markdown-view h1, .markdown-view h2, .markdown-view h3 { margin-top: 1rem; margin-bottom: 0.5rem; color: #0f172a; font-weight: 800; } .markdown-view p { margin-bottom: 1rem; } .markdown-view ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; } .custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; } `}</style>

@@ -11,6 +11,7 @@ const TOUR_STEPS = [
   { target: '#step-references', title: 'Reference Finder', content: 'Search for academic papers and automatically fetch citations for your project.', position: 'left' },
   { target: '#step-humanizer', title: 'Bypass Detectors', content: 'Use the Humanizer to ensure your project sounds natural and bypasses AI detection.', position: 'left' },
   { target: '#step-presentation', title: 'Presentation Builder', content: 'Ready to present? Generate professional PowerPoint slides based on your report.', position: 'left' },
+  { target: '#step-files-tab', title: 'Project Files', content: 'Upload and manage your project files here. Supported formats: PDF, DOCX, XLSX, and TXT files.', position: 'left' },
   { target: '#step-export', title: 'Final Export', content: 'When ready, export your project as a professional PDF or an editable Word document.', position: 'bottom' }
 ];
 
