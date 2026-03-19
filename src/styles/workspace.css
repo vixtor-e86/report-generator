@@ -863,8 +863,12 @@
     justify-content: center;
   }
 
-  .btn-black span {
+  .btn-black span, .btn-white span {
     display: none;
+  }
+
+  .btn-black svg, .btn-white svg {
+    margin: 0;
   }
 
   .btn-icon-only {

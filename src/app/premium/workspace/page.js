@@ -147,8 +147,15 @@ function WorkspaceContent() {
 
   useEffect(() => {
     loadWorkspaceData();
-    if (window.innerWidth >= 1024) setIsRightSidebarOpen(true);
-
+    // Only auto-open sidebars on desktop
+    if (window.innerWidth >= 1024) {
+      setIsRightSidebarOpen(true);
+      // We keep left sidebar closed by default even on desktop to give more focus to editor,
+      // but if you want it open, uncomment below:
+      // setIsLeftSidebarOpen(true);
+    }
+    
+    // Setup real-time project listener
     const channel = supabase.channel(`premium-updates-${projectId}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'premium_projects', filter: `id=eq.${projectId}` }, (p) => {
       setProjectData(prev => ({ ...prev, ...p.new }));
       setProjectStorageUsed(p.new.storage_used || 0);

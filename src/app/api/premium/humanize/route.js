@@ -20,6 +20,7 @@ export async function POST(request) {
       .single();
 
     if (fetchError || !project) {
+      console.error('Humanizer: DB Fetch Error:', fetchError);
       return NextResponse.json({ error: 'Project data not found.' }, { status: 404 });
     }
 
@@ -32,18 +33,30 @@ export async function POST(request) {
       }, { status: 403 });
     }
 
-    const apiKey = process.env.RYNE_API_KEY;
-    if (!apiKey) throw new Error('Humanizer API Key (RYNE_API_KEY) missing.');
-
-    // 2. Protect Images
-    const protectedImages = [];
-    const processedContent = content.replace(/!\[.*?\]\(.*?\)/g, (match) => {
-      const tag = ` ###W3_IMG_${protectedImages.length}### `;
-      protectedImages.push(match);
+    // --- 2. STRUCTURAL PROTECTION LOGIC (Headers & Images) ---
+    const protectedElements = [];
+    
+    // Step A: Protect Markdown Headers (e.g., ## 1.1 Introduction)
+    // We use a specific regex to catch headers and store them word-for-word
+    const headerRegex = /^#+ .*/gm;
+    let processedContent = content.replace(headerRegex, (match) => {
+      const tag = ` ###W3_HEADER_${protectedElements.length}### `;
+      protectedElements.push({ tag, content: match });
       return tag;
     });
 
-    // 3. Call Ryne AI
+    // Step B: Protect Markdown Images
+    const imageRegex = /!\[.*?\]\(.*?\)/g;
+    processedContent = processedContent.replace(imageRegex, (match) => {
+      const tag = ` ###W3_IMG_${protectedElements.length}### `;
+      protectedElements.push({ tag, content: match });
+      return tag;
+    });
+
+    const apiKey = process.env.RYNE_API_KEY;
+    if (!apiKey) throw new Error('Humanizer API Key (RYNE_API_KEY) missing.');
+
+    // --- 3. CALL RYNE AI (Supernova Model) ---
     const response = await fetch("https://ryne.ai/api/humanizer/models/supernova", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -63,12 +76,15 @@ export async function POST(request) {
     let humanizedText = data.content || data.text;
     if (!humanizedText) throw new Error('Ryne AI returned empty content.');
 
-    // 4. Restore Images
-    protectedImages.forEach((tag, i) => {
-      humanizedText = humanizedText.split(`###W3_IMG_${i}###`).join(tag);
+    // --- 4. RESTORE PROTECTED ELEMENTS (Headers & Images) ---
+    protectedElements.forEach((el) => {
+      // Split and join is more robust than string.replace for technical tags
+      humanizedText = humanizedText.split(el.tag.trim()).join(el.content);
+      // Also try with spaces just in case AI added them
+      humanizedText = humanizedText.split(el.tag).join(el.content);
     });
 
-    // 5. Update Database (Atomic Increment)
+    // --- 5. PERSIST USAGE ---
     const newUsed = currentUsed + wordCount;
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('premium_projects')
