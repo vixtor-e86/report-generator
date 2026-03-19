@@ -10,12 +10,16 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing content or project ID.' }, { status: 400 });
     }
 
+    // --- 1. WORD COUNT & LIMIT SYNC ---
     const wordCount = content.trim().split(/\s+/).filter(w => w.length > 0).length;
     
-    // 1. Fetch current usage
+    // Read limit from Vercel/Env
+    const envLimit = parseInt(process.env.HUMANIZER_LIMIT || '10000', 10);
+
+    // Fetch current usage
     const { data: project, error: fetchError } = await supabaseAdmin
       .from('premium_projects')
-      .select('id, humanizer_words_used')
+      .select('humanizer_words_used')
       .eq('id', projectId)
       .single();
 
@@ -24,12 +28,10 @@ export async function POST(request) {
     }
 
     const currentUsed = project.humanizer_words_used || 0;
-    // PRIORITY: Read from .env
-    const limit = parseInt(process.env.HUMANIZER_LIMIT || '10000', 10);
 
-    if (currentUsed + wordCount > limit) {
+    if (currentUsed + wordCount > envLimit) {
       return NextResponse.json({ 
-        error: `Limit reached. You have ${limit - currentUsed} words remaining.` 
+        error: `Limit reached. You have ${envLimit - currentUsed} words remaining.` 
       }, { status: 403 });
     }
 
@@ -73,24 +75,25 @@ export async function POST(request) {
 
     const finalOutput = [...protectedLines, "", humanizedText].join('\n').trim();
 
-    // --- 4. PERSIST USAGE ---
+    // --- 4. PERSIST USAGE & SYNC LIMIT ---
     const newUsed = currentUsed + wordCount;
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('premium_projects')
       .update({
         humanizer_words_used: newUsed,
+        humanizer_words_limit: envLimit, // SYNC ENV LIMIT TO DB
         last_generated_at: new Date().toISOString()
       })
       .eq('id', projectId)
-      .select('humanizer_words_used')
+      .select('humanizer_words_used, humanizer_words_limit')
       .single();
 
     return NextResponse.json({ 
       success: true, 
       humanized: finalOutput, 
       newUsed: updated?.humanizer_words_used || newUsed,
-      wordCount,
-      limit // CRITICAL: Return the .env limit so frontend updates its bar
+      newLimit: updated?.humanizer_words_limit || envLimit,
+      wordCount
     });
 
   } catch (error) {
