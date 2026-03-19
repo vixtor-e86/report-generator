@@ -6,15 +6,11 @@ export async function POST(request) {
   try {
     const { content, projectId } = await request.json();
 
-    console.log('--- HUMANIZER METER DEBUG START ---');
-    console.log('Project ID:', projectId);
-
     if (!content || content.length < 5 || !projectId) {
       return NextResponse.json({ error: 'Missing content or project ID.' }, { status: 400 });
     }
 
     const wordCount = content.trim().split(/\s+/).filter(w => w.length > 0).length;
-    console.log('Calculated Word Count for this request:', wordCount);
     
     // 1. Fetch current usage
     const { data: project, error: fetchError } = await supabaseAdmin
@@ -24,13 +20,12 @@ export async function POST(request) {
       .single();
 
     if (fetchError || !project) {
-      console.error('METER ERROR: Failed to fetch project usage:', fetchError);
-      return NextResponse.json({ error: 'Project not found in database.' }, { status: 404 });
+      return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
     }
 
     const currentUsed = project.humanizer_words_used || 0;
+    // PRIORITY: Read from .env
     const limit = parseInt(process.env.HUMANIZER_LIMIT || '10000', 10);
-    console.log('Current DB Usage:', currentUsed, '/', limit);
 
     if (currentUsed + wordCount > limit) {
       return NextResponse.json({ 
@@ -76,37 +71,26 @@ export async function POST(request) {
       humanizedText = bodyToHumanize;
     }
 
-    // Prepend headers back
     const finalOutput = [...protectedLines, "", humanizedText].join('\n').trim();
 
-    // --- 4. PERSIST USAGE (The Critical Part) ---
-    const newUsedValue = currentUsed + wordCount;
-    console.log('Updating DB to new total:', newUsedValue);
-
+    // --- 4. PERSIST USAGE ---
+    const newUsed = currentUsed + wordCount;
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('premium_projects')
       .update({
-        humanizer_words_used: newUsedValue,
+        humanizer_words_used: newUsed,
         last_generated_at: new Date().toISOString()
       })
       .eq('id', projectId)
       .select('humanizer_words_used')
       .single();
 
-    if (updateError) {
-      console.error('METER ERROR: Database Update Failed:', updateError);
-    } else {
-      console.log('METER SUCCESS: New DB Value Verified:', updated.humanizer_words_used);
-    }
-
-    console.log('--- HUMANIZER METER DEBUG END ---');
-
     return NextResponse.json({ 
       success: true, 
       humanized: finalOutput, 
-      newUsed: updated?.humanizer_words_used || newUsedValue,
+      newUsed: updated?.humanizer_words_used || newUsed,
       wordCount,
-      limit
+      limit // CRITICAL: Return the .env limit so frontend updates its bar
     });
 
   } catch (error) {

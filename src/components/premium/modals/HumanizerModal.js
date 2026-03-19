@@ -1,7 +1,7 @@
 // src/components/premium/modals/HumanizerModal.js
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -26,27 +26,21 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   
   // Usage tracking
   const [localUsage, setLocalUsage] = useState(projectData?.humanizer_words_used || 0);
-  const [localLimit, setLocalLimit] = useState(10000);
+  const [localLimit, setLocalLimit] = useState(projectData?.humanizer_words_limit || 10000);
 
   useEffect(() => {
     if (projectData?.humanizer_words_used !== undefined) {
       setLocalUsage(projectData.humanizer_words_used);
     }
-  }, [projectData?.humanizer_words_used]);
+    if (projectData?.humanizer_words_limit !== undefined) {
+      setLocalLimit(projectData.humanizer_words_limit);
+    }
+  }, [projectData?.humanizer_words_used, projectData?.humanizer_words_limit]);
 
   const percentage = Math.min((localUsage / localLimit) * 100, 100);
 
-  useEffect(() => {
-    if (selectedChapterId) {
-      const chapter = chapters.find(c => c.id === selectedChapterId);
-      if (chapter?.content) {
-        setSections(parseChapterIntoSections(chapter.content));
-        setSelectedSectionIds(['all']);
-      }
-    }
-  }, [selectedChapterId, chapters]);
-
-  const parseChapterIntoSections = (content) => {
+  // Robust Section Parsing
+  const parseChapterIntoSections = useCallback((content) => {
     if (!content) return [];
     const normalized = content.replace(/\r\n/g, '\n');
     const headingRegex = /^#+ (.*)/gm;
@@ -74,7 +68,18 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     }
     
     return parsedSections.filter(s => s.content.length > 0);
-  };
+  }, []);
+
+  // Update sections whenever active chapter content changes (Vital for multi-step humanizing)
+  useEffect(() => {
+    if (selectedChapterId) {
+      const chapter = chapters.find(c => c.id === selectedChapterId);
+      if (chapter?.content) {
+        console.log('METER DEBUG: Parsing absolute latest chapter content...');
+        setSections(parseChapterIntoSections(chapter.content));
+      }
+    }
+  }, [selectedChapterId, chapters, parseChapterIntoSections]);
 
   const toggleSection = (id) => {
     if (id === 'all') {
@@ -124,11 +129,11 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
         if (data.limit) setLocalLimit(data.limit);
         if (onUpdateProjectData) onUpdateProjectData({ 
           humanizer_words_used: data.newUsed,
-          humanizer_words_limit: data.limit || 10000
+          humanizer_words_limit: data.limit || localLimit
         });
       }
 
-      // Robust Merging
+      // Robust Merging Logic
       let finalChapterOutput = data.humanized;
       if (!selectedSectionIds.includes('all')) {
         const fullOriginal = chapter.content.replace(/\r\n/g, '\n');
@@ -138,6 +143,17 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
           finalChapterOutput = fullOriginal.replace(targetOriginal, data.humanized);
         } else if (fullOriginal.includes(targetOriginal.trim())) {
           finalChapterOutput = fullOriginal.replace(targetOriginal.trim(), data.humanized);
+        } else {
+          // Absolute fallback: Rebuild the entire chapter using sections
+          finalChapterOutput = sections.map(sec => {
+            if (selectedSectionIds.includes(sec.id)) {
+              // Replace only the first selected section with the whole result
+              const firstId = sections.find(s => selectedSectionIds.includes(s.id))?.id;
+              if (sec.id === firstId) return data.humanized;
+              return ""; 
+            }
+            return sec.content;
+          }).filter(c => c !== "").join("\n\n");
         }
       }
 
@@ -175,9 +191,9 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       
       if (!response.ok) throw new Error('Failed to save');
       
-      if (onSaved) await onSaved(); // Reload workspace data
+      // RELOAD WORKSPACE (This updates 'chapters' which triggers section re-parse)
+      if (onSaved) await onSaved(); 
       
-      // DO NOT CLOSE MODAL - Return to sections
       showNotification('Success', 'Rewrite saved. You can now select another section.', 'success');
       
       // Reset for next selection
