@@ -6,27 +6,31 @@ export async function POST(request) {
   try {
     const { content, projectId } = await request.json();
 
+    console.log('--- HUMANIZER METER DEBUG START ---');
+    console.log('Project ID:', projectId);
+
     if (!content || content.length < 5 || !projectId) {
       return NextResponse.json({ error: 'Missing content or project ID.' }, { status: 400 });
     }
 
-    // --- 1. WORD COUNT ---
     const wordCount = content.trim().split(/\s+/).filter(w => w.length > 0).length;
+    console.log('Calculated Word Count for this request:', wordCount);
     
-    // Fetch current usage
+    // 1. Fetch current usage
     const { data: project, error: fetchError } = await supabaseAdmin
       .from('premium_projects')
-      .select('humanizer_words_used')
+      .select('id, humanizer_words_used')
       .eq('id', projectId)
       .single();
 
     if (fetchError || !project) {
-      return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
+      console.error('METER ERROR: Failed to fetch project usage:', fetchError);
+      return NextResponse.json({ error: 'Project not found in database.' }, { status: 404 });
     }
 
     const currentUsed = project.humanizer_words_used || 0;
-    // We use .env for limit or default to 10,000
     const limit = parseInt(process.env.HUMANIZER_LIMIT || '10000', 10);
+    console.log('Current DB Usage:', currentUsed, '/', limit);
 
     if (currentUsed + wordCount > limit) {
       return NextResponse.json({ 
@@ -35,8 +39,6 @@ export async function POST(request) {
     }
 
     // --- 2. HEADER PROTECTION ---
-    // Ryne AI is good, but it sometimes "cleans up" headers. 
-    // We remove them entirely so it ONLY humanizes the body text.
     const protectedLines = [];
     const lines = content.split('\n');
     const bodyLines = lines.filter(line => {
@@ -46,7 +48,6 @@ export async function POST(request) {
       }
       return true;
     });
-
     const bodyToHumanize = bodyLines.join('\n').trim();
 
     const apiKey = process.env.RYNE_API_KEY;
@@ -54,7 +55,7 @@ export async function POST(request) {
 
     // --- 3. CALL RYNE AI ---
     let humanizedText = "";
-    if (bodyToHumanize.length > 10) {
+    if (bodyToHumanize.length > 5) {
       const response = await fetch("https://ryne.ai/api/humanizer/models/supernova", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -72,32 +73,38 @@ export async function POST(request) {
       if (!response.ok) throw new Error(`Ryne AI Error: ${data.message || response.statusText}`);
       humanizedText = data.content || data.text;
     } else {
-      // If there's no body (only headers), we just return the original body
       humanizedText = bodyToHumanize;
     }
 
-    // --- 4. RECONSTRUCT (Put Headers Back) ---
-    // We prepend the protected headers back to the humanized body
+    // Prepend headers back
     const finalOutput = [...protectedLines, "", humanizedText].join('\n').trim();
 
-    // --- 5. PERSIST USAGE ---
-    const newUsed = currentUsed + wordCount;
+    // --- 4. PERSIST USAGE (The Critical Part) ---
+    const newUsedValue = currentUsed + wordCount;
+    console.log('Updating DB to new total:', newUsedValue);
+
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('premium_projects')
       .update({
-        humanizer_words_used: newUsed,
+        humanizer_words_used: newUsedValue,
         last_generated_at: new Date().toISOString()
       })
       .eq('id', projectId)
       .select('humanizer_words_used')
       .single();
 
-    if (updateError) console.error('Usage Update Error:', updateError);
+    if (updateError) {
+      console.error('METER ERROR: Database Update Failed:', updateError);
+    } else {
+      console.log('METER SUCCESS: New DB Value Verified:', updated.humanizer_words_used);
+    }
+
+    console.log('--- HUMANIZER METER DEBUG END ---');
 
     return NextResponse.json({ 
       success: true, 
       humanized: finalOutput, 
-      newUsed: updated?.humanizer_words_used || newUsed,
+      newUsed: updated?.humanizer_words_used || newUsedValue,
       wordCount,
       limit
     });
