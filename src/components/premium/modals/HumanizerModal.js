@@ -24,9 +24,9 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   const [results, setResults] = useState({ original: '', humanized: '', fullHumanized: '' });
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // Usage tracking (Independent of saves)
+  // Usage tracking
   const [localUsage, setLocalUsage] = useState(projectData?.humanizer_words_used || 0);
-  const wordsLimit = projectData?.humanizer_words_limit || 10000;
+  const [localLimit, setLocalLimit] = useState(10000);
 
   useEffect(() => {
     if (projectData?.humanizer_words_used !== undefined) {
@@ -34,7 +34,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     }
   }, [projectData?.humanizer_words_used]);
 
-  const percentage = Math.min((localUsage / wordsLimit) * 100, 100);
+  const percentage = Math.min((localUsage / localLimit) * 100, 100);
 
   useEffect(() => {
     if (selectedChapterId) {
@@ -70,7 +70,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
     if (parsedSections.length > 0) {
       parsedSections[parsedSections.length - 1].content = normalized.substring(lastIndex).trim();
     } else {
-      parsedSections.push({ id: "whole", title: "Full Content", content: normalized });
+      parsedSections.push({ id: "whole", title: "Full Chapter Content", content: normalized });
     }
     
     return parsedSections.filter(s => s.content.length > 0);
@@ -117,15 +117,18 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       });
       
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Ryne AI Connection failed');
+      if (!response.ok) throw new Error(data.error || 'Humanizer Connection failed');
       
-      // Update usage bar immediately
       if (data.newUsed !== undefined) {
         setLocalUsage(data.newUsed);
-        if (onUpdateProjectData) onUpdateProjectData({ humanizer_words_used: data.newUsed });
+        if (data.limit) setLocalLimit(data.limit);
+        if (onUpdateProjectData) onUpdateProjectData({ 
+          humanizer_words_used: data.newUsed,
+          humanizer_words_limit: data.limit || 10000
+        });
       }
 
-      // Surgical Merge
+      // Robust Merging
       let finalChapterOutput = data.humanized;
       if (!selectedSectionIds.includes('all')) {
         const fullOriginal = chapter.content.replace(/\r\n/g, '\n');
@@ -147,7 +150,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
 
     } catch (err) { 
       setStep('sections');
-      if (showNotification) showNotification('Humanizer Error', err.message, 'error');
+      if (showNotification) showNotification('Error', err.message, 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -155,7 +158,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
 
   const handleSave = async () => {
     if (setIsGlobalLoading) {
-      setGlobalLoadingText('Updating chapter and creating version history...');
+      setGlobalLoadingText('Updating chapter structure...');
       setIsGlobalLoading(true);
     }
     try {
@@ -169,27 +172,36 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
           isAiAction: true 
         })
       });
-      if (!response.ok) throw new Error('Failed to save humanized content');
-      if (onSaved) onSaved();
-      onClose();
-      if (showNotification) showNotification('Success', 'Technical rewrite saved successfully.', 'success');
+      
+      if (!response.ok) throw new Error('Failed to save');
+      
+      if (onSaved) await onSaved(); // Reload workspace data
+      
+      // DO NOT CLOSE MODAL - Return to sections
+      showNotification('Success', 'Rewrite saved. You can now select another section.', 'success');
+      
+      // Reset for next selection
+      setResults({ original: '', humanized: '', fullHumanized: '' });
+      setStep('sections');
+      
     } catch (err) { 
-      if (showNotification) showNotification('Error', 'Save failed. Check your connection.', 'error');
+      if (showNotification) showNotification('Error', 'Save failed. Check connection.', 'error');
     }
     finally { if (setIsGlobalLoading) setIsGlobalLoading(false); }
   };
 
-  const resetModal = () => {
+  const handleClose = () => {
     setStep('select');
     setSelectedChapterId(null);
     setResults({ original: '', humanized: '', fullHumanized: '' });
+    onClose();
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-4">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={onClose} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={handleClose} />
       
       <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} 
         className="relative bg-white md:rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col h-full md:h-[85vh] md:max-h-[750px]">
@@ -202,10 +214,10 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
             </div>
             <div>
               <h2 className="text-base md:text-xl font-black text-slate-900 leading-tight">Academic Humanizer</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Powered by Ryne AI</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">W3 WriteLab Technical Core</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"><Icons.X /></button>
+          <button onClick={handleClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"><Icons.X /></button>
         </div>
 
         <div className="flex-1 overflow-hidden flex flex-col">
@@ -216,7 +228,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
                   <div className="flex justify-between items-end mb-2">
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Usage Meter</p>
-                      <p className="text-sm font-black text-slate-900">{localUsage.toLocaleString()} / {wordsLimit.toLocaleString()}</p>
+                      <p className="text-sm font-black text-slate-900">{localUsage.toLocaleString()} / {localLimit.toLocaleString()} words</p>
                     </div>
                     <span className={`text-xs font-black ${percentage > 90 ? 'text-red-500' : 'text-slate-900'}`}>{percentage.toFixed(0)}%</span>
                   </div>
@@ -227,7 +239,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
 
                 <div className="text-center shrink-0">
                   <h3 className="text-xl md:text-2xl font-black text-slate-900">Choose Chapter</h3>
-                  <p className="text-sm text-slate-500 mt-1">Select the chapter you want to optimize.</p>
+                  <p className="text-sm text-slate-500 mt-1">Select the chapter you want to optimize for academic flow.</p>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -320,12 +332,12 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
                 </div>
                 
                 <div>
-                  <h3 className="text-2xl font-black text-slate-900">Ryne AI is Polishing...</h3>
-                  <p className="text-sm text-slate-500 mt-2">Integrating nuanced language and sophisticated structure. This may take up to 60 seconds.</p>
+                  <h3 className="text-2xl font-black text-slate-900">System is Humanizing...</h3>
+                  <p className="text-sm text-slate-500 mt-2">Our technical core is rewriting your content for academic flow. Please wait a moment.</p>
                 </div>
 
                 <div className="bg-white p-4 rounded-xl border border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">
-                  System Status: Supernova Model Active
+                  System Status: Academic Analysis Active
                 </div>
               </div>
             </div>
@@ -337,7 +349,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
                 {/* Original */}
                 <div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden border-b md:border-b-0">
                   <div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Original Draft</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Original Selection</span>
                     <span className="text-[10px] font-bold text-slate-400">{results.original.split(' ').length} Words</span>
                   </div>
                   <div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-400 leading-relaxed font-medium markdown-view opacity-60">
@@ -348,7 +360,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
                 {/* Humanized */}
                 <div className="flex-1 h-1/2 md:h-full flex flex-col bg-white overflow-hidden border-l border-slate-100">
                   <div className="p-3 md:p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
-                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Humanized Version</span>
+                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Technical Rewrite</span>
                     <span className="text-[10px] font-bold text-slate-900">{results.humanized.split(' ').length} Words</span>
                   </div>
                   <div className="flex-1 p-5 md:p-8 overflow-y-auto text-sm text-slate-900 leading-relaxed font-bold bg-slate-50/30 markdown-view">
@@ -359,9 +371,9 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
 
               {/* Action Bar */}
               <div className="p-5 md:p-6 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
-                <button onClick={resetModal} className="text-[9px] md:text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Reset Tool</button>
+                <button onClick={() => setStep('sections')} className="text-[9px] md:text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back to Selection</button>
                 <button onClick={handleSave} className="px-6 md:px-10 py-3 md:py-4 bg-slate-900 hover:bg-black text-white rounded-xl md:rounded-2xl font-black text-[11px] md:text-sm shadow-xl transition-all active:scale-95 flex items-center gap-3">
-                  <Icons.Save /> SAVE TO CHAPTER
+                  <Icons.Save /> SAVE CHANGES
                 </button>
               </div>
             </div>

@@ -10,79 +10,75 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing content or project ID.' }, { status: 400 });
     }
 
+    // --- 1. WORD COUNT ---
     const wordCount = content.trim().split(/\s+/).filter(w => w.length > 0).length;
     
-    // 1. Fetch current usage
+    // Fetch current usage
     const { data: project, error: fetchError } = await supabaseAdmin
       .from('premium_projects')
-      .select('id, humanizer_words_used, humanizer_words_limit')
+      .select('humanizer_words_used')
       .eq('id', projectId)
       .single();
 
     if (fetchError || !project) {
-      console.error('Humanizer: DB Fetch Error:', fetchError);
-      return NextResponse.json({ error: 'Project data not found.' }, { status: 404 });
+      return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
     }
 
     const currentUsed = project.humanizer_words_used || 0;
-    const limit = project.humanizer_words_limit || 10000;
+    // We use .env for limit or default to 10,000
+    const limit = parseInt(process.env.HUMANIZER_LIMIT || '10000', 10);
 
     if (currentUsed + wordCount > limit) {
       return NextResponse.json({ 
-        error: `Word limit exceeded. You have ${limit - currentUsed} words remaining.` 
+        error: `Limit reached. You have ${limit - currentUsed} words remaining.` 
       }, { status: 403 });
     }
 
-    // --- 2. STRUCTURAL PROTECTION LOGIC (Headers & Images) ---
-    const protectedElements = [];
-    
-    // Step A: Protect Markdown Headers (e.g., ## 1.1 Introduction)
-    // We use a specific regex to catch headers and store them word-for-word
-    const headerRegex = /^#+ .*/gm;
-    let processedContent = content.replace(headerRegex, (match) => {
-      const tag = ` ###W3_HEADER_${protectedElements.length}### `;
-      protectedElements.push({ tag, content: match });
-      return tag;
+    // --- 2. HEADER PROTECTION ---
+    // Ryne AI is good, but it sometimes "cleans up" headers. 
+    // We remove them entirely so it ONLY humanizes the body text.
+    const protectedLines = [];
+    const lines = content.split('\n');
+    const bodyLines = lines.filter(line => {
+      if (line.trim().startsWith('#')) {
+        protectedLines.push(line);
+        return false;
+      }
+      return true;
     });
 
-    // Step B: Protect Markdown Images
-    const imageRegex = /!\[.*?\]\(.*?\)/g;
-    processedContent = processedContent.replace(imageRegex, (match) => {
-      const tag = ` ###W3_IMG_${protectedElements.length}### `;
-      protectedElements.push({ tag, content: match });
-      return tag;
-    });
+    const bodyToHumanize = bodyLines.join('\n').trim();
 
     const apiKey = process.env.RYNE_API_KEY;
-    if (!apiKey) throw new Error('Humanizer API Key (RYNE_API_KEY) missing.');
+    if (!apiKey) throw new Error('Humanizer API Key missing.');
 
-    // --- 3. CALL RYNE AI (Supernova Model) ---
-    const response = await fetch("https://ryne.ai/api/humanizer/models/supernova", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: processedContent,
-        tone: "professional",
-        purpose: "academic report",
-        language: "english",
-        user_id: apiKey,
-        shouldStream: false,
-      }),
-    });
+    // --- 3. CALL RYNE AI ---
+    let humanizedText = "";
+    if (bodyToHumanize.length > 10) {
+      const response = await fetch("https://ryne.ai/api/humanizer/models/supernova", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: bodyToHumanize,
+          tone: "professional",
+          purpose: "academic report",
+          language: "english",
+          user_id: apiKey,
+          shouldStream: false,
+        }),
+      });
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(`Ryne AI Error: ${data.message || response.statusText}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(`Ryne AI Error: ${data.message || response.statusText}`);
+      humanizedText = data.content || data.text;
+    } else {
+      // If there's no body (only headers), we just return the original body
+      humanizedText = bodyToHumanize;
+    }
 
-    let humanizedText = data.content || data.text;
-    if (!humanizedText) throw new Error('Ryne AI returned empty content.');
-
-    // --- 4. RESTORE PROTECTED ELEMENTS (Headers & Images) ---
-    protectedElements.forEach((el) => {
-      // Split and join is more robust than string.replace for technical tags
-      humanizedText = humanizedText.split(el.tag.trim()).join(el.content);
-      // Also try with spaces just in case AI added them
-      humanizedText = humanizedText.split(el.tag).join(el.content);
-    });
+    // --- 4. RECONSTRUCT (Put Headers Back) ---
+    // We prepend the protected headers back to the humanized body
+    const finalOutput = [...protectedLines, "", humanizedText].join('\n').trim();
 
     // --- 5. PERSIST USAGE ---
     const newUsed = currentUsed + wordCount;
@@ -100,9 +96,10 @@ export async function POST(request) {
 
     return NextResponse.json({ 
       success: true, 
-      humanized: humanizedText, 
+      humanized: finalOutput, 
       newUsed: updated?.humanizer_words_used || newUsed,
-      wordCount
+      wordCount,
+      limit
     });
 
   } catch (error) {
