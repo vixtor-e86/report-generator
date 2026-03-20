@@ -17,10 +17,10 @@ const Icons = {
 };
 
 export default function HumanizerModal({ isOpen, onClose, chapters, projectId, userId, projectData, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification, onUpdateProjectData, humanizerLimit }) {
-  const [step, setStep] = useState('select'); // select | sections | processing | compare
+  const [step, setStep] = useState('select'); 
   const [selectedChapterId, setSelectedChapterId] = useState(null);
   const [sections, setSections] = useState([]);
-  const [selectedSectionId, setSelectedSectionId] = useState('all'); // SINGLE SELECT ONLY
+  const [selectedSectionId, setSelectedSectionId] = useState('all'); 
   const [results, setResults] = useState({ original: '', humanized: '', fullHumanized: '' });
   const [isProcessing, setIsProcessing] = useState(false);
   
@@ -97,7 +97,6 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
         if (onUpdateProjectData) onUpdateProjectData({ humanizer_words_used: data.newUsed });
       }
 
-      // ROBUST SINGLE MERGE
       let finalChapterOutput = data.humanized;
       if (selectedSectionId !== 'all') {
         finalChapterOutput = sections.map(sec => {
@@ -153,7 +152,6 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} 
         className="relative bg-white rounded-none md:rounded-[48px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col h-full max-h-[900px]">
         
-        {/* Header */}
         <div className="p-6 md:p-10 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-2xl"><Icons.User /></div>
@@ -257,7 +255,6 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
             </div>
           </div>
 
-          {/* Sidebar Status */}
           <div className="w-96 bg-white border-l border-slate-100 flex flex-col shrink-0 p-10">
             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-8">System Metrics</h4>
             <div className="bg-slate-50 p-8 rounded-[32px] border border-slate-100 space-y-6">
@@ -272,7 +269,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
               </div>
               <div className="pt-4 border-t border-slate-200">
                 <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed">Structural Guard: Active</p>
-                <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed">Academic Tone: Supernova</p>
+                <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed">Academic Tone: Enabled</p>
               </div>
             </div>
           </div>

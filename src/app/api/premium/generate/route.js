@@ -193,6 +193,11 @@ export async function POST(request) {
     const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
     TASK: Author a detailed Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${project.title}".
 
+    ## CURRENCY AND PRICING AUTHORITY (MANDATORY)
+    - STRICT RULE: Use ONLY Nigerian Naira (₦) for all financial values, component costs, and market pricing.
+    - DO NOT use Dollars ($) or USD.
+    - Ensure BEME (Bill of Engineering Measurement and Evaluation) tables use realistic Nigerian market rates in ₦.
+
     ## PROJECT CONTEXT
     - DESCRIPTION: ${project.description}
     - COMPONENTS: ${componentsUsed || project.components_used}
