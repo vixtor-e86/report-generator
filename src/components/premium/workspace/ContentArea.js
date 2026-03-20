@@ -555,6 +555,28 @@ export default function ContentArea({
             </div>
           </div>
           <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', minHeight: '700px', display: 'flex', flexDirection: 'column' }}>
+            <style>{`
+              .markdown-preview { color: #1f2937; line-height: 1.8; font-family: 'Inter', system-ui, sans-serif; width: 100%; }
+              .markdown-preview h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 1.5rem; color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; }
+              .markdown-preview h2 { font-size: 1.6rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: #111827; }
+              .markdown-preview h3 { font-size: 1.3rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.8rem; color: #374151; }
+              .markdown-preview p { margin-bottom: 1.2rem; text-align: justify; }
+              .markdown-preview ol { margin-bottom: 1.2rem; padding-left: 2rem; list-style-type: decimal !important; }
+              .markdown-preview ul { margin-bottom: 1.2rem; padding-left: 2rem; list-style-type: disc !important; }
+              .markdown-preview li { margin-bottom: 0.6rem; display: list-item !important; }
+              .markdown-preview li > p { margin-bottom: 0.4rem; }
+              .markdown-preview blockquote { border-left: 4px solid #e5e7eb; padding-left: 1.5rem; margin-left: 0; margin-bottom: 1.2rem; color: #6b7280; font-style: italic; }
+              .markdown-preview code { background: #f1f5f9; padding: 0.2rem 0.4rem; borderRadius: 4px; font-family: monospace; font-size: 0.9em; color: #4338ca; }
+              .markdown-preview pre { background: #1e293b; color: #f8fafc; padding: 1.5rem; borderRadius: 12px; overflow-x: auto; margin-bottom: 1.2rem; }
+              .markdown-preview pre code { background: none; padding: 0; color: inherit; font-size: 0.9em; }
+              .markdown-preview img { display: block; max-width: 100%; height: auto; margin: 2rem auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; }
+              .markdown-preview table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; table-layout: auto; border: 1px solid #e5e7eb; }
+              .markdown-preview th, .markdown-preview td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; }
+              .markdown-preview th { background: #f8fafc; font-weight: 700; color: #111827; }
+              .markdown-preview del { color: #9ca3af; }
+              .markdown-preview hr { border: 0; border-top: 2px solid #f1f5f9; margin: 2rem 0; }
+              .markdown-preview strong { font-weight: 700; color: #111827; }
+            `}</style>
             {workspaceMode === 'editor' ? (
               <>
                 <div style={{ padding: '12px 40px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
@@ -602,21 +624,6 @@ export default function ContentArea({
               </>
             ) : (
               <div className="markdown-preview premium-print-area" style={{ padding: '60px', minHeight: '700px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-                <style>{`
-                  .markdown-preview { color: #1f2937; line-height: 1.8; font-family: 'Inter', system-ui, sans-serif; width: 100%; }
-                  .markdown-preview h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1.5rem; color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; }
-                  .markdown-preview h2 { font-size: 1.8rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1.2rem; color: #111827; }
-                  .markdown-preview h3 { font-size: 1.4rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; color: #374151; }
-                  .markdown-preview p { margin-bottom: 1.5rem; text-align: justify; }
-                  .markdown-preview ol { margin-bottom: 1.5rem; padding-left: 2.5rem; list-style-type: decimal !important; }
-                  .markdown-preview ul { margin-bottom: 1.5rem; padding-left: 2.5rem; list-style-type: disc !important; }
-                  .markdown-preview li { margin-bottom: 0.8rem; display: list-item !important; }
-                  .markdown-preview li > p { margin-bottom: 0.5rem; }
-                  .markdown-preview img { display: block; max-width: 100%; height: auto; margin: 2rem auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; }
-                  .markdown-preview table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; table-layout: auto; }
-                  .markdown-preview th, .markdown-preview td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; word-break: break-word; }
-                  .markdown-preview th { background: #f9fafb; font-weight: 600; }
-                `}</style>
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{localContent || '*No content yet.*'}</ReactMarkdown>
               </div>
             )}
