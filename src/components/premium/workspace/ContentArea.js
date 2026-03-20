@@ -51,6 +51,7 @@ export default function ContentArea({
   const [copied, setCopied] = useState(false);  
   const [codeCopied, setCodeCopied] = useState(false);
   const [showBankModal, setShowBankModal] = useState(false);
+  const [showMarkdownGuide, setShowMarkdownGuide] = useState(false);
   const [isSubmittingPayout, setIsSubmittingPayout] = useState(false);
   const [pendingPayout, setPendingPayout] = useState(false);
   const [bankDetails, setBankDetails] = useState({ accountNumber: '', bankName: '', accountName: '' });
@@ -556,7 +557,7 @@ export default function ContentArea({
           <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', minHeight: '700px', display: 'flex', flexDirection: 'column' }}>
             {workspaceMode === 'editor' ? (
               <>
-                <div style={{ padding: '12px 40px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                <div style={{ padding: '12px 40px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Markdown Guide:</span>
                   <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#4b5563' }}>
                     <span><strong>#</strong> Header 1</span>
@@ -566,6 +567,28 @@ export default function ContentArea({
                     <span><strong>-</strong> List</span>
                     <span><strong>1.</strong> Numbered</span>
                   </div>
+                  <button 
+                    onClick={() => setShowMarkdownGuide(true)}
+                    style={{ 
+                      marginLeft: 'auto', 
+                      padding: '6px 12px', 
+                      borderRadius: '8px', 
+                      border: '1px solid #e5e7eb', 
+                      background: 'white', 
+                      fontSize: '11px', 
+                      fontWeight: '700', 
+                      color: '#4338ca', 
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#4338ca'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#e5e7eb'; }}
+                  >
+                    <Icons.Eye /> View Full Guide
+                  </button>
                 </div>
                 <textarea
                   ref={textareaRef}
@@ -599,6 +622,47 @@ export default function ContentArea({
             )}
           </div>
         </div>
+        {showMarkdownGuide && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: 'white', borderRadius: '32px', width: '100%', maxWidth: '900px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+              <div style={{ padding: '24px 32px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#111827' }}>Markdown Comparison Guide</h3>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>See how your markdown syntax translates to the final report.</p>
+                </div>
+                <button onClick={() => setShowMarkdownGuide(false)} style={{ border: 'none', background: '#f3f4f6', padding: '8px', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#e5e7eb'} onMouseLeave={e => e.currentTarget.style.background = '#f3f4f6'}><Icons.X /></button>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '16px' }}>
+                   <div style={{ fontSize: '11px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Markdown Syntax</div>
+                   <div style={{ fontSize: '11px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rendered Preview</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {[
+                    { markdown: '# Heading 1\n## Heading 2\n### Heading 3' },
+                    { markdown: '**Bold Text**\n*Italic Text*\n~~Strikethrough~~' },
+                    { markdown: '- Bullet point 1\n- Bullet point 2\n  - Nested point\n\n1. Numbered list\n2. Second item' },
+                    { markdown: '| Product | Price |\n| :--- | :--- |\n| Premium | ₦15,000 |\n| Standard | ₦5,000 |' },
+                    { markdown: '> Important research finding or quote.\n\n`Inline code snippet`' },
+                    { markdown: '![Alt text](https://w3writelab.com/logo.png)\n*Captions are added automatically*' },
+                  ].map((ex, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', paddingBottom: '24px', borderBottom: '1px solid #f1f5f9' }}>
+                       <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '13px', whiteSpace: 'pre-wrap', color: '#475569' }}>
+                         {ex.markdown}
+                       </div>
+                       <div className="markdown-preview" style={{ padding: '0', fontSize: '14px' }}>
+                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{ex.markdown}</ReactMarkdown>
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ padding: '24px 32px', background: '#f9fafb', borderTop: '1px solid #e5e7eb', textAlign: 'right' }}>
+                <button onClick={() => setShowMarkdownGuide(false)} style={{ padding: '12px 32px', borderRadius: '14px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseLeave={e => e.currentTarget.style.transform = 'none'}>Got it, thanks!</button>
+              </div>
+            </div>
+          </div>
+        )}
         {showImageSelector && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '600px', padding: '24px' }}>
