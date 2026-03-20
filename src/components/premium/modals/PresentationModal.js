@@ -1,7 +1,7 @@
 // src/components/premium/modals/PresentationModal.js
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import pptxgen from "pptxgenjs";
 import { SLIDE_TEMPLATES } from '@/lib/slideTemplates';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,17 +15,31 @@ const Icons = {
   ChevronRight: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>,
   Download: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>,
   Sparkles: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.912 5.813a2 2 0 0 01.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"></path></svg>,
+  Image: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>,
   GraduationCap: (props) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path></svg>,
   User: (props) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>,
   Bookmark: (props) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>,
-  ArrowRight: (props) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14M12 5l7 7-7 7"></path></svg>,
-  CheckCircle2: (props) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>,
-  Lightbulb: (props) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A5 5 0 0 0 8 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"></path><path d="M9 18h6"></path><path d="M10 22h4"></path></svg>,
   Star: (props) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>,
 };
 
-// --- PPTX Export Helper ---
-async function exportSlidesToPPTX(slides, template, filename) {
+// --- PPTX Helper with Image Buffering ---
+const fetchImageAsBase64 = async (url) => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.error("Image buffering failed:", e);
+    return null;
+  }
+};
+
+async function exportSlidesToPPTX(slides, template, filename, selectedImages = []) {
   const pptx = new pptxgen();
   pptx.layout = 'LAYOUT_16x9';
   
@@ -33,67 +47,59 @@ async function exportSlidesToPPTX(slides, template, filename) {
   const secondaryColor = template.secondaryColor.replace('#', '');
   const accentColor = template.accentColor.replace('#', '');
 
+  // Prepare images
+  const bufferedImages = {};
+  for (const img of selectedImages) {
+    const b64 = await fetchImageAsBase64(img.file_url || img.src);
+    if (b64) bufferedImages[img.id] = b64;
+  }
+
   slides.forEach((slide) => {
     const pptSlide = pptx.addSlide();
 
     switch (slide.type) {
       case 'title':
         pptSlide.background = { color: primaryColor };
-        pptSlide.addText(slide.title.toUpperCase(), {
-          x: '10%', y: '35%', w: '80%', h: '15%',
-          fontSize: 36, bold: true, color: 'FFFFFF', align: 'center'
-        });
-        if (slide.subtitle) {
-          pptSlide.addText(slide.subtitle, {
-            x: '10%', y: '50%', w: '80%', h: '8%',
-            fontSize: 20, color: accentColor, align: 'center'
-          });
-        }
-        let yPos = 62;
-        if (slide.author) {
-          pptSlide.addText(`By: ${slide.author}`, { x: '10%', y: `${yPos}%`, w: '80%', h: '6%', fontSize: 16, color: 'DDDDDD', align: 'center' });
-          yPos += 6;
-        }
-        if (slide.institution) {
-          pptSlide.addText(slide.institution, { x: '10%', y: `${yPos}%`, w: '80%', h: '5%', fontSize: 14, color: 'AAAAAA', align: 'center' });
-        }
+        pptSlide.addText(slide.title.toUpperCase(), { x: '10%', y: '35%', w: '80%', h: '15%', fontSize: 36, bold: true, color: 'FFFFFF', align: 'center' });
+        if (slide.subtitle) pptSlide.addText(slide.subtitle, { x: '10%', y: '50%', w: '80%', h: '8%', fontSize: 20, color: accentColor, align: 'center' });
         pptSlide.addShape('rect', { x: 0, y: '96%', w: '100%', h: '4%', fill: { color: accentColor } });
         break;
 
       case 'section':
         pptSlide.background = { color: secondaryColor };
-        if (slide.sectionTitle) {
-          pptSlide.addText(slide.sectionTitle.toUpperCase(), { x: '10%', y: '35%', w: '80%', h: '6%', fontSize: 14, color: accentColor, align: 'center', charSpacing: 3 });
-        }
         pptSlide.addText(slide.title, { x: '10%', y: '42%', w: '80%', h: '15%', fontSize: 40, bold: true, color: 'FFFFFF', align: 'center' });
         pptSlide.addShape('rect', { x: 0, y: '96%', w: '100%', h: '4%', fill: { color: accentColor } });
         break;
 
-      case 'conclusion':
-        pptSlide.background = { color: primaryColor };
-        pptSlide.addText(slide.title, { x: '8%', y: '22%', w: '84%', h: '12%', fontSize: 32, bold: true, color: 'FFFFFF' });
-        if (slide.bullets) {
-          slide.bullets.slice(0, 5).forEach((bullet, idx) => {
-            const y = 38 + (idx * 10);
-            pptSlide.addShape('rect', { x: '8%', y: `${y}%`, w: '84%', h: '8%', fill: { color: secondaryColor, transparency: 50 }, line: { color: accentColor, width: 2 } });
-            pptSlide.addText('★ ' + bullet, { x: '10%', y: `${y + 1}%`, w: '80%', h: '6%', fontSize: 14, color: 'EEEEEE' });
-          });
+      case 'content':
+        pptSlide.background = { color: 'FFFFFF' };
+        pptSlide.addText(slide.title, { x: '8%', y: '10%', w: '84%', h: '10%', fontSize: 28, bold: true, color: primaryColor });
+        
+        // Check if this slide has an assigned image
+        if (slide.imageId && bufferedImages[slide.imageDbId]) {
+          // Slide with Image (Split Layout)
+          if (slide.bullets) {
+            slide.bullets.slice(0, 4).forEach((bullet, idx) => {
+              const y = 25 + (idx * 12);
+              pptSlide.addText('• ' + bullet, { x: '8%', y: `${y}%`, w: '40%', h: '10%', fontSize: 14, color: '334155' });
+            });
+          }
+          pptSlide.addImage({ data: bufferedImages[slide.imageDbId], x: '55%', y: '25%', w: '35%', h: '50%' });
+        } else {
+          // Standard Bullet Slide
+          if (slide.bullets) {
+            slide.bullets.slice(0, 6).forEach((bullet, idx) => {
+              const y = 25 + (idx * 10);
+              pptSlide.addText('• ' + bullet, { x: '8%', y: `${y}%`, w: '84%', h: '8%', fontSize: 16, color: '334155' });
+            });
+          }
         }
-        pptSlide.addShape('rect', { x: 0, y: '96%', w: '100%', h: '4%', fill: { color: accentColor } });
+        pptSlide.addShape('rect', { x: 0, y: '97%', w: '100%', h: '3%', fill: { color: accentColor } });
         break;
 
-      default: // content/bullets
+      default:
         pptSlide.background = { color: 'FFFFFF' };
-        pptSlide.addShape('rect', { x: '8%', y: '12%', w: '12%', h: '1%', fill: { color: accentColor } });
-        pptSlide.addText(slide.title, { x: '8%', y: '15%', w: '84%', h: '10%', fontSize: 28, bold: true, color: primaryColor });
-        if (slide.bullets) {
-          slide.bullets.slice(0, 6).forEach((bullet, idx) => {
-            const y = 30 + (idx * 9);
-            pptSlide.addShape('rect', { x: '6%', y: `${y}%`, w: '88%', h: '8%', fill: { color: idx % 2 === 0 ? 'F8FAFC' : 'FFFFFF' } });
-            pptSlide.addShape('rect', { x: '6%', y: `${y}%`, w: '0.8%', h: '8%', fill: { color: accentColor } });
-            pptSlide.addText('✓ ' + bullet, { x: '8%', y: `${y}%`, w: '84%', h: '8%', fontSize: 14, color: '1F2937', valign: 'middle' });
-          });
-        }
+        pptSlide.addText(slide.title, { x: '8%', y: '10%', w: '84%', h: '10%', fontSize: 28, bold: true, color: primaryColor });
         pptSlide.addShape('rect', { x: 0, y: '97%', w: '100%', h: '3%', fill: { color: accentColor } });
         break;
     }
@@ -102,141 +108,62 @@ async function exportSlidesToPPTX(slides, template, filename) {
   await pptx.writeFile({ fileName: filename });
 }
 
-// --- Preview Components ---
-const SlideRenderer = ({ slide, template }) => {
-  const commonStyles = {
-    width: '100%', height: '100%', position: 'relative', overflow: 'hidden', transition: 'all 0.5s ease', fontFamily: template.fontFamily
-  };
-
-  switch (slide.type) {
-    case 'title':
-      return (
-        <div style={{ ...commonStyles, backgroundColor: template.primaryColor, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10%', textAlign: 'center' }}>
-          <div style={{ position: 'absolute', top: 0, right: 0, width: '30%', height: '30%', borderRadius: '50%', background: template.accentColor, opacity: 0.1, transform: 'translate(30%, -30%)' }} />
-          <div style={{ padding: '4%', background: `${template.accentColor}20`, borderRadius: '16px', marginBottom: '5%' }}>
-            <Icons.GraduationCap style={{ color: template.accentColor, width: '40px', height: '40px' }} />
-          </div>
-          <h1 style={{ fontSize: 'clamp(18px, 4vw, 32px)', fontWeight: '900', color: 'white', textTransform: 'uppercase', marginBottom: '4%', lineHeight: '1.2' }}>{slide.title}</h1>
-          <p style={{ fontSize: 'clamp(12px, 2.5vw, 18px)', color: template.accentColor, marginBottom: '6%' }}>{slide.subtitle}</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'rgba(255,255,255,0.8)' }}>
-              <Icons.User style={{ width: '14px', height: '14px' }} /> <span style={{ fontSize: 'clamp(10px, 2vw, 14px)', fontWeight: '600' }}>{slide.author}</span>
-            </div>
-            <p style={{ fontSize: 'clamp(10px, 1.8vw, 12px)', color: 'rgba(255,255,255,0.6)' }}>{slide.institution}</p>
-          </div>
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4%', background: template.accentColor }} />
-        </div>
-      );
-    case 'section':
-      return (
-        <div style={{ ...commonStyles, backgroundColor: template.secondaryColor, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10%', textAlign: 'center' }}>
-          <Icons.Bookmark style={{ color: template.accentColor, width: '32px', height: '32px', marginBottom: '4%' }} />
-          <p style={{ fontSize: 'clamp(10px, 2vw, 14px)', fontWeight: '800', color: template.accentColor, textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '4%' }}>{slide.sectionTitle}</p>
-          <h2 style={{ fontSize: 'clamp(24px, 5vw, 40px)', fontWeight: '900', color: 'white', lineHeight: '1.1' }}>{slide.title}</h2>
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4%', background: template.accentColor }} />
-        </div>
-      );
-    case 'conclusion':
-      return (
-        <div style={{ ...commonStyles, backgroundColor: template.primaryColor, padding: '8%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '3%', marginBottom: '6%' }}>
-            <Icons.Lightbulb style={{ color: template.accentColor, width: '24px', height: '24px' }} />
-            <div style={{ width: '40px', height: '4px', background: template.accentColor, borderRadius: '2px' }} />
-          </div>
-          <h2 style={{ fontSize: 'clamp(20px, 4vw, 32px)', fontWeight: '900', color: 'white', marginBottom: '8%' }}>{slide.title}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {slide.bullets?.map((b, i) => (
-              <div key={i} style={{ padding: '3%', background: 'rgba(255,255,255,0.05)', borderLeft: `3px solid ${template.accentColor}`, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Icons.Star style={{ color: template.accentColor, width: '14px', height: '14px' }} />
-                <span style={{ color: '#eee', fontSize: 'clamp(12px, 2vw, 16px)', fontWeight: '500' }}>{b}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4%', background: template.accentColor }} />
-        </div>
-      );
-    default:
-      return (
-        <div style={{ ...commonStyles, backgroundColor: 'white', padding: '8%' }}>
-          <div style={{ width: '10%', height: '4px', background: template.accentColor, borderRadius: '2px', marginBottom: '4%' }} />
-          <h2 style={{ fontSize: 'clamp(18px, 3.5vw, 28px)', fontWeight: '900', color: template.primaryColor, marginBottom: '2%', textTransform: 'uppercase' }}>{slide.title}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4%' }}>
-            {slide.bullets?.map((b, i) => (
-              <div key={i} style={{ padding: '2% 3%', background: i % 2 === 0 ? '#f8fafc' : 'white', borderLeft: `3px solid ${template.accentColor}`, display: 'flex', alignItems: 'start', gap: '12px', borderRadius: '4px' }}>
-                <Icons.CheckCircle2 style={{ color: template.accentColor, width: '16px', height: '16px', marginTop: '2px' }} />
-                <span style={{ color: '#334155', fontSize: 'clamp(11px, 1.8vw, 14px)', fontWeight: '500', lineHeight: '1.4' }}>{b}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ position: 'absolute', bottom: '4%', right: '4%', color: '#cbd5e1', fontSize: '10px', fontWeight: '800' }}>{slide.id}</div>
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4px', background: template.accentColor }} />
-        </div>
-      );
-  }
-};
-
 // --- Main Component ---
-export default function PresentationModal({ isOpen, onClose, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, showNotification }) {
-  const [step, setStep] = useState('selection');
+export default function PresentationModal({ isOpen, onClose, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, showNotification, images = [] }) {
+  const [step, setStep] = useState('selection'); // selection | images | preview
   const [selectedChapters, setSelectedChapters] = useState([]);
+  const [selectedImageIds, setSelectedImageIds] = useState([]);
   const [slides, setSlides] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(SLIDE_TEMPLATES[0]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Ready threshold (characters)
   const READY_THRESHOLD = 300;
 
-  // Initialize selection based on content availability
   useEffect(() => {
     if (isOpen) {
       setStep('selection');
       setSlides([]);
-      setSelectedChapters([]); // Always start with a clean, empty selection
+      setSelectedChapters([]);
+      setSelectedImageIds([]);
     }
   }, [isOpen]);
 
   const toggleChapter = (num) => {
     const chapter = chapters.find(ch => ch.number === num);
     if (!chapter || !chapter.content || chapter.content.trim().length < READY_THRESHOLD) {
-      if (showNotification) showNotification('Chapter Not Ready', `Chapter ${num} doesn't have enough technical content to build slides yet.`, 'warning');
+      if (showNotification) showNotification('Chapter Not Ready', `Chapter ${num} needs more content.`, 'warning');
       return;
     }
-
     setSelectedChapters(prev => prev.includes(num) ? prev.filter(n => n !== num) : [...prev, num].sort((a,b) => a-b));
   };
 
-  const processData = (data) => {
-    const slideList = [];
-    let counter = 1;
-    slideList.push({ id: String(counter++), type: 'title', title: data.title, subtitle: data.subtitle, author: data.author, institution: data.institution });
-    data.sections.forEach((sec, idx) => {
-      slideList.push({ id: String(counter++), type: 'section', title: sec.title, sectionTitle: `Section ${idx + 1}` });
-      const chunkedBullets = [];
-      for (let i = 0; i < sec.bullets.length; i += 5) chunkedBullets.push(sec.bullets.slice(i, i + 5));
-      chunkedBullets.forEach((bullets, bIdx) => {
-        slideList.push({ id: String(counter++), type: 'content', title: sec.title + (chunkedBullets.length > 1 ? ` (${bIdx + 1})` : ''), bullets });
-      });
-    });
-    if (data.conclusion) slideList.push({ id: String(counter++), type: 'conclusion', title: data.conclusion.title, bullets: data.conclusion.bullets });
-    return slideList;
+  const toggleImage = (id) => {
+    setSelectedImageIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     if (setIsGlobalLoading) {
-      setGlobalLoadingText('AI is summarizing content for academic slides...');
+      setGlobalLoadingText('AI is architecting your visual presentation...');
       setIsGlobalLoading(true);
     }
     try {
       const response = await fetch('/api/premium/generate-slides', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId, userId, selectedChapterNumbers: selectedChapters })
+        body: JSON.stringify({ 
+          projectId, userId, 
+          selectedChapterNumbers: selectedChapters,
+          includeImages: selectedImageIds.length > 0
+        })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-      setSlides(processData(data.data));
+      
+      // Process and inject images into data
+      const processedSlides = processSlidesWithImages(data.data, selectedImageIds);
+      setSlides(processedSlides);
       setStep('preview');
       setCurrentIndex(0);
     } catch (err) { alert(err.message); }
@@ -246,10 +173,41 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
     }
   };
 
+  const processSlidesWithImages = (data, imageIds) => {
+    const slideList = [];
+    let counter = 1;
+    let imagePointer = 0;
+
+    slideList.push({ id: String(counter++), type: 'title', title: data.title, subtitle: data.subtitle, author: data.author, institution: data.institution });
+    
+    data.sections.forEach((sec, idx) => {
+      slideList.push({ id: String(counter++), type: 'section', title: sec.title });
+      
+      const chunkedBullets = [];
+      for (let i = 0; i < sec.bullets.length; i += 5) chunkedBullets.push(sec.bullets.slice(i, i + 5));
+      
+      chunkedBullets.forEach((bullets, bIdx) => {
+        const slide = { id: String(counter++), type: 'content', title: sec.title, bullets };
+        
+        // Attach an image if available and it's the first slide of a section
+        if (bIdx === 0 && imagePointer < imageIds.length) {
+          slide.imageDbId = imageIds[imagePointer];
+          slide.imageId = true; // Flag for layout
+          imagePointer++;
+        }
+        slideList.push(slide);
+      });
+    });
+
+    if (data.conclusion) slideList.push({ id: String(counter++), type: 'conclusion', title: data.conclusion.title, bullets: data.conclusion.bullets });
+    return slideList;
+  };
+
   const handleDownload = () => {
     if (slides.length === 0) return;
+    const currentImages = images.filter(img => selectedImageIds.includes(img.id));
     const filename = `${slides[0].title.replace(/\s+/g, '_')}_Presentation.pptx`;
-    exportSlidesToPPTX(slides, selectedTemplate, filename);
+    exportSlidesToPPTX(slides, selectedTemplate, filename, currentImages);
   };
 
   if (!isOpen) return null;
@@ -261,120 +219,115 @@ export default function PresentationModal({ isOpen, onClose, chapters, projectId
       <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} 
         className="relative bg-white md:rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col md:flex-row h-full md:h-[90vh] md:max-h-[850px]">
         
-        {/* Main Workspace */}
         <div className="flex-1 flex flex-col bg-slate-50 border-r border-slate-100 overflow-hidden">
           <div className="p-5 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-xl"><Icons.Monitor /></div>
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white"><Icons.Monitor /></div>
               <div>
                 <h2 className="text-base md:text-xl font-black text-slate-900 leading-tight">Academic Slide Suite</h2>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{step === 'selection' ? 'Select Content' : 'Slide Preview'}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{step === 'selection' ? 'Select Chapters' : step === 'images' ? 'Select Visuals' : 'Slide Preview'}</p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"><Icons.X /></button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 md:p-10 flex flex-col items-center">
-            {step === 'selection' ? (
-              <div className="w-full max-w-lg space-y-6 md:space-y-8 my-auto">
+            {step === 'selection' && (
+              <div className="w-full max-w-lg space-y-6 my-auto">
                 <div className="text-center">
-                  <h3 className="text-xl md:text-2xl font-black text-slate-900">Presentation Content</h3>
-                  <p className="text-sm text-slate-500 font-medium mt-2 px-4">Select completed chapters to build your slides.</p>
+                  <h3 className="text-xl md:text-2xl font-black text-slate-900 uppercase">Step 1: Research Basis</h3>
+                  <p className="text-sm text-slate-500 font-medium mt-2">Select completed chapters to feed the Slide Architect.</p>
                 </div>
                 <div className="grid gap-3">
                   {chapters.map(ch => {
                     const hasContent = ch.content && ch.content.trim().length >= READY_THRESHOLD;
                     const isSelected = selectedChapters.includes(ch.number);
-                    
                     return (
-                      <button 
-                        key={ch.id} 
-                        disabled={!hasContent} 
-                        onClick={() => toggleChapter(ch.number)}
-                        style={{ pointerEvents: hasContent ? 'auto' : 'none' }}
-                        className={`flex items-center justify-between p-4 md:p-5 rounded-2xl md:rounded-3xl border-2 transition-all text-left ${
-                          isSelected 
-                            ? 'border-slate-900 bg-white shadow-xl ring-4 md:ring-8 ring-slate-100' 
-                            : hasContent 
-                              ? 'border-slate-100 bg-white hover:border-slate-200' 
-                              : 'border-slate-100 bg-slate-50 opacity-40 grayscale cursor-not-allowed'
-                        }`}
-                      >
-                        <div className="flex-1 min-w-0 pr-4">
-                          <div className="flex items-center gap-2">
-                            <span className={`font-black ${hasContent ? 'text-slate-900' : 'text-slate-400'}`}>Chapter {ch.number}</span>
-                            {!hasContent && (
-                              <span className="text-[9px] font-black bg-white text-slate-400 px-2 py-0.5 rounded-full border border-slate-100 uppercase tracking-tighter">
-                                Content Missing
-                              </span>
-                            )}
-                          </div>
-                          <p className={`text-xs font-bold truncate mt-1 ${hasContent ? 'text-slate-400' : 'text-slate-300'}`}>{ch.title}</p>
+                      <button key={ch.id} disabled={!hasContent} onClick={() => toggleChapter(ch.number)}
+                        className={`flex items-center justify-between p-4 rounded-3xl border-2 transition-all text-left ${isSelected ? 'border-slate-900 bg-white shadow-xl' : 'border-slate-100 bg-white'}`}>
+                        <div className="flex-1 pr-4">
+                          <span className={`font-black ${hasContent ? 'text-slate-900' : 'text-slate-400'}`}>Chapter {ch.number}</span>
+                          <p className="text-xs font-bold truncate text-slate-400">{ch.title}</p>
                         </div>
-                        {isSelected && <div className="w-6 h-6 md:w-8 md:h-8 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-lg shrink-0"><Icons.Check /></div>}
+                        {isSelected && <Icons.Check />}
                       </button>
                     );
                   })}
                 </div>
-                <button onClick={handleGenerate} disabled={isGenerating || selectedChapters.length === 0}
-                  className="w-full py-4 md:py-5 bg-slate-900 hover:bg-black text-white rounded-2xl md:rounded-3xl font-black text-sm shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3">
-                  <Icons.Sparkles /> {isGenerating ? 'SUMMARIZING...' : 'BUILD PREVIEW'}
+                <button onClick={() => setStep('images')} disabled={selectedChapters.length === 0}
+                  className="w-full py-5 bg-slate-900 text-white rounded-3xl font-black shadow-xl flex items-center justify-center gap-3">
+                  NEXT: ADD VISUALS <Icons.ChevronRight />
                 </button>
               </div>
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center py-2 md:py-4">
-                <div className="w-full max-w-[850px] aspect-video rounded-2xl md:rounded-[32px] shadow-2xl overflow-hidden relative group border-4 md:border-[12px] border-white transition-all duration-500 bg-white">
-                  <SlideRenderer slide={slides[currentIndex]} template={selectedTemplate} />
-                  
-                  <button onClick={() => setCurrentIndex(p => Math.max(0, p-1))}
-                    className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 p-2 md:p-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20 z-10"><Icons.ChevronLeft /></button>
-                  <button onClick={() => setCurrentIndex(p => Math.min(slides.length-1, p+1))}
-                    className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 p-2 md:p-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all border border-white/20 z-10"><Icons.ChevronRight /></button>
-                </div>
+            )}
 
-                <div className="mt-6 md:mt-10 flex flex-col items-center gap-4 md:gap-6">
-                  <div className="flex gap-1.5 md:gap-2.5">
+            {step === 'images' && (
+              <div className="w-full max-w-2xl space-y-6 my-auto">
+                <div className="text-center">
+                  <h3 className="text-xl md:text-2xl font-black text-slate-900 uppercase">Step 2: Technical Visuals</h3>
+                  <p className="text-sm text-slate-500 font-medium mt-2">Select diagrams or images to include in your presentation.</p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[40vh] overflow-y-auto p-2">
+                  {images.map(img => (
+                    <button key={img.id} onClick={() => toggleImage(img.id)}
+                      className={`relative aspect-square rounded-2xl overflow-hidden border-4 transition-all ${selectedImageIds.includes(img.id) ? 'border-slate-900 scale-95' : 'border-white shadow-md'}`}>
+                      <img src={img.src} alt={img.name} className="w-full h-full object-cover" />
+                      {selectedImageIds.includes(img.id) && <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center text-white"><Icons.Check /></div>}
+                    </button>
+                  ))}
+                  {images.length === 0 && <div className="col-span-full py-12 text-center text-slate-400 italic">No project images found. Upload some in the sidebar first.</div>}
+                </div>
+                <div className="flex gap-4">
+                  <button onClick={() => setStep('selection')} className="flex-1 py-5 bg-white border-2 border-slate-100 rounded-3xl font-black">BACK</button>
+                  <button onClick={handleGenerate} className="flex-[2] py-5 bg-slate-900 text-white rounded-3xl font-black shadow-xl flex items-center justify-center gap-3">
+                    <Icons.Sparkles /> BUILD PRESENTATION
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {step === 'preview' && (
+              <div className="w-full h-full flex flex-col items-center justify-center py-4">
+                <div className="w-full max-w-[850px] aspect-video rounded-[32px] shadow-2xl overflow-hidden relative group border-8 border-white bg-white">
+                  <div className="w-full h-full p-8 flex items-center justify-center bg-slate-100">
+                    <div className="text-center">
+                      <h4 className="font-black text-slate-900 text-xl">{slides[currentIndex].title}</h4>
+                      <p className="text-slate-500 mt-2">Slide {currentIndex + 1} - {slides[currentIndex].type.toUpperCase()}</p>
+                      {slides[currentIndex].imageDbId && <div className="mt-4 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full font-black text-xs">VISUAL ELEMENT INCLUDED</div>}
+                    </div>
+                  </div>
+                  <button onClick={() => setCurrentIndex(p => Math.max(0, p-1))} className="absolute left-6 top-1/2 -translate-y-1/2 p-4 bg-black/10 hover:bg-black/20 rounded-full"><Icons.ChevronLeft /></button>
+                  <button onClick={() => setCurrentIndex(p => Math.min(slides.length-1, p+1))} className="absolute right-6 top-1/2 -translate-y-1/2 p-4 bg-black/10 hover:bg-black/20 rounded-full"><Icons.ChevronRight /></button>
+                </div>
+                <div className="mt-10 flex flex-col items-center gap-6">
+                  <div className="flex gap-2">
                     {slides.map((_, i) => (
-                      <button key={i} onClick={() => setCurrentIndex(i)} className={`h-1.5 md:h-2 rounded-full transition-all ${i === currentIndex ? 'w-8 md:w-12 bg-slate-900' : 'w-1.5 md:w-2 bg-slate-200 hover:bg-slate-300'}`} />
+                      <button key={i} onClick={() => setCurrentIndex(i)} className={`h-2 rounded-full transition-all ${i === currentIndex ? 'w-12 bg-slate-900' : 'w-2 bg-slate-200'}`} />
                     ))}
                   </div>
-                  <div className="flex items-center gap-4 md:gap-8">
-                    <button onClick={() => setStep('selection')} className="text-[9px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-[0.2em] transition-colors">← Back</button>
-                    <span className="text-[10px] font-black text-slate-900 bg-white px-3 md:px-4 py-1.5 md:py-2 rounded-full shadow-sm border border-slate-100 uppercase tracking-widest">Slide {currentIndex + 1} / {slides.length}</span>
-                  </div>
+                  <button onClick={() => setStep('images')} className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900">← Back to Visuals</button>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Sidebar Controls */}
-        <div className="w-full md:w-80 lg:w-96 flex flex-col bg-white overflow-hidden shrink-0 border-t md:border-t-0 border-slate-100">
-          <div className="flex-1 overflow-y-auto p-5 md:p-8">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 md:mb-6">Visual Theme</h4>
-            <div className="grid grid-cols-2 md:grid-cols-1 gap-3 md:gap-4">
+        <div className="w-full md:w-80 lg:w-96 flex flex-col bg-white overflow-hidden shrink-0">
+          <div className="flex-1 overflow-y-auto p-8">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Visual Theme</h4>
+            <div className="space-y-4">
               {SLIDE_TEMPLATES.map(t => (
                 <button key={t.id} onClick={() => setSelectedTemplate(t)}
-                  className={`group relative p-3 md:p-5 rounded-xl md:rounded-[24px] border-2 transition-all text-left overflow-hidden ${selectedTemplate.id === t.id ? 'border-slate-900 shadow-lg md:shadow-xl ring-4 ring-slate-50' : 'border-slate-50 hover:border-slate-200'}`}>
-                  <div className="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20" style={{ backgroundColor: t.primaryColor }} />
-                  <div className="flex items-center gap-2 md:gap-4 relative z-10">
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg shadow-lg flex items-center justify-center text-white" style={{ background: t.primaryColor }}>
-                      <div className="w-3 md:w-4 h-1 bg-white/40 rounded-full" />
-                    </div>
-                    <div>
-                      <p className="text-xs md:text-sm font-black text-slate-900 leading-none">{t.name}</p>
-                      <p className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-1">{t.theme}</p>
-                    </div>
-                  </div>
+                  className={`w-full relative p-5 rounded-[24px] border-2 transition-all text-left overflow-hidden ${selectedTemplate.id === t.id ? 'border-slate-900 shadow-xl' : 'border-slate-50'}`}>
+                  <div className="absolute inset-0 opacity-10" style={{ backgroundColor: t.primaryColor }} />
+                  <div className="relative z-10 font-black text-slate-900 text-sm">{t.name}</div>
                 </button>
               ))}
             </div>
           </div>
-
-          <div className="p-5 md:p-8 bg-slate-50 border-t border-slate-100 space-y-3 md:space-y-4 shrink-0">
-            <p className="hidden md:block text-[10px] text-center text-slate-400 font-bold leading-relaxed px-2 uppercase tracking-wide">Professional PPTX Export</p>
-            <button onClick={handleDownload} disabled={step === 'selection'}
-              className="w-full py-4 md:py-5 bg-slate-900 hover:bg-black disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-2xl md:rounded-3xl font-black text-[11px] md:text-sm shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3">
+          <div className="p-8 bg-slate-50 border-t border-slate-100">
+            <button onClick={handleDownload} disabled={step !== 'preview'}
+              className="w-full py-5 bg-slate-900 text-white rounded-3xl font-black shadow-xl flex items-center justify-center gap-3 disabled:opacity-40">
               <Icons.Download /> DOWNLOAD PPTX
             </button>
           </div>
