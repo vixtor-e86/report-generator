@@ -1,3 +1,4 @@
+// src/app/premium/workspace/page.js
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -42,6 +43,7 @@ function WorkspaceContent() {
     template: { structure: { chapters: [] } }
   });
 
+  const [humanizerLimit, setHumanizerLimit] = useState(0); // NEW: Derived from .env
   const [chapters, setChapters] = useState([]);
   const [images, setImages] = useState([]);
   const [files, setFiles] = useState([]);
@@ -62,7 +64,6 @@ function WorkspaceContent() {
   const [exportType, setExportType] = useState('pdf');
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
 
-  // NEW: Custom Notification State
   const [notification, setNotification] = useState({
     isOpen: false,
     title: '',
@@ -83,20 +84,9 @@ function WorkspaceContent() {
   const [workspaceMode, setWorkspaceMode] = useState('editor');
   const [previewFile, setPreviewFile] = useState(null);
 
-  // Sticky Generation Settings (Persists as long as page is not reloaded)
   const [stickyGenSettings, setStickyGenSettings] = useState({
-    projectTitle: '',
-    projectDescription: '',
-    componentsUsed: '',
-    researchBooks: '',
-    userPrompt: '',
-    selectedImages: [],
-    selectedPapers: [],
-    selectedContextFiles: [],
-    referenceStyle: 'APA',
-    maxReferences: 10,
-    skipReferences: false,
-    targetWordCount: 2000 
+    projectTitle: '', projectDescription: '', componentsUsed: '', researchBooks: '', userPrompt: '',
+    selectedImages: [], selectedPapers: [], selectedContextFiles: [], referenceStyle: 'APA', maxReferences: 10, skipReferences: false, targetWordCount: 2000 
   });
 
   const { uploadFile, uploading, deleteFile, deleting } = useFileUpload(projectId);
@@ -104,6 +94,13 @@ function WorkspaceContent() {
   const loadWorkspaceData = async () => {
     if (!projectId) return;
     
+    // Fetch App Config (Limit from .env)
+    try {
+      const configRes = await fetch('/api/premium/config');
+      const config = await configRes.json();
+      if (config.humanizerLimit) setHumanizerLimit(config.humanizerLimit);
+    } catch (err) { console.error('Config fetch failed'); }
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setCurrentUser(user);
@@ -147,15 +144,8 @@ function WorkspaceContent() {
 
   useEffect(() => {
     loadWorkspaceData();
-    // Only auto-open sidebars on desktop
-    if (window.innerWidth >= 1024) {
-      setIsRightSidebarOpen(true);
-      // We keep left sidebar closed by default even on desktop to give more focus to editor,
-      // but if you want it open, uncomment below:
-      // setIsLeftSidebarOpen(true);
-    }
-    
-    // Setup real-time project listener
+    if (window.innerWidth >= 1024) setIsRightSidebarOpen(true);
+
     const channel = supabase.channel(`premium-updates-${projectId}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'premium_projects', filter: `id=eq.${projectId}` }, (p) => {
       setProjectData(prev => ({ ...prev, ...p.new }));
       setProjectStorageUsed(p.new.storage_used || 0);
@@ -174,14 +164,9 @@ function WorkspaceContent() {
   };
 
   const handleDelete = async (file) => {
-    showNotification(
-      'Confirm Deletion',
-      `Are you sure you want to delete "${file.original_name || file.name}"? This action cannot be undone.`,
-      'confirm',
-      async () => {
-        if (await deleteFile(file.file_key, file.id)) loadWorkspaceData();
-      }
-    );
+    showNotification('Confirm Deletion', `Delete "${file.original_name || file.name}"?`, 'confirm', async () => {
+      if (await deleteFile(file.file_key, file.id)) loadWorkspaceData();
+    });
   };
 
   return (
@@ -192,6 +177,7 @@ function WorkspaceContent() {
         onDelete={handleDelete} deleting={deleting} onFileClick={setPreviewFile} 
         onError={(m) => showNotification('Upload Error', m, 'error')}
         storageUsed={projectStorageUsed} isOpen={isLeftSidebarOpen} onClose={() => setIsLeftSidebarOpen(false)}
+        humanizerLimit={humanizerLimit}
       />
 
       <div className="main-workspace">
@@ -205,14 +191,12 @@ function WorkspaceContent() {
         <div className="workspace-content">
           <ContentArea
             activeView={activeView} projectData={projectData} chapters={chapters} images={images} workspaceMode={workspaceMode} setWorkspaceMode={setWorkspaceMode}
-            userProfile={userProfile}
-            onUpdateChapter={(id, content) => setChapters(chapters.map(ch => ch.id === id ? { ...ch, content } : ch))}
+            userProfile={userProfile} onUpdateChapter={(id, content) => setChapters(chapters.map(ch => ch.id === id ? { ...ch, content } : ch))}
             onUpdateTemplate={async (ns) => {
               const { error } = await supabase.from('custom_templates').update({ structure: ns }).eq('id', projectData.template?.id);
               if (!error) loadWorkspaceData();
             }}
-            onVisualToolsClick={() => setIsVisualToolsModalOpen(true)}
-            showNotification={showNotification}
+            onVisualToolsClick={() => setIsVisualToolsModalOpen(true)} showNotification={showNotification}
           />
 
           <AnimatePresence>
@@ -232,62 +216,35 @@ function WorkspaceContent() {
       <ResearchSearchModal isOpen={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} projectId={projectId} onPaperSaved={loadWorkspaceData} showNotification={showNotification} />
       <VisualToolsModal isOpen={isVisualToolsModalOpen} onClose={() => setIsVisualToolsModalOpen(false)} projectId={projectId} userId={currentUser?.id} onImageSaved={loadWorkspaceData} showNotification={showNotification} />
       <PresentationModal isOpen={isPresentationModalOpen} onClose={() => setIsPresentationModalOpen(false)} chapters={chapters} projectId={projectId} userId={currentUser?.id} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} showNotification={showNotification} />
+      
       <HumanizerModal 
         isOpen={isHumanizerModalOpen} 
         onClose={() => setIsHumanizerModalOpen(false)} 
-        chapters={chapters} 
-        projectId={projectId}
-        userId={currentUser?.id} 
-        projectData={projectData}
-        setIsGlobalLoading={setIsGlobalLoading} 
-        setGlobalLoadingText={setGlobalLoadingText} 
-        onSaved={loadWorkspaceData} 
-        showNotification={showNotification}
+        chapters={chapters} projectId={projectId} userId={currentUser?.id} projectData={projectData}
+        setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} 
+        onSaved={loadWorkspaceData} showNotification={showNotification}
+        humanizerLimit={humanizerLimit}
         onUpdateProjectData={(updates) => setProjectData(prev => ({ ...prev, ...updates }))}
       />
 
       <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        type={exportType}
-        projectDocs={projectDocs}
-        chapters={chapters}
-        projectId={projectId}
-        userId={currentUser?.id}
-        setIsGlobalLoading={setIsGlobalLoading} 
-        setGlobalLoadingText={setGlobalLoadingText} 
-        onSaved={loadWorkspaceData}
-        showNotification={showNotification}
+        isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} type={exportType} projectDocs={projectDocs}
+        chapters={chapters} projectId={projectId} userId={currentUser?.id} setIsGlobalLoading={setIsGlobalLoading} 
+        setGlobalLoadingText={setGlobalLoadingText} onSaved={loadWorkspaceData} showNotification={showNotification}
       />
       <ModifyModal isOpen={isModifyModalOpen} onClose={() => setIsModifyModalOpen(false)} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} showNotification={showNotification} />
       <GenerationModal 
-        isOpen={isGenerationModalOpen} 
-        onClose={() => setIsGenerationModalOpen(false)} 
-        uploadedImages={images} 
-        researchPapers={researchPapers} // Only Semantic Scholar papers
-        dataFiles={files} // Only user uploaded data files
-        activeChapter={activeChapter} 
-        projectId={projectId} 
-        userId={currentUser?.id} 
-        projectData={projectData} 
-        onGenerateSuccess={loadWorkspaceData} 
-        setIsGlobalLoading={setIsGlobalLoading} 
-        setGlobalLoadingText={setGlobalLoadingText} 
-        formData={stickyGenSettings}
-        setFormData={setStickyGenSettings}
-        showNotification={showNotification}
+        isOpen={isGenerationModalOpen} onClose={() => setIsGenerationModalOpen(false)} 
+        uploadedImages={images} researchPapers={researchPapers} dataFiles={files} 
+        activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} 
+        projectData={projectData} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} 
+        setGlobalLoadingText={setGlobalLoadingText} formData={stickyGenSettings} setFormData={setStickyGenSettings} showNotification={showNotification}
       />
       <LoadingModal isOpen={isGlobalLoading} loadingText={globalLoadingText} />
-      
       <CustomModal 
-        isOpen={notification.isOpen}
-        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
-        title={notification.title}
-        message={notification.message}
-        type={notification.type}
-        onConfirm={notification.onConfirm}
+        isOpen={notification.isOpen} onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title} message={notification.message} type={notification.type} onConfirm={notification.onConfirm}
       />
-
       <TourGuide projectId={projectId} />
     </div>
   );

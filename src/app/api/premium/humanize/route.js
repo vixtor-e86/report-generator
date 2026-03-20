@@ -6,30 +6,38 @@ export async function POST(request) {
   try {
     const { content, projectId } = await request.json();
 
-    // 1. Strict Env Validation
+    // 1. STRICT ENV VALIDATION (NO DEFAULTS)
     const limit = parseInt(process.env.HUMANIZER_LIMIT);
     const apiKey = process.env.RYNE_API_KEY;
 
-    if (isNaN(limit)) throw new Error('CRITICAL: HUMANIZER_LIMIT is missing or invalid in .env');
-    if (!apiKey) throw new Error('CRITICAL: RYNE_API_KEY is missing in .env');
+    if (isNaN(limit)) {
+      throw new Error('CRITICAL CONFIG ERROR: HUMANIZER_LIMIT is missing or invalid in server environment.');
+    }
+    if (!apiKey) {
+      throw new Error('CRITICAL CONFIG ERROR: RYNE_API_KEY is missing in server environment.');
+    }
 
-    if (!content || !projectId) return NextResponse.json({ error: 'Missing content or projectId' }, { status: 400 });
+    if (!content || !projectId) {
+      return NextResponse.json({ error: 'Missing required parameters: content or projectId' }, { status: 400 });
+    }
 
     const wordCount = content.trim().split(/\s+/).filter(w => w.length > 0).length;
     
-    // 2. Fetch current usage (We'll also use this to ensure the project exists)
+    // 2. Fetch Words Used from Database
     const { data: project, error: fetchError } = await supabaseAdmin
       .from('premium_projects')
       .select('humanizer_words_used')
       .eq('id', projectId)
       .single();
 
-    if (fetchError || !project) throw new Error('Project not found');
+    if (fetchError || !project) throw new Error('Could not find project usage records.');
 
     const currentUsed = project.humanizer_words_used || 0;
 
     if (currentUsed + wordCount > limit) {
-      return NextResponse.json({ error: `Limit reached. ${limit - currentUsed} words left.` }, { status: 403 });
+      return NextResponse.json({ 
+        error: `Account Limit reached. You have ${limit - currentUsed} words remaining in this project.` 
+      }, { status: 403 });
     }
 
     // --- 3. HEADER PROTECTION ---
@@ -41,7 +49,6 @@ export async function POST(request) {
       }
       return true;
     });
-
     const bodyText = bodyLines.join('\n').trim();
 
     // --- 4. CALL RYNE AI ---
@@ -60,27 +67,20 @@ export async function POST(request) {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(`Ryne AI: ${data.message || response.statusText}`);
+      if (!response.ok) throw new Error(`Ryne AI Response: ${data.message || response.statusText}`);
       humanized = data.content || data.text;
     } else {
       humanized = bodyText;
     }
     
-    // Re-stitch headers
+    // Stitch headers back
     const finalOutput = [...protectedHeaders, "", humanized].join('\n').trim();
 
-    // --- 5. PERSIST USAGE & SYNC LIMIT (CRITICAL) ---
-    // We update BOTH used and limit columns so that Sidebar.js always has the fresh Vercel value
+    // --- 5. PERSIST USAGE ---
     const newUsed = currentUsed + wordCount;
-    
-    console.log(`METER SYNC: Project ${projectId} -> used: ${newUsed}, limit: ${limit}`);
-
     await supabaseAdmin
       .from('premium_projects')
-      .update({ 
-        humanizer_words_used: newUsed,
-        humanizer_words_limit: limit // FORCE SYNC VERCEL LIMIT TO DB
-      })
+      .update({ humanizer_words_used: newUsed })
       .eq('id', projectId);
 
     return NextResponse.json({ 
@@ -91,7 +91,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Humanizer Error:', error.message);
+    console.error('Humanizer API Route Error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

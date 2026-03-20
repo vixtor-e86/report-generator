@@ -1,3 +1,4 @@
+// src/components/premium/workspace/Sidebar.js
 'use client';
 
 import { useState } from 'react';
@@ -5,7 +6,6 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useFileUpload } from '@/hooks/useFileUpload';
 
-// Simple SVG Icons
 const Icons = {
   ChevronDown: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>,
   Home: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>,
@@ -23,23 +23,9 @@ const Icons = {
 };
 
 export default function Sidebar({ 
-  projectData, 
-  chapters, 
-  images, 
-  projectDocs = [],
-  userProfile, // Added prop
-  activeView, 
-  onViewChange,
-  onUpload, 
-  uploading,
-  onDelete,
-  deleting,
-  onFileClick,
-  onError,
-  isOpen,
-  onClose,
-  storageUsed = 0,
-  storageLimit = 300 * 1024 * 1024 // Default 300MB
+  projectData, chapters, images, projectDocs = [], userProfile, activeView, onViewChange,
+  onUpload, uploading, onDelete, deleting, onFileClick, onError, isOpen, onClose,
+  storageUsed = 0, storageLimit = 300 * 1024 * 1024, humanizerLimit = 0
 }) {
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(true);
   const [showCaptionModal, setShowCaptionModal] = useState(false);
@@ -49,24 +35,14 @@ export default function Sidebar({
   const handleImageUploadRequest = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Validation: PNG, JPEG
     const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-    if (!validTypes.includes(file.type)) {
-      onError('Only PNG and JPEG images are allowed.');
-      return;
-    }
-
+    if (!validTypes.includes(file.type)) { onError('Only PNG and JPEG allowed.'); return; }
     setPendingFile(file);
     setShowCaptionModal(true);
   };
 
   const handleSaveWithCaption = () => {
-    if (!imageCaption.trim()) {
-      if (onError) onError('Please enter a caption for the image.');
-      else alert('Please enter a caption for the image.');
-      return;
-    }
+    if (!imageCaption.trim()) { onError('Please enter a caption.'); return; }
     onUpload(pendingFile, 'project_image', null, imageCaption.trim());
     setShowCaptionModal(false);
     setPendingFile(null);
@@ -76,326 +52,106 @@ export default function Sidebar({
   const handleDocUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Validation: PDF ONLY for project docs
-    const validTypes = ['application/pdf'];
-    const validExtensions = ['.pdf'];
-    const extension = '.' + file.name.split('.').pop().toLowerCase();
-
-    if (!validTypes.includes(file.type) && !validExtensions.includes(extension)) {
-      onError('Only PDF files are allowed for project documents to ensure merging compatibility.');
-      return;
-    }
-
     onUpload(file, 'project_component');
   };
 
+  const currentUsage = projectData?.humanizer_words_used || 0;
+  const barPercentage = humanizerLimit > 0 ? Math.min((currentUsage / humanizerLimit) * 100, 100) : 0;
+
   return (
     <>
-      {/* Mobile Backdrop */}
-      {isOpen && (
-        <div 
-          className="sidebar-backdrop" 
-          onClick={onClose}
-        />
-      )}
-      
+      {isOpen && <div className="sidebar-backdrop" onClick={onClose} />}
       <div id="step-sidebar" className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
-        {/* Workspace Selector */}
         <div className="sidebar-header-new">
           <div className="workspace-selector" style={{ cursor: 'default' }}>
             <img src="/premium_icon/favicon.ico" alt="Logo" style={{ width: 24, height: 24 }} />
-            <div className="workspace-info">
-              <span className="workspace-name">W3 Writelab</span>
-              <span className="premium-label">Premium</span>
-            </div>
-            {/* Mobile Close Button */}
-            <button className="mobile-close-btn" onClick={onClose}>
-              <Icons.ChevronDown style={{ transform: 'rotate(90deg)' }}/>
-            </button>
+            <div className="workspace-info"><span className="workspace-name">W3 Writelab</span><span className="premium-label">Premium</span></div>
+            <button className="mobile-close-btn" onClick={onClose}><Icons.ChevronDown style={{ transform: 'rotate(90deg)' }}/></button>
           </div>
         </div>
 
-      {/* Main Navigation */}
       <div className="sidebar-nav-new">
-        <button 
-          className={`nav-item-new ${activeView === 'dashboard' ? 'active' : ''}`}
-          onClick={() => onViewChange('dashboard')}
-        >
-          <Icons.Home />
-          <span>Dashboard</span>
-        </button>
-
+        <button className={`nav-item-new ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => onViewChange('dashboard')}><Icons.Home /><span>Dashboard</span></button>
         <div className="nav-group">
-          <button 
-            className="nav-item-new" 
-            onClick={() => setIsDocumentsOpen(!isDocumentsOpen)}
-          >
-            <Icons.FileText />
-            <span>Documents</span>
-            <span className={`dropdown-chevron ${isDocumentsOpen ? 'open' : ''}`}>
-              <Icons.ChevronDown />
-            </span>
-          </button>
-          
-          {/* Nested Document Items (Chapters & Assets) */}
+          <button className="nav-item-new" onClick={() => setIsDocumentsOpen(!isDocumentsOpen)}><Icons.FileText /><span>Documents</span><span className={`dropdown-chevron ${isDocumentsOpen ? 'open' : ''}`}><Icons.ChevronDown /></span></button>
           {isDocumentsOpen && (
-             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="sub-nav-list"
-            >
+             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="sub-nav-list">
               <div className="sub-nav-header">Project Docs</div>
-              
-              {/* List Uploaded Project Components */}
               {projectDocs.map((doc) => (
                 <div key={doc.id} className="sub-nav-item" style={{ paddingRight: '8px' }}>
-                  <button
-                    onClick={() => onFileClick(doc)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left' }}
-                  >
-                    <span style={{ fontSize: '14px' }}>📄</span>
-                    <span className="truncate" style={{ maxWidth: '100px' }}>{doc.name}</span>
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); onDelete(doc); }}
-                    disabled={deleting}
-                    className="text-gray-400 hover:text-red-500 transition disabled:opacity-50"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
-                  >
-                    <Icons.Trash />
-                  </button>
+                  <button onClick={() => onFileClick(doc)} style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left' }}><span style={{ fontSize: '14px' }}>📄</span><span className="truncate" style={{ maxWidth: '100px' }}>{doc.name}</span></button>
+                  <button onClick={(e) => { e.stopPropagation(); onDelete(doc); }} disabled={deleting} className="text-gray-400 hover:text-red-500 transition" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><Icons.Trash /></button>
                 </div>
               ))}
-
-              <label htmlFor="doc-upload" className={`sub-nav-item upload-item ${uploading ? 'opacity-50 pointer-events-none' : ''}`} style={{ marginBottom: '12px' }}>
-                <input
-                  id="doc-upload"
-                  type="file"
-                  accept=".pdf,.docx"
-                  onChange={handleDocUpload}
-                  style={{ display: 'none' }}
-                  disabled={uploading}
-                />
-                <Icons.Plus /> Add Component
-              </label>
-
+              <label htmlFor="doc-upload" className={`sub-nav-item upload-item ${uploading ? 'opacity-50 pointer-events-none' : ''}`} style={{ marginBottom: '12px' }}><input id="doc-upload" type="file" accept=".pdf,.docx" onChange={handleDocUpload} style={{ display: 'none' }} disabled={uploading} /><Icons.Plus /> Add Component</label>
               <div className="sub-nav-header">Current Project</div>
               {(projectData.template?.structure?.chapters || chapters).map((chapter) => (
-                <button
-                  key={chapter.id || chapter.number}
-                  className={`sub-nav-item ${activeView === `chapter-${chapter.id || chapter.number}` ? 'active' : ''}`}
-                  onClick={() => onViewChange(`chapter-${chapter.id || chapter.number}`)}
-                >
-                  Chapter {chapter.id || chapter.number}
-                </button>
+                <button key={chapter.id || chapter.number} className={`sub-nav-item ${activeView === `chapter-${chapter.id || chapter.number}` ? 'active' : ''}`} onClick={() => onViewChange(`chapter-${chapter.id || chapter.number}`)}>Chapter {chapter.id || chapter.number}</button>
               ))}
-              
               <div className="sub-nav-header">Assets</div>
-              
-              {/* List Uploaded Images */}
               {images.map((img) => (
                 <div key={img.id} className={`sub-nav-item ${activeView === `image-${img.id}` ? 'active' : ''}`} style={{ paddingRight: '8px' }}>
-                  <button
-                    onClick={() => onViewChange(`image-${img.id}`)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left' }}
-                  >
-                    <span style={{ fontSize: '14px' }}>🖼️</span>
-                    <span className="truncate" style={{ maxWidth: '100px' }}>{img.original_name || 'Image'}</span>
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); onDelete(img); }}
-                    disabled={deleting}
-                    className="text-gray-400 hover:text-red-500 transition disabled:opacity-50"
-                    title="Delete Image"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
-                  >
-                    <Icons.Trash />
-                  </button>
+                  <button onClick={() => onViewChange(`image-${img.id}`)} style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left' }}><span style={{ fontSize: '14px' }}>🖼️</span><span className="truncate" style={{ maxWidth: '100px' }}>{img.original_name || 'Image'}</span></button>
+                  <button onClick={(e) => { e.stopPropagation(); onDelete(img); }} disabled={deleting} className="text-gray-400 hover:text-red-500 transition" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><Icons.Trash /></button>
                 </div>
               ))}
-
-               <label htmlFor="image-upload" className={`sub-nav-item upload-item ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/png, image/jpeg"
-                  onChange={handleImageUploadRequest}
-                  style={{ display: 'none' }}
-                  disabled={uploading}
-                />
-                <Icons.Image /> {uploading ? 'Uploading...' : 'Add Image'}
-              </label>
+               <label htmlFor="image-upload" className={`sub-nav-item upload-item ${uploading ? 'opacity-50 pointer-events-none' : ''}`}><input id="image-upload" type="file" accept="image/png, image/jpeg" onChange={handleImageUploadRequest} style={{ display: 'none' }} disabled={uploading} /><Icons.Image /> {uploading ? 'Uploading...' : 'Add Image'}</label>
             </motion.div>
           )}
         </div>
-
-        <button 
-          className={`nav-item-new ${activeView === 'edit-template' ? 'active' : ''}`}
-          onClick={() => onViewChange('edit-template')}
-        >
-          <Icons.Layers />
-          <span>Templates</span>
-        </button>
-
-        <button 
-          className={`nav-item-new ${activeView === 'history' ? 'active' : ''}`}
-          onClick={() => onViewChange('history')}
-        >
-          <Icons.Clock />
-          <span>History</span>
-        </button>
+        <button className={`nav-item-new ${activeView === 'edit-template' ? 'active' : ''}`} onClick={() => onViewChange('edit-template')}><Icons.Layers /><span>Templates</span></button>
+        <button className={`nav-item-new ${activeView === 'history' ? 'active' : ''}`} onClick={() => onViewChange('history')}><Icons.Clock /><span>History</span></button>
       </div>
 
-      {/* Bottom Actions */}
       <div className="sidebar-footer-new">
-        
-        {/* Token Usage Card */}
         <div className="upgrade-card token-card">
           <div className="upgrade-content">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Icons.Cpu />
-              <span className="upgrade-title">AI Tokens</span>
-            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Icons.Cpu /><span className="upgrade-title">AI Tokens</span></div>
+            <span className="token-count">{((projectData?.tokens_used || 0) / 1000).toFixed(0)}k / {((projectData?.tokens_limit || 300000) / 1000).toFixed(0)}k</span>
+          </div>
+          <div className="upgrade-bar"><div className="upgrade-progress" style={{ width: `${Math.min(((projectData?.tokens_used || 0) / (projectData?.tokens_limit || 300000)) * 100, 100)}%` }}></div></div>
+        </div>
+
+        {/* Humanizer Usage Bar (Strict Authority from .env) */}
+        <div className="upgrade-card token-card" style={{ marginTop: '8px' }}>
+          <div className="upgrade-content">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{ color: '#10b981' }}><Icons.Cpu /></div><span className="upgrade-title">Humanizer</span></div>
             <span className="token-count">
-              {((projectData?.tokens_used || 0) / 1000).toFixed(0)}k / {((projectData?.tokens_limit || 300000) / 1000).toFixed(0)}k
+              {currentUsage.toLocaleString()} / {humanizerLimit.toLocaleString()}
             </span>
           </div>
           <div className="upgrade-bar">
-             <div 
-               className="upgrade-progress" 
-               style={{ 
-                 width: `${Math.min(((projectData?.tokens_used || 0) / (projectData?.tokens_limit || 300000)) * 100, 100)}%` 
-               }}
-             ></div>
+             <div className="upgrade-progress" style={{ width: `${barPercentage}%`, background: '#10b981' }}></div>
           </div>
         </div>
 
-        {/* Humanizer Usage Card */}
         <div className="upgrade-card token-card" style={{ marginTop: '8px' }}>
           <div className="upgrade-content">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ color: '#10b981' }}><Icons.Cpu /></div>
-              <span className="upgrade-title">Humanizer</span>
-            </div>
-            <span className="token-count">
-              {(projectData?.humanizer_words_used || 0).toLocaleString()} / {(projectData?.humanizer_words_limit || 10000).toLocaleString()}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Icons.HardDrive /><span className="upgrade-title">Storage</span></div>
+            <span className="token-count">{(storageUsed / (1024 * 1024)).toFixed(1)} / {(storageLimit / (1024 * 1024)).toFixed(0)} MB</span>
           </div>
-          <div className="upgrade-bar">
-             <div 
-               className="upgrade-progress" 
-               style={{ 
-                 width: `${Math.min(((projectData?.humanizer_words_used || 0) / (projectData?.humanizer_words_limit || 10000)) * 100, 100)}%`,
-                 background: '#10b981'
-               }}
-             ></div>
-          </div>
-        </div>
-
-        {/* Storage Usage Card */}
-        <div className="upgrade-card token-card" style={{ marginTop: '8px' }}>
-          <div className="upgrade-content">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Icons.HardDrive />
-              <span className="upgrade-title">Storage</span>
-            </div>
-            <span className="token-count">
-              {(storageUsed / (1024 * 1024)).toFixed(1)} / {(storageLimit / (1024 * 1024)).toFixed(0)} MB
-            </span>
-          </div>
-          <div className="upgrade-bar">
-             <div 
-               className="upgrade-progress" 
-               style={{ 
-                 width: `${Math.min((storageUsed / storageLimit) * 100, 100)}%`,
-                 background: storageUsed > storageLimit * 0.9 ? '#ef4444' : undefined // Red if > 90%
-               }}
-             ></div>
-          </div>
+          <div className="upgrade-bar"><div className="upgrade-progress" style={{ width: `${Math.min((storageUsed / storageLimit) * 100, 100)}%`, background: storageUsed > storageLimit * 0.9 ? '#ef4444' : undefined }}></div></div>
         </div>
 
         <div className="footer-menu">
-          <Link href={`/premium/feedback?projectId=${projectData?.id}`} className="footer-item" style={{ textDecoration: 'none' }}>
-            <Icons.MessageSquare />
-            <span>Feedback</span>
-          </Link>
-          <button 
-            className={`footer-item ${activeView === 'referral' ? 'active' : ''}`}
-            onClick={() => onViewChange('referral')}
-          >
-            <Icons.Users />
-            <span>Refer & Earn</span>
-          </button>
+          <Link href={`/premium/feedback?projectId=${projectData?.id}`} className="footer-item" style={{ textDecoration: 'none' }}><Icons.MessageSquare /><span>Feedback</span></Link>
+          <button className={`footer-item ${activeView === 'referral' ? 'active' : ''}`} onClick={() => onViewChange('referral')}><Icons.Users /><span>Refer & Earn</span></button>
         </div>
 
         <div className="user-profile-new">
-          <img 
-            src={`https://ui-avatars.com/api/?name=${userProfile?.username || 'User'}&background=random`} 
-            alt="User" 
-            className="user-avatar-img" 
-          />
-          <div className="user-info-new">
-            <span className="user-name-new">{userProfile?.username || 'Loading...'}</span>
-            <span className="user-email-new" style={{ fontSize: '10px' }}>{userProfile?.id ? 'Premium Account' : 'Loading...'}</span>
-          </div>
-          <Link href="/dashboard" className="logout-btn" title="Back to Dashboard" style={{ 
-            background: 'none', 
-            border: 'none', 
-            cursor: 'pointer', 
-            color: '#6366f1',
-            padding: '4px',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textDecoration: 'none'
-          }}>
-            <Icons.ArrowLeft />
-          </Link>
+          <img src={`https://ui-avatars.com/api/?name=${userProfile?.username || 'User'}&background=random`} alt="User" className="user-avatar-img" />
+          <div className="user-info-new"><span className="user-name-new">{userProfile?.username || 'Loading...'}</span><span className="user-email-new" style={{ fontSize: '10px' }}>{userProfile?.id ? 'Premium Account' : 'Loading...'}</span></div>
+          <Link href="/dashboard" className="logout-btn" title="Back to Dashboard" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6366f1', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}><Icons.ArrowLeft /></Link>
         </div>
       </div>
 
-      {/* Caption Modal */}
       {showCaptionModal && (
-        <div className="modal-overlay" style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', 
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000
-        }}>
-          <div className="modal-container" style={{
-            background: 'white', padding: '24px', borderRadius: '16px', 
-            width: '100%', maxWidth: '400px'
-          }}>
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+          <div className="modal-container" style={{ background: 'white', padding: '24px', borderRadius: '16px', width: '100%', maxWidth: '400px' }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '700' }}>Add Image Caption</h3>
-            <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '16px' }}>
-              This caption will be used as the image reference in AI prompts.
-            </p>
-            <textarea
-              value={imageCaption}
-              onChange={(e) => setImageCaption(e.target.value)}
-              placeholder="e.g., Block diagram of the power supply unit"
-              style={{
-                width: '100%', height: '80px', padding: '12px', border: '1px solid #e5e7eb',
-                borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', resize: 'none',
-                boxSizing: 'border-box'
-              }}
-              autoFocus
-            />
-            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-              <button 
-                onClick={() => { setShowCaptionModal(false); setPendingFile(null); }}
-                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #e5e7eb', background: 'white', cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSaveWithCaption}
-                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '600', cursor: 'pointer' }}
-              >
-                Save & Upload
-              </button>
-            </div>
+            <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '16px' }}>This caption will be used as the image reference in AI prompts.</p>
+            <textarea value={imageCaption} onChange={(e) => setImageCaption(e.target.value)} placeholder="e.g., Block diagram of the power supply unit" style={{ width: '100%', height: '80px', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' }} autoFocus />
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}><button onClick={() => { setShowCaptionModal(false); setPendingFile(null); }} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #e5e7eb', background: 'white', cursor: 'pointer' }}>Cancel</button><button onClick={handleSaveWithCaption} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '600', cursor: 'pointer' }}>Save & Upload</button></div>
           </div>
         </div>
       )}
