@@ -215,7 +215,17 @@ function WorkspaceContent() {
       <FilePreviewModal isOpen={!!previewFile} onClose={() => setPreviewFile(null)} file={previewFile} />
       <ResearchSearchModal isOpen={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} projectId={projectId} onPaperSaved={loadWorkspaceData} showNotification={showNotification} />
       <VisualToolsModal isOpen={isVisualToolsModalOpen} onClose={() => setIsVisualToolsModalOpen(false)} projectId={projectId} userId={currentUser?.id} onImageSaved={loadWorkspaceData} showNotification={showNotification} />
-      <PresentationModal isOpen={isPresentationModalOpen} onClose={() => setIsPresentationModalOpen(false)} chapters={chapters} projectId={projectId} userId={currentUser?.id} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} showNotification={showNotification} />
+      <PresentationModal 
+        isOpen={isPresentationModalOpen} 
+        onClose={() => setIsPresentationModalOpen(false)} 
+        chapters={chapters} 
+        projectId={projectId} 
+        userId={currentUser?.id} 
+        setIsGlobalLoading={setIsGlobalLoading} 
+        setGlobalLoadingText={setGlobalLoadingText} 
+        showNotification={showNotification}
+        images={images}
+      />
       
       <HumanizerModal 
         isOpen={isHumanizerModalOpen} 
