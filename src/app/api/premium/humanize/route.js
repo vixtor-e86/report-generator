@@ -30,78 +30,76 @@ export async function POST(request) {
     }
 
     // --- 2. SEQUENTIAL STRUCTURAL PARSING ---
-    // We split the content into blocks. Headers are preserved, Body blocks are humanized.
     const lines = content.split('\n');
     const blocks = [];
     let currentBody = [];
 
     lines.forEach((line) => {
       if (line.trim().startsWith('#')) {
-        // If we were collecting body text, push it as a block first
         if (currentBody.length > 0) {
           blocks.push({ type: 'body', content: currentBody.join('\n') });
           currentBody = [];
         }
-        // Push the header block
         blocks.push({ type: 'header', content: line });
       } else {
         currentBody.push(line);
       }
     });
-    // Push final body block if exists
     if (currentBody.length > 0) {
       blocks.push({ type: 'body', content: currentBody.join('\n') });
     }
 
-    // --- 3. PARALLEL HUMANIZATION (BODY BLOCKS ONLY) ---
+    // --- 3. PARALLEL HUMANIZATION ---
     const humanizeBlock = async (text) => {
-      if (text.trim().length < 10) return text; // Skip tiny fragments
+      if (text.trim().length < 5) return text;
 
       try {
         const response = await fetch("https://ryne.ai/api/humanizer/models/supernova", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            // Wrap in a technical instruction to ensure tone and currency
-            text: `Instruction: Rewrite the following technical text to sound professional and human-written. STRICT RULE: Use Nigerian Naira (₦) for all pricing. 
-            
-            Content: ${text}`,
+            // Send text CLEANLY without "Instruction:" prefix to prevent the AI from repeating it
+            text: text,
             tone: "professional",
-            purpose: "academic report",
+            // Move structural instructions here
+            purpose: "academic technical report. IMPORTANT: Use Nigerian Naira (₦) for all currency mentioned.",
             user_id: apiKey,
             shouldStream: false,
           }),
         });
 
         const data = await response.json();
-        if (!response.ok) return text; // Fallback to original on error
+        if (!response.ok) return text;
 
         let result = data.content || data.text || text;
         
-        // Final cleaning: Ryne sometimes adds "Here is the rewrite:"
-        result = result.replace(/^(Here is the rewrite:|Rewritten content:|Sure, here is the text:)/i, '').trim();
+        // CLEANUP: Aggressively remove any AI conversational filler or repeated prompts
+        // This removes phrases like "Here is the rewrite:", "Sure, here is the text:", etc.
+        result = result.replace(/^(Here is the rewrite:|Rewritten content:|Sure, here is the text:|Rewritten text:|Output:|Analysis:)/i, '').trim();
         
-        // Manual currency fail-safe
+        // Remove common intro sentences if AI repeats the instruction
+        result = result.replace(/^.*?(sound professional and human-written|Nigerian Naira|academic report).*?(\n|$)/si, '').trim();
+        
+        // Manual currency fail-safe (Mandatory for Nigerian localization)
         return result.replace(/\$/g, '₦');
       } catch (e) {
         return text;
       }
     };
 
-    // Execute all body blocks in parallel
     const processedBlocks = await Promise.all(
       blocks.map(async (block) => {
         if (block.type === 'body') {
           return await humanizeBlock(block.content);
         }
-        return block.content; // Return headers exactly as they are
+        return block.content;
       })
     );
 
-    // --- 4. REASSEMBLE CHAPTER ---
+    // --- 4. REASSEMBLE ---
     const finalOutput = processedBlocks.join('\n').trim();
 
-    // --- 5. PERSIST USAGE ---
+    // --- 5. PERSIST ---
     const newUsed = currentUsed + wordCount;
     await supabaseAdmin
       .from('premium_projects')
@@ -116,7 +114,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Humanizer Error:', error.message);
+    console.error('Humanizer API Error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
