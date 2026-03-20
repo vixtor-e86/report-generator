@@ -6,12 +6,10 @@ export async function POST(request) {
   try {
     const { content, projectId } = await request.json();
 
-    // 1. Strict Env Validation
+    // 1. Env Validation
     const limit = parseInt(process.env.HUMANIZER_LIMIT);
     const apiKey = process.env.RYNE_API_KEY;
-
-    if (isNaN(limit)) throw new Error('HUMANIZER_LIMIT missing in .env');
-    if (!apiKey) throw new Error('RYNE_API_KEY missing in .env');
+    if (isNaN(limit) || !apiKey) throw new Error('Server configuration error (Limit/API Key).');
 
     if (!content || !projectId) return NextResponse.json({ error: 'Missing content or projectId' }, { status: 400 });
 
@@ -31,48 +29,77 @@ export async function POST(request) {
       return NextResponse.json({ error: `Limit reached. ${limit - currentUsed} words remaining.` }, { status: 403 });
     }
 
-    // --- 2. SURGICAL HEADER PROTECTION (IN-PLACE) ---
-    const headersMap = [];
+    // --- 2. SEQUENTIAL STRUCTURAL PARSING ---
+    // We split the content into blocks. Headers are preserved, Body blocks are humanized.
     const lines = content.split('\n');
-    
-    const processedLines = lines.map(line => {
+    const blocks = [];
+    let currentBody = [];
+
+    lines.forEach((line) => {
       if (line.trim().startsWith('#')) {
-        const placeholder = `[[[W3_HEADER_${headersMap.length}]]]`;
-        headersMap.push({ placeholder, original: line });
-        return placeholder;
+        // If we were collecting body text, push it as a block first
+        if (currentBody.length > 0) {
+          blocks.push({ type: 'body', content: currentBody.join('\n') });
+          currentBody = [];
+        }
+        // Push the header block
+        blocks.push({ type: 'header', content: line });
+      } else {
+        currentBody.push(line);
       }
-      return line;
     });
+    // Push final body block if exists
+    if (currentBody.length > 0) {
+      blocks.push({ type: 'body', content: currentBody.join('\n') });
+    }
 
-    const bodyWithPlaceholders = processedLines.join('\n');
+    // --- 3. PARALLEL HUMANIZATION (BODY BLOCKS ONLY) ---
+    const humanizeBlock = async (text) => {
+      if (text.trim().length < 10) return text; // Skip tiny fragments
 
-    // --- 3. CALL RYNE AI ---
-    const response = await fetch("https://ryne.ai/api/humanizer/models/supernova", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: bodyWithPlaceholders,
-        tone: "professional",
-        purpose: "academic report",
-        user_id: apiKey,
-        shouldStream: false,
-      }),
-    });
+      try {
+        const response = await fetch("https://ryne.ai/api/humanizer/models/supernova", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            // Wrap in a technical instruction to ensure tone and currency
+            text: `Instruction: Rewrite the following technical text to sound professional and human-written. STRICT RULE: Use Nigerian Naira (₦) for all pricing. 
+            
+            Content: ${text}`,
+            tone: "professional",
+            purpose: "academic report",
+            user_id: apiKey,
+            shouldStream: false,
+          }),
+        });
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(`Ryne AI: ${data.message || response.statusText}`);
+        const data = await response.json();
+        if (!response.ok) return text; // Fallback to original on error
 
-    let humanizedText = data.content || data.text;
-    if (!humanizedText) throw new Error('AI returned empty content');
+        let result = data.content || data.text || text;
+        
+        // Final cleaning: Ryne sometimes adds "Here is the rewrite:"
+        result = result.replace(/^(Here is the rewrite:|Rewritten content:|Sure, here is the text:)/i, '').trim();
+        
+        // Manual currency fail-safe
+        return result.replace(/\$/g, '₦');
+      } catch (e) {
+        return text;
+      }
+    };
 
-    // --- 4. SURGICAL RESTORATION ---
-    // Swap placeholders back for original headers in their EXACT positions
-    headersMap.forEach(h => {
-      humanizedText = humanizedText.split(h.placeholder).join(h.original);
-    });
+    // Execute all body blocks in parallel
+    const processedBlocks = await Promise.all(
+      blocks.map(async (block) => {
+        if (block.type === 'body') {
+          return await humanizeBlock(block.content);
+        }
+        return block.content; // Return headers exactly as they are
+      })
+    );
 
-    // Final cleanup: Ensure no stray placeholders or clumping
-    const finalOutput = humanizedText.trim();
+    // --- 4. REASSEMBLE CHAPTER ---
+    const finalOutput = processedBlocks.join('\n').trim();
 
     // --- 5. PERSIST USAGE ---
     const newUsed = currentUsed + wordCount;
