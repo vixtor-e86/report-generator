@@ -22,6 +22,7 @@ import PresentationModal from '@/components/premium/modals/PresentationModal';
 import HumanizerModal from '@/components/premium/modals/HumanizerModal';
 import ExportModal from '@/components/premium/modals/ExportModal';
 import CustomModal from '@/components/premium/modals/CustomModal';
+import StructureConfirmationModal from '@/components/premium/modals/StructureConfirmationModal';
 import TourGuide from '@/components/premium/workspace/TourGuide';
 
 import '@/styles/workspace.css';
@@ -61,8 +62,10 @@ function WorkspaceContent() {
   const [isPresentationModalOpen, setIsPresentationModalOpen] = useState(false);
   const [isHumanizerModalOpen, setIsHumanizerModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isStructureModalOpen, setIsStructureModalOpen] = useState(false);
   const [exportType, setExportType] = useState('pdf');
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+  const [pendingGenData, setPendingGenData] = useState(null);
 
   const [notification, setNotification] = useState({
     isOpen: false,
@@ -71,6 +74,44 @@ function WorkspaceContent() {
     type: 'info',
     onConfirm: null
   });
+
+  const handleFinalGenerate = async () => {
+    if (!activeChapter || !pendingGenData) return;
+    setIsStructureModalOpen(false);
+    setIsGenerationModalOpen(false);
+    
+    try {
+      setGlobalLoadingText(`System Architect is designing Chapter ${activeChapter.number || activeChapter.id}...`);
+      setIsGlobalLoading(true);
+
+      const response = await fetch('/api/premium/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId, 
+          userId: currentUser?.id, 
+          chapterNumber: activeChapter.number || activeChapter.id, 
+          chapterTitle: activeChapter?.title,
+          ...pendingGenData,
+          referenceStyle: stickyGenSettings.referenceStyle,
+          maxReferences: stickyGenSettings.maxReferences,
+        })
+      });
+      
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Generation failed');
+      }
+      
+      loadWorkspaceData();
+      showNotification('Success', `Chapter ${activeChapter.number || activeChapter.id} generated successfully!`, 'success');
+    } catch (error) { 
+      showNotification('Generation Error', error.message, 'error');
+    } finally { 
+      setIsGlobalLoading(false); 
+      setPendingGenData(null);
+    }
+  };
 
   const showNotification = (title, message, type = 'info', onConfirm = null) => {
     setNotification({ isOpen: true, title, message, type, onConfirm });
@@ -249,7 +290,22 @@ function WorkspaceContent() {
         activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} 
         projectData={projectData} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} 
         setGlobalLoadingText={setGlobalLoadingText} formData={stickyGenSettings} setFormData={setStickyGenSettings} showNotification={showNotification}
-        onEditTemplate={() => setActiveView('edit-template')}
+        onGenerateClick={(data) => {
+          setPendingGenData(data);
+          setIsStructureModalOpen(true);
+        }}
+      />
+      <StructureConfirmationModal 
+        isOpen={isStructureModalOpen} 
+        onClose={() => setIsStructureModalOpen(false)} 
+        projectData={projectData} 
+        activeChapter={activeChapter} 
+        onConfirm={handleFinalGenerate} 
+        onEditTemplate={() => {
+          setIsStructureModalOpen(false);
+          setIsGenerationModalOpen(false);
+          setActiveView('edit-template');
+        }}
       />
       <LoadingModal isOpen={isGlobalLoading} loadingText={globalLoadingText} />
       <CustomModal 
