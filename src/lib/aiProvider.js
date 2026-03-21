@@ -62,7 +62,7 @@ async function callDeepSeek(prompt, maxTokens, temperature, modelOverride = null
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`DeepSeek API error: ${errorData.error?.message || response.statusText}`);
+      throw new Error(`System error: ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
@@ -80,8 +80,8 @@ async function callDeepSeek(prompt, maxTokens, temperature, modelOverride = null
     };
 
   } catch (error) {
-    console.error('DeepSeek API Error:', error);
-    throw new Error(`DeepSeek generation failed: ${error.message}`);
+    console.error('System API Error:', error);
+    throw new Error(`System generation failed: ${error.message}`);
   }
 }
 
@@ -132,8 +132,8 @@ async function callGemini(prompt, maxTokens, temperature, fileParts = null, mode
     };
 
   } catch (error) {
-    console.error('Gemini API Error:', error);
-    throw new Error(`Gemini generation failed: ${error.message}`);
+    console.error('System API Error:', error);
+    throw new Error(`System generation failed: ${error.message}`);
   }
 }
 
@@ -166,7 +166,7 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Claude API error: ${errorData.error?.message || response.statusText}`);
+      throw new Error(`System error: ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
@@ -188,8 +188,8 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
     };
 
   } catch (error) {
-    console.error('Claude API Error:', error);
-    throw new Error(`Claude generation failed: ${error.message}`);
+    console.error('System API Error:', error);
+    throw new Error(`System generation failed: ${error.message}`);
   }
 }
 

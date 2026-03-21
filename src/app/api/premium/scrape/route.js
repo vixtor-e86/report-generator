@@ -87,7 +87,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Scraping Error:', error);
+    console.error('System Error:', error);
     return NextResponse.json({ error: error.message || 'Failed to process URL' }, { status: 500 });
   }
 }

@@ -63,10 +63,10 @@ export async function generateChapter({
       tokensUsed: response.usageMetadata?.totalTokenCount || 0
     };
   } catch (error) {
-    console.error('Gemini API Error:', error);
+    console.error('System API Error:', error);
     return {
       success: false,
-      error: error.message
+      error: 'The System encountered an error. Please try again.'
     };
   }
 }

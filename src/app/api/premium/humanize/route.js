@@ -142,7 +142,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Humanizer API Error:', error.message);
+    console.error('System API Error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

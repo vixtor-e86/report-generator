@@ -78,37 +78,51 @@ function parseInlineFormatting(text, fontSize = 24, isBold = false) {
 
 // --- NEW: Reference Extractor Logic ---
 function extractMasterReferences(chapters, dbReferences) {
-  const refSet = new Set();
+  const masterMap = new Map(); // Key: Normalized title, Value: Original formatted text
   
+  const normalize = (text) => {
+    if (!text) return "";
+    return text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+  };
+
   // 1. Add all DB references first (formatted)
   if (dbReferences) {
     dbReferences.forEach(r => {
       const auths = Array.isArray(r.authors) ? r.authors.join(', ') : (r.authors || 'Unknown');
       const refText = `${auths} (${r.year}). "${r.title}". ${r.venue || 'Research Journal'}.`;
-      refSet.add(refText.trim());
+      const key = normalize(r.title);
+      if (key && !masterMap.has(key)) {
+        masterMap.set(key, refText.trim());
+      }
     });
   }
 
   // 2. Scan chapter content for AI-generated references
   chapters.forEach(ch => {
     const content = ch.content || "";
-    // Find the references section
     const parts = content.split(/## References|### References/i);
     if (parts.length > 1) {
       const refSection = parts[parts.length - 1].trim();
       const lines = refSection.split('\n');
       lines.forEach(line => {
         const trimmed = line.trim();
-        // Clean prefixes like "1. ", "[1] ", "- ", "* "
         const cleaned = trimmed.replace(/^(\[?\d+\]?\.?|\-|\*)\s+/, '').trim();
-        if (cleaned.length > 30) { // Ignore short/broken lines
-          refSet.add(cleaned);
+        
+        if (cleaned.length > 30) {
+          // Extract a potential title from the cleaned line to use as a key
+          // Most references have title in quotes or between year and venue
+          const titleMatch = cleaned.match(/"(.*?)"/) || cleaned.match(/\)\.\s+(.*?)\./);
+          const titleKey = titleMatch ? normalize(titleMatch[1]) : normalize(cleaned.substring(0, 100));
+          
+          if (titleKey && !masterMap.has(titleKey)) {
+            masterMap.set(titleKey, cleaned);
+          }
         }
       });
     }
   });
 
-  return Array.from(refSet).sort();
+  return Array.from(masterMap.values()).sort();
 }
 
 export async function POST(request) {
