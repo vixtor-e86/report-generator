@@ -249,6 +249,7 @@ function WorkspaceContent() {
         activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} 
         projectData={projectData} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} 
         setGlobalLoadingText={setGlobalLoadingText} formData={stickyGenSettings} setFormData={setStickyGenSettings} showNotification={showNotification}
+        onEditTemplate={() => setActiveView('edit-template')}
       />
       <LoadingModal isOpen={isGlobalLoading} loadingText={globalLoadingText} />
       <CustomModal 

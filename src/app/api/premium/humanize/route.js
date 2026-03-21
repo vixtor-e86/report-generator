@@ -13,7 +13,55 @@ export async function POST(request) {
 
     if (!content || !projectId) return NextResponse.json({ error: 'Missing content or projectId' }, { status: 400 });
 
-    const wordCount = content.trim().split(/\s+/).filter(w => w.length > 0).length;
+    // --- 2. SEQUENTIAL STRUCTURAL PARSING ---
+    const lines = content.split('\n');
+    const blocks = [];
+    let currentBody = [];
+    let isReferenceSection = false;
+
+    lines.forEach((line) => {
+      const trimmedLine = line.trim();
+      if (trimmedLine.startsWith('#')) {
+        if (currentBody.length > 0) {
+          blocks.push({ 
+            type: isReferenceSection ? 'reference' : 'body', 
+            content: currentBody.join('\n') 
+          });
+          currentBody = [];
+        }
+        
+        // Detect references section header (skip humanization for everything under it)
+        const headerText = trimmedLine.replace(/^#+\s*/, '').trim().toLowerCase();
+        const headerLevel = (trimmedLine.match(/^#+/) || ['#'])[0].length;
+        
+        if (['references', 'bibliography', 'works cited', 'reference list'].includes(headerText)) {
+          isReferenceSection = true;
+        } else if (headerLevel <= 2) {
+          // Reset reference flag for new major chapters/sections
+          isReferenceSection = false;
+        }
+        
+        blocks.push({ type: 'header', content: line });
+      } else {
+        currentBody.push(line);
+      }
+    });
+    
+    if (currentBody.length > 0) {
+      blocks.push({ 
+        type: isReferenceSection ? 'reference' : 'body', 
+        content: currentBody.join('\n') 
+      });
+    }
+
+    // Calculate word count for limit check (only humanizable blocks)
+    let wordCount = 0;
+    blocks.forEach(block => {
+      if (block.type === 'body') {
+        const count = block.content.trim().split(/\s+/).filter(w => w.length > 0).length;
+        wordCount += count;
+      }
+    });
     
     // Fetch Usage
     const { data: project, error: fetchError } = await supabaseAdmin
@@ -27,26 +75,6 @@ export async function POST(request) {
     const currentUsed = project.humanizer_words_used || 0;
     if (currentUsed + wordCount > limit) {
       return NextResponse.json({ error: `Limit reached. ${limit - currentUsed} words remaining.` }, { status: 403 });
-    }
-
-    // --- 2. SEQUENTIAL STRUCTURAL PARSING ---
-    const lines = content.split('\n');
-    const blocks = [];
-    let currentBody = [];
-
-    lines.forEach((line) => {
-      if (line.trim().startsWith('#')) {
-        if (currentBody.length > 0) {
-          blocks.push({ type: 'body', content: currentBody.join('\n') });
-          currentBody = [];
-        }
-        blocks.push({ type: 'header', content: line });
-      } else {
-        currentBody.push(line);
-      }
-    });
-    if (currentBody.length > 0) {
-      blocks.push({ type: 'body', content: currentBody.join('\n') });
     }
 
     // --- 3. PARALLEL HUMANIZATION ---

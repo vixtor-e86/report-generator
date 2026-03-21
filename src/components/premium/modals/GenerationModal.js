@@ -20,14 +20,14 @@ export default function GenerationModal({
   activeChapter, projectId, userId, projectData, onGenerateSuccess,
   setIsGlobalLoading, setGlobalLoadingText,
   formData: stickyData, setFormData: setStickyData,
-  showNotification
+  showNotification, onEditTemplate
 }) {
   const [localData, setLocalData] = useState({
     projectTitle: '', projectDescription: '', componentsUsed: '', researchBooks: '',
     userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
   });
 
-  const [activeTab, setActiveTab] = useState('details');
+  const [activeTab, setActiveTab] = useState('structure'); // Start with structure confirmation
   const [generating, setGenerating] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [extractedPreview, setExtractedPreview] = useState('');
@@ -36,6 +36,11 @@ export default function GenerationModal({
   const currentChapterNumber = activeChapter?.number || activeChapter?.id || 0;
   const isChapter4 = currentChapterNumber === 4;
   const isSubsequentChapter = currentChapterNumber > 1;
+
+  // Get current chapter structure from projectData
+  const chapterStructure = projectData?.template?.structure?.chapters?.find(
+    ch => (ch.chapter || ch.number) === currentChapterNumber
+  );
 
   useEffect(() => {
     if (isOpen && projectData) {
@@ -46,9 +51,9 @@ export default function GenerationModal({
         researchBooks: projectData.research_papers_context || '',
         userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
       });
-      setActiveTab(isSubsequentChapter ? 'materials' : 'details');
+      setActiveTab('structure');
     }
-  }, [isOpen, projectData, currentChapterNumber, isSubsequentChapter]);
+  }, [isOpen, projectData, currentChapterNumber]);
 
   const handlePreviewFile = async (file) => {
     setPreviewFile(file);
@@ -134,11 +139,53 @@ export default function GenerationModal({
         ) : (
           <>
             <div style={{ display: 'flex', gap: '12px', padding: '0 24px', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
+              <button onClick={() => setActiveTab('structure')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'structure' ? '#111827' : '#6b7280', borderBottom: activeTab === 'structure' ? '2px solid #111827' : '2px solid transparent' }}>Review Structure</button>
               <button onClick={() => setActiveTab('details')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'details' ? '#111827' : '#6b7280', borderBottom: activeTab === 'details' ? '2px solid #111827' : '2px solid transparent' }}>Details & Context</button>
               <button onClick={() => setActiveTab('materials')} style={{ padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: activeTab === 'materials' ? '#111827' : '#6b7280', borderBottom: activeTab === 'materials' ? '2px solid #111827' : '2px solid transparent' }}>Materials & References</button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+              {activeTab === 'structure' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div style={{ padding: '20px', background: '#eef2ff', borderRadius: '16px', border: '1px solid #e0e7ff' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                      <div style={{ padding: '8px', background: '#6366f1', borderRadius: '10px', color: 'white' }}><Icons.FileText /></div>
+                      <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1e1b4b' }}>Chapter {currentChapterNumber} Architecture</h3>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#4338ca', lineHeight: '1.6' }}>The System Architect will follow this exact structure to generate your report. Please verify that all required sections are present.</p>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Planned Sections:</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                      {chapterStructure?.sections?.length > 0 ? chapterStructure.sections.map((section, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                          <span style={{ fontSize: '12px', fontWeight: '800', color: '#6366f1', width: '24px' }}>{idx + 1}.</span>
+                          <span style={{ fontSize: '14px', fontWeight: '600', color: '#334155' }}>{section}</span>
+                        </div>
+                      )) : (
+                        <p style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '14px' }}>No specific sections defined for this chapter template.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                    <button 
+                      onClick={() => { onClose(); onEditTemplate(); }}
+                      style={{ flex: 1, padding: '16px', borderRadius: '14px', border: '1px solid #e2e8f0', background: 'white', color: '#475569', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
+                      <Icons.Target /> Edit Structure
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('details')}
+                      style={{ flex: 1.5, padding: '16px', borderRadius: '14px', border: 'none', background: '#111827', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
+                      Confirm and Continue <Icons.Check />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {activeTab === 'details' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   
