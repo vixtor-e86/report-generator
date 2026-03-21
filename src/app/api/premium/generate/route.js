@@ -136,7 +136,7 @@ export async function POST(request) {
         const query = (project.title + " " + project.description).substring(0, 200);
         const searchUrl = new URL('https://api.semanticscholar.org/graph/v1/paper/search', 'https://api.semanticscholar.org');
         searchUrl.searchParams.set('query', query);
-        searchUrl.searchParams.set('year', '2022-2026');
+        searchUrl.searchParams.set('year', '2020-2026');
         searchUrl.searchParams.set('limit', '15');
         searchUrl.searchParams.set('fields', 'title,authors,year,venue,url');
         const searchRes = await fetch(searchUrl.toString());
@@ -187,8 +187,8 @@ export async function POST(request) {
     ## CITATION AND REFERENCE REQUIREMENTS
     ${citationStyleInst}
     - COUNT: Exactly ${totalNeeded} references. 
-    - SOURCING: Fulfill missing count using 2022-2026 technical papers.
-    - RECENTCY: 2022-2026 only.` : '';
+    - SOURCING: Fulfill missing count using 2020-2026 technical papers.
+    - RECENTCY: 2020-2026 only.` : '';
 
     const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
     TASK: Author a detailed Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${project.title}".

@@ -12,7 +12,7 @@ const Icons = {
 
 export default function ResearchSearchModal({ isOpen, onClose, projectId, onPaperSaved, showNotification }) {
   const [query, setQuery] = useState('');
-  const [yearStart, setYearStart] = useState('2018');
+  const [yearStart, setYearStart] = useState('2020');
   const [yearEnd, setYearEnd] = useState(new Date().getFullYear().toString());
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);

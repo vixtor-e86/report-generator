@@ -68,7 +68,7 @@ export default function StructureConfirmationModal({
             onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
             onMouseLeave={e => e.currentTarget.style.transform = 'none'}
           >
-            Proceed with AI Generation <Icons.Check />
+            Proceed with Generation <Icons.Check />
           </button>
         </div>
       </motion.div>

@@ -25,7 +25,7 @@ function getReferenceInstructions(referenceStyle, faculty, isLastChapter, existi
   return `
 CITATION RULES (${referenceStyle.toUpperCase()}):
 1. In-Text: Use ${style.inText}. Distribute 8-12 citations naturally.
-2. Sourcing: Use the provided project references. If more are needed, find REAL academic papers from 2022-2026.
+2. Sourcing: Use the provided project references. If more are needed, find REAL academic papers from 2020-2026.
 3. Fulfillment: You MUST include exactly 8-12 references in your technical analysis.
 ${existingRefsText}
 4. **MANDATORY**: At the end of THIS chapter, you MUST include a "## References" section. 
@@ -34,7 +34,7 @@ ${existingRefsText}
    - **CONTENT**: List only the sources actually cited in this chapter.
    - If this is the FINAL chapter, ensure the list is comprehensive for the whole project.
    - Max 40 unique references for the entire project.
-   - RECENTCY: All sources must be between 2022-2026.
+   - RECENTCY: All sources must be between 2020-2026.
 `;
 }
 
@@ -89,7 +89,7 @@ function getFacultySpecificPrompt(chapterNumber, data) {
   2. Tone: Formal, Technical, Academic.
   3. Format: Markdown (## H1, ### H2).
   4. Currency: ₦ (NGN).
-  5. RECENTCY: Citations must be 2022-2026.
+  5. RECENTCY: Citations must be 2020-2026.
   6. NO conversational filler. Start directly with ## heading.`;
 
   return prompt;

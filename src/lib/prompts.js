@@ -95,9 +95,9 @@ The specific objectives of this project are:
 
 ### 2.5 Review of Related Work
 (Review 5 specific "Past Projects" or studies. I will provide the format, you provide the FICTIONAL but REALISTIC content.)
-* **[1] A. Ibrahim et al. (2020):** Developed a similar system using Arduino. However, their system lacked remote monitoring capabilities, which restricted its usability to local environments only.
-* **[2] O. Okeke (2021):** Proposed a method using analog sensors. While cost-effective, the accuracy was low (approx 75%), leading to frequent calibration errors.
-* **[3] J. Smith (2019):** Worked on a GSM-based variant. The major limitation was the high power consumption, which drained the battery in under 4 hours.
+* **[1] A. Ibrahim et al. (2022):** Developed a similar system using Arduino. However, their system lacked remote monitoring capabilities, which restricted its usability to local environments only.
+* **[2] O. Okeke (2023):** Proposed a method using analog sensors. While cost-effective, the accuracy was low (approx 75%), leading to frequent calibration errors.
+* **[3] J. Smith (2021):** Worked on a GSM-based variant. The major limitation was the high power consumption, which drained the battery in under 4 hours.
 * (Generate 2 more realistic reviews relevant to ${components}.)
 
 ### 2.6 Summary of Literature Review
