@@ -19,6 +19,8 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [showCaptionModal, setShowCaptionModal] = useState(false);
+  const [imageCaption, setImageCaption] = useState('');
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -40,6 +42,8 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
       } else {
         setResult({ type: 'image', imageUrl: data.imageUrl });
       }
+      // Pre-fill caption with a simplified version of the prompt
+      setImageCaption(prompt.substring(0, 50));
     } catch (err) { 
       setError(err.message); 
       if (showNotification) showNotification('Generation Failed', err.message, 'error');
@@ -48,16 +52,25 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
   };
 
   const handleSaveToProject = async () => {
-    if (!result?.imageUrl) return;
+    if (!result?.imageUrl || !imageCaption.trim()) return;
     setLoading(true);
     try {
       const response = await fetch('/api/premium/save-visual', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: result.imageUrl, projectId, userId, name: `${activeTool === 'diagram' ? 'Diagram' : 'Illustration'}: ${prompt.substring(0, 20)}...`, type: activeTool })
+        body: JSON.stringify({ 
+          imageUrl: result.imageUrl, 
+          projectId, 
+          userId, 
+          name: `${activeTool === 'diagram' ? 'Diagram' : 'Illustration'}: ${prompt.substring(0, 20)}...`, 
+          type: activeTool,
+          caption: imageCaption.trim()
+        })
       });
+      const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to save');
       if (showNotification) showNotification('Success', 'Visual added to your project assets!', 'success');
+      setShowCaptionModal(false);
       onImageSaved();
       onClose();
     } catch (err) { 
@@ -128,7 +141,7 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
                     <img src={result.imageUrl} alt="Result" className="max-w-full max-h-full object-contain rounded-lg shadow-lg" />
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <button onClick={handleSaveToProject} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs shadow-lg flex items-center justify-center gap-2 transition-all hover:bg-black active:scale-95"><Icons.Share /> ADD TO PROJECT</button>
+                    <button onClick={() => setShowCaptionModal(true)} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs shadow-lg flex items-center justify-center gap-2 transition-all hover:bg-black active:scale-95"><Icons.Share /> ADD TO PROJECT</button>
                     <a href={result.imageUrl} download className="flex-1 py-4 bg-white border-2 border-slate-100 text-slate-900 rounded-2xl font-black text-xs flex items-center justify-center gap-2 no-underline transition-all hover:bg-slate-50"><Icons.Download /> DOWNLOAD PNG</a>
                   </div>
                 </motion.div>
@@ -136,6 +149,45 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
             </AnimatePresence>
           </div>
         </div>
+
+        {/* Caption Modal Overlay */}
+        <AnimatePresence>
+          {showCaptionModal && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+              className="absolute inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl border border-slate-100">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900">Add Image Caption</h3>
+                    <p className="text-sm text-slate-500 font-medium mt-1">This caption will be used in the final report.</p>
+                  </div>
+                  <button onClick={() => setShowCaptionModal(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"><Icons.X /></button>
+                </div>
+                
+                <div className="mb-8">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Caption Text</label>
+                  <textarea 
+                    value={imageCaption} 
+                    onChange={(e) => setImageCaption(e.target.value)}
+                    placeholder="e.g. Figure 4.1: Block diagram of the system architecture..."
+                    className="w-full min-h-[100px] p-4 rounded-2xl border-2 border-slate-200 focus:border-slate-900 outline-none text-sm font-medium leading-relaxed resize-none transition-all"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button onClick={() => setShowCaptionModal(false)} 
+                    className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs transition-all hover:bg-slate-200">CANCEL</button>
+                  <button onClick={handleSaveToProject} disabled={loading || !imageCaption.trim()}
+                    className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs shadow-lg transition-all hover:bg-black disabled:opacity-50">
+                    {loading ? "SAVING..." : "CONFIRM & SAVE"}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );

@@ -6,7 +6,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 export async function POST(request) {
   try {
-    const { imageUrl, projectId, userId, name, type, sizeBytes } = await request.json();
+    const { imageUrl, projectId, userId, name, type, sizeBytes, caption } = await request.json();
 
     if (!imageUrl || !projectId || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -57,7 +57,7 @@ export async function POST(request) {
         file_type: fileType,
         size_bytes: finalSize, 
         purpose: purpose,
-        caption: name
+        caption: caption || name
       })
       .select()
       .single();
