@@ -224,7 +224,18 @@ export async function POST(request) {
     }
 
     await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: aiResponse.content, prompt_used: userPrompt, model_used: aiResponse.model });
-    await supabaseAdmin.from('premium_projects').update({ tokens_used: (project.tokens_used || 0) + (aiResponse.tokensUsed?.total || 0), updated_at: new Date().toISOString() }).eq('id', projectId);
+    
+    // Update Project Stats & Persistence
+    const projectUpdateData = { 
+      tokens_used: (project.tokens_used || 0) + (aiResponse.tokensUsed?.total || 0), 
+      updated_at: new Date().toISOString() 
+    };
+
+    // PERSISTENCE: Store components and research context so they remain editable/pre-filled
+    if (componentsUsed) projectUpdateData.components_used = componentsUsed;
+    if (researchBooks) projectUpdateData.research_papers_context = researchBooks;
+
+    await supabaseAdmin.from('premium_projects').update(projectUpdateData).eq('id', projectId);
 
     return NextResponse.json({ success: true, content: aiResponse.content });
 

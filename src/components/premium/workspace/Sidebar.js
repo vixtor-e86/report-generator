@@ -25,8 +25,11 @@ const Icons = {
 export default function Sidebar({ 
   projectData, chapters, images, projectDocs = [], userProfile, activeView, onViewChange,
   onUpload, uploading, onDelete, deleting, onFileClick, onError, isOpen, onClose,
-  storageUsed = 0, storageLimit = 300 * 1024 * 1024, humanizerLimit = 0
+  storageUsed = 0, storageLimit = 100 * 1024 * 1024, humanizerLimit = 0
 }) {
+  // Use project-specific storage limit if defined in DB
+  const finalStorageLimit = projectData?.storage_limit || storageLimit;
+
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(true);
   const [showCaptionModal, setShowCaptionModal] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
@@ -128,9 +131,9 @@ export default function Sidebar({
         <div className="upgrade-card token-card" style={{ marginTop: '8px' }}>
           <div className="upgrade-content">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Icons.HardDrive /><span className="upgrade-title">Storage</span></div>
-            <span className="token-count">{(storageUsed / (1024 * 1024)).toFixed(1)} / {(storageLimit / (1024 * 1024)).toFixed(0)} MB</span>
+            <span className="token-count">{(storageUsed / (1024 * 1024)).toFixed(1)} / {(finalStorageLimit / (1024 * 1024)).toFixed(0)} MB</span>
           </div>
-          <div className="upgrade-bar"><div className="upgrade-progress" style={{ width: `${Math.min((storageUsed / storageLimit) * 100, 100)}%`, background: storageUsed > storageLimit * 0.9 ? '#ef4444' : undefined }}></div></div>
+          <div className="upgrade-bar"><div className="upgrade-progress" style={{ width: `${Math.min((storageUsed / finalStorageLimit) * 100, 100)}%`, background: storageUsed > finalStorageLimit * 0.9 ? '#ef4444' : undefined }}></div></div>
         </div>
 
         <div className="footer-menu">
