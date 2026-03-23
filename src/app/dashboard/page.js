@@ -445,13 +445,18 @@ export default function Dashboard() {
               <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Custom Templates</li>
               <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Priority Support</li>
             </ul>
-            <button 
-              onClick={handleCreatePremium} 
-              disabled={creatingPayment}
-              className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-70"
-            >
-              {creatingPayment ? 'Processing...' : (isAdmin ? 'Create Premium' : 'Select Premium')}
-            </button>
+            <div className="mt-auto">
+              <Link href="/features" className="block text-center text-sm text-gray-600 hover:text-indigo-600 font-medium mb-3 transition">
+                See what&apos;s included →
+              </Link>
+              <button 
+                onClick={handleCreatePremium} 
+                disabled={creatingPayment}
+                className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-70"
+              >
+                {creatingPayment ? 'Processing...' : (isAdmin ? 'Create Premium' : 'Select Premium')}
+              </button>
+            </div>
           </div>
         </div>
 
