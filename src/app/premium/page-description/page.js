@@ -64,8 +64,8 @@ function ProjectDescriptionContent() {
             .limit(1);
 
           if (!unusedPayments || unusedPayments.length === 0) {
-            alert('No valid Premium payment found. Please make a payment first.');
-            router.push('/dashboard');
+            showNotification('Payment Required', 'No valid Premium payment found. Please make a payment first.', 'warning');
+            setTimeout(() => router.push('/dashboard'), 3000);
             return;
           }
 
@@ -75,8 +75,8 @@ function ProjectDescriptionContent() {
           sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
           if (paymentDate < sevenDaysAgo) {
-            alert('Your Premium payment has expired (valid for 7 days).');
-            router.push('/dashboard');
+            showNotification('Payment Expired', 'Your Premium payment has expired (valid for 7 days).', 'error');
+            setTimeout(() => router.push('/dashboard'), 3000);
             return;
           }
 

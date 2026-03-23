@@ -434,8 +434,8 @@ export default function Home() {
       {showPremiumAnnouncement && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center border border-slate-100 animate-in zoom-in-95 duration-300">
-            <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-4xl animate-bounce">💎</span>
+            <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden">
+              <img src="/favicon.ico" alt="W3 WriteLab" className="w-12 h-12" />
             </div>
             
             <h3 className="text-2xl font-extrabold text-slate-900 mb-2">Premium is Ready!</h3>

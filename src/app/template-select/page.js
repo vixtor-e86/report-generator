@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import CustomModal from '@/components/premium/modals/CustomModal';
 
 function TemplateSelectContent() {
   const router = useRouter();
@@ -10,6 +11,18 @@ function TemplateSelectContent() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [templates, setTemplates] = useState([]);
+
+  // Notification Modal State
+  const [notification, setNotification] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    type: 'info' 
+  });
+
+  const showNotification = (title, message, type = 'info') => {
+    setNotification({ isOpen: true, title, message, type });
+  };
 
   // Payment verification state
   const [noPaymentFound, setNoPaymentFound] = useState(false);
@@ -110,13 +123,13 @@ function TemplateSelectContent() {
           } else {
             // ✅ Show actual error from server
             const errorMessage = data.message || data.error || 'Payment verification failed.';
-            alert(`${errorMessage} Please contact support if you were charged.`);
-            router.push('/dashboard');
+            showNotification('Verification Failed', `${errorMessage} Please contact support if you were charged.`, 'error');
+            setTimeout(() => router.push('/dashboard'), 3000);
           }
         } catch (error) {
           console.error('Verification error:', error);
-          alert('Failed to verify payment (Network/System Error). Please contact support.');
-          router.push('/dashboard');
+          showNotification('System Error', 'Failed to verify payment (Network/System Error). Please contact support.', 'error');
+          setTimeout(() => router.push('/dashboard'), 3000);
         } finally {
           setVerifyingPayment(false);
         }
@@ -605,6 +618,14 @@ function TemplateSelectContent() {
           </>
         )}
       </div>
+
+      <CustomModal 
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+      />
     </div>
   );
 }

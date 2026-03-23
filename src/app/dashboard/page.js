@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { PRICING } from '@/lib/pricing';
 import ReferralFAB from '@/components/ReferralFAB';
 import FeedbackWidget from '@/components/FeedbackWidget';
+import CustomModal from '@/components/premium/modals/CustomModal';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -21,6 +22,19 @@ export default function Dashboard() {
   const [pendingPremiumPayment, setPendingPremiumPayment] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
+
+  // Notification Modal State
+  const [notification, setNotification] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    type: 'info',
+    onConfirm: null 
+  });
+
+  const showNotification = (title, message, type = 'info', onConfirm = null) => {
+    setNotification({ isOpen: true, title, message, type, onConfirm });
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -120,7 +134,7 @@ export default function Dashboard() {
     if (!isAdmin) {
       const freeProjects = projects.filter(p => p.tier === 'free');
       if (freeProjects.length >= 1) {
-        alert('You have already used your 1 free project. Upgrade to Standard or Premium to create more.');
+        showNotification('Limit Reached', 'You have already used your 1 free project. Upgrade to Standard or Premium to create more.', 'warning');
         return;
       }
     }
@@ -134,10 +148,13 @@ export default function Dashboard() {
     }
 
     if (pendingStandardPayment) {
-      if (confirm('You have an unused Standard payment. Continue with existing payment?')) {
-        router.push('/template-select');
-        return;
-      }
+      showNotification(
+        'Existing Payment Found',
+        'You have an unused Standard payment. Would you like to continue with it?',
+        'confirm',
+        () => router.push('/template-select')
+      );
+      return;
     }
 
     setCreatingPayment(true);
@@ -163,7 +180,7 @@ export default function Dashboard() {
 
     } catch (error) {
       console.error('Payment error:', error);
-      alert(error.message || 'Failed to initialize payment. Please try again.');
+      showNotification('Payment Error', error.message || 'Failed to initialize payment. Please try again.', 'error');
     } finally {
       setCreatingPayment(false);
     }
@@ -176,10 +193,13 @@ export default function Dashboard() {
     }
 
     if (pendingPremiumPayment) {
-      if (confirm('You have an unused Premium payment. Continue to setup?')) {
-        router.push('/premium/template-selection');
-        return;
-      }
+      showNotification(
+        'Existing Premium Payment',
+        'You have an unused Premium payment. Would you like to continue to setup?',
+        'confirm',
+        () => router.push('/premium/template-selection')
+      );
+      return;
     }
 
     setCreatingPayment(true);
@@ -205,7 +225,7 @@ export default function Dashboard() {
 
     } catch (error) {
       console.error('Premium payment error:', error);
-      alert(error.message || 'Failed to initialize premium payment.');
+      showNotification('Premium Error', error.message || 'Failed to initialize premium payment.', 'error');
     } finally {
       setCreatingPayment(false);
     }
@@ -522,6 +542,15 @@ export default function Dashboard() {
 
       <FeedbackWidget userId={user?.id} />
       <ReferralFAB userId={user?.id} />
+
+      <CustomModal 
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+        onConfirm={notification.onConfirm}
+      />
     </div>
   );
 }
