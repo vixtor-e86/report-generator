@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
+import { PRICING } from '@/lib/pricing';
 import LoadingModal from '@/components/premium/modals/LoadingModal';
 import CustomModal from '@/components/premium/modals/CustomModal';
 import '@/styles/project-description.css';
@@ -29,9 +30,10 @@ function ProjectDescriptionContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [userProfile, setUserProfile] = useState(null);
+  const [pendingPayment, setPendingPayment] = useState(null);
 
   const [notification, setNotification] = useState({ isOpen: false, title: '', message: '', type: 'info' });
-  const showNotification = (title, message, type = 'info') => setNotification({ isOpen: true, title, message, type });
+  const showNotification = (title, message, type = 'info', onConfirm = null) => setNotification({ isOpen: true, title, message, type, onConfirm });
   
   const [universityData, setUniversityData] = useState({});
   const [facultiesList, setFacultiesList] = useState([]);
@@ -41,18 +43,54 @@ function ProjectDescriptionContent() {
     async function fetchData() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
-          setUserProfile(profile);
+        if (!user) {
+          router.push('/');
+          return;
         }
+
+        const { data: profile } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
+        setUserProfile(profile);
+
+        // Check for unused premium payment
+        if (profile?.role !== 'admin') {
+          const { data: unusedPayments } = await supabase
+            .from('payment_transactions')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('status', 'paid')
+            .eq('tier', 'premium')
+            .is('project_id', null)
+            .order('paid_at', { ascending: false })
+            .limit(1);
+
+          if (!unusedPayments || unusedPayments.length === 0) {
+            alert('No valid Premium payment found. Please make a payment first.');
+            router.push('/dashboard');
+            return;
+          }
+
+          const payment = unusedPayments[0];
+          const paymentDate = new Date(payment.paid_at);
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+          if (paymentDate < sevenDaysAgo) {
+            alert('Your Premium payment has expired (valid for 7 days).');
+            router.push('/dashboard');
+            return;
+          }
+
+          setPendingPayment(payment);
+        }
+
         const res = await fetch('/api/departments');
         const data = await res.json();
         setUniversityData(data);
         setFacultiesList(Object.keys(data));
-      } catch (error) { console.error('Failed to load departments:', error); }
+      } catch (error) { console.error('Failed to load data:', error); }
     }
     fetchData();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (formData.faculty && universityData[formData.faculty]) setDepartmentsList(universityData[formData.faculty]);
@@ -146,7 +184,7 @@ function ProjectDescriptionContent() {
             tokens_limit: 300000,
             tokens_used: 0,
             payment_status: isAdmin ? 'admin_bypass' : 'paid',
-            amount_paid: isAdmin ? 0 : 20000,
+            amount_paid: isAdmin ? 0 : PRICING.PREMIUM,
             template_id: newCustomTemplate.id,
             use_manual_objectives: true,
             manual_objectives: formData.manualObjectives.filter(o => o.trim())
@@ -155,6 +193,15 @@ function ProjectDescriptionContent() {
           .single();
 
         if (projectError) throw new Error(projectError.message);
+
+        // ✅ Link payment to project
+        if (pendingPayment) {
+          await supabase
+            .from('payment_transactions')
+            .update({ project_id: newProject.id, updated_at: new Date().toISOString() })
+            .eq('id', pendingPayment.id);
+        }
+
         router.push(`/premium/workspace?id=${newProject.id}`);
       } catch (err) {
         console.error('Error creating project:', err);

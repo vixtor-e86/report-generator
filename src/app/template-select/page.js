@@ -94,6 +94,12 @@ function TemplateSelectContent() {
             setPaymentVerified(true);
             setPendingPayment(data.transaction);
 
+            // ✅ NEW: Direct redirect based on tier
+            if (data.transaction.tier === 'premium') {
+              router.push('/premium/template-selection');
+              return;
+            }
+
             // Clean URL
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.delete('transaction_id');
@@ -127,6 +133,13 @@ function TemplateSelectContent() {
 
         if (unusedPayments && unusedPayments.length > 0) {
           const payment = unusedPayments[0];
+          
+          // ✅ NEW: If user has a PREMIUM payment, redirect them to the correct builder
+          if (payment.tier === 'premium') {
+             router.push('/premium/template-selection');
+             return;
+          }
+
           // ✅ NEW: Check 7-day expiry
           const paymentDate = new Date(payment.paid_at);
           const sevenDaysAgo = new Date();

@@ -17,10 +17,9 @@ export default function Dashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [creatingPayment, setCreatingPayment] = useState(false);
-  const [pendingPayment, setPendingPayment] = useState(null);
+  const [pendingStandardPayment, setPendingStandardPayment] = useState(null);
+  const [pendingPremiumPayment, setPendingPremiumPayment] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [premiumPassword, setPremiumPassword] = useState('');
-  const [verifyingPremium, setVerifyingPremium] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -64,25 +63,42 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      const { data: unusedPayments } = await supabase
+      // Check for unused payments (Standard)
+      const { data: unusedStandard } = await supabase
         .from('payment_transactions')
         .select('*')
         .eq('user_id', user.id)
         .eq('status', 'paid')
+        .eq('tier', 'standard')
         .is('project_id', null)
         .order('paid_at', { ascending: false })
         .limit(1);
 
-      if (unusedPayments && unusedPayments.length > 0) {
-        const payment = unusedPayments[0];
+      if (unusedStandard && unusedStandard.length > 0) {
+        const payment = unusedStandard[0];
         const paymentDate = new Date(payment.paid_at);
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        if (paymentDate >= sevenDaysAgo) setPendingStandardPayment(payment);
+      }
 
-        // Only set as pending if it was made in the last 7 days
-        if (paymentDate >= sevenDaysAgo) {
-          setPendingPayment(payment);
-        }
+      // Check for unused payments (Premium)
+      const { data: unusedPremium } = await supabase
+        .from('payment_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'paid')
+        .eq('tier', 'premium')
+        .is('project_id', null)
+        .order('paid_at', { ascending: false })
+        .limit(1);
+
+      if (unusedPremium && unusedPremium.length > 0) {
+        const payment = unusedPremium[0];
+        const paymentDate = new Date(payment.paid_at);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        if (paymentDate >= sevenDaysAgo) setPendingPremiumPayment(payment);
       }
 
       setUser(user);
@@ -117,7 +133,7 @@ export default function Dashboard() {
       return;
     }
 
-    if (pendingPayment) {
+    if (pendingStandardPayment) {
       if (confirm('You have an unused Standard payment. Continue with existing payment?')) {
         router.push('/template-select');
         return;
@@ -153,41 +169,45 @@ export default function Dashboard() {
     }
   };
 
-  const handleCreatePremium = () => {
+  const handleCreatePremium = async () => {
     if (isAdmin) {
       router.push('/premium/template-selection');
-    } else {
-      setPremiumPassword('');
-      setShowPremiumModal(true);
+      return;
     }
-  };
 
-  const handlePremiumAuthSubmit = async (e) => {
-    e.preventDefault();
-    if (!premiumPassword) return;
+    if (pendingPremiumPayment) {
+      if (confirm('You have an unused Premium payment. Continue to setup?')) {
+        router.push('/premium/template-selection');
+        return;
+      }
+    }
 
-    setVerifyingPremium(true);
+    setCreatingPayment(true);
     try {
-      const response = await fetch('/api/auth/verify-premium-access', {
+      const response = await fetch('/api/flutterwave/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: premiumPassword })
+        body: JSON.stringify({
+          userId: user.id,
+          email: user.email,
+          tier: 'premium',
+          amount: PRICING.PREMIUM
+        })
       });
 
       const data = await response.json();
 
-      if (data.success) {
-        setShowPremiumModal(false);
-        // Authorized - Bypass payment and go directly to project creation
-        router.push('/premium/template-selection');
-      } else {
-        alert(data.error || 'Invalid authorization code.');
+      if (!response.ok) {
+        throw new Error(data.error || 'Payment initialization failed');
       }
+
+      window.location.href = data.authorization_url;
+
     } catch (error) {
-      console.error('Premium access error:', error);
-      alert(error.message || 'Verification failed. Please try again.');
+      console.error('Premium payment error:', error);
+      alert(error.message || 'Failed to initialize premium payment.');
     } finally {
-      setVerifyingPremium(false);
+      setCreatingPayment(false);
     }
   };
 
@@ -299,18 +319,34 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Payment Success Alert */}
-        {pendingPayment && !isAdmin && (
+        {/* Payment Success Alert (Standard) */}
+        {pendingStandardPayment && !isAdmin && (
           <div className="mb-8 rounded-xl border border-emerald-200 bg-emerald-50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-2">
             <div className="p-3 bg-emerald-100 rounded-full text-emerald-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-emerald-900">Payment Successful!</h3>
-              <p className="text-emerald-700 text-sm mt-1">Your Standard tier payment of <strong>₦{pendingPayment.amount.toLocaleString()}</strong> has been confirmed.</p>
+              <h3 className="font-bold text-emerald-900">Standard Payment Confirmed!</h3>
+              <p className="text-emerald-700 text-sm mt-1">Your Standard tier payment of <strong>₦{pendingStandardPayment.amount.toLocaleString()}</strong> is active.</p>
             </div>
             <button onClick={() => router.push('/template-select')} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">
               Continue Setup →
+            </button>
+          </div>
+        )}
+
+        {/* Payment Success Alert (Premium) */}
+        {pendingPremiumPayment && !isAdmin && (
+          <div className="mb-8 rounded-xl border border-purple-200 bg-purple-50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-2">
+            <div className="p-3 bg-purple-100 rounded-full text-purple-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-purple-900">Premium Payment Confirmed!</h3>
+              <p className="text-purple-700 text-sm mt-1">Your Premium tier payment of <strong>₦{pendingPremiumPayment.amount.toLocaleString()}</strong> is active. Enjoy elite features.</p>
+            </div>
+            <button onClick={() => router.push('/premium/template-selection')} className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">
+              Setup Premium Workspace →
             </button>
           </div>
         )}
@@ -389,8 +425,12 @@ export default function Dashboard() {
               <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Custom Templates</li>
               <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Priority Support</li>
             </ul>
-            <button onClick={handleCreatePremium} className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors bg-slate-900 text-white hover:bg-slate-800">
-              {isAdmin ? 'Create Premium' : 'Select Premium'}
+            <button 
+              onClick={handleCreatePremium} 
+              disabled={creatingPayment}
+              className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-70"
+            >
+              {creatingPayment ? 'Processing...' : (isAdmin ? 'Create Premium' : 'Select Premium')}
             </button>
           </div>
         </div>
@@ -480,60 +520,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Premium Modal */}
-      {showPremiumModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 mx-auto text-purple-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            </div>
-            <h3 className="text-xl font-bold text-center text-slate-900 mb-2">Premium Authorized Access</h3>
-            <p className="text-center text-slate-600 mb-6 text-sm">The Premium workspace is currently under construction and only available to authorized testers.</p>
-            
-            <form onSubmit={handlePremiumAuthSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Authorization Code</label>
-                <input 
-                  type="password"
-                  value={premiumPassword}
-                  onChange={(e) => setPremiumPassword(e.target.value)}
-                  placeholder="Enter access code"
-                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                  required
-                />
-              </div>
-              
-              <button 
-                type="submit"
-                disabled={verifyingPremium || creatingPayment}
-                className="w-full py-3.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:pointer-events-none flex items-center justify-center gap-2"
-              >
-                {verifyingPremium ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                    Verifying...
-                  </>
-                ) : creatingPayment ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                    Initializing...
-                  </>
-                ) : (
-                  'Access Premium Workspace'
-                )}
-              </button>
-              
-              <button 
-                type="button"
-                onClick={() => setShowPremiumModal(false)}
-                className="w-full py-3 text-slate-400 hover:text-slate-600 text-sm font-semibold transition-colors"
-              >
-                Close
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
       <FeedbackWidget userId={user?.id} />
       <ReferralFAB userId={user?.id} />
     </div>
