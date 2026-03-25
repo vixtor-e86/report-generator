@@ -311,12 +311,17 @@ export default function Home() {
               </div>
               <p className="text-slate-600 text-sm mb-6">Maximum power and priority support.</p>
               <button onClick={openAuth} className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-900 font-semibold rounded-xl transition-colors mb-8">Choose Premium</button>
-              <ul className="space-y-4 text-sm text-slate-700">
+              <ul className="space-y-4 text-sm text-slate-700 mb-8">
                 <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Superior AI Model</li>
                 <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Custom Templates & Styles</li>
                 <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Priority Processing</li>
                 <li className="flex gap-3"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg> Unlimited Images</li>
               </ul>
+              <div className="pt-4 border-t border-slate-100 text-center">
+                <Link href="/features" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                  See what&apos;s included →
+                </Link>
+              </div>
             </div>
           </div>
         </div>

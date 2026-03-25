@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import CustomModal from '@/components/premium/modals/CustomModal';
 
 export default function ReferralFAB({ userId }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +27,18 @@ export default function ReferralFAB({ userId }) {
     hasBankDetails: false,
     pendingPayout: false
   });
+
+  // Notification Modal State
+  const [notification, setNotification] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    type: 'info' 
+  });
+
+  const showNotification = (title, message, type = 'info') => {
+    setNotification({ isOpen: true, title, message, type });
+  };
 
   const [commissions, setCommissions] = useState([]);
   const [payoutHistory, setPayoutHistory] = useState([]);
@@ -141,12 +154,12 @@ export default function ReferralFAB({ userId }) {
 
       if (payoutError) throw payoutError;
 
-      alert('Payout request submitted successfully! Your balance has been reset.');
+      showNotification('Success', 'Payout request submitted successfully! Your balance has been reset.', 'success');
       setShowBankModal(false);
       loadReferralData(); // Refresh stats
 
     } catch (err) {
-      alert(err.message || 'Failed to submit payout request');
+      showNotification('Error', err.message || 'Failed to submit payout request', 'error');
     } finally {
       setIsSubmittingPayout(false);
     }
@@ -267,7 +280,7 @@ export default function ReferralFAB({ userId }) {
                        <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min(100, (stats.weeklyEarnings/redeemThresholdAmount)*100)}%` }} />
                     </div>
                     <p className="text-[10px] text-slate-400 text-center">
-                      {stats.pendingPayout ? '⏳ Payout request pending approval.' : canRedeem ? '✅ Threshold reached! Redeem for Monday payout.' : `₦{(redeemThresholdAmount - stats.weeklyEarnings).toLocaleString()} more needed to unlock redemption.`}
+                      {stats.pendingPayout ? '⏳ Payout request pending approval.' : canRedeem ? '✅ Threshold reached! Redeem for Monday payout.' : `₦${(redeemThresholdAmount - stats.weeklyEarnings).toLocaleString()} more needed to unlock redemption.`}
                     </p>
                   </div>
 
@@ -338,6 +351,14 @@ export default function ReferralFAB({ userId }) {
           </div>
         </div>
       )}
+
+      <CustomModal 
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+      />
     </>
   );
 }

@@ -3,12 +3,25 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import UniversitySelector from '@/components/UniversitySelector';
+import CustomModal from '@/components/premium/modals/CustomModal';
 
 export default function Onboarding() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Notification Modal State
+  const [notification, setNotification] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    type: 'info' 
+  });
+
+  const showNotification = (title, message, type = 'info') => {
+    setNotification({ isOpen: true, title, message, type });
+  };
   
   // Form States
   const [username, setUsername] = useState('');
@@ -67,7 +80,7 @@ export default function Onboarding() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !university || !faculty || !department) {
-      alert('Please fill in all fields');
+      showNotification('Incomplete Form', 'Please fill in all fields to continue.', 'warning');
       return;
     }
 
@@ -116,7 +129,7 @@ export default function Onboarding() {
 
     } catch (error) {
       console.error('Onboarding error:', error);
-      alert(`Error: ${error.message}`);
+      showNotification('Profile Error', error.message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -126,6 +139,7 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+      {/* ... previous content ... */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center mb-4">
         <div className="flex items-center gap-2 mb-2">
           <img src="/favicon.ico" alt="W3 WriteLab" className="w-12 h-12" />
@@ -138,6 +152,7 @@ export default function Onboarding() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
+          {/* ... form content ... */}
           <form className="space-y-6" onSubmit={handleSubmit}>
             
             <div>
@@ -242,6 +257,14 @@ export default function Onboarding() {
           </form>
         </div>
       </div>
+
+      <CustomModal 
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+      />
     </div>
   );
 }
