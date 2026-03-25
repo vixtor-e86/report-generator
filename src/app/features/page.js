@@ -91,32 +91,67 @@ export default function FeaturesPage() {
           </div>
         </div>
 
-        {/* Mobile View - Cards */}
-        <div className="lg:hidden space-y-8">
-          {[
-            { title: "Standard", price: PRICING_FORMATTED.STANDARD, color: "slate-900", features: ["2,000+ Words per Chapter", "Web-Sourced Refs (2022+)", "Whole Chapter Regeneration", "Unlimited Projects", "DOCX & PDF Export"] },
-            { title: "Premium", price: PRICING_FORMATTED.PREMIUM, color: "slate-900", premium: true, features: ["4,000+ Words (Elite Depth)", "Academic Humanizer (Bypass)", "Surgical Section Editing", "Research Data Analysis", "Flowcharts & Visual Tools", "15% VIP Commissions", "Master Reference Export"] }
-          ].map((card, i) => (
-            <div key={i} className={`bg-white rounded-[32px] border-2 ${card.premium ? 'border-slate-900 shadow-2xl' : 'border-slate-100 shadow-xl'} overflow-hidden`}>
-              <div className={`p-8 ${card.premium ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900'} text-center`}>
-                <h3 className="text-xs font-black uppercase tracking-[0.3em] mb-2 opacity-60">{card.title}</h3>
-                <div className="text-4xl font-black tracking-tight">{card.price}</div>
-              </div>
-              <div className="p-8 space-y-4">
-                {card.features.map((f, j) => (
-                  <div key={j} className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${card.premium ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </div>
-                    <span className="text-sm font-bold text-slate-700">{f}</span>
-                  </div>
-                ))}
-                <Link href="/dashboard" className={`block w-full py-4 rounded-2xl text-center font-black text-xs uppercase tracking-widest mt-6 transition-all active:scale-95 ${card.premium ? 'bg-slate-900 text-white shadow-xl' : 'bg-slate-100 text-slate-900'}`}>
-                  Select {card.title}
+        {/* Mobile View - Detailed Comparison */}
+        <div className="lg:hidden space-y-10">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 gap-6">
+            {[
+              { title: "Starter", price: PRICING_FORMATTED.FREE, color: "slate-400", premium: false },
+              { title: "Standard", price: PRICING_FORMATTED.STANDARD, color: "indigo-600", premium: false },
+              { title: "Premium", price: PRICING_FORMATTED.PREMIUM, color: "slate-900", premium: true }
+            ].map((card, i) => (
+              <div key={i} className={`bg-white rounded-3xl border-2 ${card.premium ? 'border-slate-900 shadow-xl' : 'border-slate-100 shadow-md'} overflow-hidden p-6 flex items-center justify-between`}>
+                <div>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">{card.title}</h3>
+                  <div className="text-2xl font-black tracking-tight text-slate-900">{card.price}</div>
+                </div>
+                <Link href="/dashboard" className={`px-6 py-3 rounded-xl text-center font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 ${card.premium ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-900'}`}>
+                  Select
                 </Link>
               </div>
+            ))}
+          </div>
+
+          {/* Detailed Feature List */}
+          <div className="bg-white rounded-[32px] border border-slate-200 shadow-xl overflow-hidden">
+            <div className="p-6 bg-slate-50 border-b border-slate-200">
+              <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Full Capability Breakdown</h3>
             </div>
-          ))}
+            <div className="divide-y divide-slate-100">
+              {[
+                { name: "Content Target", free: "1500 Words", std: "2,000+ Words", prem: "4,000+ Words" },
+                { name: "AI Architect", free: "Basic", std: "Advanced", prem: "System Architect" },
+                { name: "Academic Humanizer", free: "✗", std: "✗", prem: "✓ 10,000 Words" },
+                { name: "Modification Style", free: "None", std: "Whole Chapter", prem: "Surgical / Partial" },
+                { name: "Web Search (Real Refs)", free: "✗", std: "✓ (2022+)", prem: "✓ (Deep Scholar)" },
+                { name: "Research Data Analysis", free: "✗", std: "✗", prem: "✓ (Full Access)" },
+                { name: "Visual Tools", free: "✗", std: "✗", prem: "✓ (Diagrams)" },
+                { name: "Presentation Gen", free: "✗", std: "✗", prem: "✓ (AI Slides)" },
+                { name: "Project Limit", free: "1 Project", std: "Scalable", prem: "Scalable" },
+                { name: "Token Limit", free: "30,000", std: "120,000", prem: "300,000" },
+                { name: "Affiliate Bonus", free: "✗", std: "10% Reward", prem: "15% (VIP)" },
+                { name: "Export Styles", free: "PDF", std: "DOCX + PDF", prem: "Premium DOCX" },
+              ].map((row, i) => (
+                <div key={i} className="p-6">
+                  <h4 className="text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-4">{row.name}</h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase mb-1">Starter</span>
+                      <span className="text-[11px] font-bold text-slate-500">{row.free}</span>
+                    </div>
+                    <div className="flex flex-col border-l border-slate-100 pl-2">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase mb-1">Standard</span>
+                      <span className="text-[11px] font-bold text-slate-900">{row.std}</span>
+                    </div>
+                    <div className="flex flex-col border-l border-slate-100 pl-2">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase mb-1">Premium</span>
+                      <span className={`text-[11px] font-bold ${row.prem.includes('✓') ? 'text-emerald-600' : 'text-slate-900'}`}>{row.prem}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
