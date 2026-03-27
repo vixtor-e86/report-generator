@@ -98,6 +98,7 @@ function NewProjectContent() {
           .select('*')
           .eq('user_id', user.id)
           .eq('status', 'paid')
+          .eq('tier', 'standard') // ✅ FIX: Only use standard payments for standard projects
           .is('project_id', null)
           .order('paid_at', { ascending: false })
           .limit(1);

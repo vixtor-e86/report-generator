@@ -113,6 +113,17 @@ function TemplateSelectContent() {
               return;
             }
 
+            if (data.transaction.tier === 'unlock') {
+              // Extract projectId from reference W3WL_UNLOCK_<ID>_<TIME>
+              const ref = data.transaction.paystack_reference || '';
+              const parts = ref.split('_');
+              const projectId = parts[2];
+              if (projectId) {
+                router.push(`/project/${projectId}`);
+                return;
+              }
+            }
+
             // Clean URL
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.delete('transaction_id');
@@ -140,6 +151,7 @@ function TemplateSelectContent() {
           .select('*')
           .eq('user_id', user.id)
           .eq('status', 'paid')
+          .eq('tier', 'standard') // ✅ FIX: Only look for standard payments here
           .is('project_id', null)
           .order('paid_at', { ascending: false })
           .limit(1);
@@ -147,12 +159,6 @@ function TemplateSelectContent() {
         if (unusedPayments && unusedPayments.length > 0) {
           const payment = unusedPayments[0];
           
-          // ✅ NEW: If user has a PREMIUM payment, redirect them to the correct builder
-          if (payment.tier === 'premium') {
-             router.push('/premium/template-selection');
-             return;
-          }
-
           // ✅ NEW: Check 7-day expiry
           const paymentDate = new Date(payment.paid_at);
           const sevenDaysAgo = new Date();
