@@ -15,12 +15,10 @@ export async function POST(request) {
     }
 
     // Generate unique reference (tx_ref)
-    // If unlocking a project, embed the projectId in the reference and set tier to unlock
+    // If unlocking a project, embed the projectId in the reference
     let tx_ref;
-    let finalTier = tier;
     if (projectId) {
       tx_ref = `W3WL_UNLOCK_${projectId}_${Date.now()}`;
-      finalTier = 'unlock'; // Special tier for project unlocks
     } else {
       tx_ref = `W3WL_${tier.toUpperCase()}_${Date.now()}_${userId.slice(0, 8)}`;
     }
@@ -73,7 +71,7 @@ export async function POST(request) {
         project_id: null, // Avoid FK constraint (standard_projects), we store projectId in tx_ref
         amount,
         currency: 'NGN',
-        tier: finalTier,
+        tier,
         status: 'pending',
         paystack_reference: tx_ref, // Storing tx_ref here
         paystack_authorization_url: flwData.data.link, // Storing payment link here

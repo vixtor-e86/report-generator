@@ -12,6 +12,7 @@ import SuggestionsModal from '@/components/standard/SuggestionsModal';
 import LoadingModal from '@/components/premium/modals/LoadingModal'; // Reusing premium loading modal
 import FeedbackWidget from '@/components/FeedbackWidget';// ✅ NEW
 import ReferralFAB from '@/components/ReferralFAB';
+import CustomModal from '@/components/premium/modals/CustomModal';
 
 export default function StandardWorkspace({ params }) {
   const resolvedParams = use(params);
@@ -34,6 +35,19 @@ export default function StandardWorkspace({ params }) {
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const [globalLoadingText, setGlobalLoadingText] = useState('AI is writing your chapter...');
 
+  // Notification Modal State
+  const [notification, setNotification] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    type: 'info',
+    onConfirm: null 
+  });
+
+  const showNotification = (title, message, type = 'info', onConfirm = null) => {
+    setNotification({ isOpen: true, title, message, type, onConfirm });
+  };
+
   // Load workspace data
   useEffect(() => {
     async function loadWorkspace() {
@@ -54,14 +68,14 @@ export default function StandardWorkspace({ params }) {
 
         if (projectError || !projectData) {
           console.error('Project error:', projectError);
-          alert('Project not found');
+          showNotification('Error', 'Project not found', 'error');
           router.push('/dashboard');
           return;
         }
 
         // Verify ownership
         if (projectData.user_id !== currentUser.id) {
-          alert('You do not have access to this project');
+          showNotification('Access Denied', 'You do not have access to this project', 'error');
           router.push('/dashboard');
           return;
         }
@@ -71,7 +85,7 @@ export default function StandardWorkspace({ params }) {
           const expiresAt = new Date(projectData.access_expires_at);
           const now = new Date();
           if (now > expiresAt) {
-            alert('Your 30-day access to this project has expired');
+            showNotification('Access Expired', 'Your 30-day access to this project has expired', 'warning');
             router.push('/dashboard');
             return;
           }
@@ -107,7 +121,7 @@ export default function StandardWorkspace({ params }) {
 
       } catch (error) {
         console.error('Error loading workspace:', error);
-        alert('Failed to load workspace');
+        showNotification('Error', 'Failed to load workspace', 'error');
         router.push('/dashboard');
       }
     }
@@ -216,11 +230,11 @@ export default function StandardWorkspace({ params }) {
       await refreshChapters();
       await refreshProject();
 
-      alert('Chapter generated successfully!');
+      showNotification('Success', 'Chapter generated successfully!', 'success');
 
     } catch (error) {
       console.error('Generation error:', error);
-      alert(error.message || 'Failed to generate chapter');
+      showNotification('Generation Error', error.message || 'Failed to generate chapter', 'error');
     } finally {
       setGenerating(false);
       setIsGlobalLoading(false);
@@ -259,11 +273,11 @@ export default function StandardWorkspace({ params }) {
       await refreshChapters();
       await refreshProject();
 
-      alert('Chapter regenerated successfully!');
+      showNotification('Success', 'Chapter regenerated successfully!', 'success');
 
     } catch (error) {
       console.error('Regeneration error:', error);
-      alert(error.message || 'Failed to regenerate chapter');
+      showNotification('Regeneration Error', error.message || 'Failed to regenerate chapter', 'error');
     } finally {
       setGenerating(false);
       setIsGlobalLoading(false);
@@ -296,19 +310,22 @@ export default function StandardWorkspace({ params }) {
       await refreshChapters();
 
       setIsEditing(false);
-      alert('Changes saved successfully!');
+      showNotification('Saved', 'Changes saved successfully!', 'success');
 
     } catch (error) {
       console.error('Save error:', error);
-      alert(error.message || 'Failed to save changes');
+      showNotification('Save Error', error.message || 'Failed to save changes', 'error');
     }
   };
 
   // Handle discard edits
   const handleDiscardEdit = () => {
-    if (confirm('Discard your changes?')) {
-      setIsEditing(false);
-    }
+    showNotification(
+      'Discard Changes',
+      'Are you sure you want to discard your changes?',
+      'confirm',
+      () => setIsEditing(false)
+    );
   };
 
   // Loading state
@@ -449,6 +466,15 @@ export default function StandardWorkspace({ params }) {
         loadingText={globalLoadingText} 
       />
       <ReferralFAB userId={user?.id} />
+
+      <CustomModal 
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+        onConfirm={notification.onConfirm}
+      />
     </div>
   );
 }

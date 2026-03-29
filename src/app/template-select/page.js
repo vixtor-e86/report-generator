@@ -153,6 +153,7 @@ function TemplateSelectContent() {
           .eq('status', 'paid')
           .eq('tier', 'standard') // ✅ FIX: Only look for standard payments here
           .is('project_id', null)
+          .not('paystack_reference', 'ilike', 'W3WL_UNLOCK_%') // ✅ FIX: Exclude unlock payments
           .order('paid_at', { ascending: false })
           .limit(1);
 

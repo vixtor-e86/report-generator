@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { getReferenceStyleOptions } from '@/lib/referenceStyles';
 import ReferenceInfoModal from '@/components/ReferenceInfoModal';
+import CustomModal from '@/components/premium/modals/CustomModal';
 
 function NewProjectContent() {
   const router = useRouter();
@@ -17,6 +18,18 @@ function NewProjectContent() {
   const [template, setTemplate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+
+  // Notification Modal State
+  const [notification, setNotification] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    type: 'info' 
+  });
+
+  const showNotification = (title, message, type = 'info') => {
+    setNotification({ isOpen: true, title, message, type });
+  };
 
   const [faculty, setFaculty] = useState('');
   const [department, setDepartment] = useState('');
@@ -59,7 +72,7 @@ function NewProjectContent() {
           .eq('tier', 'free');
 
         if (existingProjects && existingProjects.length > 0) {
-          alert('You have already used your 1 free project. Upgrade to Standard or Premium to create more.');
+          showNotification('Project Limit', 'You have already used your 1 free project. Upgrade to Standard or Premium to create more.', 'warning');
           router.push('/dashboard');
           return;
         }
@@ -78,7 +91,7 @@ function NewProjectContent() {
         .single();
 
       if (templateError || !templateData) {
-        alert('Template not found');
+        showNotification('Template Error', 'Template not found', 'error');
         router.push('/project/template-select');
         return;
       }
@@ -139,7 +152,7 @@ function NewProjectContent() {
 
   const handleCreateProject = async () => {
     if (!projectTitle || !department || !description) {
-      alert('Please fill in all mandatory fields (Title, Department, and Description)');
+      showNotification('Form Incomplete', 'Please fill in all mandatory fields (Title, Department, and Description)', 'warning');
       return;
     }
 
@@ -178,7 +191,7 @@ function NewProjectContent() {
 
       router.push(`/project/${project.id}`);
     } catch (error) {
-      alert(`Failed to create project: ${error.message}`);
+      showNotification('Creation Error', `Failed to create project: ${error.message}`, 'error');
     } finally {
       setCreating(false);
     }
@@ -452,6 +465,14 @@ function NewProjectContent() {
         isOpen={showReferenceInfo}
         onClose={() => setShowReferenceInfo(false)}
         selectedStyle={referenceStyle}
+      />
+
+      <CustomModal 
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
       />
     </div>
   );

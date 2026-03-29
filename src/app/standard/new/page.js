@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { CldUploadWidget } from 'next-cloudinary';
 import Image from 'next/image';
 import { PRICING } from '@/lib/pricing';
+import CustomModal from '@/components/premium/modals/CustomModal';
 
 const Icons = {
   Plus: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
@@ -27,6 +28,19 @@ function NewProjectContent() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [pendingPayment, setPendingPayment] = useState(null);
+
+  // Notification Modal State
+  const [notification, setNotification] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    type: 'info',
+    onConfirm: null 
+  });
+
+  const showNotification = (title, message, type = 'info', onConfirm = null) => {
+    setNotification({ isOpen: true, title, message, type, onConfirm });
+  };
 
   const [faculty, setFaculty] = useState('');
   const [department, setDepartment] = useState('');
@@ -87,7 +101,7 @@ function NewProjectContent() {
         .single();
 
       if (templateError || !templateData) {
-        alert('Template not found');
+        showNotification('Template Error', 'Template not found', 'error');
         router.push('/template-select');
         return;
       }
@@ -100,18 +114,19 @@ function NewProjectContent() {
           .eq('status', 'paid')
           .eq('tier', 'standard') // ✅ FIX: Only use standard payments for standard projects
           .is('project_id', null)
+          .not('paystack_reference', 'ilike', 'W3WL_UNLOCK_%') // ✅ FIX: Exclude unlock payments
           .order('paid_at', { ascending: false })
           .limit(1);
 
         if (paymentError) {
           console.error('Payment check error:', paymentError);
-          alert('Error checking payment status. Please try again.');
+          showNotification('Payment Error', 'Error checking payment status. Please try again.', 'error');
           router.push('/dashboard');
           return;
         }
 
         if (!unusedPayments || unusedPayments.length === 0) {
-          alert('No valid payment found. Please make a payment first.');
+          showNotification('Payment Required', 'No valid payment found. Please make a payment first.', 'warning');
           router.push('/dashboard');
           return;
         }
@@ -120,7 +135,7 @@ function NewProjectContent() {
         const hoursSincePayment = (Date.now() - paymentDate.getTime()) / (1000 * 60 * 60);
 
         if (hoursSincePayment > 24) {
-          alert('This payment session has expired. Please make a new payment.');
+          showNotification('Payment Expired', 'This payment session has expired. Please make a new payment.', 'error');
           router.push('/dashboard');
           return;
         }
@@ -183,7 +198,7 @@ function NewProjectContent() {
 
   const saveImageWithCaption = () => {
     if (!imageCaption.trim()) {
-      alert('Please enter a caption for the image');
+      showNotification('Caption Required', 'Please enter a caption for the image', 'warning');
       return;
     }
 
@@ -204,8 +219,12 @@ function NewProjectContent() {
   };
 
   const handleDeleteImage = (index) => {
-    if (!confirm('Delete this image?')) return;
-    setImages(images.filter((_, i) => i !== index));
+    showNotification(
+      'Confirm Delete',
+      'Are you sure you want to remove this image?',
+      'confirm',
+      () => setImages(images.filter((_, i) => i !== index))
+    );
   };
 
   const addComponent = () => {
@@ -224,18 +243,18 @@ function NewProjectContent() {
     
     if (isSIWES) {
       if (!companyName || !department || !duration || !description || validObjectives.length === 0) {
-        alert('Please fill in all required fields including at least one objective');
+        showNotification('Form Incomplete', 'Please fill in all required fields including at least one objective', 'warning');
         return;
       }
     } else {
       if (!projectTitle || !department || !description || validObjectives.length === 0) {
-        alert('Please fill in all mandatory fields (Title, Objectives, and Description)');
+        showNotification('Form Incomplete', 'Please fill in all mandatory fields (Title, Objectives, and Description)', 'warning');
         return;
       }
     }
 
     if (!isAdmin && !pendingPayment) {
-      alert('No valid payment found. Please go back and make a payment.');
+      showNotification('Payment Error', 'No valid payment found. Please go back and make a payment.', 'error');
       router.push('/dashboard');
       return;
     }
@@ -318,7 +337,7 @@ function NewProjectContent() {
       router.push(`/standard/${project.id}`);
     } catch (error) {
       console.error('Error creating project:', error);
-      alert(`Failed to create project: ${error.message}`);
+      showNotification('Project Error', `Failed to create project: ${error.message}`, 'error');
     } finally {
       setCreating(false);
     }
@@ -461,6 +480,15 @@ function NewProjectContent() {
         </div>
       </div>
       <ReferenceInfoModal isOpen={showReferenceInfo} onClose={() => setShowReferenceInfo(false)} selectedStyle={referenceStyle} />
+      
+      <CustomModal 
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+        onConfirm={notification.onConfirm}
+      />
     </div>
   );
 }

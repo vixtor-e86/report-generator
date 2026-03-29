@@ -9,6 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm'; 
 import { useReactToPrint } from 'react-to-print';
 import ReferralFAB from '@/components/ReferralFAB';
+import CustomModal from '@/components/premium/modals/CustomModal';
 
 export default function Workspace({ params }) {
   const resolvedParams = use(params);
@@ -29,6 +30,19 @@ export default function Workspace({ params }) {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+
+  // Notification Modal State
+  const [notification, setNotification] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    type: 'info',
+    onConfirm: null 
+  });
+
+  const showNotification = (title, message, type = 'info', onConfirm = null) => {
+    setNotification({ isOpen: true, title, message, type, onConfirm });
+  };
 
   const currentChapterRef = useRef();
   const fullReportRef = useRef();
@@ -99,7 +113,7 @@ export default function Workspace({ params }) {
 
   const saveImageWithCaption = async () => {
     if (!imageCaption.trim()) {
-      alert('Please enter a caption for the image');
+      showNotification('Caption Required', 'Please enter a caption for the image', 'warning');
       return;
     }
 
@@ -121,28 +135,34 @@ export default function Workspace({ params }) {
       setImageCaption('');
       setTempImageData(null);
     } else {
-      alert('Failed to save image');
+      showNotification('Error', 'Failed to save image', 'error');
     }
   };
 
   const handleDeleteImage = async (imageId) => {
-    if (!confirm('Delete this image?')) return;
-    const { error } = await supabase
-      .from('project_images')
-      .delete()
-      .eq('id', imageId);
+    showNotification(
+      'Confirm Delete',
+      'Are you sure you want to remove this image?',
+      'confirm',
+      async () => {
+        const { error } = await supabase
+          .from('project_images')
+          .delete()
+          .eq('id', imageId);
 
-    if (!error) {
-      setImages(images.filter(img => img.id !== imageId));
-    } else {
-      alert('Failed to delete image');
-    }
+        if (!error) {
+          setImages(images.filter(img => img.id !== imageId));
+        } else {
+          showNotification('Error', 'Failed to delete image', 'error');
+        }
+      }
+    );
   };
 
   // Generate Chapter Logic
   const handleGenerateChapter = async () => {
     if (!user || !currentChapter) {
-      alert('User not loaded yet. Please wait.');
+      showNotification('Wait', 'User not loaded yet. Please wait.', 'info');
       return;
     }
 
@@ -171,11 +191,11 @@ export default function Workspace({ params }) {
           : ch
       ));
 
-      alert('Chapter generated successfully!');
+      showNotification('Success', 'Chapter generated successfully!', 'success');
 
     } catch (error) {
       console.error('Generation error:', error);
-      alert(error.message || 'Failed to generate chapter');
+      showNotification('Generation Error', error.message || 'Failed to generate chapter', 'error');
     } finally {
       setGenerating(false);
     }
@@ -207,7 +227,7 @@ export default function Workspace({ params }) {
 
     } catch (error) {
       console.error('Payment error:', error);
-      alert(error.message || 'Failed to start payment');
+      showNotification('Payment Error', error.message || 'Failed to start payment', 'error');
       setPaymentProcessing(false);
     }
   };
@@ -733,6 +753,15 @@ export default function Workspace({ params }) {
         </div>
       )}
       <ReferralFAB userId={user?.id} />
+
+      <CustomModal 
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+        onConfirm={notification.onConfirm}
+      />
     </div>
   );
 }

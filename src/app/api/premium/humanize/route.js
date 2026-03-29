@@ -34,7 +34,14 @@ export async function POST(request) {
         const headerText = trimmedLine.replace(/^#+\s*/, '').trim().toLowerCase();
         const headerLevel = (trimmedLine.match(/^#+/) || ['#'])[0].length;
         
-        if (['references', 'bibliography', 'works cited', 'reference list'].includes(headerText)) {
+        // Expanded list of reference indicators
+        const refIndicators = [
+          'references', 'bibliography', 'works cited', 'reference list', 
+          'list of references', 'selected bibliography', 'sources',
+          'academic references', 'technical references', 'reference'
+        ];
+        
+        if (refIndicators.some(indicator => headerText.includes(indicator))) {
           isReferenceSection = true;
         } else if (headerLevel <= 2) {
           // Reset reference flag for new major chapters/sections

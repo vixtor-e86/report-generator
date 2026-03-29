@@ -85,6 +85,7 @@ export default function Dashboard() {
         .eq('status', 'paid')
         .eq('tier', 'standard')
         .is('project_id', null)
+        .not('paystack_reference', 'ilike', 'W3WL_UNLOCK_%') // ✅ FIX: Exclude unlock payments
         .order('paid_at', { ascending: false })
         .limit(1);
 
