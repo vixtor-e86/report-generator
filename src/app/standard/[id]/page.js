@@ -373,6 +373,7 @@ export default function StandardWorkspace({ params }) {
           onPrintCurrentChapter={handlePrintCurrentChapter}
           onPreviewBeforeGenerate={handlePreviewBeforeGenerate}
           onSuggestImprovements={handleSuggestImprovements}
+          showNotification={showNotification}
         />
 
         {/* Chapter Content */}

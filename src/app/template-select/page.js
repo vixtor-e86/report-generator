@@ -89,6 +89,14 @@ function TemplateSelectContent() {
       const transactionId = searchParams.get('transaction_id');
       const txRef = searchParams.get('tx_ref');
       const paymentRef = searchParams.get('payment_ref'); // Keep for backward compatibility
+      const status = searchParams.get('status');
+      const returnTo = searchParams.get('return_to');
+
+      // 1. Handle Cancellation immediately
+      if (status === 'cancelled' && returnTo) {
+        router.push(`/project/${returnTo}`);
+        return;
+      }
 
       if (transactionId || txRef || paymentRef) {
         // User came back from payment provider
@@ -104,6 +112,7 @@ function TemplateSelectContent() {
           const data = await response.json();
 
           if (data.verified) {
+            // ... (successful verification logic)
             setPaymentVerified(true);
             setPendingPayment(data.transaction);
 
@@ -130,15 +139,25 @@ function TemplateSelectContent() {
             newUrl.searchParams.delete('tx_ref');
             newUrl.searchParams.delete('status');
             newUrl.searchParams.delete('payment_ref');
+            newUrl.searchParams.delete('return_to');
             window.history.replaceState({}, '', newUrl);
           } else {
-            // ✅ Show actual error from server
+            // ✅ Verification failed or was cancelled
+            if (returnTo) {
+              router.push(`/project/${returnTo}`);
+              return;
+            }
+            
             const errorMessage = data.message || data.error || 'Payment verification failed.';
             showNotification('Verification Failed', `${errorMessage} Please contact support if you were charged.`, 'error');
             setTimeout(() => router.push('/dashboard'), 3000);
           }
         } catch (error) {
           console.error('Verification error:', error);
+          if (returnTo) {
+            router.push(`/project/${returnTo}`);
+            return;
+          }
           showNotification('System Error', 'Failed to verify payment (Network/System Error). Please contact support.', 'error');
           setTimeout(() => router.push('/dashboard'), 3000);
         } finally {

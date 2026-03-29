@@ -34,7 +34,7 @@ export async function POST(request) {
         tx_ref,
         amount,
         currency: 'NGN',
-        redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/template-select`, // Note: For project unlock, we might want to redirect back to the project page?
+        redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/template-select${projectId ? `?return_to=${projectId}` : ''}`,
         customer: {
           email: email,
           name: email.split('@')[0], // Fallback name

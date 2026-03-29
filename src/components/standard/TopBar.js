@@ -15,7 +15,8 @@ export default function TopBar({
   onToggleSidebar,
   onPrintCurrentChapter,
   onPreviewBeforeGenerate,
-  onSuggestImprovements
+  onSuggestImprovements,
+  showNotification
 }) {
   const [exporting, setExporting] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -70,11 +71,13 @@ export default function TopBar({
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      alert('Document exported successfully!');
+      if (showNotification) showNotification('Success', 'Document exported successfully!', 'success');
+      else alert('Document exported successfully!');
 
     } catch (error) {
       console.error('Export error:', error);
-      alert(error.message || 'Failed to export document');
+      if (showNotification) showNotification('Export Error', error.message || 'Failed to export document', 'error');
+      else alert(error.message || 'Failed to export document');
     } finally {
       setExporting(false);
     }
