@@ -25,20 +25,11 @@ export default function ReferralFAB({ userId }) {
     role: 'user',
     referralCount: 0,
     hasBankDetails: false,
-    pendingPayout: false
+    pendingPayout: false,
+    expiryDate: null
   });
 
-  // Notification Modal State
-  const [notification, setNotification] = useState({ 
-    isOpen: false, 
-    title: '', 
-    message: '', 
-    type: 'info' 
-  });
-
-  const showNotification = (title, message, type = 'info') => {
-    setNotification({ isOpen: true, title, message, type });
-  };
+  // ... (Notification Modal State remains same)
 
   const [commissions, setCommissions] = useState([]);
   const [payoutHistory, setPayoutHistory] = useState([]);
@@ -48,7 +39,7 @@ export default function ReferralFAB({ userId }) {
     
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('referral_code, referral_weekly_earnings, role, referral_count, bank_account_number, bank_name, bank_account_name')
+      .select('referral_code, referral_weekly_earnings, role, referral_count, bank_account_number, bank_name, bank_account_name, referral_period_expiry')
       .eq('id', userId)
       .single();
     
@@ -59,7 +50,8 @@ export default function ReferralFAB({ userId }) {
         weeklyEarnings: profile.referral_weekly_earnings || 0,
         role: profile.role || 'user',
         referralCount: profile.referral_count || 0,
-        hasBankDetails: hasBank
+        hasBankDetails: hasBank,
+        expiryDate: profile.referral_period_expiry
       });
 
       if (hasBank) {
@@ -256,7 +248,7 @@ export default function ReferralFAB({ userId }) {
                   <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
                     <h4 className="font-bold text-amber-900 text-xs mb-1">Important Payout Rules:</h4>
                     <ul className="text-[11px] text-amber-800 space-y-1 list-disc ml-3">
-                      <li>Accumulated bonuses reset every <span className="font-bold">Friday</span> at 11:59 PM.</li>
+                      <li>Bonuses expire <span className="font-bold">7 days</span> after your first earning of the week.</li>
                       <li>You must accumulate at least <span className="font-bold">₦10,000</span> to redeem.</li>
                       <li>Payouts for redeemed bonuses happen every <span className="font-bold">Monday</span>.</li>
                     </ul>
@@ -268,6 +260,11 @@ export default function ReferralFAB({ userId }) {
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
                       <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Weekly Earnings</p>
                       <p className="text-3xl font-black text-slate-900">₦{stats.weeklyEarnings.toLocaleString()}<span className="text-sm text-slate-400 font-bold">/₦{redeemThresholdAmount.toLocaleString()}</span></p>
+                      {stats.expiryDate && (
+                        <p className="text-[9px] font-bold text-indigo-600 uppercase mt-2 bg-indigo-50 inline-block px-2 py-0.5 rounded">
+                          Ends: {new Date(stats.expiryDate).toLocaleDateString()} {new Date(stats.expiryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -314,7 +311,7 @@ export default function ReferralFAB({ userId }) {
             </div>
 
             <div className="p-4 bg-slate-50 border-t border-slate-100">
-               <p className="text-[10px] text-slate-400 text-center">Unredeemed bonuses reset every Friday at 11:59 PM.</p>
+               <p className="text-[10px] text-slate-400 text-center">Bonuses expire 7 days after the first earning of each period.</p>
             </div>
           </div>
         </div>

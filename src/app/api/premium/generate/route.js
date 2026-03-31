@@ -187,8 +187,14 @@ export async function POST(request) {
     ## CITATION AND REFERENCE REQUIREMENTS
     ${citationStyleInst}
     - COUNT: Exactly ${totalNeeded} references. 
-    - SOURCING: Fulfill missing count using 2020-2026 technical papers.
-    - RECENTCY: 2020-2026 only.` : '';
+    - SOURCING: Combine the technical papers provided above with other elite sources:
+      1. Technical Journals and Research Papers (Provided).
+      2. High-authority Online Articles (e.g., IEEE Spectrum, NASA, MIT Tech Review).
+      3. Official Documentation and Datasheets (e.g., Arduino, STMicroelectronics).
+      4. Citations from reputable academic repositories.
+    - RECENCY: Focus on 2020-2026.
+    - NO FORGING: Do NOT hallucinate or "make up" references. If you supplement the provided list, ensure they are real, verifiable sources. 
+    - CONSISTENCY: Ensure in-text citations match the final reference list perfectly.` : '';
 
     const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
     TASK: Author a detailed Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${project.title}".
