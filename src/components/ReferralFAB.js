@@ -29,7 +29,17 @@ export default function ReferralFAB({ userId }) {
     expiryDate: null
   });
 
-  // ... (Notification Modal State remains same)
+  // Notification Modal State
+  const [notification, setNotification] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    type: 'info' 
+  });
+
+  const showNotification = (title, message, type = 'info') => {
+    setNotification({ isOpen: true, title, message, type });
+  };
 
   const [commissions, setCommissions] = useState([]);
   const [payoutHistory, setPayoutHistory] = useState([]);
