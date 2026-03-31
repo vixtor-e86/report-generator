@@ -85,9 +85,14 @@ export async function POST(request) {
       .single();
 
     if (dbError) {
-      console.error('Database error:', dbError);
+      console.error('Detailed Database Error:', {
+        message: dbError.message,
+        code: dbError.code,
+        details: dbError.details,
+        hint: dbError.hint
+      });
       return NextResponse.json(
-        { error: 'Failed to create transaction record' },
+        { error: `Failed to create transaction record: ${dbError.message}` },
         { status: 500 }
       );
     }
