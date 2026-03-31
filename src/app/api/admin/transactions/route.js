@@ -94,6 +94,22 @@ export async function PATCH(request) {
       .single();
 
     if (error) throw error;
+
+    // ✅ NEW: Handle Project Unlock for Manual Verification
+    if (updated.paystack_reference && updated.paystack_reference.startsWith('W3WL_UNLOCK_')) {
+      const parts = updated.paystack_reference.split('_');
+      // Format: W3WL_UNLOCK_<PROJECT_ID>_<TIMESTAMP>
+      if (parts.length >= 3) {
+        const projectIdToUnlock = parts[2];
+        await supabaseAdmin
+          .from('projects')
+          .update({ is_unlocked: true, tier: 'standard' })
+          .eq('id', projectIdToUnlock);
+        
+        console.log(`Admin manually unlocked project: ${projectIdToUnlock}`);
+      }
+    }
+
     return NextResponse.json({ success: true, transaction: updated });
 
   } catch (error) {

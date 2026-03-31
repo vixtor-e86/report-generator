@@ -90,7 +90,34 @@ export default function Workspace({ params }) {
         .eq('project_id', projectId)
         .order('created_at', { ascending: true });
 
-      setProject(projectData);
+      // ✅ NEW: Auto-Unlock Mechanism
+      // If project is locked, check if there's a verified payment for it
+      let finalProjectData = projectData;
+      if (!projectData.is_unlocked) {
+        const { data: verifiedPayment } = await supabase
+          .from('payment_transactions')
+          .select('id')
+          .eq('status', 'paid')
+          .ilike('paystack_reference', `W3WL_UNLOCK_${projectId}_%`)
+          .limit(1);
+
+        if (verifiedPayment && verifiedPayment.length > 0) {
+          // A payment exists but project isn't updated - auto-fix it now
+          const { data: updatedProject } = await supabase
+            .from('projects')
+            .update({ is_unlocked: true, tier: 'standard' })
+            .eq('id', projectId)
+            .select()
+            .single();
+          
+          if (updatedProject) {
+            finalProjectData = updatedProject;
+            console.log("Project auto-unlocked via verified transaction check.");
+          }
+        }
+      }
+
+      setProject(finalProjectData);
       setChapters(chaptersData || []);
       setImages(imagesData || []);
       setLoading(false);
