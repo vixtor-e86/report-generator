@@ -12,7 +12,9 @@ import {
   TableCell, 
   WidthType, 
   BorderStyle,
-  PageBreak
+  PageBreak,
+  VerticalAlign,
+  ShadingType
 } from 'docx';
 
 export async function generateDocx(data) {
@@ -161,6 +163,7 @@ async function convertMarkdownToDocx(markdown, images, chapterNumber) {
     if (line.startsWith('|')) {
       const rows = [];
       let j = i;
+      let rowCount = 0;
       while (j < lines.length && lines[j].trim().startsWith('|')) {
         const rawRow = lines[j].trim();
         // Skip separator rows like |---|---|
@@ -175,10 +178,12 @@ async function convertMarkdownToDocx(markdown, images, chapterNumber) {
         if (cells[cells.length - 1] === '') cells.pop();
 
         if (cells.length > 0) {
+          const isHeader = rowCount === 0;
           rows.push(new TableRow({ 
+            tableHeader: isHeader,
             children: cells.map(c => new TableCell({ 
               children: [new Paragraph({ 
-                children: parseInlineFormatting(c, 20), 
+                children: parseInlineFormatting(c, isHeader ? 22 : 20, isHeader), 
                 alignment: AlignmentType.CENTER 
               })], 
               borders: { 
@@ -187,9 +192,11 @@ async function convertMarkdownToDocx(markdown, images, chapterNumber) {
                 left: { style: BorderStyle.SINGLE, size: 1 }, 
                 right: { style: BorderStyle.SINGLE, size: 1 } 
               },
-              verticalAlign: AlignmentType.CENTER
+              verticalAlign: VerticalAlign.CENTER,
+              shading: isHeader ? { fill: "F3F4F6", type: ShadingType.CLEAR } : undefined
             })) 
           }));
+          rowCount++;
         }
         j++;
       }
@@ -221,7 +228,17 @@ async function convertMarkdownToDocx(markdown, images, chapterNumber) {
     } else if (line.includes('{{figure')) {
       const m = line.match(/\{\{figure(\d+)\.(\d+)\}\}/);
       if (m) {
-        const img = images.find(ig => ig.placeholder_id === `figure${m[1]}.${m[2]}`);
+        const placeholderId = `figure${m[1]}.${m[2]}`;
+        // Find image: either matches this chapter specifically, or use global order if chapter_number is null
+        const chapterNumber = parseInt(m[1]);
+        const figureIndex = parseInt(m[2]);
+
+        const chapterImages = images?.filter(img => 
+          img.chapter_number === chapterNumber || img.chapter_number === null
+        ).sort((a, b) => (a.order_number || 0) - (b.order_number || 0));
+
+        const img = chapterImages?.[figureIndex - 1];
+
         if (img?.buffer) {
           paragraphs.push(new Paragraph({ 
             children: [new ImageRun({ data: img.buffer, transformation: { width: 500, height: 400 } })], 

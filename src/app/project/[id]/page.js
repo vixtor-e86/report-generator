@@ -30,6 +30,7 @@ export default function Workspace({ params }) {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+  const [processedContent, setProcessedContent] = useState('');
 
   // Notification Modal State
   const [notification, setNotification] = useState({ 
@@ -127,6 +128,31 @@ export default function Workspace({ params }) {
       loadWorkspace();
     }
   }, [projectId, router]);
+
+  // ✅ NEW: Process Figure Placeholders for the current chapter
+  useEffect(() => {
+    if (!currentChapter?.content) {
+      setProcessedContent('');
+      return;
+    }
+
+    let content = currentChapter.content;
+    const figureRegex = /\{\{figure(\d+)\.(\d+)\}\}/g;
+    
+    content = content.replace(figureRegex, (match, chNum, figNum) => {
+      const figureIndex = parseInt(figNum);
+      
+      // For free tier, images are global to project
+      const img = images?.[figureIndex - 1];
+      
+      if (img) {
+        return `\n\n![Figure ${chNum}.${figNum}: ${img.caption}](${img.cloudinary_url})\n*Figure ${chNum}.${figNum}: ${img.caption}*\n\n`;
+      }
+      return `\n\n> **[Figure ${chNum}.${figNum} Placeholder]**\n\n`;
+    });
+
+    setProcessedContent(content);
+  }, [currentChapter, images]);
 
   // Image Upload Logic
   const handleImageUpload = async (result) => {
@@ -564,9 +590,29 @@ export default function Workspace({ params }) {
                   prose-strong:text-black prose-strong:font-bold
                   prose-table:text-xs sm:prose-table:text-base">
                   
-                  {currentChapter?.content ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {currentChapter.content}
+                  {processedContent ? (
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        img: ({ src, alt }) => (
+                          <div className="my-12 flex flex-col items-center justify-center figure-container">
+                            <div className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-slate-100">
+                              <img
+                                src={src}
+                                alt={alt}
+                                className="object-contain w-full h-full bg-slate-50"
+                              />
+                            </div>
+                            {alt && (
+                              <p className="mt-4 text-sm font-bold text-slate-500 italic text-center max-w-xl">
+                                {alt}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      }}
+                    >
+                      {processedContent}
                     </ReactMarkdown>
                   ) : (
                     <div className="text-gray-500 italic text-sm sm:text-base">Content will appear here...</div>

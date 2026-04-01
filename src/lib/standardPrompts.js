@@ -74,6 +74,17 @@ function getFacultySpecificPrompt(chapterNumber, data) {
     objectivesInstruction = `\n\n### MANDATORY RESEARCH OBJECTIVES:\nYou MUST include these EXACT objectives word-for-word in the 'Objectives' section:\n${manualObjectives.map((o, i) => `${i + 1}. ${o}`).join('\n')}\n`;
   }
 
+  // ✅ Image Placeholder Instructions
+  let imageInstructions = '';
+  if (images && images.length > 0) {
+    imageInstructions = `\n\n### VISUAL ASSETS (MANDATORY):
+    You MUST insert the following image placeholders at logically relevant points in your technical description. 
+    Do NOT group them all at the end; distribute them where they best support the text.
+    ${images.map(img => `- ${img.placeholder}: ${img.caption}`).join('\n')}
+    
+    STRICT RULE: Use the exact format {{figureX.Y}} when placing images.`;
+  }
+
   const prompt = `You are a senior academic researcher. 
   TASK: Author Chapter ${chapterNumber}: ${chapterInfo.title} for the project "${projectTitle}".
   
@@ -81,6 +92,7 @@ function getFacultySpecificPrompt(chapterNumber, data) {
   FIELD: ${faculty} (${department})
   COMPONENTS: ${components.join(', ')}
   ${objectivesInstruction}
+  ${imageInstructions}
   ${context ? `\nPREVIOUS CONTEXT:\n${context}` : ''}
 
   REQUIRED SECTIONS:

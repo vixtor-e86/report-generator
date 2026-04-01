@@ -19,8 +19,16 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
     const figureRegex = /\{\{figure(\d+)\.(\d+)\}\}/g;
     
     content = content.replace(figureRegex, (match, chNum, figNum) => {
-      const placeholderId = `figure${chNum}.${figNum}`;
-      const img = images?.find(i => i.placeholder_id === placeholderId);
+      const chapterNumber = parseInt(chNum);
+      const figureIndex = parseInt(figNum);
+      
+      // Find image: either matches this chapter specifically, or use global order if chapter_number is null
+      // We look for the Nth image associated with this chapter
+      const chapterImages = images?.filter(img => 
+        img.chapter_number === chapterNumber || img.chapter_number === null
+      ).sort((a, b) => (a.order_number || 0) - (b.order_number || 0));
+
+      const img = chapterImages?.[figureIndex - 1];
       
       if (img) {
         return `\n\n![Figure ${chNum}.${figNum}: ${img.caption}](${img.cloudinary_url})\n*Figure ${chNum}.${figNum}: ${img.caption}*\n\n`;
@@ -171,10 +179,6 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
         <div className="px-10 py-4 border-t border-slate-50 bg-slate-50/50 shrink-0">
           <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-widest">
             <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                Model: {chapter.ai_model_used}
-              </span>
               {chapter.tokens_output && (
                 <span>Word Count: {Math.round(chapter.tokens_output * 0.75)} words</span>
               )}

@@ -73,6 +73,13 @@ export async function POST(request) {
     // Build sections text from template
     const sectionsText = chapterInfo.sections.map(section => `${section}`).join('\n');
 
+    // ✅ NEW: Fetch project images for placeholders
+    const { data: projectImages } = await supabaseAdmin
+      .from('project_images')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('order_number', { ascending: true });
+
     // Create prompt
     const prompt = createFreePrompt({
       chapterNumber,
@@ -84,7 +91,8 @@ export async function POST(request) {
       components: project.components.join(', '),
       description: project.description,
       context,
-      referenceStyle: project.reference_style || 'apa'
+      referenceStyle: project.reference_style || 'apa',
+      images: projectImages || []
     });
 
     // Generate using DeepSeek (via callAI which defaults to DeepSeek)
@@ -150,8 +158,20 @@ function createFreePrompt(data) {
     components,
     description,
     context,
-    referenceStyle
+    referenceStyle,
+    images = []
   } = data;
+
+  // ✅ Image Placeholder Instructions
+  let imageInstructions = '';
+  if (images && images.length > 0) {
+    imageInstructions = `\n\n**VISUAL ASSETS (MANDATORY):**
+    You MUST insert the following image placeholders at logically relevant points in your technical description. 
+    Do NOT group them all at the end; distribute them where they best support the text.
+    ${images.map((img, i) => `- {{figure${chapterNumber}.${i + 1}}}: ${img.caption}`).join('\n')}
+    
+    STRICT RULE: Use the exact format {{figureX.Y}} when placing images.`;
+  }
 
   const styleGuide = referenceStyle.toLowerCase() === 'ieee' 
     ? `CITATION STYLE (IEEE - STRICTLY ENFORCED):
@@ -171,6 +191,8 @@ function createFreePrompt(data) {
 - Department: ${department}
 - Components/Materials: ${components}
 - Description: ${description}
+
+${imageInstructions}
 
 ${context}
 
