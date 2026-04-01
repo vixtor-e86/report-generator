@@ -633,6 +633,16 @@ export default function ContentArea({
               </>
             ) : (
               <div className="markdown-preview premium-print-area" style={{ padding: '60px', minHeight: '700px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                {/* ✅ Internal Chapter Header */}
+                <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+                  <h1 style={{ fontSize: '36px', fontWeight: '900', borderBottom: '4px solid #111827', paddingBottom: '16px', marginBottom: '12px', display: 'inline-block' }}>
+                    CHAPTER {activeChapter.chapter_number}
+                  </h1>
+                  <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#4b5563', margin: 0 }}>
+                    {activeChapter.title.toUpperCase()}
+                  </h2>
+                </div>
+
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{localContent || '*No content yet.*'}</ReactMarkdown>
               </div>
             )}

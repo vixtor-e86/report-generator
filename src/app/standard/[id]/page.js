@@ -378,16 +378,6 @@ export default function StandardWorkspace({ params }) {
 
         {/* Chapter Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-10 lg:p-12 custom-scrollbar print:p-0 print:overflow-visible">
-          {currentChapter && (
-            <div className="hidden print:block text-center mb-12">
-              <h1 className="text-[24pt] font-serif font-bold uppercase border-b-2 border-black pb-4 mb-2">
-                CHAPTER {currentChapter.chapter_number}
-              </h1>
-              <h2 className="text-[18pt] font-serif font-bold uppercase">
-                {currentChapter.title}
-              </h2>
-            </div>
-          )}
           {!currentChapter ? (
             <div className="max-w-4xl mx-auto bg-white p-12 text-center rounded-[40px] border-2 border-dashed border-slate-200 print:hidden">
               <h3 className="text-2xl font-black text-slate-900 mb-3">Chapter Context Missing</h3>

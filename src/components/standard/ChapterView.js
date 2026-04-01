@@ -144,6 +144,16 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
       {/* Chapter Content */}
       <div className="flex-1 px-12 py-16 overflow-y-auto custom-scrollbar print:p-0 print:overflow-visible">
         <div className="max-w-4xl mx-auto print:max-w-none print:mx-0">
+          {/* ✅ Internal Chapter Header */}
+          <div className="mb-12 text-center">
+            <h1 className="text-[24pt] font-sans font-black uppercase border-b-4 border-slate-900 pb-4 mb-2 tracking-tighter">
+              CHAPTER {chapter.chapter_number}
+            </h1>
+            <h2 className="text-[18pt] font-sans font-black uppercase text-slate-600 tracking-tight">
+              {chapter.title}
+            </h2>
+          </div>
+
           <div className="prose prose-slate max-w-none 
             prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900
             prose-p:text-justify prose-p:text-slate-700 prose-p:leading-[1.8]
