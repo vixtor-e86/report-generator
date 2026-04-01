@@ -235,7 +235,10 @@ The specific objectives of this project are:
 3.  **PCB Manufacturing:** Moving from Vero-board to a printed circuit board (PCB) would improve durability.
 
 ## REFERENCES
-(List 10-15 high-quality IEEE citations. Use specific names. Do NOT use placeholders.)
+(List 10-15 high-quality citations. Use specific names. Do NOT use placeholders.)
+- Combine technical journals with high-authority online sources (e.g., IEEE Spectrum, NASA, official documentation).
+- **NO FORGING**: Do NOT hallucinate or "make up" references. Ensure all sources are real and verifiable.
+- RECENTCY: All sources must be between 2020-2026.
 [1] A. B. Adebayo, "Modern Trends in Engineering," *Journal of Nigerian Engineering*, vol. 4, no. 2, pp. 45-50, 2023.
 [2] C. D. John and E. F. Peters, "Microcontroller Applications in Automation," *IEEE Transactions on Industrial Electronics*, vol. 12, pp. 112-118, 2022.
 [3] (Generate 10 more realistic citations relevant to ${components})

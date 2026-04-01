@@ -25,13 +25,17 @@ function getReferenceInstructions(referenceStyle, faculty, isLastChapter, existi
   return `
 CITATION RULES (${referenceStyle.toUpperCase()}):
 1. In-Text: Use ${style.inText}. Distribute 8-12 citations naturally.
-2. Sourcing: Use the provided project references. If more are needed, find REAL academic papers from 2020-2026.
+2. Sourcing: Combine the provided project references with other technical sources:
+   - Real Academic/Technical Papers (2020-2026).
+   - High-authority Online Articles (e.g., IEEE Spectrum, NASA, MIT Tech Review).
+   - Official Documentation and Datasheets (e.g., Arduino, STMicroelectronics, Academic Sites).
 3. Fulfillment: You MUST include exactly 8-12 references in your technical analysis.
 ${existingRefsText}
 4. **MANDATORY**: At the end of THIS chapter, you MUST include a "## References" section. 
    - **STRICT FORMAT**: Use a Markdown numbered list (1. [Reference]).
    - **CLEANLINESS**: Each reference must be its own list item. Ensure there is exactly one blank line between each numbered item to prevent text bunching.
    - **CONTENT**: List only the sources actually cited in this chapter.
+   - **NO FORGING**: Do NOT hallucinate or "make up" references. Ensure all sources are real and verifiable.
    - If this is the FINAL chapter, ensure the list is comprehensive for the whole project.
    - Max 40 unique references for the entire project.
    - RECENTCY: All sources must be between 2020-2026.
