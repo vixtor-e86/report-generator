@@ -546,12 +546,9 @@ export default function ContentArea({
       <div className="content-area">
         <div className="content-layout-wrapper" style={{ alignItems: 'flex-start' }}>
           <div style={{ marginBottom: '24px', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
-            <div style={{ flex: 1 }}>
-              <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>
-                CHAPTER {activeChapter.chapter_number}: {activeChapter.title.toUpperCase()}
-              </h1>
+            <div>
+              <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' }}>{activeChapter.title}</h1>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-
                 <div style={{ background: '#f3f4f6', padding: '4px', borderRadius: '8px', display: 'inline-flex' }}>
                   <button onClick={() => setWorkspaceMode('editor')} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: workspaceMode === 'editor' ? 'white' : 'transparent', color: workspaceMode === 'editor' ? '#111827' : '#6b7280', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}><Icons.Edit3 /> Editor</button>
                   <button onClick={() => setWorkspaceMode('preview')} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: workspaceMode === 'preview' ? 'white' : 'transparent', color: workspaceMode === 'preview' ? '#111827' : '#6b7280', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}><Icons.Eye /> Preview</button>
@@ -633,16 +630,6 @@ export default function ContentArea({
               </>
             ) : (
               <div className="markdown-preview premium-print-area" style={{ padding: '60px', minHeight: '700px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-                {/* ✅ Internal Chapter Header */}
-                <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-                  <h1 style={{ fontSize: '36px', fontWeight: '900', borderBottom: '4px solid #111827', paddingBottom: '16px', marginBottom: '12px', display: 'inline-block' }}>
-                    CHAPTER {activeChapter.chapter_number}
-                  </h1>
-                  <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#4b5563', margin: 0 }}>
-                    {activeChapter.title.toUpperCase()}
-                  </h2>
-                </div>
-
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{localContent || '*No content yet.*'}</ReactMarkdown>
               </div>
             )}

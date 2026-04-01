@@ -194,21 +194,11 @@ export async function POST(request) {
         const filteredLines = rawLines.filter((line, index) => {
           const t = line.trim().toUpperCase();
           if (!t) return true;
-          
-          // Definitions for titles to strip
-          const chapterTitleStr = ch.title?.toUpperCase() || "";
-          const projectTitleStr = project.title?.toUpperCase() || "";
-          const chapterLabel = `CHAPTER ${ch.chapter_number}`;
-          const chapterCombo = `${chapterLabel}: ${chapterTitleStr}`;
-
-          // Check if line matches any title variations
-          const isTitle = t === chapterLabel || t === chapterTitleStr || t === chapterCombo || t === projectTitleStr;
-          
-          if (index < 10 && isTitle) return false;
-          
+          const isTitle = t === `CHAPTER ${ch.chapter_number}` || t === ch.title.toUpperCase() || t === `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`;
+          if (index < 5 && isTitle) return false;
           if (line.startsWith('#')) {
             const clean = line.replace(/^#+\s+/, '').toUpperCase();
-            if (clean === chapterLabel || clean === chapterTitleStr || clean === chapterCombo || clean === projectTitleStr) return false;
+            if (clean === `CHAPTER ${ch.chapter_number}` || clean === ch.title.toUpperCase() || clean === `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`) return false;
           }
           return true;
         });
@@ -309,21 +299,11 @@ export async function POST(request) {
         const filteredLines = rawLines.filter((line, index) => {
           const t = line.trim().toUpperCase();
           if (!t) return true;
-          
-          // Definitions for titles to strip
-          const chapterTitleStr = ch.title?.toUpperCase() || "";
-          const projectTitleStr = project.title?.toUpperCase() || "";
-          const chapterLabel = `CHAPTER ${ch.chapter_number}`;
-          const chapterCombo = `${chapterLabel}: ${chapterTitleStr}`;
-
-          // Check if line matches any title variations
-          const isTitle = t === chapterLabel || t === chapterTitleStr || t === chapterCombo || t === projectTitleStr;
-          
-          if (index < 10 && isTitle) return false;
-          
+          const isTitle = t === `CHAPTER ${ch.chapter_number}` || t === ch.title.toUpperCase() || t === `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`;
+          if (index < 5 && isTitle) return false;
           if (line.startsWith('#')) {
             const clean = line.replace(/^#+\s+/, '').toUpperCase();
-            if (clean === chapterLabel || clean === chapterTitleStr || clean === chapterCombo || clean === projectTitleStr) return false;
+            if (clean === `CHAPTER ${ch.chapter_number}` || clean === ch.title.toUpperCase() || clean === `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`) return false;
           }
           return true;
         });

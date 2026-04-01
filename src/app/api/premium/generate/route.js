@@ -214,7 +214,7 @@ export async function POST(request) {
     ## WRITING REQUIREMENTS
     - FORMAT: Markdown.
     - TARGET: ${targetWordCount} words.
-    - NO REPETITION: Do NOT include the project title, the chapter title, or "Chapter X" at the start of your response. Start directly with the technical content.
+    - NO REPETITION: Do NOT include the project title at the start of your response.
     - USER INSTRUCTIONS: ${userPrompt || 'Deliver elite technical content.'}
 
     ${skipReferences ? '--- STRICT: NO REFERENCES OR CITATIONS. ---' : '--- MANDATORY: Include "## References" at the end. ---'}`;
