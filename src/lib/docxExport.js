@@ -25,14 +25,13 @@ export async function generateDocx(data) {
       try {
         const response = await fetch(img.cloudinary_url);
         const arrayBuffer = await (await response.blob()).arrayBuffer();
-        // Use Uint8Array for better cross-environment compatibility (Word on PC is picky)
         return { ...img, buffer: new Uint8Array(arrayBuffer) };
       } catch (e) { return null; }
     })
   );
   const validImages = imagesData.filter(img => img !== null);
 
-  // --- REFERENCE EXTRACTION LOGIC ---
+  // --- REFERENCE EXTRACTION ---
   const masterRefs = new Set();
   chapters.forEach(ch => {
     const parts = (ch.content || "").split(/## References|### References/i);
@@ -72,7 +71,6 @@ export async function generateDocx(data) {
     const chapterChildren = await convertMarkdownToDocx(contentBody, validImages, ch.chapter_number);
     children.push(...chapterChildren);
 
-    // Add page break after every chapter except the last one if there are references
     if (i < chapters.length - 1 || finalRefs.length > 0) {
       children.push(new Paragraph({ children: [new PageBreak()] }));
     }
@@ -90,7 +88,6 @@ export async function generateDocx(data) {
     });
   }
 
-  // Word PC likes single-section documents better for simple reports
   return new Document({
     sections: [{
       properties: {},
@@ -117,62 +114,132 @@ function generateTableOfContents(chapters) {
   return toc;
 }
 
-function parseTechnicalText(text) {
-  return text.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)').replace(/\\sqrt\{([^}]+)\}/g, '√$1').replace(/\$/g, '').trim();
-}
-
+/**
+ * Advanced Inline Formatter
+ * Handles: **Bold**, *Italics*, `Code`, and mixtures
+ */
 function parseInlineFormatting(text, fontSize = 24, isBold = false) {
-  const clean = parseTechnicalText(text);
-  if (!clean) return [new TextRun({ text: "", font: 'Times New Roman', size: fontSize })];
+  if (!text) return [new TextRun({ text: "", font: 'Times New Roman', size: fontSize })];
+
+  // Clean technical symbols
+  let clean = text.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+                  .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
+                  .replace(/\$/g, '');
 
   const runs = [];
-  let cur = 0;
-  const regex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)/g;
-  let m;
-  while ((m = regex.exec(clean)) !== null) {
-    if (m.index > cur) {
-      runs.push(new TextRun({ text: clean.substring(cur, m.index), font: 'Times New Roman', size: fontSize, bold: isBold }));
+  
+  // This regex looks for:
+  // 1. ***bold-italic***
+  // 2. **bold**
+  // 3. *italic*
+  // 4. `code`
+  const regex = /(\*\*\*(.+?)\*\*\*)|(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`(.+?)`)/g;
+  
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(clean)) !== null) {
+    // Add plain text before match
+    if (match.index > lastIndex) {
+      runs.push(new TextRun({ 
+        text: clean.substring(lastIndex, match.index), 
+        font: 'Times New Roman', 
+        size: fontSize, 
+        bold: isBold 
+      }));
     }
-    if (m[2]) {
-      runs.push(new TextRun({ text: m[2], bold: true, font: 'Times New Roman', size: fontSize }));
-    } else if (m[4]) {
-      runs.push(new TextRun({ text: m[4], italics: true, font: 'Times New Roman', size: fontSize }));
+
+    if (match[1]) { // ***bold-italic***
+      runs.push(new TextRun({ text: match[2], bold: true, italics: true, font: 'Times New Roman', size: fontSize }));
+    } else if (match[3]) { // **bold**
+      runs.push(new TextRun({ text: match[4], bold: true, font: 'Times New Roman', size: fontSize }));
+    } else if (match[5]) { // *italic*
+      runs.push(new TextRun({ text: match[6], italics: true, font: 'Times New Roman', size: fontSize }));
+    } else if (match[7]) { // `code`
+      runs.push(new TextRun({ 
+        text: match[8], 
+        font: 'Courier New', 
+        size: fontSize - 2, 
+        shading: { fill: "F3F4F6", type: ShadingType.CLEAR } 
+      }));
     }
-    cur = m.index + m[0].length;
+
+    lastIndex = regex.lastIndex;
   }
-  if (cur < clean.length) {
-    runs.push(new TextRun({ text: clean.substring(cur), font: 'Times New Roman', size: fontSize, bold: isBold }));
+
+  // Add remaining text
+  if (lastIndex < clean.length) {
+    runs.push(new TextRun({ 
+      text: clean.substring(lastIndex), 
+      font: 'Times New Roman', 
+      size: fontSize, 
+      bold: isBold 
+    }));
   }
+
   return runs.length > 0 ? runs : [new TextRun({ text: clean, font: 'Times New Roman', size: fontSize, bold: isBold })];
 }
 
 async function convertMarkdownToDocx(markdown, images, chapterNumber) {
   const paragraphs = [];
   const lines = markdown.split('\n');
+  let inCodeBlock = false;
+  let codeBlockLines = [];
   
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) { 
-      // Avoid excessive empty paragraphs
+    const rawLine = lines[i];
+    const trimmedLine = rawLine.trim();
+
+    // --- CODE BLOCK HANDLER (```) ---
+    if (trimmedLine.startsWith('```')) {
+      if (inCodeBlock) {
+        // Closing block - render now
+        paragraphs.push(new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  shading: { fill: "111827", type: ShadingType.CLEAR }, // Dark background like editor
+                  children: codeBlockLines.map(code => new Paragraph({
+                    children: [new TextRun({ text: code, font: 'Courier New', size: 18, color: "E5E7EB" })],
+                    spacing: { before: 40, after: 40 }
+                  })),
+                  margins: { top: 200, bottom: 200, left: 200, right: 200 }
+                })
+              ]
+            })
+          ]
+        }));
+        codeBlockLines = [];
+        inCodeBlock = false;
+      } else {
+        inCodeBlock = true;
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBlockLines.push(rawLine);
+      continue;
+    }
+
+    if (!trimmedLine) { 
       if (paragraphs.length > 0 && paragraphs[paragraphs.length - 1] instanceof Paragraph) continue;
       paragraphs.push(new Paragraph({ text: '', spacing: { after: 200 } })); 
       continue; 
     }
 
-    // Robust Table Parsing
-    if (line.startsWith('|')) {
+    // --- TABLE HANDLER ---
+    if (trimmedLine.startsWith('|')) {
       const rows = [];
       let j = i;
       let rowCount = 0;
       while (j < lines.length && lines[j].trim().startsWith('|')) {
         const rawRow = lines[j].trim();
-        // Skip separator rows like |---|---|
         if (rawRow.includes('---') && (rawRow.match(/-/g) || []).length > 5) {
-          j++;
-          continue;
+          j++; continue;
         }
-
-        // Split by pipe and remove empty first/last elements if they exist
         let cells = rawRow.split('|').map(c => c.trim());
         if (cells[0] === '') cells.shift();
         if (cells[cells.length - 1] === '') cells.pop();
@@ -182,16 +249,8 @@ async function convertMarkdownToDocx(markdown, images, chapterNumber) {
           rows.push(new TableRow({ 
             tableHeader: isHeader,
             children: cells.map(c => new TableCell({ 
-              children: [new Paragraph({ 
-                children: parseInlineFormatting(c, isHeader ? 22 : 20, isHeader), 
-                alignment: AlignmentType.CENTER 
-              })], 
-              borders: { 
-                top: { style: BorderStyle.SINGLE, size: 1 }, 
-                bottom: { style: BorderStyle.SINGLE, size: 1 }, 
-                left: { style: BorderStyle.SINGLE, size: 1 }, 
-                right: { style: BorderStyle.SINGLE, size: 1 } 
-              },
+              children: [new Paragraph({ children: parseInlineFormatting(c, isHeader ? 22 : 20, isHeader), alignment: AlignmentType.CENTER })], 
+              borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } },
               verticalAlign: VerticalAlign.CENTER,
               shading: isHeader ? { fill: "F3F4F6", type: ShadingType.CLEAR } : undefined
             })) 
@@ -200,60 +259,34 @@ async function convertMarkdownToDocx(markdown, images, chapterNumber) {
         }
         j++;
       }
-      
       if (rows.length > 0) {
-        paragraphs.push(new Table({ 
-          rows, 
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          margins: { top: 100, bottom: 100, left: 100, right: 100 }
-        }));
+        paragraphs.push(new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE }, margins: { top: 100, bottom: 100, left: 100, right: 100 } }));
       }
-      i = j - 1; 
-      continue;
+      i = j - 1; continue;
     }
 
-    if (line.startsWith('## ')) continue; // Skip redundant chapter title
-    if (line.startsWith('### ')) {
-      paragraphs.push(new Paragraph({ 
-        children: [new TextRun({ text: line.replace('### ', '').trim(), font: 'Times New Roman', size: 28, bold: true })], 
-        heading: HeadingLevel.HEADING_2, 
-        spacing: { before: 300, after: 300 } 
-      }));
-    } else if (line.startsWith('#### ')) {
-      paragraphs.push(new Paragraph({ 
-        children: [new TextRun({ text: line.replace('#### ', '').trim(), font: 'Times New Roman', size: 26, bold: true })], 
-        heading: HeadingLevel.HEADING_3, 
-        spacing: { before: 200, after: 200 } 
-      }));
-    } else if (line.includes('{{figure')) {
-      const m = line.match(/\{\{figure(\d+)\.(\d+)\}\}/);
+    // --- HEADING & IMAGE HANDLERS ---
+    if (trimmedLine.startsWith('## ')) continue;
+    if (trimmedLine.startsWith('### ')) {
+      paragraphs.push(new Paragraph({ children: [new TextRun({ text: trimmedLine.replace('### ', '').trim(), font: 'Times New Roman', size: 28, bold: true })], heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 300 } }));
+    } else if (trimmedLine.startsWith('#### ')) {
+      paragraphs.push(new Paragraph({ children: [new TextRun({ text: trimmedLine.replace('#### ', '').trim(), font: 'Times New Roman', size: 26, bold: true })], heading: HeadingLevel.HEADING_3, spacing: { before: 200, after: 200 } }));
+    } else if (trimmedLine.includes('{{figure')) {
+      const m = trimmedLine.match(/\{\{figure(\d+)\.(\d+)\}\}/);
       if (m) {
-        const placeholderId = `figure${m[1]}.${m[2]}`;
-        // Find image: either matches this chapter specifically, or use global order if chapter_number is null
         const chapterNumber = parseInt(m[1]);
         const figureIndex = parseInt(m[2]);
-
-        const chapterImages = images?.filter(img => 
-          img.chapter_number === chapterNumber || img.chapter_number === null
-        ).sort((a, b) => (a.order_number || 0) - (b.order_number || 0));
-
+        const chapterImages = images?.filter(img => img.chapter_number === chapterNumber || img.chapter_number === null).sort((a, b) => (a.order_number || 0) - (b.order_number || 0));
         const img = chapterImages?.[figureIndex - 1];
-
         if (img?.buffer) {
-          paragraphs.push(new Paragraph({ 
-            children: [new ImageRun({ data: img.buffer, transformation: { width: 500, height: 400 } })], 
-            alignment: AlignmentType.CENTER 
-          }));
-          paragraphs.push(new Paragraph({ 
-            children: [new TextRun({ text: `Figure ${m[1]}.${m[2]}: ${img.caption}`, italics: true, size: 22, font: 'Times New Roman' })], 
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 200 }
-          }));
+          paragraphs.push(new Paragraph({ children: [new ImageRun({ data: img.buffer, transformation: { width: 500, height: 400 } })], alignment: AlignmentType.CENTER }));
+          paragraphs.push(new Paragraph({ children: [new TextRun({ text: `Figure ${m[1]}.${m[2]}: ${img.caption}`, italics: true, size: 22, font: 'Times New Roman' })], alignment: AlignmentType.CENTER, spacing: { after: 200 } }));
         }
       }
     } else {
+      // --- STANDARD PARAGRAPH ---
       paragraphs.push(new Paragraph({ 
-        children: parseInlineFormatting(line), 
+        children: parseInlineFormatting(trimmedLine), 
         alignment: AlignmentType.JUSTIFIED, 
         spacing: { after: 240, line: 360 } 
       }));
