@@ -377,9 +377,9 @@ export default function StandardWorkspace({ params }) {
         />
 
         {/* Chapter Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-10 lg:p-12 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-10 lg:p-12 custom-scrollbar print:p-0 print:overflow-visible">
           {!currentChapter ? (
-            <div className="max-w-4xl mx-auto bg-white p-12 text-center rounded-[40px] border-2 border-dashed border-slate-200">
+            <div className="max-w-4xl mx-auto bg-white p-12 text-center rounded-[40px] border-2 border-dashed border-slate-200 print:hidden">
               <h3 className="text-2xl font-black text-slate-900 mb-3">Chapter Context Missing</h3>
               <p className="text-slate-500 font-medium leading-relaxed">Please select a valid chapter from the navigation sidebar to begin technical documentation.</p>
             </div>
@@ -394,12 +394,33 @@ export default function StandardWorkspace({ params }) {
               chapter={currentChapter}
               images={images}
               generating={generating}
+              onPrint={handlePrintCurrentChapter}
             />
           )}
         </div>
       </div>
 
       <style jsx global>{`
+        @media print {
+          @page {
+            size: auto;
+            margin: 20mm;
+          }
+          body {
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .min-h-screen {
+            min-height: auto !important;
+          }
+          .h-screen {
+            height: auto !important;
+          }
+          .overflow-hidden {
+            overflow: visible !important;
+          }
+        }
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }

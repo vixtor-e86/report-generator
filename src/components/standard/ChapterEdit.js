@@ -25,7 +25,7 @@ export default function ChapterEdit({ chapter, onSave, onCancel }) {
   const charCount = content.length;
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto print:hidden">
       {/* Header */}
       <div className="bg-white rounded-t-3xl border border-slate-200 p-6 sm:p-8">
         <div className="flex items-center justify-between mb-6">

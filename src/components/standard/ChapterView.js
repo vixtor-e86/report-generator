@@ -41,8 +41,8 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
 
   const components = {
     img: ({ src, alt }) => (
-      <div className="my-12 flex flex-col items-center justify-center figure-container">
-        <div className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-slate-100">
+      <div className="my-12 flex flex-col items-center justify-center figure-container print:my-8">
+        <div className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-slate-100 print:shadow-none print:border-none print:max-w-none">
           <img
             src={src}
             alt={alt}
@@ -114,9 +114,9 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
   if (!chapter) return null;
 
   return (
-    <div className="bg-white rounded-[40px] shadow-2xl border border-slate-100 min-h-[800px] flex flex-col overflow-hidden">
+    <div className="bg-white rounded-[40px] shadow-2xl border border-slate-100 min-h-[800px] flex flex-col overflow-hidden print:shadow-none print:border-none print:rounded-none">
       {/* View Header */}
-      <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+      <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10 print:hidden">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <span className="px-3 py-1 bg-slate-900 text-white text-[10px] font-black rounded-full uppercase tracking-widest">
@@ -142,8 +142,8 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
       </div>
 
       {/* Chapter Content */}
-      <div className="flex-1 px-12 py-16 overflow-y-auto custom-scrollbar">
-        <div className="max-w-4xl mx-auto">
+      <div className="flex-1 px-12 py-16 overflow-y-auto custom-scrollbar print:p-0 print:overflow-visible">
+        <div className="max-w-4xl mx-auto print:max-w-none print:mx-0">
           <div className="prose prose-slate max-w-none 
             prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900
             prose-p:text-justify prose-p:text-slate-700 prose-p:leading-[1.8]
@@ -176,7 +176,7 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
 
       {/* Footer Info */}
       {chapter.ai_model_used && (
-        <div className="px-10 py-4 border-t border-slate-50 bg-slate-50/50 shrink-0">
+        <div className="px-10 py-4 border-t border-slate-50 bg-slate-50/50 shrink-0 print:hidden">
           <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-widest">
             <div className="flex items-center gap-4">
               {chapter.tokens_output && (
