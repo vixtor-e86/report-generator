@@ -444,9 +444,34 @@ export default function Home() {
             </div>
             
             <h3 className="text-2xl font-extrabold text-slate-900 mb-2">Premium is Ready!</h3>
-            <p className="text-slate-600 mb-8 leading-relaxed">
+            <p className="text-slate-600 mb-6 leading-relaxed">
               Our most powerful research engine is now live. Experience superior AI, custom templates, and priority processing.
             </p>
+
+            {/* YouTube Walkthrough Section */}
+            <div className="mb-8 group">
+              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-3">Watch Walkthrough Guide</p>
+              <a 
+                href="https://youtube.com/shorts/k1OWL9BlB74" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="relative block aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl border-4 border-white transition-transform hover:scale-[1.02] active:scale-95"
+              >
+                <img 
+                  src="https://img.youtube.com/vi/k1OWL9BlB74/maxresdefault.jpg" 
+                  alt="Tutorial Preview" 
+                  className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl group-hover:bg-red-500 transition-colors">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                </div>
+                <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                  <p className="text-white text-xs font-bold">Mastering the 3 Packages • 60 mins Guide</p>
+                </div>
+              </a>
+            </div>
             
             <button 
               onClick={closeAnnouncement}

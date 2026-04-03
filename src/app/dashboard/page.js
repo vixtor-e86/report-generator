@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [pendingStandardPayment, setPendingStandardPayment] = useState(null);
   const [pendingPremiumPayment, setPendingPremiumPayment] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const router = useRouter();
 
   // Notification Modal State
@@ -548,6 +549,60 @@ export default function Dashboard() {
 
       <FeedbackWidget userId={user?.id} />
       <ReferralFAB userId={user?.id} />
+
+      {/* Floating Tutorial Trigger */}
+      <button 
+        onClick={() => setShowTutorial(true)}
+        className="fixed bottom-24 right-6 w-12 h-12 bg-red-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-red-700 transition-all hover:scale-110 active:scale-95 z-[40]"
+        title="Watch Tutorial Guide"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+      </button>
+
+      {/* Tutorial Modal */}
+      {showTutorial && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] shadow-2xl max-w-md w-full p-8 text-center animate-in zoom-in-95 duration-300 relative">
+            <button onClick={() => setShowTutorial(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M10 15l5.197-3L10 9v6z"/><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/></svg>
+            </div>
+            
+            <h3 className="text-2xl font-black text-slate-900 mb-2">Mastering W3 WriteLab</h3>
+            <p className="text-slate-600 mb-8 leading-relaxed font-medium">
+              This quick walkthrough guide shows you exactly how to generate a "Standard & Good" project using our 3 different packages.
+            </p>
+
+            <a 
+              href="https://youtube.com/shorts/k1OWL9BlB74" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="relative block aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl border-4 border-slate-50 transition-all hover:ring-4 hover:ring-red-100 mb-8 group"
+            >
+              <img 
+                src="https://img.youtube.com/vi/k1OWL9BlB74/maxresdefault.jpg" 
+                alt="Tutorial Preview" 
+                className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-14 h-14 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </div>
+            </a>
+            
+            <button 
+              onClick={() => setShowTutorial(false)}
+              className="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl shadow-lg transition-all active:scale-95"
+            >
+              I Understand!
+            </button>
+          </div>
+        </div>
+      )}
 
       <CustomModal 
         isOpen={notification.isOpen}
