@@ -32,6 +32,8 @@ export default function Workspace({ params }) {
   const [userProfile, setUserProfile] = useState(null);
   const [processedContent, setProcessedContent] = useState('');
 
+  const currentChapter = chapters.find(ch => ch.chapter_number === selectedChapter);
+
   // Notification Modal State
   const [notification, setNotification] = useState({ 
     isOpen: false, 
@@ -358,7 +360,6 @@ export default function Workspace({ params }) {
     );
   }
 
-  const currentChapter = chapters.find(ch => ch.chapter_number === selectedChapter);
   const maxImages = 2;
   const allChaptersGenerated = chapters.every(ch => ch.status === 'draft' || ch.status === 'approved');
 
@@ -825,8 +826,6 @@ export default function Workspace({ params }) {
           </div>
         </div>
       )}
-      <ReferralFAB userId={user?.id} />
-
       <CustomModal 
         isOpen={notification.isOpen}
         onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}

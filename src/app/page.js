@@ -452,7 +452,7 @@ export default function Home() {
             <div className="mb-8 group">
               <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-3">Watch Walkthrough Guide</p>
               <a 
-                href="https://youtube.comm/watch?v=KIfsDZbiMDo"
+                href="https://youtube.com/watch?v=KIfsDZbiMDo"
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="relative block aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl border-4 border-white transition-transform hover:scale-[1.02] active:scale-95"

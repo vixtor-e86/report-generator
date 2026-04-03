@@ -333,13 +333,13 @@ function WorkspaceContent() {
             </p>
 
             <a 
-              href="https://youtube.com/shorts/k1OWL9BlB74" 
+              href="https://youtube.com/watch?v=KIfsDZbiMDo"
               target="_blank" 
               rel="noopener noreferrer"
               className="relative block aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl border-4 border-slate-50 transition-all hover:ring-4 hover:ring-red-100 mb-8 group"
             >
               <img 
-                src="https://img.youtube.com/vi/k1OWL9BlB74/maxresdefault.jpg" 
+                src="https://img.youtube.com/vi/KIfsDZbiMDo/maxresdefault.jpg" 
                 alt="Tutorial Preview" 
                 className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
               />

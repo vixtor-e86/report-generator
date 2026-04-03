@@ -548,7 +548,6 @@ export default function Dashboard() {
       </div>
 
       <FeedbackWidget userId={user?.id} />
-      <ReferralFAB userId={user?.id} />
 
       {/* Floating Tutorial Trigger */}
       <button 
