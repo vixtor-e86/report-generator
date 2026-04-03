@@ -15,7 +15,7 @@ const TOUR_STEPS = [
   { target: '#step-export', title: 'Final Export', content: 'When ready, export your project as a professional PDF or an editable Word document.', position: 'bottom' }
 ];
 
-export default function TourGuide({ projectId }) {
+export default function TourGuide({ projectId, onComplete }) {
   const [currentStep, setCurrentStep] = useState(-1);
   const [targetRect, setTargetRect] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -62,6 +62,7 @@ export default function TourGuide({ projectId }) {
     if (projectId) {
       localStorage.setItem(`has_seen_tour_${projectId}`, 'true');
     }
+    if (onComplete) onComplete();
   };
 
   if (currentStep < 0 || !targetRect) return null;
