@@ -105,6 +105,7 @@ function WorkspaceContent() {
       }
       
       loadWorkspaceData();
+      setWorkspaceMode('preview'); // ✅ Auto-switch to preview mode
       showNotification('Success', `Chapter ${activeChapter.number || activeChapter.id} generated successfully!`, 'success');
     } catch (error) { 
       showNotification('Generation Error', error.message, 'error');
