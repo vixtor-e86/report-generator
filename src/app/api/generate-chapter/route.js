@@ -97,9 +97,9 @@ export async function POST(request) {
 
     // Generate using DeepSeek (via callAI which defaults to DeepSeek)
     const result = await callAI(prompt, {
-      maxTokens: 6000,
+      maxTokens: 5000, // Reduced from 6000 for faster response on cloud servers
       temperature: 0.7,
-      provider: 'deepseek' // Explicitly set DeepSeek for free projects as requested
+      provider: 'deepseek'
     });
 
     const content = result.content;

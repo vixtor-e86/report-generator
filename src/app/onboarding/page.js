@@ -25,9 +25,13 @@ export default function Onboarding() {
   
   // Form States
   const [username, setUsername] = useState('');
+  const [isNigeria, setIsNigeria] = useState(true); // ✅ NEW: Support international users
   const [university, setUniversity] = useState(null);
+  const [manualInstitution, setManualInstitution] = useState(''); // ✅ NEW
   const [faculty, setFaculty] = useState('');
+  const [manualFaculty, setManualFaculty] = useState(''); // ✅ NEW
   const [department, setDepartment] = useState('');
+  const [manualDepartment, setManualDepartment] = useState(''); // ✅ NEW
   const [referralCode, setReferralCode] = useState('');
   const [isRefLocked, setIsReferralLocked] = useState(false);
   
@@ -79,9 +83,18 @@ export default function Onboarding() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!username || !university || !faculty || !department) {
-      showNotification('Incomplete Form', 'Please fill in all fields to continue.', 'warning');
-      return;
+    
+    // Validation
+    if (isNigeria) {
+      if (!username || !university || !faculty || !department) {
+        showNotification('Incomplete Form', 'Please fill in all fields to continue.', 'warning');
+        return;
+      }
+    } else {
+      if (!username || !manualInstitution || !manualFaculty || !manualDepartment) {
+        showNotification('Incomplete Form', 'Please fill in all fields to continue.', 'warning');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -96,34 +109,41 @@ export default function Onboarding() {
           .from('user_profiles')
           .select('id')
           .eq('referral_code', cleanedCode)
-          .maybeSingle(); // Use maybeSingle to avoid crash if code is invalid
+          .maybeSingle(); 
         
         if (referrer) {
           referredBy = referrer.id;
-          
-          // Increment the referrer's count safely via RPC
           await supabase.rpc('increment_referral_count', { referrer_uuid: referredBy });
         }
       }
 
       // Create the user profile
+      const profilePayload = {
+        id: user.id,
+        full_name: user.user_metadata.full_name || username,
+        username: username,
+        created_at: new Date().toISOString(),
+        referred_by: referredBy,
+      };
+
+      if (isNigeria) {
+        profilePayload.university_id = university.id === 'other' ? null : university.id;
+        profilePayload.custom_institution = university.id === 'other' ? university.name : null;
+        profilePayload.faculty = faculty;
+        profilePayload.department = department;
+      } else {
+        profilePayload.university_id = null;
+        profilePayload.custom_institution = manualInstitution;
+        profilePayload.faculty = manualFaculty;
+        profilePayload.department = manualDepartment;
+      }
+
       const { error } = await supabase
         .from('user_profiles')
-        .upsert({
-          id: user.id,
-          full_name: user.user_metadata.full_name || username,
-          username: username,
-          university_id: university.id === 'other' ? null : university.id,
-          custom_institution: university.id === 'other' ? university.name : null,
-          faculty: faculty,
-          department: department,
-          created_at: new Date().toISOString(),
-          referred_by: referredBy, // Links the users
-        });
+        .upsert(profilePayload);
 
       if (error) throw error;
 
-      // Clean up storage and go to dashboard
       localStorage.removeItem('referred_by_code');
       router.push('/dashboard');
 
@@ -139,7 +159,6 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
-      {/* ... previous content ... */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center mb-4">
         <div className="flex items-center gap-2 mb-2">
           <img src="/favicon.ico" alt="W3 WriteLab" className="w-12 h-12" />
@@ -151,8 +170,7 @@ export default function Onboarding() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
-          {/* ... form content ... */}
+        <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10 border border-slate-100">
           <form className="space-y-6" onSubmit={handleSubmit}>
             
             <div>
@@ -169,58 +187,112 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <UniversitySelector 
-              onSelect={(uni) => setUniversity(uni)} 
-              selectedId={university?.id}
-            />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Faculty</label>
-              <div className="mt-1">
-                <select
-                  required
-                  value={faculty}
-                  onChange={handleFacultyChange}
-                  className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
-                >
-                  <option value="">Select Faculty</option>
-                  {facultiesList.map((fac, index) => (
-                    <option key={index} value={fac}>{fac}</option>
-                  ))}
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+            {/* ✅ INTERNATIONAL TOGGLE */}
+            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <input 
+                type="checkbox" 
+                id="intl-toggle"
+                checked={!isNigeria}
+                onChange={(e) => setIsNigeria(!e.target.checked)}
+                className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <label htmlFor="intl-toggle" className="text-sm font-bold text-slate-700 cursor-pointer">
+                I am not in Nigeria (International User)
+              </label>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Department</label>
-              <div className="mt-1">
-                {faculty === 'Other' ? (
+            {isNigeria ? (
+              <>
+                <UniversitySelector 
+                  onSelect={(uni) => setUniversity(uni)} 
+                  selectedId={university?.id}
+                />
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Faculty</label>
+                  <div className="mt-1">
+                    <select
+                      required
+                      value={faculty}
+                      onChange={handleFacultyChange}
+                      className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
+                    >
+                      <option value="">Select Faculty</option>
+                      {facultiesList.map((fac, index) => (
+                        <option key={index} value={fac}>{fac}</option>
+                      ))}
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Department</label>
+                  <div className="mt-1">
+                    {faculty === 'Other' ? (
+                      <input
+                        type="text"
+                        required
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
+                        placeholder="Enter Department Name"
+                      />
+                    ) : (
+                      <select
+                        required
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        disabled={!faculty}
+                        className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                      >
+                        <option value="">Select Department</option>
+                        {Array.isArray(departmentsList) && departmentsList.map((dept, index) => (
+                          <option key={index} value={dept}>{dept}</option>
+                        ))}
+                        <option value="Other">Other</option>
+                      </select>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Institution Name</label>
                   <input
                     type="text"
                     required
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
-                    placeholder="Enter Department Name"
+                    value={manualInstitution}
+                    onChange={(e) => setManualInstitution(e.target.value)}
+                    className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
+                    placeholder="e.g. Harvard University"
                   />
-                ) : (
-                  <select
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Faculty / School</label>
+                  <input
+                    type="text"
                     required
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    disabled={!faculty}
-                    className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                  >
-                    <option value="">Select Department</option>
-                    {Array.isArray(departmentsList) && departmentsList.map((dept, index) => (
-                      <option key={index} value={dept}>{dept}</option>
-                    ))}
-                    <option value="Other">Other</option>
-                  </select>
-                )}
+                    value={manualFaculty}
+                    onChange={(e) => setManualFaculty(e.target.value)}
+                    className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
+                    placeholder="e.g. School of Engineering"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Department / Course</label>
+                  <input
+                    type="text"
+                    required
+                    value={manualDepartment}
+                    onChange={(e) => setManualDepartment(e.target.value)}
+                    className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
+                    placeholder="e.g. Computer Science"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="pt-4 border-t border-gray-100">
               <label className="block text-sm font-bold text-gray-700">
