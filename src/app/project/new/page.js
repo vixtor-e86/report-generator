@@ -265,30 +265,40 @@ function NewProjectContent() {
             <label className="block text-sm font-bold text-gray-900 mb-2">
               Faculty *
             </label>
-            <select
-              value={faculty}
-              onChange={handleFacultyChange}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition mb-4"
-            >
-              <option value="">Select Faculty</option>
-              {facultiesList.map((fac, i) => (
-                <option key={i} value={fac}>
-                  {fac}
-                </option>
-              ))}
-              <option value="Other">Other</option>
-            </select>
+            {profile?.is_international ? (
+              <input 
+                type="text" 
+                value={faculty} 
+                onChange={(e) => setFaculty(e.target.value)} 
+                placeholder="e.g. School of Engineering" 
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition mb-4" 
+              />
+            ) : (
+              <select
+                value={faculty}
+                onChange={handleFacultyChange}
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition mb-4"
+              >
+                <option value="">Select Faculty</option>
+                {facultiesList.map((fac, i) => (
+                  <option key={i} value={fac}>
+                    {fac}
+                  </option>
+                ))}
+                <option value="Other">Other</option>
+              </select>
+            )}
 
             <label className="block text-sm font-bold text-gray-900 mb-2">
               Department *
             </label>
-            {faculty === 'Other' ? (
-              <input
-                type="text"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                placeholder="Enter your department name"
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            {profile?.is_international || faculty === 'Other' ? (
+              <input 
+                type="text" 
+                value={department} 
+                onChange={(e) => setDepartment(e.target.value)} 
+                placeholder="Enter your department name" 
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" 
               />
             ) : (
               <select

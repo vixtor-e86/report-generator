@@ -265,19 +265,39 @@ function ProjectDescriptionContent() {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="faculty" className="form-label">Faculty <span className="required">*</span></label>
-              <select id="faculty" value={formData.faculty} onChange={handleFacultyChange} className={`form-select ${errors.faculty ? 'error' : ''}`}>
-                <option value="">Select Faculty</option>
-                {facultiesList.map((fac, index) => (<option key={index} value={fac}>{fac}</option>))}
-              </select>
+              {userProfile?.is_international ? (
+                <input 
+                  type="text" 
+                  value={formData.faculty} 
+                  onChange={(e) => handleInputChange('faculty', e.target.value)} 
+                  placeholder="e.g. School of Engineering" 
+                  className={`form-input ${errors.faculty ? 'error' : ''}`} 
+                />
+              ) : (
+                <select id="faculty" value={formData.faculty} onChange={handleFacultyChange} className={`form-select ${errors.faculty ? 'error' : ''}`}>
+                  <option value="">Select Faculty</option>
+                  {facultiesList.map((fac, index) => (<option key={index} value={fac}>{fac}</option>))}
+                </select>
+              )}
               {errors.faculty && <span className="error-message">{errors.faculty}</span>}
             </div>
 
             <div className="form-group">
               <label htmlFor="department" className="form-label">Department <span className="required">*</span></label>
-              <select id="department" value={formData.department} onChange={(e) => handleInputChange('department', e.target.value)} disabled={!formData.faculty} className={`form-select ${errors.department ? 'error' : ''} ${!formData.faculty ? 'disabled' : ''}`}>
-                <option value="">Select Department</option>
-                {departmentsList.map((dept, index) => (<option key={index} value={dept}>{dept}</option>))}
-              </select>
+              {userProfile?.is_international || formData.faculty === 'Other' ? (
+                <input 
+                  type="text" 
+                  value={formData.department} 
+                  onChange={(e) => handleInputChange('department', e.target.value)} 
+                  placeholder="Enter your department name" 
+                  className={`form-input ${errors.department ? 'error' : ''}`} 
+                />
+              ) : (
+                <select id="department" value={formData.department} onChange={(e) => handleInputChange('department', e.target.value)} disabled={!formData.faculty} className={`form-select ${errors.department ? 'error' : ''} ${!formData.faculty ? 'disabled' : ''}`}>
+                  <option value="">Select Department</option>
+                  {departmentsList.map((dept, index) => (<option key={index} value={dept}>{dept}</option>))}
+                </select>
+              )}
               {errors.department && <span className="error-message">{errors.department}</span>}
             </div>
           </div>
