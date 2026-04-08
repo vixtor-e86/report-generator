@@ -199,6 +199,11 @@ export async function POST(request) {
     const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
     TASK: Author a detailed Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${project.title}".
 
+    ## ACADEMIC FIELD FOCUS
+    - FACULTY: ${project.faculty}
+    - DEPARTMENT: ${project.department}
+    - TECHNICAL ANGLE: All analysis, terminology, and citations MUST be specialized for the ${project.department} field.
+
     ## PROJECT CONTEXT
     - DESCRIPTION: ${project.description}
     - COMPONENTS: ${componentsUsed || project.components_used}
