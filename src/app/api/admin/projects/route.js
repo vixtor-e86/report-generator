@@ -2,85 +2,60 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-async function fetchAllRows(tableName, selectStr = '*') {
-  let allRows = [];
-  let from = 0;
-  let to = 999;
-  let hasMore = true;
-
-  while (hasMore) {
-    const { data, error } = await supabaseAdmin
-      .from(tableName)
-      .select(selectStr)
-      .order('created_at', { ascending: false })
-      .range(from, to);
-    
-    if (error) {
-      console.error(`Error fetching ${tableName}:`, error);
-      break;
-    }
-
-    if (data && data.length > 0) {
-      allRows = [...allRows, ...data];
-      if (data.length < 1000) {
-        hasMore = false;
-      } else {
-        from += 1000;
-        to += 1000;
-        // Limit to 5000 total for admin dashboard performance
-        if (allRows.length >= 5000) hasMore = false;
-      }
-    } else {
-      hasMore = false;
-    }
-  }
-  return allRows;
-}
-
 export async function GET(request) {
   try {
-    // 1. Get exact counts for badges
-    const { count: freeCount } = await supabaseAdmin.from('projects').select('*', { count: 'exact', head: true });
-    const { count: stdCount } = await supabaseAdmin.from('standard_projects').select('*', { count: 'exact', head: true });
-    const { count: premCount } = await supabaseAdmin.from('premium_projects').select('*', { count: 'exact', head: true });
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '1000');
 
-    // 2. Fetch data for the list (limited to recent 5000 for performance)
-    const standardProjects = await fetchAllRows('standard_projects');
-    const premiumProjects = await fetchAllRows('premium_projects');
-    const freeProjects = await fetchAllRows('projects');
+    // 1. Fetch everything in parallel for maximum speed
+    const [
+      { count: freeCount },
+      { count: stdCount },
+      { count: premCount },
+      { data: premiumProjects, error: premError },
+      { data: standardProjects, error: stdError },
+      { data: freeProjects, error: freeError }
+    ] = await Promise.all([
+      // Exact counts for badges
+      supabaseAdmin.from('projects').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('standard_projects').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('premium_projects').select('*', { count: 'exact', head: true }),
+      
+      // Actual data (limited to 1000 each for performance)
+      // Note: We include user_profiles in the query to avoid a second loop
+      supabaseAdmin.from('premium_projects')
+        .select('*, user_profiles(username, email)')
+        .order('created_at', { ascending: false })
+        .limit(limit),
+      
+      supabaseAdmin.from('standard_projects')
+        .select('*, user_profiles(username, email)')
+        .order('created_at', { ascending: false })
+        .limit(limit),
+      
+      supabaseAdmin.from('projects')
+        .select('*, user_profiles(username, email)')
+        .order('created_at', { ascending: false })
+        .limit(limit)
+    ]);
+
+    if (premError) console.error('Premium fetch error:', premError);
+    if (stdError) console.error('Standard fetch error:', stdError);
+    if (freeError) console.error('Free fetch error:', freeError);
 
     // Combine and normalize
+    // We handle the case where user_profiles might be missing or the join fails
     const allProjects = [
       ...(premiumProjects || []).map(p => ({ ...p, type: 'premium', tier: 'premium' })),
       ...(standardProjects || []).map(p => ({ ...p, type: 'standard', tier: p.tier || 'standard' })),
       ...(freeProjects || []).map(p => ({ ...p, type: 'free', tier: 'free' }))
     ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    // 3. Fetch Users for enrichment
-    let enrichedProjects = [];
-    if (allProjects.length > 0) {
-      const userIds = [...new Set(allProjects.map(p => p.user_id).filter(Boolean))];
-      
-      let users = [];
-      if (userIds.length > 0) {
-        const { data: usersData, error: usersError } = await supabaseAdmin
-          .from('user_profiles')
-          .select('id, username, email')
-          .in('id', userIds);
-          
-        if (!usersError) {
-          users = usersData;
-        }
-      }
-
-      enrichedProjects = allProjects.map(project => ({
-        ...project,
-        user_profiles: users.find(u => u.id === project.user_id) || { username: 'Unknown', email: 'N/A' }
-      }));
-    }
+    // Slice to the overall limit if needed (e.g. top 1000 recent across all tiers)
+    const resultProjects = allProjects.slice(0, limit);
 
     return NextResponse.json({
-      projects: enrichedProjects,
+      projects: resultProjects,
       counts: {
         all: (freeCount || 0) + (stdCount || 0) + (premCount || 0),
         free: freeCount || 0,
