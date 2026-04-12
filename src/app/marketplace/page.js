@@ -6,7 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { 
   ArrowRight, Sparkles, ShoppingBag, Wrench, 
   ShieldCheck, BookOpen, Presentation, BarChart3,
-  Code2, Zap, GraduationCap, CheckCircle2
+  Code2, Zap, GraduationCap, CheckCircle2, Star
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { academicTools } from '@/data/marketplace/tools';
