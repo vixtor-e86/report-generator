@@ -11,7 +11,7 @@ import { Button } from '@/components/marketplace/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/marketplace/ui/tabs';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
-import { formatCurrency } from '@/lib/marketplace-utils';
+import { formatCurrency } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 
 export default function MarketplaceDashboardPage() {

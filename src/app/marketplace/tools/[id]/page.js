@@ -13,7 +13,7 @@ import { Textarea } from '@/components/marketplace/ui/textarea';
 import { Badge } from '@/components/marketplace/ui/badge';
 import { getToolById } from '@/data/marketplace/tools';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
-import { formatCurrency } from '@/lib/marketplace-utils';
+import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const iconMap = {

@@ -12,7 +12,7 @@ import { Input } from '@/components/marketplace/ui/input';
 import { Badge } from '@/components/marketplace/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/marketplace/ui/sheet';
 import { projects, faculties, departments, levels } from '@/data/marketplace/projects';
-import { formatCurrency } from '@/lib/marketplace-utils';
+import { formatCurrency } from '@/lib/utils';
 
 gsap.registerPlugin(ScrollTrigger);
 

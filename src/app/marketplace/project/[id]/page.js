@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { projects } from '@/data/marketplace/projects';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
-import { formatCurrency, formatFileSize } from '@/lib/marketplace-utils';
+import { formatCurrency, formatFileSize } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useParams } from 'next/navigation';
 

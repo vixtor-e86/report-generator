@@ -11,7 +11,7 @@ import { Label } from '@/components/marketplace/ui/label';
 import { Textarea } from '@/components/marketplace/ui/textarea';
 import { faculties, departments, levels } from '@/data/marketplace/projects';
 import { useUser } from '@/contexts/marketplace/UserContext';
-import { formatFileSize } from '@/lib/marketplace-utils';
+import { formatFileSize } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export default function UploadProjectPage() {

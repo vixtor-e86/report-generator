@@ -13,7 +13,7 @@ import { Input } from '@/components/marketplace/ui/input';
 import { Badge } from '@/components/marketplace/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/marketplace/ui/tabs';
 import { academicTools, toolCategories } from '@/data/marketplace/tools';
-import { formatCurrency } from '@/lib/marketplace-utils';
+import { formatCurrency } from '@/lib/utils';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
 
 gsap.registerPlugin(ScrollTrigger);

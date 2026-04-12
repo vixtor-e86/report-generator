@@ -17,7 +17,7 @@ import {
 } from '@/components/marketplace/ui/dropdown-menu';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
-import { formatCurrency } from '@/lib/marketplace-utils';
+import { formatCurrency } from '@/lib/utils';
 
 export default function Navigation() {
   const pathname = usePathname();

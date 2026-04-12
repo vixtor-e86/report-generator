@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/marketplace/ui/button';
 import { academicTools } from '@/data/marketplace/tools';
 import { projects } from '@/data/marketplace/projects';
-import { formatCurrency } from '@/lib/marketplace-utils';
+import { formatCurrency } from '@/lib/utils';
 
 gsap.registerPlugin(ScrollTrigger);
 
