@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { PRICING } from '@/lib/pricing';
+import { ShoppingBag } from 'lucide-react';
 import ReferralFAB from '@/components/ReferralFAB';
 import FeedbackWidget from '@/components/FeedbackWidget';
 import CustomModal from '@/components/premium/modals/CustomModal';
