@@ -6,7 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { 
   Search, Wrench, ShieldCheck, BookOpen, Presentation, 
   BarChart3, Code2, Lightbulb, RefreshCw, SpellCheck, 
-  Quote, Image, ArrowRight, Zap, Check
+  Quote, Image, ArrowRight, Zap, Check, Star
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
