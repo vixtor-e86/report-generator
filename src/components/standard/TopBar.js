@@ -299,7 +299,7 @@ export default function TopBar({
                 )}
               </div>
             </>
-          )}}
+          )}
         </div>
       </div>
 
