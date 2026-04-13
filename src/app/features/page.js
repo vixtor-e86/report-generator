@@ -61,7 +61,7 @@ export default function FeaturesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {[
-                  { name: "Content Target", free: "1500 Words", std: "2,000+ Words", prem: "4,000+ Words", subPrem: "Elite Technical Depth" },
+                  { name: "Content Target", free: "3,000 Words", std: "3,000+ Words", prem: "4,000+ Words", subPrem: "Elite Technical Depth" },
                   { name: "AI Architect", free: "Basic", std: "Advanced", prem: "System Architect", subPrem: "Deep Technical Logic" },
                   { name: "Academic Humanizer", free: "✗", std: "✗", prem: "✓ 10,000 Words", premClass: "text-emerald-500 font-black", subPrem: "Bypass AI Detectors" },
                   { name: "Modification Style", free: "None", std: "Whole Chapter", prem: "Surgical / Partial", subPrem: "Edit Specific Sections" },
@@ -119,7 +119,7 @@ export default function FeaturesPage() {
             </div>
             <div className="divide-y divide-slate-100">
               {[
-                { name: "Content Target", free: "1500 Words", std: "2,000+ Words", prem: "4,000+ Words" },
+                { name: "Content Target", free: "3,000 Words", std: "3,000+ Words", prem: "4,000+ Words" },
                 { name: "AI Architect", free: "Basic", std: "Advanced", prem: "System Architect" },
                 { name: "Academic Humanizer", free: "✗", std: "✗", prem: "✓ 10,000 Words" },
                 { name: "Modification Style", free: "None", std: "Whole Chapter", prem: "Surgical / Partial" },

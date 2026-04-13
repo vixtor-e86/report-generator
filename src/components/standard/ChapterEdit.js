@@ -28,26 +28,26 @@ export default function ChapterEdit({ chapter, onSave, onCancel }) {
     <div className="max-w-5xl mx-auto print:hidden">
       {/* Header */}
       <div className="bg-white rounded-t-3xl border border-slate-200 p-6 sm:p-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-6">
           <div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
               Edit Technical Draft
             </h2>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+            <p className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">
               Chapter {chapter.chapter_number} • Precise Manual Control
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={onCancel}
-              className="px-4 py-2 text-slate-400 hover:text-slate-900 font-black text-[11px] uppercase tracking-widest transition-all"
+              className="px-4 py-2 text-slate-400 hover:text-slate-900 font-black text-[10px] sm:text-[11px] uppercase tracking-widest transition-all"
             >
               Discard
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[10px] sm:text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center gap-2"
             >
               {saving ? (
                 <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white"></div>

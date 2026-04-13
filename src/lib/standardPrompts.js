@@ -101,7 +101,7 @@ function getFacultySpecificPrompt(chapterNumber, data) {
   ${getReferenceInstructions(referenceStyle, faculty, chapterNumber === (templateStructure?.chapters?.length || 5), existingReferences)}
 
   WRITING RULES:
-  1. Target: 2000 words. 
+  1. Target: 3000 words. 
   2. Tone: Formal, Technical, Academic.
   3. Format: Markdown (## H1, ### H2).
   4. Currency: ₦ (NGN).

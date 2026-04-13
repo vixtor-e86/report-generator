@@ -46,9 +46,9 @@ export default function ModifyModal({ isOpen, onClose, onSubmit, chapter }) {
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-[40px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-100">
         {/* Header */}
-        <div className="p-8 sm:p-10 border-b border-slate-50">
+        <div className="p-6 sm:p-10 border-b border-slate-50">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-tighter">
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase tracking-tighter">
               Surgical Modification
             </h3>
             <button
@@ -58,22 +58,22 @@ export default function ModifyModal({ isOpen, onClose, onSubmit, chapter }) {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+          <p className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-widest">
             Chapter {chapter?.chapter_number} • Direct AI Instruction
           </p>
         </div>
 
         {/* Body */}
-        <div className="p-8 sm:p-10">
+        <div className="p-6 sm:p-10">
           {/* Info Box */}
-          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8">
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 sm:p-5 mb-8">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-900 flex-shrink-0">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
               </div>
               <div>
-                <p className="text-xs font-black text-slate-900 uppercase tracking-widest mb-1">Process Logic</p>
-                <p className="text-[11px] font-medium text-slate-500 leading-relaxed">
+                <p className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-1">Process Logic</p>
+                <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 leading-relaxed">
                   Your requirements will be added to the AI architect's context. The chapter will be rewritten to match your specific instructions.
                 </p>
               </div>

@@ -116,9 +116,9 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
   return (
     <div className="bg-white rounded-[40px] shadow-2xl border border-slate-100 min-h-[800px] flex flex-col overflow-hidden print:shadow-none print:border-none print:rounded-none">
       {/* View Header */}
-      <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10 print:hidden">
+      <div className="px-6 sm:px-10 py-6 sm:py-8 border-b border-slate-50 flex items-center justify-between shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10 print:hidden">
         <div>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-1">
             <span className="px-3 py-1 bg-slate-900 text-white text-[10px] font-black rounded-full uppercase tracking-widest">
               Chapter {chapter.chapter_number}
             </span>
@@ -142,7 +142,7 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
       </div>
 
       {/* Chapter Content */}
-      <div className="flex-1 px-12 py-16 overflow-y-auto custom-scrollbar print:p-0 print:overflow-visible">
+      <div className="flex-1 px-6 sm:px-12 py-10 sm:py-16 overflow-y-auto custom-scrollbar print:p-0 print:overflow-visible">
         <div className="max-w-4xl mx-auto print:max-w-none print:mx-0">
           <div className="prose prose-slate max-w-none 
             prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900

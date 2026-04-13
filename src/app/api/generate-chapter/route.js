@@ -213,7 +213,7 @@ ${sections}
 8. Keep paragraphs well-spaced
 
 **CONTENT REQUIREMENTS:**
-1. Write 2000-2500 words for this chapter
+1. Write 3000 words for this chapter
 2. Use professional Nigerian academic tone
 3. Be SPECIFIC to the project components: ${components}
 4. Include ${faculty}-appropriate technical details
