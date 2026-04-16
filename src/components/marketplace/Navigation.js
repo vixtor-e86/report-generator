@@ -93,11 +93,9 @@ export default function Navigation() {
                       variant="ghost"
                       className="flex items-center gap-2 hover:bg-[#f3f4f6] rounded-full px-2"
                     >
-                      <img
-                        src={user?.avatar}
-                        alt={user?.name}
-                        className="w-8 h-8 rounded-full border border-[#e5e7eb]"
-                      />
+                      <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white text-xs font-black uppercase">
+                        {user?.name?.charAt(0) || 'U'}
+                      </div>
                       <span className="text-black text-sm font-medium hidden sm:block">
                         {user?.name?.split(' ')[0]}
                       </span>
@@ -108,9 +106,14 @@ export default function Navigation() {
                     align="end"
                     className="w-56 bg-white border-[#e5e7eb] rounded-xl shadow-lg p-1"
                   >
-                    <div className="px-3 py-2">
-                      <p className="text-black font-semibold text-sm">{user?.name}</p>
-                      <p className="text-[#6b7280] text-xs">{user?.email}</p>
+                    <div className="px-3 py-2 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-900 text-sm font-black uppercase">
+                        {user?.name?.charAt(0) || 'U'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-black font-semibold text-sm truncate">{user?.name}</p>
+                        <p className="text-[#6b7280] text-xs truncate">{user?.email}</p>
+                      </div>
                     </div>
                     <DropdownMenuSeparator className="bg-[#e5e7eb]" />
                     <DropdownMenuItem asChild>
@@ -207,14 +210,12 @@ export default function Navigation() {
                   {isAuthenticated && (
                     <div className="p-6 border-t border-[#e5e7eb]">
                       <div className="flex items-center gap-3 mb-6">
-                        <img
-                          src={user?.avatar}
-                          alt={user?.name}
-                          className="w-12 h-12 rounded-full border border-[#e5e7eb]"
-                        />
-                        <div>
-                          <p className="text-black font-bold">{user?.name}</p>
-                          <p className="text-[#6b7280] text-sm">{user?.email}</p>
+                        <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center text-white text-base font-black uppercase">
+                          {user?.name?.charAt(0) || 'U'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-black font-bold truncate">{user?.name}</p>
+                          <p className="text-[#6b7280] text-sm truncate">{user?.email}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 px-4 py-3 bg-[#f3f4f6] rounded-xl border border-[#e5e7eb]">

@@ -261,11 +261,11 @@ export default function ProjectDetailPage() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="bg-zinc-100/50 border border-[#e5e7eb] p-1 mb-8 rounded-full shadow-inner inline-flex">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-full text-[#6b7280] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Overview</TabsTrigger>
-                <TabsTrigger value="code" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-full text-[#6b7280] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all"><Code className="w-3.5 h-3.5 mr-2" />Preview</TabsTrigger>
-                <TabsTrigger value="docs" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-full text-[#6b7280] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all"><FileText className="w-3.5 h-3.5 mr-2" />Docs</TabsTrigger>
-                <TabsTrigger value="reviews" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-full text-[#6b7280] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Reviews</TabsTrigger>
+              <TabsList className="bg-zinc-100 border border-[#e5e7eb] p-1 mb-8 rounded-full shadow-inner inline-flex">
+                <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-full text-[#374151] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Overview</TabsTrigger>
+                <TabsTrigger value="code" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-full text-[#374151] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all"><Code className="w-3.5 h-3.5 mr-2" />Preview</TabsTrigger>
+                <TabsTrigger value="docs" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-full text-[#374151] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all"><FileText className="w-3.5 h-3.5 mr-2" />Docs</TabsTrigger>
+                <TabsTrigger value="reviews" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-full text-[#374151] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Reviews</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview">
@@ -381,7 +381,7 @@ export default function ProjectDetailPage() {
                     <p className="text-[#6b7280] text-[11px] font-bold uppercase tracking-wider">{project.seller.department}</p>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full border-[#e5e7eb] text-[#111827] rounded-2xl py-6 font-bold hover:bg-zinc-50">Contact Seller</Button>
+                <Button variant="outline" className="w-full border-[#e5e7eb] bg-transparent text-white rounded-2xl py-6 font-bold hover:bg-white hover:text-black transition-colors">Contact Seller</Button>
               </div>
             </div>
           </div>

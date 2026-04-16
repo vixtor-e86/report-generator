@@ -109,7 +109,7 @@ export default function AcademicToolsPage() {
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full lg:w-auto">
               <TabsList className="bg-zinc-100 border border-[#e5e7eb] p-1 h-auto flex-wrap rounded-full shadow-inner">
                 {toolCategories.map((cat) => (
-                  <TabsTrigger key={cat.id} value={cat.id} className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-full text-[#111827] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition-all">
+                  <TabsTrigger key={cat.id} value={cat.id} className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-full text-[#374151] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition-all">
                     {cat.name}
                   </TabsTrigger>
                 ))}

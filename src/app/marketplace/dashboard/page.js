@@ -69,10 +69,10 @@ export default function MarketplaceDashboardPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="sticky top-[70px] z-30 bg-[#f8f9fc]/95 backdrop-blur-md pt-2 pb-6 mb-4">
             <TabsList className="bg-zinc-100 border border-[#e5e7eb] p-1 rounded-full shadow-inner inline-flex">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-full text-[#6b7280] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Overview</TabsTrigger>
-              <TabsTrigger value="purchases" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-full text-[#6b7280] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Resources</TabsTrigger>
-              <TabsTrigger value="tools" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-full text-[#6b7280] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Execution</TabsTrigger>
-              <TabsTrigger value="wallet" className="data-[state=active]:bg-white data-[state=active]:text-black rounded-full text-[#6b7280] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Billing</TabsTrigger>
+              <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-full text-[#374151] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Overview</TabsTrigger>
+              <TabsTrigger value="purchases" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-full text-[#374151] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Resources</TabsTrigger>
+              <TabsTrigger value="tools" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-full text-[#374151] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Execution</TabsTrigger>
+              <TabsTrigger value="wallet" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-full text-[#374151] px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Billing</TabsTrigger>
             </TabsList>
           </div>
 
