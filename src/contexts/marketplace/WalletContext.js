@@ -1,106 +1,91 @@
 "use client";
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '@/contexts/marketplace/UserContext';
 
 const WalletContext = createContext(undefined);
 
-// Mock wallet with initial balance
-const mockWallet = {
-  balance: 15000,
-  currency: 'NGN',
-  transactions: [
-    {
-      id: 't1',
-      type: 'deposit',
-      amount: 20000,
-      description: 'Initial deposit',
-      status: 'completed',
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    },
-    {
-      id: 't2',
-      type: 'payment',
-      amount: 3500,
-      description: 'Purchase: React E-commerce Project',
-      status: 'completed',
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    },
-    {
-      id: 't3',
-      type: 'payment',
-      amount: 1500,
-      description: 'Tool: Plagiarism Checker (3 uses)',
-      status: 'completed',
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    },
-  ],
-};
-
 export function WalletProvider({ children }) {
-  const [wallet, setWallet] = useState(mockWallet);
+  const { user } = useUser();
+  const [wallet, setWallet] = useState({ balance: 0, currency: 'NGN', transactions: [] });
+  const [loading, setLoading] = useState(true);
 
-  const addFunds = useCallback(async (amount) => {
-    const transaction = {
-      id: `t${Date.now()}`,
-      type: 'deposit',
-      amount,
-      description: 'Wallet deposit',
-      status: 'completed',
-      createdAt: new Date(),
-    };
+  const fetchWalletData = useCallback(async () => {
+    if (!user) return;
 
-    setWallet(prev => ({
-      ...prev,
-      balance: prev.balance + amount,
-      transactions: [transaction, ...prev.transactions],
-    }));
-  }, []);
+    try {
+      // 1. Fetch balance
+      const { data: walletData, error: walletError } = await supabase
+        .from('marketplace_wallets')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (walletError && walletError.code !== 'PGRST116') {
+        console.error('Error fetching wallet:', walletError);
+      }
+
+      // 2. Fetch transactions
+      const { data: txData, error: txError } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (txError) {
+        console.error('Error fetching transactions:', txError);
+      }
+
+      setWallet({
+        balance: walletData?.balance || 0,
+        currency: walletData?.currency || 'NGN',
+        transactions: txData || [],
+      });
+    } catch (err) {
+      console.error('Unexpected wallet error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchWalletData();
+  }, [fetchWalletData]);
 
   const deductFunds = useCallback(async (amount, description) => {
-    if (wallet.balance < amount) {
+    if (wallet.balance < amount) return false;
+
+    // This should ideally be an Edge Function or RPC for atomicity
+    // For now we do a simple update
+    const { error } = await supabase
+      .from('marketplace_wallets')
+      .update({ balance: wallet.balance - amount })
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Deduction failed:', error);
       return false;
     }
 
-    const transaction = {
-      id: `t${Date.now()}`,
-      type: 'payment',
+    // Record transaction
+    await supabase.from('wallet_transactions').insert({
+      user_id: user.id,
       amount,
-      description,
+      type: 'purchase',
       status: 'completed',
-      createdAt: new Date(),
-    };
+      description,
+    });
 
-    setWallet(prev => ({
-      ...prev,
-      balance: prev.balance - amount,
-      transactions: [transaction, ...prev.transactions],
-    }));
-
+    fetchWalletData();
     return true;
-  }, [wallet.balance]);
-
-  const addEarnings = useCallback((amount, description) => {
-    const transaction = {
-      id: `t${Date.now()}`,
-      type: 'earning',
-      amount,
-      description,
-      status: 'completed',
-      createdAt: new Date(),
-    };
-
-    setWallet(prev => ({
-      ...prev,
-      balance: prev.balance + amount,
-      transactions: [transaction, ...prev.transactions],
-    }));
-  }, []);
+  }, [wallet.balance, user, fetchWalletData]);
 
   return (
     <WalletContext.Provider value={{
       wallet,
-      addFunds,
+      loading,
+      refreshWallet: fetchWalletData,
       deductFunds,
-      addEarnings,
     }}>
       {children}
     </WalletContext.Provider>

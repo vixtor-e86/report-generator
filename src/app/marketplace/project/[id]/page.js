@@ -381,7 +381,7 @@ export default function ProjectDetailPage() {
                     <p className="text-[#6b7280] text-[11px] font-bold uppercase tracking-wider">{project.seller.department}</p>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full border-[#e5e7eb] text-white rounded-2xl py-6 font-bold hover:bg-zinc-50 hover:text-black">Contact Seller</Button>
+                <Button variant="outline" className="w-full border-[#e5e7eb] text-black rounded-2xl py-6 font-bold hover:bg-zinc-50 hover:text-black">Contact Seller</Button>
               </div>
             </div>
           </div>

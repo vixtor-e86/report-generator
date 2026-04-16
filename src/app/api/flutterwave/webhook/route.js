@@ -55,6 +55,45 @@ export async function POST(request) {
             console.error('Error updating transaction:', updateError);
           }
 
+          // ✅ Handle Wallet Funding
+          if (tx_ref && tx_ref.includes('W3WL_FUND_')) {
+            console.log('Processing Wallet Deposit for ref:', tx_ref);
+            
+            // 1. Mark wallet transaction as completed
+            const { data: walletTx, error: wTxError } = await supabaseAdmin
+              .from('wallet_transactions')
+              .update({ status: 'completed' })
+              .eq('reference', tx_ref)
+              .select()
+              .single();
+
+            if (wTxError) {
+              console.error('Error updating wallet tx:', wTxError);
+            }
+
+            if (walletTx) {
+              // 2. Update wallet balance
+              // Use an atomic increment in a real app, for now simple update
+              const { data: wallet, error: wError } = await supabaseAdmin
+                .from('marketplace_wallets')
+                .select('balance')
+                .eq('user_id', walletTx.user_id)
+                .single();
+
+              if (wallet) {
+                const newBalance = wallet.balance + walletTx.amount;
+                await supabaseAdmin
+                  .from('marketplace_wallets')
+                  .update({ 
+                    balance: newBalance,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('user_id', walletTx.user_id);
+                console.log('Wallet balance updated successfully!');
+              }
+            }
+          }
+
           // ✅ Handle Project Unlock
           if (tx_ref && tx_ref.includes('W3WL_UNLOCK_')) {
             console.log('Handling Project Unlock for ref:', tx_ref);
