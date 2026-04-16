@@ -55,8 +55,8 @@ export default function Navigation() {
                 href={item.path}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                   isActive(item.path)
-                    ? 'text-black bg-white shadow-sm border border-[#e5e7eb]'
-                    : 'text-[#6b7280] hover:text-black hover:bg-[#f3f4f6]'
+                    ? 'text-black bg-white shadow-sm border border-[#e5e7eb] font-black'
+                    : 'text-[#6b7280] hover:text-black hover:bg-[#f3f4f6] font-bold'
                 }`}
               >
                 {item.label}

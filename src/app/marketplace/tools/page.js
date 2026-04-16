@@ -93,11 +93,12 @@ export default function AcademicToolsPage() {
       </div>
 
       {/* Search and Categories */}
-      <div className="sticky top-[70px] z-40 bg-white/80 backdrop-blur-xl border-b border-[#e5e7eb]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="relative flex-1 max-w-md">
+      <div className="sticky top-[70px] z-40 bg-white/95 backdrop-blur-xl border-b border-[#e5e7eb] shadow-sm pt-4 pb-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row gap-4 items-center">
+            <div className="relative flex-1 max-w-md w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+
               <Input
                 placeholder="Search research tools..."
                 value={searchQuery}

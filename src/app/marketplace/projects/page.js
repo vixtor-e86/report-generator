@@ -116,7 +116,7 @@ export default function LiveMarketPage() {
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="sticky top-[70px] z-40 bg-white/80 backdrop-blur-xl border-b border-[#e5e7eb]">
+      <div className="sticky top-[70px] z-40 bg-white/95 backdrop-blur-xl border-b border-[#e5e7eb] shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}

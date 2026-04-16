@@ -10,10 +10,9 @@ export default function MarketplaceLayout({ children }) {
       <WalletProvider>
         <div className="min-h-screen bg-[#f8f9fc]">
           <Navigation />
-          <main>
+          <main className="pt-[70px]">
             {children}
-          </main>
-          <Toaster position="top-right" />
+          </main>          <Toaster position="top-right" />
         </div>
       </WalletProvider>
     </UserProvider>

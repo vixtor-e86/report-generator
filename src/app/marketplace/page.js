@@ -183,11 +183,13 @@ export default function MarketplaceHomePage() {
                   </div>
                   
                   <div className="p-6 grid grid-cols-2 gap-4">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm">
-                        <div className="w-full h-24 bg-zinc-100 rounded-xl mb-3" />
-                        <div className="h-3 w-3/4 bg-zinc-100 rounded mb-2" />
-                        <div className="h-3 w-1/2 bg-zinc-50 rounded" />
+                    {projects.slice(0, 4).map((project) => (
+                      <div key={project.id} className="bg-white p-2 rounded-2xl border border-zinc-100 shadow-sm">
+                        <div className="w-full h-20 rounded-xl mb-2 overflow-hidden">
+                          <img src={project.thumbnail} className="w-full h-full object-cover grayscale-[0.5]" alt="" />
+                        </div>
+                        <div className="h-2 w-full bg-zinc-900 rounded mb-1.5" />
+                        <div className="h-2 w-2/3 bg-zinc-200 rounded" />
                       </div>
                     ))}
                   </div>
