@@ -48,8 +48,8 @@ export default function MarketplaceDashboardPage() {
             <p className="text-[#6b7280] font-medium">Resource management for <span className="text-black font-bold">{user?.name}</span></p>
           </div>
           <div className="flex gap-3">
-            <Link href="/marketplace/projects"><Button variant="outline" className="border-[#e5e7eb] bg-white rounded-full px-6 font-bold shadow-sm">Explore Market</Button></Link>
-            <Link href="/marketplace/tools"><Button className="bg-black hover:bg-zinc-800 text-white rounded-full px-6 font-bold">Launch Tool</Button></Link>
+            <Link href="/marketplace/projects"><Button variant="outline" className="border-[#e5e7eb] bg-white rounded-full px-6 font-black text-[#111827] shadow-sm hover:bg-zinc-50 transition-all uppercase text-[11px] tracking-widest">Explore Market</Button></Link>
+            <Link href="/marketplace/tools"><Button className="bg-black hover:bg-zinc-800 text-white rounded-full px-6 font-black uppercase text-[11px] tracking-widest">Launch Tool</Button></Link>
           </div>
         </div>
 
