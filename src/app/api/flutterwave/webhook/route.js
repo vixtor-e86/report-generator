@@ -103,13 +103,13 @@ export async function POST(request) {
             const projectId = parts.find((p, i) => parts[i-1] === 'UNLOCK');
             
             if (projectId) {
-              console.log('Unlocking Standard Project ID:', projectId);
-              // Use standard_projects table as seen in codebase
+              console.log('Unlocking Project ID:', projectId);
+              // Check projects table for free project unlocks
               const { error: unlockError } = await supabaseAdmin
-                .from('standard_projects')
+                .from('projects')
                 .update({ 
                   is_unlocked: true,
-                  tier: 'standard'
+                  tier: 'unlocked'
                 })
                 .eq('id', projectId);
 

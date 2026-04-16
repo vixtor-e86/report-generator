@@ -104,7 +104,7 @@ export async function GET(request) {
         .from('projects')
         .update({ 
           is_unlocked: true,
-          tier: 'standard' // Change tier to standard upon payment
+          tier: 'unlocked' // Change tier to unlocked upon payment
         })
         .eq('id', projectIdToUnlock);
 

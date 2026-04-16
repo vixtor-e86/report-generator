@@ -33,8 +33,18 @@ export async function GET(request) {
     const allProjects = [
       ...(premiumProjects || []).map(p => ({ ...p, type: 'premium', tier: 'premium' })),
       ...(standardProjects || []).map(p => ({ ...p, type: 'standard', tier: p.tier || 'standard' })),
-      ...(freeProjects || []).map(p => ({ ...p, type: 'free', tier: 'free' }))
+      ...(freeProjects || []).map(p => ({ ...p, type: 'free', tier: p.tier || 'free' }))
     ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    // Calculate detailed counts for each tier
+    const tiers = allProjects.map(p => p.tier || 'free');
+    const counts = {
+      all: allProjects.length,
+      free: tiers.filter(t => t === 'free').length,
+      unlocked: tiers.filter(t => t === 'unlocked').length,
+      standard: (stdCount || 0), // Use raw DB count for accuracy
+      premium: (premCount || 0)
+    };
 
     // 2. Fetch Users for enrichment (Separate call for better reliability)
     let enrichedProjects = allProjects.slice(0, limit);
@@ -58,12 +68,7 @@ export async function GET(request) {
 
     return NextResponse.json({
       projects: enrichedProjects,
-      counts: {
-        all: (freeCount || 0) + (stdCount || 0) + (premCount || 0),
-        free: freeCount || 0,
-        standard: stdCount || 0,
-        premium: premCount || 0
-      }
+      counts: counts
     });
 
   } catch (error) {

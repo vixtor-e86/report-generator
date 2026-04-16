@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState([]);
-  const [counts, setCounts] = useState({ all: 0, free: 0, standard: 0, premium: 0 });
+  const [counts, setCounts] = useState({ all: 0, free: 0, unlocked: 0, standard: 0, premium: 0 });
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, free, standard, premium
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,7 +55,7 @@ export default function AdminProjectsPage() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-6">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex flex-wrap gap-2">
-            {['all', 'free', 'standard', 'premium'].map((tier) => (
+            {['all', 'free', 'unlocked', 'standard', 'premium'].map((tier) => (
               <button
                 key={tier}
                 onClick={() => setFilter(tier)}
@@ -116,6 +116,7 @@ export default function AdminProjectsPage() {
                     <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full capitalize ${
                       (project.tier || 'free') === 'standard' ? 'bg-indigo-100 text-indigo-700' : 
                       (project.tier || 'free') === 'premium' ? 'bg-purple-100 text-purple-700' :
+                      (project.tier || 'free') === 'unlocked' ? 'bg-emerald-100 text-emerald-700' :
                       'bg-slate-100 text-slate-700'
                     }`}>
                       {project.tier || 'free'}
