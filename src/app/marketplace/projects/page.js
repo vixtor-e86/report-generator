@@ -67,8 +67,7 @@ export default function LiveMarketPage() {
           trigger: projectsRef.current,
           start: 'top 85%',
         },
-        y: 30,
-        opacity: 0,
+        y: 20,
         duration: 0.5,
         stagger: 0.08,
         ease: 'power3.out',
@@ -116,7 +115,7 @@ export default function LiveMarketPage() {
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="sticky top-[70px] z-40 bg-white/95 backdrop-blur-xl border-b border-[#e5e7eb] shadow-sm">
+      <div className="sticky top-[70px] z-40 bg-white border-b border-[#e5e7eb] shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
@@ -470,8 +469,9 @@ function ProjectCard({ project, viewMode }) {
           <img
             src={project.thumbnail}
             alt={project.title}
-            className="w-full h-full object-cover rounded-[22px] group-hover:scale-105 transition-transform duration-700"
+            className="w-full h-full object-cover rounded-[22px] transition-transform duration-700 group-hover:scale-105"
           />
+
           <div className="absolute top-5 left-5 flex gap-2">
             <span className="px-3 py-1 bg-white/95 backdrop-blur-sm text-[#111827] text-[10px] font-black uppercase tracking-wider rounded-full shadow-sm border border-zinc-100">
               {project.faculty}

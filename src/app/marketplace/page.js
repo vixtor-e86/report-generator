@@ -67,8 +67,7 @@ export default function MarketplaceHomePage() {
           trigger: toolsRef.current,
           start: 'top 80%',
         },
-        y: 30,
-        opacity: 0,
+        y: 20,
         duration: 0.5,
         stagger: 0.08,
         ease: 'power3.out',
@@ -80,8 +79,7 @@ export default function MarketplaceHomePage() {
           trigger: marketRef.current,
           start: 'top 80%',
         },
-        y: 30,
-        opacity: 0,
+        y: 20,
         duration: 0.5,
         stagger: 0.1,
         ease: 'power3.out',
@@ -184,12 +182,12 @@ export default function MarketplaceHomePage() {
                   
                   <div className="p-6 grid grid-cols-2 gap-4">
                     {projects.slice(0, 4).map((project) => (
-                      <div key={project.id} className="bg-white p-2 rounded-2xl border border-zinc-100 shadow-sm">
+                      <div key={project.id} className="bg-white p-2 rounded-2xl border border-zinc-200 shadow-sm">
                         <div className="w-full h-20 rounded-xl mb-2 overflow-hidden">
-                          <img src={project.thumbnail} className="w-full h-full object-cover grayscale-[0.5]" alt="" />
+                          <img src={project.thumbnail} className="w-full h-full object-cover" alt="" />
                         </div>
                         <div className="h-2 w-full bg-zinc-900 rounded mb-1.5" />
-                        <div className="h-2 w-2/3 bg-zinc-200 rounded" />
+                        <div className="h-2 w-2/3 bg-zinc-300 rounded" />
                       </div>
                     ))}
                   </div>
@@ -323,7 +321,7 @@ export default function MarketplaceHomePage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute top-3 left-3">
-                      <span className="px-3 py-1 bg-white/95 backdrop-blur-sm text-[#111827] text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm border border-zinc-100">
+                      <span className="px-3 py-1 bg-white text-[#111827] text-[10px] font-bold uppercase tracking-wider rounded-full shadow-md border border-zinc-100">
                         {project.faculty}
                       </span>
                     </div>

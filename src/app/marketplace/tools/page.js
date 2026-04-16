@@ -56,8 +56,7 @@ export default function AcademicToolsPage() {
           trigger: toolsRef.current,
           start: 'top 85%',
         },
-        y: 30,
-        opacity: 0,
+        y: 20,
         duration: 0.5,
         stagger: 0.06,
         ease: 'power3.out',
@@ -93,7 +92,7 @@ export default function AcademicToolsPage() {
       </div>
 
       {/* Search and Categories */}
-      <div className="sticky top-[70px] z-40 bg-white/95 backdrop-blur-xl border-b border-[#e5e7eb] shadow-sm pt-4 pb-4">
+      <div className="sticky top-[70px] z-40 bg-white border-b border-[#e5e7eb] shadow-md pt-4 pb-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row gap-4 items-center">
             <div className="relative flex-1 max-w-md w-full">
@@ -103,12 +102,12 @@ export default function AcademicToolsPage() {
                 placeholder="Search research tools..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-11 bg-[#f8f9fc] border-[#e5e7eb] text-[#111827] placeholder:text-[#9ca3af] focus:border-black rounded-full h-11"
+                className="pl-11 bg-white border-[#e5e7eb] text-[#111827] placeholder:text-[#9ca3af] focus:border-black rounded-full h-11"
               />
             </div>
 
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full lg:w-auto">
-              <TabsList className="bg-[#f8f9fc] border border-[#e5e7eb] p-1 h-auto flex-wrap rounded-full shadow-inner">
+              <TabsList className="bg-zinc-100 border border-[#e5e7eb] p-1 h-auto flex-wrap rounded-full shadow-inner">
                 {toolCategories.map((cat) => (
                   <TabsTrigger key={cat.id} value={cat.id} className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-full text-[#6b7280] px-6 py-2 text-xs font-bold uppercase tracking-wide transition-all">
                     {cat.name}
