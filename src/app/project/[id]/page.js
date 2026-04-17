@@ -3,7 +3,7 @@ import { useState, useEffect, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import TopBar from '@/components/standard/TopBar'; // ✅ ADDED
+import FreeTopBar from '@/components/standard/FreeTopBar'; // ✅ UPDATED
 import { CldUploadWidget } from 'next-cloudinary';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown'; 
@@ -559,16 +559,19 @@ export default function Workspace({ params }) {
               </h1>
             </div>
 
-            <TopBar
+            <FreeTopBar
               chapter={currentChapter}
               project={project}
               generating={generating}
+              onEdit={() => setIsEditing(true)}
+              onSave={handleSaveEdit}
               onGenerate={handleGenerateChapter}
               onPrintCurrentChapter={handlePrintCurrentChapter}
               onUpdateProjectDetails={handleUpdateProjectDetails}
               allChaptersGenerated={allChaptersGenerated}
               checkAccessAndPrint={checkAccessAndPrint}
               handlePrintFullReport={handlePrintFullReport}
+              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             />
           </div>
         </div>

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import ProjectDetailsModal from './ProjectDetailsModal';
 
-export default function TopBar({
+export default function FreeTopBar({
   chapter,
   isEditing,
   generating,
@@ -11,35 +11,45 @@ export default function TopBar({
   onEdit,
   onSave,
   onGenerate,
-  onRegenerate,
-  onModifyRegenerate,
   onToggleSidebar,
   onPrintCurrentChapter,
-  onPreviewBeforeGenerate,
-  onSuggestImprovements,
-  showNotification,
   onUpdateProjectDetails,
-  onPrintFullReport
+  allChaptersGenerated,
+  onPrintFullReport,
+  checkAccessAndPrint
 }) {
   const [exporting, setExporting] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showEditDetailsModal, setShowEditDetailsModal] = useState(false);
 
   const isGenerated = chapter && (chapter.status === 'draft' || chapter.status === 'edited' || chapter.status === 'approved');
-  const canRegenerate = isGenerated && project.tokens_used < project.tokens_limit;
+  
+  // Rule: Export/Full Print is locked until all chapters are finished
+  const isExportRestricted = !allChaptersGenerated;
 
   const handlePrintCurrent = () => {
-    if (onPrintCurrentChapter) onPrintCurrentChapter();
-    else window.print();
+    if (checkAccessAndPrint) {
+      checkAccessAndPrint(onPrintCurrentChapter || (() => window.print()));
+    } else if (onPrintCurrentChapter) {
+      onPrintCurrentChapter();
+    } else {
+      window.print();
+    }
     setShowMobileMenu(false);
   };
 
   const handlePrintFull = () => {
-    if (onPrintFullReport) onPrintFullReport();
+    if (isExportRestricted) return;
+    if (checkAccessAndPrint) {
+      checkAccessAndPrint(onPrintFullReport);
+    } else if (onPrintFullReport) {
+      onPrintFullReport();
+    }
     setShowMobileMenu(false);
   };
 
   const handleExportDOCX = async () => {
+    if (isExportRestricted) return;
     setExporting(true);
     setShowMobileMenu(false);
 
@@ -73,11 +83,9 @@ export default function TopBar({
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-
-      if (showNotification) showNotification('Success', 'Document exported successfully!', 'success');
     } catch (error) {
       console.error('Export error:', error);
-      if (showNotification) showNotification('Export Error', error.message || 'Failed to export document', 'error');
+      alert(error.message || 'Failed to export document');
     } finally {
       setExporting(false);
     }
@@ -94,28 +102,28 @@ export default function TopBar({
           
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-black text-slate-900 truncate tracking-tight">
-                {chapter ? chapter.title : 'Technical Workspace'}
+              <h1 className="text-lg sm:text-xl font-black text-slate-900 truncate tracking-tight uppercase">
+                {chapter ? `Chapter ${chapter.chapter_number}` : 'Free Workspace'}
               </h1>
-              <span className="text-[10px] font-black bg-indigo-600 text-white px-2 py-0.5 rounded uppercase tracking-widest">
-                STANDARD
+              <span className="text-[10px] font-black bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full uppercase tracking-widest border border-indigo-100">
+                {project?.tier === 'unlocked' ? 'UNLOCKED' : 'FREE'}
               </span>
             </div>
             {chapter && isGenerated && (
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 hidden sm:block">
-                Project Architect • Chapter {chapter.chapter_number} • Draft
+                Academic Draft • {chapter.title}
               </p>
             )}
           </div>
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {!chapter ? (
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full border border-slate-100 italic">Initialization Required</div>
+             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full border border-slate-100 italic">Select Chapter</div>
           ) : isEditing ? (
             <>
-              <button onClick={onSave} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95">Save Changes</button>
+              <button onClick={onSave} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95">Save Edits</button>
             </>
           ) : !isGenerated ? (
             <>
@@ -125,12 +133,13 @@ export default function TopBar({
                 className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all flex items-center gap-2"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                Edit Details
+                <span className="hidden sm:inline">Edit Details</span>
+                <span className="sm:hidden">Edit</span>
               </button>
               <button
                 onClick={onGenerate}
                 disabled={generating}
-                className="bg-slate-900 text-white px-6 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-xl flex items-center gap-2"
+                className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-xl flex items-center gap-2"
               >
                 {generating ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white" /> : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>}
                 Generate
@@ -138,26 +147,36 @@ export default function TopBar({
             </>
           ) : (
             <div className="flex items-center gap-2">
-                <div className="hidden lg:flex items-center gap-2">
-                    <button onClick={onEdit} className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all">Manual Edit</button>
-                    <button onClick={onSuggestImprovements} className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all">Analyze</button>
-                    <button onClick={onRegenerate} disabled={!canRegenerate} className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 disabled:opacity-40">Regen</button>
-                    <button onClick={onModifyRegenerate} disabled={!canRegenerate} className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 disabled:opacity-40">Modify</button>
-                </div>
+                {/* Manual Edit always available for Free */}
+                <button
+                  onClick={onEdit}
+                  className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all flex items-center gap-2"
+                >
+                  Edit
+                </button>
 
-                <div className="w-px h-6 bg-slate-200 mx-1 hidden lg:block"></div>
+                <div className="w-px h-6 bg-slate-200 mx-1 hidden sm:block"></div>
 
                 <button onClick={handlePrintCurrent} className="p-2 text-slate-400 hover:text-slate-900 transition-colors" title="Print Chapter">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                 </button>
 
-                <button onClick={handlePrintFull} className="p-2 text-emerald-500 hover:text-emerald-700 transition-colors" title="Print Full Report">
+                <button
+                  onClick={handlePrintFull}
+                  disabled={isExportRestricted}
+                  className={`p-2 transition-colors ${!isExportRestricted ? 'text-emerald-500 hover:text-emerald-700' : 'text-slate-200'}`}
+                  title={!isExportRestricted ? "Print Full Report" : "Complete all chapters to unlock"}
+                >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 </button>
 
-                <button onClick={handleExportDOCX} disabled={exporting} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg flex items-center gap-2">
-                  {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white" /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
-                  Export
+                <button
+                  onClick={handleExportDOCX}
+                  disabled={exporting || isExportRestricted}
+                  className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-lg flex items-center gap-2 disabled:opacity-30"
+                >
+                  {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white" /> : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
+                  {isExportRestricted ? 'Incomplete' : 'Export'}
                 </button>
             </div>
           )}
@@ -170,17 +189,6 @@ export default function TopBar({
         project={project}
         onSubmit={onUpdateProjectDetails}
       />
-
-      {/* Token Warning */}
-      {project?.tier === 'standard' && chapter && isGenerated && !canRegenerate && (
-        <div className="mt-3 mx-8 bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
-          <svg className="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-          <div>
-            <p className="text-sm font-semibold text-red-900">Token limit reached</p>
-            <p className="text-xs text-red-700">You've used all {project?.tokens_limit?.toLocaleString()} tokens. Upgrade for unlimited access.</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
