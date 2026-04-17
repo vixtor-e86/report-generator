@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 
 const Icons = {
   X: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
@@ -17,10 +18,11 @@ export default function GenerationModal({
   activeChapter, projectId, userId, projectData, onGenerateSuccess,
   setIsGlobalLoading, setGlobalLoadingText,
   formData: stickyData, setFormData: setStickyData,
-  showNotification, onGenerateClick
+  showNotification, onGenerateClick, hasStartedGeneration
 }) {
   const [localData, setLocalData] = useState({
-    projectTitle: '', projectDescription: '', componentsUsed: '', researchBooks: '',
+    projectTitle: '', projectDescription: '', faculty: '', department: '',
+    componentsUsed: '', researchBooks: '',
     userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
   });
 
@@ -33,12 +35,15 @@ export default function GenerationModal({
   const currentChapterNumber = activeChapter?.number || activeChapter?.id || 0;
   const isChapter4 = currentChapterNumber === 4;
   const isSubsequentChapter = currentChapterNumber > 1;
+  const isCustomTemplate = projectData?.custom_templates?.name === 'Custom Template';
 
   useEffect(() => {
     if (isOpen && projectData) {
       setLocalData({
         projectTitle: projectData.title || '',
         projectDescription: projectData.description || '',
+        faculty: projectData.faculty || '',
+        department: projectData.department || '',
         componentsUsed: projectData.components_used || '',
         researchBooks: projectData.research_papers_context || '',
         userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
@@ -72,8 +77,30 @@ export default function GenerationModal({
     setPreviewFile(null);
   };
 
-  const handleGenerateInit = () => {
+  const handleGenerateInit = async () => {
     if (!activeChapter) return;
+    
+    // ✅ Persist Title/Description/Faculty/Dept changes if generation hasn't started
+    if (!hasStartedGeneration) {
+        try {
+            const { error } = await supabase
+                .from('premium_projects')
+                .update({
+                    title: localData.projectTitle,
+                    description: localData.projectDescription,
+                    faculty: localData.faculty,
+                    department: localData.department
+                })
+                .eq('id', projectId);
+            
+            if (error) throw error;
+        } catch (err) {
+            console.error("Failed to update project details:", err);
+            showNotification('Error', 'Failed to update project details. Please try again.', 'error');
+            return;
+        }
+    }
+
     // Pass everything to the confirm structure modal
     onGenerateClick({
         ...localData,
@@ -117,17 +144,61 @@ export default function GenerationModal({
                   
                   <div>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Title</label>
-                    <div style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: '#f9fafb', color: '#6b7280', fontWeight: '600', cursor: 'default' }}>
-                      {localData.projectTitle}
-                    </div>
+                    {!hasStartedGeneration ? (
+                        <input 
+                            type="text" 
+                            value={localData.projectTitle} 
+                            onChange={(e) => setLocalData({...localData, projectTitle: e.target.value})}
+                            placeholder="Enter project title"
+                            style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: 'white' }}
+                        />
+                    ) : (
+                        <div style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: '#f9fafb', color: '#6b7280', fontWeight: '600', cursor: 'default' }}>
+                            {localData.projectTitle}
+                        </div>
+                    )}
                   </div>
 
                   <div>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Project Description (Full Scope)</label>
-                    <div style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '100px', maxHeight: '200px', background: '#f9fafb', color: '#6b7280', cursor: 'default', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
-                      {localData.projectDescription}
-                    </div>
+                    {!hasStartedGeneration ? (
+                        <textarea 
+                            value={localData.projectDescription} 
+                            onChange={(e) => setLocalData({...localData, projectDescription: e.target.value})}
+                            placeholder="Provide a detailed overview of your project"
+                            style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '100px', background: 'white' }}
+                        />
+                    ) : (
+                        <div style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '100px', maxHeight: '200px', background: '#f9fafb', color: '#6b7280', cursor: 'default', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
+                            {localData.projectDescription}
+                        </div>
+                    )}
                   </div>
+
+                  {!hasStartedGeneration && isCustomTemplate && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Faculty</label>
+                            <input 
+                                type="text" 
+                                value={localData.faculty} 
+                                onChange={(e) => setLocalData({...localData, faculty: e.target.value})}
+                                placeholder="e.g. Engineering"
+                                style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: 'white' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Department</label>
+                            <input 
+                                type="text" 
+                                value={localData.department} 
+                                onChange={(e) => setLocalData({...localData, department: e.target.value})}
+                                placeholder="e.g. Civil Engineering"
+                                style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', background: 'white' }}
+                            />
+                        </div>
+                    </div>
+                  )}
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
@@ -178,7 +249,7 @@ export default function GenerationModal({
                         </select>
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '13px', fontWeight: '700' }}>Max References</label>
+                        <label style={{ block: 'block', fontSize: '13px', fontWeight: '700' }}>Max References</label>
                         <input type="number" value={stickyData.maxReferences} onChange={(e) => setStickyData({...stickyData, maxReferences: parseInt(e.target.value)})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
                       </div>
                     </div>

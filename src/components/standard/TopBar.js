@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import ProjectDetailsModal from './ProjectDetailsModal';
 
 export default function TopBar({
   chapter,
@@ -16,10 +17,12 @@ export default function TopBar({
   onPrintCurrentChapter,
   onPreviewBeforeGenerate,
   onSuggestImprovements,
-  showNotification
+  showNotification,
+  onUpdateProjectDetails // ✅ NEW
 }) {
   const [exporting, setExporting] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showEditDetailsModal, setShowEditDetailsModal] = useState(false); // ✅ NEW
 
   const isGenerated = chapter && (chapter.status === 'draft' || chapter.status === 'edited' || chapter.status === 'approved');
   const canRegenerate = isGenerated && project.tokens_used < project.tokens_limit;

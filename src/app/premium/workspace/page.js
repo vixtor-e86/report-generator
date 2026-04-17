@@ -292,6 +292,7 @@ function WorkspaceContent() {
         activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} 
         projectData={projectData} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} 
         setGlobalLoadingText={setGlobalLoadingText} formData={stickyGenSettings} setFormData={setStickyGenSettings} showNotification={showNotification}
+        hasStartedGeneration={chapters.some(ch => ch.content && ch.content.trim().length > 0)}
         onGenerateClick={(data) => {
           setPendingGenData(data);
           setIsStructureModalOpen(true);

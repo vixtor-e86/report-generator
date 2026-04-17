@@ -170,6 +170,27 @@ export default function StandardWorkspace({ params }) {
     }
   };
 
+  // ✅ NEW: Handle Project Details Update
+  const handleUpdateProjectDetails = async (updates) => {
+    try {
+      const { error } = await supabase
+        .from('standard_projects')
+        .update({
+          title: updates.title,
+          description: updates.description
+        })
+        .eq('id', project.id);
+
+      if (error) throw error;
+      
+      await refreshProject();
+      showNotification('Success', 'Project details updated and locked!', 'success');
+    } catch (error) {
+      console.error('Update error:', error);
+      showNotification('Error', 'Failed to update project details', 'error');
+    }
+  };
+
   // ✅ NEW: Handle print current chapter
   const handlePrintCurrentChapter = () => {
     // Hide sidebar temporarily
@@ -374,6 +395,7 @@ export default function StandardWorkspace({ params }) {
           onPreviewBeforeGenerate={handlePreviewBeforeGenerate}
           onSuggestImprovements={handleSuggestImprovements}
           showNotification={showNotification}
+          onUpdateProjectDetails={handleUpdateProjectDetails} // ✅ NEW
         />
 
         {/* Chapter Content */}

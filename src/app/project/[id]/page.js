@@ -131,6 +131,40 @@ export default function Workspace({ params }) {
     }
   }, [projectId, router]);
 
+  // ✅ NEW: Refresh project
+  const refreshProject = async () => {
+    const { data: projectData } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .single();
+
+    if (projectData) {
+      setProject(projectData);
+    }
+  };
+
+  // ✅ NEW: Handle Project Details Update
+  const handleUpdateProjectDetails = async (updates) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          title: updates.title,
+          description: updates.description
+        })
+        .eq('id', project.id);
+
+      if (error) throw error;
+      
+      await refreshProject();
+      showNotification('Success', 'Project details updated!', 'success');
+    } catch (error) {
+      console.error('Update error:', error);
+      showNotification('Error', 'Failed to update project details', 'error');
+    }
+  };
+
   // ✅ NEW: Process Figure Placeholders for the current chapter
   useEffect(() => {
     if (!currentChapter?.content) {
@@ -524,44 +558,17 @@ export default function Workspace({ params }) {
               </h1>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              {currentChapter?.status === 'not_generated' && (
-                <button 
-                  onClick={handleGenerateChapter}
-                  disabled={generating}
-                  className="bg-indigo-600 text-white px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 text-xs sm:text-base"
-                >
-                  <span className="hidden sm:inline">{generating ? 'Generating...' : 'Generate Chapter'}</span>
-                  <span className="sm:hidden">{generating ? 'Gen...' : 'Generate'}</span>
-                </button>
-              )}
-              
-              {/* Print Current Chapter */}
-              <button 
-                onClick={() => checkAccessAndPrint(handlePrintCurrentChapter)}
-                disabled={currentChapter?.status === 'not_generated'}
-                className="bg-gray-800 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold hover:bg-gray-900 transition flex items-center gap-1.5 disabled:opacity-50 text-xs sm:text-base"
-                title="Print Current Chapter"
-              >
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                <span className="hidden lg:inline">Print Chapter</span>
-              </button>
-
-              {/* Print Full Report */}
-              <button 
-                onClick={() => checkAccessAndPrint(handlePrintFullReport)}
-                disabled={!allChaptersGenerated}
-                className="bg-green-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold hover:bg-green-700 transition flex items-center gap-1.5 disabled:opacity-50 disabled:bg-gray-400 text-xs sm:text-base"
-                title={allChaptersGenerated ? "Print Full Report" : "Generate all chapters first"}
-              >
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span className="hidden lg:inline">Full Report</span>
-              </button>
-            </div>
+            <TopBar
+              chapter={currentChapter}
+              project={project}
+              generating={generating}
+              onGenerate={handleGenerateChapter}
+              onPrintCurrentChapter={handlePrintCurrentChapter}
+              onUpdateProjectDetails={handleUpdateProjectDetails}
+              allChaptersGenerated={allChaptersGenerated}
+              checkAccessAndPrint={checkAccessAndPrint}
+              handlePrintFullReport={handlePrintFullReport}
+            />
           </div>
         </div>
 
