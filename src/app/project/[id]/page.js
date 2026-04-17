@@ -3,7 +3,8 @@ import { useState, useEffect, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import FreeTopBar from '@/components/standard/FreeTopBar'; // ✅ UPDATED
+import FreeTopBar from '@/components/standard/FreeTopBar';
+import ChapterEdit from '@/components/standard/ChapterEdit'; // ✅ ADDED
 import { CldUploadWidget } from 'next-cloudinary';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown'; 
@@ -23,6 +24,7 @@ export default function Workspace({ params }) {
   const [images, setImages] = useState([]);
   const [selectedChapter, setSelectedChapter] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // ✅ ADDED
   const [showCaptionModal, setShowCaptionModal] = useState(false);
   const [tempImageData, setTempImageData] = useState(null);
   const [imageCaption, setImageCaption] = useState('');
@@ -132,7 +134,7 @@ export default function Workspace({ params }) {
     }
   }, [projectId, router]);
 
-  // ✅ NEW: Refresh project
+  // Refresh project
   const refreshProject = async () => {
     const { data: projectData } = await supabase
       .from('projects')
@@ -142,6 +144,35 @@ export default function Workspace({ params }) {
 
     if (projectData) {
       setProject(projectData);
+    }
+  };
+
+  // ✅ NEW: Handle Save Edits
+  const handleSaveEdit = async (newContent) => {
+    if (!currentChapter) return;
+
+    try {
+      const { error } = await supabase
+        .from('chapters')
+        .update({
+          content: newContent,
+          status: 'draft' // Mark as draft after edit
+        })
+        .eq('id', currentChapter.id);
+
+      if (error) throw error;
+
+      setChapters(chapters.map(ch => 
+        ch.id === currentChapter.id 
+          ? { ...ch, content: newContent, status: 'draft' }
+          : ch
+      ));
+
+      setIsEditing(false);
+      showNotification('Saved', 'Changes saved successfully!', 'success');
+    } catch (error) {
+      console.error('Save error:', error);
+      showNotification('Error', 'Failed to save changes', 'error');
     }
   };
 
@@ -583,6 +614,12 @@ export default function Workspace({ params }) {
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Ready to Generate</h3>
               <p className="text-gray-600 text-sm sm:text-base">Click &quot;Generate Chapter&quot; to begin.</p>
             </div>
+          ) : isEditing ? (
+            <ChapterEdit
+              chapter={currentChapter}
+              onSave={handleSaveEdit}
+              onCancel={() => setIsEditing(false)}
+            />
           ) : (
             <div 
               ref={currentChapterRef} 
