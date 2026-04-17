@@ -36,7 +36,9 @@ export async function POST(request) {
         tx_ref,
         amount,
         currency: 'NGN',
-        redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/template-select${projectId ? `?return_to=${projectId}` : ''}`,
+        redirect_url: projectId 
+          ? `${process.env.NEXT_PUBLIC_BASE_URL}/project/${projectId}?status=success`
+          : `${process.env.NEXT_PUBLIC_BASE_URL}/template-select`,
         customer: {
           email: email,
           name: email.split('@')[0], // Fallback name

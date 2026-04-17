@@ -265,7 +265,7 @@ function ProjectDescriptionContent() {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="faculty" className="form-label">Faculty <span className="required">*</span></label>
-              {userProfile?.is_international ? (
+              {userProfile?.is_international || formData.templateType === 'custom' ? (
                 <input 
                   type="text" 
                   value={formData.faculty} 
@@ -284,7 +284,7 @@ function ProjectDescriptionContent() {
 
             <div className="form-group">
               <label htmlFor="department" className="form-label">Department <span className="required">*</span></label>
-              {userProfile?.is_international || formData.faculty === 'Other' ? (
+              {userProfile?.is_international || formData.faculty === 'Other' || formData.templateType === 'custom' ? (
                 <input 
                   type="text" 
                   value={formData.department} 
