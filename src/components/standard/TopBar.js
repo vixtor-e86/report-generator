@@ -18,20 +18,38 @@ export default function TopBar({
   onPreviewBeforeGenerate,
   onSuggestImprovements,
   showNotification,
-  onUpdateProjectDetails // ✅ NEW
+  onUpdateProjectDetails,
+  allChaptersGenerated, // ✅ NEW
+  onPrintFullReport,    // ✅ NEW
+  checkAccessAndPrint   // ✅ NEW
 }) {
   const [exporting, setExporting] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showEditDetailsModal, setShowEditDetailsModal] = useState(false); // ✅ NEW
+  const [showEditDetailsModal, setShowEditDetailsModal] = useState(false);
 
   const isGenerated = chapter && (chapter.status === 'draft' || chapter.status === 'edited' || chapter.status === 'approved');
   const canRegenerate = isGenerated && project.tokens_used < project.tokens_limit;
 
+  // ✅ Restricted ONLY for Free/Unlocked projects that are incomplete
+  const isExportRestricted = (project?.tier === 'free' || project?.tier === 'unlocked') && !allChaptersGenerated;
+
   const handlePrintCurrentChapter = () => {
-    if (onPrintCurrentChapter) {
+    if (checkAccessAndPrint) {
+      checkAccessAndPrint(onPrintCurrentChapter || (() => window.print()));
+    } else if (onPrintCurrentChapter) {
       onPrintCurrentChapter();
     } else {
       window.print();
+    }
+    setShowMobileMenu(false);
+  };
+
+  const handlePrintFull = () => {
+    if (isExportRestricted) return;
+    if (checkAccessAndPrint) {
+      checkAccessAndPrint(onPrintFullReport);
+    } else if (onPrintFullReport) {
+      onPrintFullReport();
     }
     setShowMobileMenu(false);
   };
@@ -232,22 +250,32 @@ export default function TopBar({
                 <button
                   onClick={handlePrintCurrentChapter}
                   className="p-2 text-slate-400 hover:text-slate-900 transition-colors"
-                  title="Print Report"
+                  title="Print Current Chapter"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                 </button>
 
                 <button
+                  onClick={handlePrintFull}
+                  disabled={!allChaptersGenerated}
+                  className={`p-2 transition-colors ${allChaptersGenerated ? 'text-emerald-500 hover:text-emerald-700' : 'text-slate-200 cursor-not-allowed'}`}
+                  title={allChaptersGenerated ? "Print Full Report" : "Generate all chapters to unlock full print"}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </button>
+
+                <button
                   onClick={handleExportDOCX}
-                  disabled={exporting}
-                  className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                  disabled={exporting || !allChaptersGenerated}
+                  className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title={!allChaptersGenerated ? "Generate all chapters to export" : ""}
                 >
                   {exporting ? (
                     <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white"></div>
                   ) : (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                   )}
-                  Export Report
+                  {allChaptersGenerated ? 'Export Report' : 'Incomplete'}
                 </button>
               </div>
 
@@ -289,11 +317,23 @@ export default function TopBar({
                         Modify Content
                       </button>
                       <div className="h-px bg-slate-100 my-1"></div>
-                      <button onClick={() => { handlePrintCurrentChapter(); setShowMobileMenu(false); }} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-slate-900">
+                      <button onClick={handlePrintCurrentChapter} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-slate-900">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                         Print Chapter
                       </button>
-                      <button onClick={() => { handleExportDOCX(); setShowMobileMenu(false); }} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-900">
+                      <button 
+                        onClick={handlePrintFull} 
+                        disabled={!allChaptersGenerated}
+                        className={`w-full text-left px-5 py-3 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest ${allChaptersGenerated ? 'text-emerald-600 hover:bg-slate-50' : 'text-slate-300 opacity-50'}`}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Full Report
+                      </button>
+                      <button 
+                        onClick={handleExportDOCX} 
+                        disabled={!allChaptersGenerated}
+                        className={`w-full text-left px-5 py-3 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest ${allChaptersGenerated ? 'text-slate-900 hover:bg-slate-50' : 'text-slate-300 opacity-50'}`}
+                      >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         Export DOCX
                       </button>
@@ -306,8 +346,8 @@ export default function TopBar({
         </div>
       </div>
 
-      {/* Token Limit Warning */}
-      {chapter && isGenerated && !canRegenerate && (
+      {/* Token Limit Warning - ONLY for Standard Tier */}
+      {project?.tier === 'standard' && chapter && isGenerated && !canRegenerate && (
         <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
           <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
