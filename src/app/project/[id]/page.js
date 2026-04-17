@@ -3,6 +3,7 @@ import { useState, useEffect, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import TopBar from '@/components/standard/TopBar'; // ✅ ADDED
 import { CldUploadWidget } from 'next-cloudinary';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown'; 
