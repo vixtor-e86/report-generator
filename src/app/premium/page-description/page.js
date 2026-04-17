@@ -202,7 +202,7 @@ function ProjectDescriptionContent() {
             .eq('id', pendingPayment.id);
         }
 
-        router.push(`/premium/workspace?id=${newProject.id}`);
+        router.replace(`/premium/workspace?id=${newProject.id}`);
       } catch (err) {
         console.error('Error creating project:', err);
         showNotification('Creation Error', err.message || 'Failed to create project.', 'error');

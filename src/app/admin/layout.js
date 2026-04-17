@@ -56,20 +56,24 @@ export default function AdminLayout({ children }) {
     );
   }
 
-  const navItems = [
-    { name: 'Dashboard', path: '/admin', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+  const platformNav = [
+    { name: 'Overview', path: '/admin', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
     { name: 'Projects', path: '/admin/projects', icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
-    { name: 'Transactions', path: '/admin/transactions', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { name: 'Referral Payouts', path: '/admin/transactions/payouts', icon: 'M3 10h18M7 15h1m4 0h1m4 0h1m-7 4h12a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-    { name: 'User Management', path: '/admin/users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
-    { name: 'Email System', path: '/admin/email', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
+    { name: 'Payments', path: '/admin/transactions', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+    { name: 'Referrals', path: '/admin/transactions/payouts', icon: 'M3 10h18M7 15h1m4 0h1m4 0h1m-7 4h12a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+    { name: 'Users', path: '/admin/users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
     { name: 'Templates', path: '/admin/templates', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
-    { name: 'Activity Logs', path: '/admin/logs', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+  ];
+
+  const marketplaceNav = [
+    { name: 'Overview', path: '/admin/marketplace', icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' },
+    { name: 'Wallets', path: '/admin/marketplace/wallets', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
+    { name: 'Wallet Funding', path: '/admin/marketplace/funding', icon: 'M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z' },
   ];
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
-      {/* Mobile Header */}
+      {/* ... (Mobile Header) ... */}
       <div className="lg:hidden bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-3">
            <img src="/favicon.ico" alt="Logo" className="w-8 h-8" />
@@ -83,13 +87,13 @@ export default function AdminLayout({ children }) {
       </div>
 
       <div className="flex h-screen overflow-hidden">
-        {/* Sidebar - Desktop & Mobile Drawer */}
+        {/* Sidebar */}
         <aside className={`
           fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto flex flex-col
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
           {/* Logo Area */}
-          <div className="h-16 flex items-center gap-3 px-6 border-b border-slate-800 bg-slate-950">
+          <div className="h-16 flex items-center gap-3 px-6 border-b border-slate-800 bg-slate-950 flex-shrink-0">
             <img src="/favicon.ico" alt="Logo" className="w-8 h-8" />
             <div>
               <h1 className="text-white font-bold text-lg tracking-tight">W3 WriteLab</h1>
@@ -98,28 +102,72 @@ export default function AdminLayout({ children }) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            {navItems.map((item) => {
-              const isActive = pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : 'hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <svg className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
-                  </svg>
-                  {item.name}
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-6 space-y-8">
+            {/* Platform Section */}
+            <div>
+              <h3 className="px-3 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">Platform Core</h3>
+              <nav className="space-y-1">
+                {platformNav.map((item) => {
+                  const isActive = pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      href={item.path}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
+                        isActive ? 'bg-indigo-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white'
+                      }`}
+                    >
+                      <svg className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
+                      </svg>
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Marketplace Section */}
+            <div>
+              <h3 className="px-3 text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-3">Marketplace</h3>
+              <nav className="space-y-1">
+                {marketplaceNav.map((item) => {
+                  const isActive = pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      href={item.path}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
+                        isActive ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white'
+                      }`}
+                    >
+                      <svg className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
+                      </svg>
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* System Section */}
+            <div>
+              <h3 className="px-3 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">System</h3>
+              <nav className="space-y-1">
+                <Link href="/admin/email" className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold ${pathname === '/admin/email' ? 'bg-slate-700 text-white' : 'hover:bg-slate-800'}`}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                  Email System
                 </Link>
-              );
-            })}
-          </nav>
+                <Link href="/admin/logs" className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold ${pathname === '/admin/logs' ? 'bg-slate-700 text-white' : 'hover:bg-slate-800'}`}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  Activity Logs
+                </Link>
+              </nav>
+            </div>
+          </div>
 
           {/* User Profile in Sidebar (Bottom) */}
           <div className="p-4 border-t border-slate-800 bg-slate-950">

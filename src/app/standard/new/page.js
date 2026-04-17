@@ -334,7 +334,7 @@ function NewProjectContent() {
         await supabase.from('standard_images').insert(imageRecords);
       }
 
-      router.push(`/standard/${project.id}`);
+      router.replace(`/standard/${project.id}`);
     } catch (error) {
       console.error('Error creating project:', error);
       showNotification('Project Error', `Failed to create project: ${error.message}`, 'error');

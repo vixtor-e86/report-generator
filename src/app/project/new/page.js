@@ -189,7 +189,7 @@ function NewProjectContent() {
 
       await supabase.from('chapters').insert(chaptersToCreate);
 
-      router.push(`/project/${project.id}`);
+      router.replace(`/project/${project.id}`);
     } catch (error) {
       showNotification('Creation Error', `Failed to create project: ${error.message}`, 'error');
     } finally {
