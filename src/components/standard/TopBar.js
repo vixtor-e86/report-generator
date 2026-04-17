@@ -315,7 +315,7 @@ export default function TopBar({
           <div className="flex-1">
             <p className="text-sm font-semibold text-red-900">Token limit reached</p>
             <p className="text-xs text-red-700 mt-1">
-              You've used all {project.tokens_limit.toLocaleString()} tokens. You can still edit manually or upgrade to Premium for unlimited regenerations.
+              You've used all {project?.tokens_limit?.toLocaleString() || '0'} tokens. You can still edit manually or upgrade to Premium for unlimited regenerations.
             </p>
           </div>
         </div>
