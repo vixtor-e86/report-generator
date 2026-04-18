@@ -1,500 +1,440 @@
 "use client";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { 
   ArrowLeft, Upload, X, File, 
-  Image as ImageIcon, AlertCircle, ChevronDown, Check, CheckCircle2
+  Image as ImageIcon, AlertCircle, ChevronDown, Check, CheckCircle2,
+  Code2, BookOpen, Layers, DollarSign, Sparkles, FileText
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
 import { Label } from '@/components/marketplace/ui/label';
 import { Textarea } from '@/components/marketplace/ui/textarea';
-import { faculties, departments, levels } from '@/data/marketplace/projects';
 import { useUser } from '@/contexts/marketplace/UserContext';
-import { formatFileSize } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export default function UploadProjectPage() {
-  const navigate = useRouter();
+  const router = useRouter();
   const { user } = useUser();
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
 
+  const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [uploadedImages, setUploadedImages] = useState([]);
-
+  
   const [formData, setFormData] = useState({
     title: '',
-    description: '',
-    faculty: '',
-    department: '',
-    level: '',
-    projectType: 'both',
     price: '',
     originalPrice: '',
-    tags: '',
+    faculty: '',
+    department: '',
+    level: '400',
+    projectType: 'both', // 'source_code', 'documentation', 'both'
+    technologies: '',
+    abstract: '',
+    chapter1: '',
+    codeSnippet: '',
+    mainFile: null,
+    images: [] // Array of files (Max 3)
   });
 
-  const [errors, setErrors] = useState({});
+  const [imagePreviews, setImagePreviews] = useState([]);
+
+  useEffect(() => {
+    if (user && !user.isSeller) {
+      toast.error("Access Denied: You must be a verified seller.");
+      router.push('/marketplace/dashboard');
+    }
+  }, [user, router]);
 
   const handleFileUpload = (e, type) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    const newFiles = Array.from(files).map((file) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      file,
+    if (type === 'main') {
+        const file = files[0];
+        const extension = file.name.split('.').pop().toLowerCase();
+        
+        // Dynamic Validation based on Project Type
+        if (formData.projectType === 'documentation') {
+            if (!['pdf', 'docx', 'doc'].includes(extension)) {
+                return toast.error("For documentation, only PDF or DOCX files are allowed.");
+            }
+            if (file.size > 20 * 1024 * 1024) {
+                return toast.error("Maximum size for documentation is 20MB.");
+            }
+        } else {
+            // source_code or both
+            if (!['zip', 'rar', '7z'].includes(extension)) {
+                return toast.error("For projects with code, please upload a ZIP or RAR archive.");
+            }
+            if (file.size > 100 * 1024 * 1024) {
+                return toast.error("Maximum size for project archives is 100MB.");
+            }
+        }
+
+        setFormData(prev => ({ ...prev, mainFile: file }));
+        toast.success(`Package Attached: ${file.name}`);
+    } else {
+        const newFiles = Array.from(files);
+        // Max 3 images (1 thumbnail + 2 additional)
+        const currentCount = formData.images.length;
+        if (currentCount + newFiles.length > 3) {
+            return toast.error("Maximum 3 images allowed (1 Thumbnail + 2 Previews).");
+        }
+
+        const validFiles = newFiles.filter(f => f.size <= 5 * 1024 * 1024);
+        setFormData(prev => ({ ...prev, images: [...prev.images, ...validFiles] }));
+        
+        const urls = validFiles.map(f => URL.createObjectURL(f));
+        setImagePreviews(prev => [...prev, ...urls]);
+    }
+  };
+
+  const removeImage = (index) => {
+    setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
     }));
-
-    if (type === 'file') {
-      setUploadedFiles((prev) => [...prev, ...newFiles]);
-    } else {
-      setUploadedImages((prev) => [...prev, ...newFiles].slice(0, 5));
-    }
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const removeFile = (id, type) => {
-    if (type === 'file') {
-      setUploadedFiles((prev) => prev.filter((f) => f.id !== id));
-    } else {
-      setUploadedImages((prev) => prev.filter((f) => f.id !== id));
+  const validateStep = (s) => {
+    if (s === 1) {
+        if (!formData.title || !formData.price || !formData.faculty || !formData.department) return toast.error("Please fill all mandatory fields");
+    } else if (s === 2) {
+        if (formData.abstract.length < 100) return toast.error("Abstract must be at least 100 characters");
+        if (formData.chapter1.length < 500) return toast.error("Chapter 1 preview must be substantial (min 500 chars)");
+    } else if (s === 3) {
+        if (!formData.mainFile) return toast.error("Please upload the project archive");
+        if (formData.images.length === 0) return toast.error("At least 1 image (thumbnail) is required");
     }
+    return true;
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (formData.description.length < 100) {
-      newErrors.description = 'Description must be at least 100 characters';
-    }
-    if (!formData.faculty) newErrors.faculty = 'Faculty is required';
-    if (!formData.department) newErrors.department = 'Department is required';
-    if (!formData.level) newErrors.level = 'Level is required';
-    if (!formData.price) newErrors.price = 'Price is required';
-    if (uploadedFiles.length === 0) {
-      newErrors.files = 'At least one project file is required';
-    }
-    if (uploadedImages.length === 0) {
-      newErrors.images = 'At least one preview image is required';
-    }
+  const nextStep = () => validateStep(step) && setStep(step + 1);
+  const prevStep = () => setStep(step - 1);
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      toast.error('Please fix the errors in the form');
-      return;
-    }
-
+  const handleSubmit = async () => {
+    if (!validateStep(3)) return;
     setIsSubmitting(true);
 
-    // Simulate upload
-    setTimeout(() => {
-      toast.success('Project uploaded successfully!');
-      navigate.push('/marketplace/projects');
-      setIsSubmitting(false);
-    }, 2000);
-  };
+    try {
+      const { data: seller } = await supabase.from('marketplace_sellers').select('id').eq('user_id', user.id).single();
+      if (!seller) throw new Error("Seller profile not found");
 
-  const updateField = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
+      // 1. Upload Main File
+      const mainFileRes = await fetch('/api/marketplace/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: formData.mainFile.name, contentType: formData.mainFile.type, userId: user.id, folder: 'projects' })
+      });
+      const { uploadUrl: mainUrl, publicUrl: mainFileUrl } = await mainFileRes.json();
+      await fetch(mainUrl, { method: 'PUT', headers: { 'Content-Type': formData.mainFile.type }, body: formData.mainFile });
+
+      // 2. Upload Images
+      const imageUrls = [];
+      for (const img of formData.images) {
+        const res = await fetch('/api/marketplace/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: img.name, contentType: img.type, userId: user.id, folder: 'previews' })
+        });
+        const { uploadUrl, publicUrl } = await res.json();
+        await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': img.type }, body: img });
+        imageUrls.push(publicUrl);
+      }
+
+      // 3. Save to DB
+      const { error } = await supabase.from('marketplace_projects').insert({
+        seller_id: seller.id,
+        user_id: user.id,
+        title: formData.title,
+        price: parseInt(formData.price),
+        original_price: formData.originalPrice ? parseInt(formData.originalPrice) : null,
+        faculty: formData.faculty,
+        department: formData.department,
+        level: formData.level,
+        project_type: formData.projectType,
+        technologies: formData.technologies,
+        abstract: formData.abstract,
+        chapter_1_preview: formData.chapter1,
+        code_snippet: formData.codeSnippet,
+        file_url: mainFileUrl,
+        preview_images: imageUrls,
+        status: 'pending'
+      });
+
+      if (error) throw error;
+
+      toast.success("Blueprint submitted successfully!");
+      router.push('/marketplace/dashboard');
+
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (!user?.isSeller) {
-    return (
-      <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center p-4">
-        <div className="text-center p-12 bg-white border border-[#e5e7eb] rounded-[40px] shadow-sm max-w-lg">
-          <div className="w-20 h-20 bg-zinc-100 rounded-[30px] flex items-center justify-center mb-8 mx-auto">
-            <AlertCircle className="w-10 h-10 text-zinc-400" />
-          </div>
-          <h2 className="text-2xl font-black text-[#111827] mb-2 tracking-tight">Accreditation Required</h2>
-          <p className="text-[#6b7280] font-medium mb-10">You need a verified seller profile to publish projects to the marketplace.</p>
-          <Link href="/marketplace/seller-setup">
-            <Button className="bg-black hover:bg-zinc-800 text-white rounded-full px-10 py-7 font-black shadow-xl transition-all active:scale-[0.98] uppercase text-xs tracking-widest">
-              Begin Accreditation
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#f8f9fc]">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <button
-          onClick={() => navigate.back()}
-          className="flex items-center gap-2 text-[#6b7280] hover:text-black transition-colors mb-10 text-xs font-black uppercase tracking-widest"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Abort Upload
-        </button>
-
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-black text-[#111827] mb-3 tracking-tight">
-            Publish Project
-          </h1>
-          <p className="text-[#6b7280] font-medium">
-            List your professional academic work for students worldwide
-          </p>
+    <div className="min-h-screen bg-[#f8f9fc] pt-12 pb-24 font-sans">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Progress Nav */}
+        <div className="flex items-center justify-between mb-12">
+            <button onClick={() => router.back()} className="flex items-center gap-2 text-zinc-900 font-black uppercase text-[10px] tracking-widest hover:text-blue-600 transition-colors">
+                <ArrowLeft className="w-4 h-4 stroke-[3]" /> Abort
+            </button>
+            <div className="flex gap-2">
+                {[1, 2, 3].map(i => (
+                    <div key={i} className={`h-2 w-16 rounded-full transition-all duration-500 ${step >= i ? 'bg-blue-600' : 'bg-zinc-200'}`} />
+                ))}
+            </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-10">
-          {/* Basic Information */}
-          <div className="bg-white border border-[#e5e7eb] rounded-[40px] p-10 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-2 bg-black" />
-            <h2 className="text-xl font-black text-[#111827] mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <span className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center text-xs">01</span>
-              Project Metadata
-            </h2>
-
-            <div className="space-y-8">
-              <div>
-                <Label htmlFor="title" className="text-[#111827] font-black uppercase text-[10px] tracking-widest mb-3 block">
-                  Official Title
-                </Label>
-                <Input
-                  id="title"
-                  placeholder="e.g. Design of a Modular IoT Gateway"
-                  value={formData.title}
-                  onChange={(e) => updateField('title', e.target.value)}
-                  className={`bg-[#f8f9fc] border-[#e5e7eb] text-[#111827] rounded-xl h-12 focus:border-black font-bold placeholder:text-[#9ca3af] ${
-                    errors.title ? 'border-red-400' : ''
-                  }`}
-                />
-                {errors.title && (
-                  <p className="text-red-500 text-xs font-bold mt-2 uppercase tracking-wide">{errors.title}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="description" className="text-[#111827] font-black uppercase text-[10px] tracking-widest mb-3 block">
-                  Project Abstract & Scope
-                </Label>
-                <Textarea
-                  id="description"
-                  placeholder="Detailed technical description, problem statement, and key findings..."
-                  value={formData.description}
-                  onChange={(e) => updateField('description', e.target.value)}
-                  className={`min-h-[180px] bg-[#f8f9fc] border-[#e5e7eb] text-[#111827] rounded-2xl p-6 focus:border-black font-medium leading-relaxed ${
-                    errors.description ? 'border-red-400' : ''
-                  }`}
-                />
-                <div className="flex justify-between mt-3">
-                  <p className="text-[#9ca3af] text-[10px] font-black uppercase">
-                    {formData.description.length} Characters (Min 100)
-                  </p>
-                  {errors.description && (
-                    <p className="text-red-500 text-xs font-bold uppercase tracking-wide">{errors.description}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-6">
-                <div>
-                  <Label htmlFor="faculty" className="text-[#111827] font-black uppercase text-[10px] tracking-widest mb-3 block">
-                    Field of Study
-                  </Label>
-                  <div className="relative">
-                    <select
-                      id="faculty"
-                      value={formData.faculty}
-                      onChange={(e) => {
-                        updateField('faculty', e.target.value);
-                        updateField('department', '');
-                      }}
-                      className={`w-full px-4 py-3 bg-[#f8f9fc] border border-[#e5e7eb] rounded-xl text-[#111827] focus:border-black focus:outline-none font-bold appearance-none ${
-                        errors.faculty ? 'border-red-400' : ''
-                      }`}
-                    >
-                      <option value="">Select Faculty</option>
-                      {faculties.filter(f => f !== 'All').map((f) => (
-                        <option key={f} value={f}>{f}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af] pointer-events-none" />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="department" className="text-[#111827] font-black uppercase text-[10px] tracking-widest mb-3 block">
-                    Department
-                  </Label>
-                  <div className="relative">
-                    <select
-                      id="department"
-                      value={formData.department}
-                      onChange={(e) => updateField('department', e.target.value)}
-                      disabled={!formData.faculty}
-                      className="w-full px-4 py-3 bg-[#f8f9fc] border border-[#e5e7eb] rounded-xl text-[#111827] focus:border-black focus:outline-none disabled:opacity-50 font-bold appearance-none"
-                    >
-                      <option value="">Select Department</option>
-                      {formData.faculty && departments[formData.faculty]?.map((d) => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af] pointer-events-none" />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="level" className="text-[#111827] font-black uppercase text-[10px] tracking-widest mb-3 block">
-                    Academic Level
-                  </Label>
-                  <div className="relative">
-                    <select
-                      id="level"
-                      value={formData.level}
-                      onChange={(e) => updateField('level', e.target.value)}
-                      className="w-full px-4 py-3 bg-[#f8f9fc] border border-[#e5e7eb] rounded-xl text-[#111827] focus:border-black focus:outline-none font-bold appearance-none"
-                    >
-                      <option value="">Select Level</option>
-                      {levels.map((l) => (
-                        <option key={l} value={l}>{l} Level</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af] pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pricing */}
-          <div className="bg-white border border-[#e5e7eb] rounded-[40px] p-10 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-2 bg-blue-600" />
-            <h2 className="text-xl font-black text-[#111827] mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <span className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center text-xs">02</span>
-              Valuation
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-10 mb-10">
-              <div>
-                <Label htmlFor="price" className="text-[#111827] font-black uppercase text-[10px] tracking-widest mb-3 block">
-                  Listing Price (₦)
-                </Label>
-                <Input
-                  id="price"
-                  type="number"
-                  placeholder="e.g. 5000"
-                  value={formData.price}
-                  onChange={(e) => updateField('price', e.target.value)}
-                  className={`bg-[#f8f9fc] border-[#e5e7eb] text-[#111827] rounded-xl h-14 focus:border-black font-black text-xl placeholder:text-[#9ca3af] ${
-                    errors.price ? 'border-red-400' : ''
-                  }`}
-                />
-                {errors.price && (
-                  <p className="text-red-500 text-xs font-bold mt-2 uppercase tracking-wide">{errors.price}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="originalPrice" className="text-[#111827] font-black uppercase text-[10px] tracking-widest mb-3 block">
-                  MSRP / Original (₦) <span className="text-[#9ca3af] ml-1">(Optional)</span>
-                </Label>
-                <Input
-                  id="originalPrice"
-                  type="number"
-                  placeholder="e.g. 8000"
-                  value={formData.originalPrice}
-                  onChange={(e) => updateField('originalPrice', e.target.value)}
-                  className="bg-[#f8f9fc] border-[#e5e7eb] text-[#6b7280] rounded-xl h-14 focus:border-black font-bold text-xl placeholder:text-[#9ca3af]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-[#111827] font-black uppercase text-[10px] tracking-widest mb-4 block">Archive Classification</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { value: 'source_code', label: 'Technical Code' },
-                  { value: 'documentation', label: 'Manuscript Only' },
-                  { value: 'both', label: 'Full Package' },
-                ].map((type) => (
-                  <label
-                    key={type.value}
-                    className={`flex flex-col gap-1 p-5 rounded-[20px] border-2 cursor-pointer transition-all ${
-                      formData.projectType === type.value
-                        ? 'border-black bg-zinc-900 text-white shadow-xl'
-                        : 'border-[#e5e7eb] bg-[#f8f9fc] text-[#6b7280] hover:border-zinc-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="projectType"
-                      value={type.value}
-                      checked={formData.projectType === type.value}
-                      onChange={(e) => updateField('projectType', e.target.value)}
-                      className="hidden"
-                    />
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${formData.projectType === type.value ? 'text-blue-400' : 'text-[#9ca3af]'}`}>Classification</span>
-                    <span className="font-black text-sm">{type.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Files Upload */}
-          <div className="bg-white border border-[#e5e7eb] rounded-[40px] p-10 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-2 bg-green-500" />
-            <h2 className="text-xl font-black text-[#111827] mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <span className="w-8 h-8 bg-green-500 text-white rounded-lg flex items-center justify-center text-xs">03</span>
-              Digital Assets
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-10">
-              {/* Project Files */}
-              <div>
-                <Label className="text-[#111827] font-black uppercase text-[10px] tracking-widest mb-3 block">
-                  Project Archive (ZIP/PDF)
-                </Label>
-                
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  onChange={(e) => handleFileUpload(e, 'file')}
-                  className="hidden"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full aspect-video border-2 border-dashed border-[#e5e7eb] rounded-[24px] hover:border-black hover:bg-[#f8f9fc] transition-all flex flex-col items-center justify-center gap-3 group"
-                >
-                  <div className="w-12 h-12 bg-[#f8f9fc] rounded-2xl flex items-center justify-center group-hover:bg-white transition-colors">
-                    <Upload className="w-6 h-6 text-[#9ca3af] group-hover:text-black" />
-                  </div>
-                  <div className="text-center px-6">
-                    <p className="text-black font-bold text-sm">Upload Package</p>
-                    <p className="text-[#9ca3af] text-[10px] font-black uppercase tracking-tighter mt-1">MAX 100MB • ZIP, PDF, DOC</p>
-                  </div>
-                </button>
-
-                <div className="mt-6 space-y-3">
-                  {uploadedFiles.map((file) => (
-                    <div key={file.id} className="flex items-center gap-4 p-4 bg-[#f8f9fc] rounded-2xl border border-zinc-50 shadow-sm">
-                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-inner">
-                        <File className="w-5 h-5 text-black" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-black font-bold text-xs truncate">{file.name}</p>
-                        <p className="text-[#9ca3af] text-[9px] font-black uppercase tracking-wider">{formatFileSize(file.size)}</p>
-                      </div>
-                      <button type="button" onClick={() => removeFile(file.id, 'file')} className="p-2 hover:bg-red-50 rounded-full text-red-400 transition-colors">
-                        <X className="w-4 h-4" />
-                      </button>
+        <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-8 sm:p-16 shadow-sm relative overflow-hidden">
+            {step === 1 && (
+                <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="text-center">
+                        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-[24px] flex items-center justify-center mx-auto mb-6">
+                            <Layers className="w-8 h-8" />
+                        </div>
+                        <h1 className="text-4xl font-black text-[#111827] tracking-tight uppercase tracking-tighter">Project Identity</h1>
+                        <p className="text-[#6b7280] font-medium mt-2 uppercase text-[10px] tracking-widest">Stage 01 • Core Definition</p>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Preview Images */}
-              <div>
-                <Label className="text-[#111827] font-black uppercase text-[10px] tracking-widest mb-3 block">
-                  Showcase Gallery (PNG/JPG)
-                </Label>
+                    <div className="grid md:grid-cols-2 gap-10">
+                        <div className="md:col-span-2 space-y-4">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Archive Classification</Label>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                {[
+                                    { id: 'source_code', label: 'Source Code', icon: Code2 },
+                                    { id: 'documentation', label: 'Manuscript Only', icon: BookOpen },
+                                    { id: 'both', label: 'Full Package', icon: CheckCircle2 },
+                                ].map((type) => (
+                                    <button
+                                        key={type.id}
+                                        onClick={() => setFormData({...formData, projectType: type.id})}
+                                        className={`flex flex-col items-center gap-3 p-6 rounded-[28px] border-2 transition-all ${
+                                            formData.projectType === type.id 
+                                            ? 'border-blue-600 bg-blue-50/50 text-blue-600 shadow-lg' 
+                                            : 'border-zinc-50 bg-zinc-50 text-zinc-400 hover:border-zinc-200'
+                                        }`}
+                                    >
+                                        <type.icon className="w-6 h-6" />
+                                        <span className="font-black text-[10px] uppercase tracking-widest">{type.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => handleFileUpload(e, 'image')}
-                  className="hidden"
-                />
+                        <div className="space-y-6 md:col-span-2">
+                            <div className="space-y-3">
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Official Title <span className="text-red-500">*</span></Label>
+                                <Input 
+                                    value={formData.title} 
+                                    onChange={e => setFormData({...formData, title: e.target.value})}
+                                    placeholder="DESIGN AND IMPLEMENTATION OF..."
+                                    className="bg-zinc-50 border-[#e5e7eb] rounded-3xl h-16 font-black text-[#111827] focus:border-blue-600 text-base"
+                                />
+                            </div>
+                        </div>
 
-                <button
-                  type="button"
-                  onClick={() => imageInputRef.current?.click()}
-                  className="w-full aspect-video border-2 border-dashed border-[#e5e7eb] rounded-[24px] hover:border-black hover:bg-[#f8f9fc] transition-all flex flex-col items-center justify-center gap-3 group"
-                >
-                  <div className="w-12 h-12 bg-[#f8f9fc] rounded-2xl flex items-center justify-center group-hover:bg-white transition-colors">
-                    <ImageIcon className="w-6 h-6 text-[#9ca3af] group-hover:text-black" />
-                  </div>
-                  <div className="text-center px-6">
-                    <p className="text-black font-bold text-sm">Upload Visuals</p>
-                    <p className="text-[#9ca3af] text-[10px] font-black uppercase tracking-tighter mt-1">MAX 5 IMAGES • 16:9 RATIO</p>
-                  </div>
-                </button>
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Faculty <span className="text-red-500">*</span></Label>
+                            <Input 
+                                value={formData.faculty} 
+                                onChange={e => setFormData({...formData, faculty: e.target.value})}
+                                placeholder="E.G. ENGINEERING"
+                                className="bg-zinc-50 border-[#e5e7eb] rounded-3xl h-16 font-black text-[#111827] focus:border-blue-600 text-base"
+                            />
+                        </div>
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Department <span className="text-red-500">*</span></Label>
+                            <Input 
+                                value={formData.department} 
+                                onChange={e => setFormData({...formData, department: e.target.value})}
+                                placeholder="E.G. COMPUTER SCIENCE"
+                                className="bg-zinc-50 border-[#e5e7eb] rounded-3xl h-16 font-black text-[#111827] focus:border-blue-600 text-base"
+                            />
+                        </div>
 
-                <div className="mt-6 grid grid-cols-3 gap-3">
-                  {uploadedImages.map((image) => (
-                    <div key={image.id} className="relative aspect-square rounded-xl overflow-hidden border border-[#e5e7eb] shadow-sm p-1 bg-white">
-                      <img
-                        src={URL.createObjectURL(image.file)}
-                        alt={image.name}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFile(image.id, 'image')}
-                        className="absolute top-2 right-2 p-1.5 bg-black/80 backdrop-blur-md rounded-full hover:bg-red-600 transition-colors"
-                      >
-                        <X className="w-3 h-3 text-white" />
-                      </button>
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Listing Price (₦) <span className="text-red-500">*</span></Label>
+                            <div className="relative">
+                                <DollarSign className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                                <Input 
+                                    type="number"
+                                    value={formData.price} 
+                                    onChange={e => setFormData({...formData, price: e.target.value})}
+                                    placeholder="5000"
+                                    className="pl-12 bg-zinc-50 border-[#e5e7eb] rounded-3xl h-16 font-black text-[#111827] focus:border-blue-600 text-xl"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Original Price (₦)</Label>
+                            <div className="relative">
+                                <DollarSign className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300" />
+                                <Input 
+                                    type="number"
+                                    value={formData.originalPrice} 
+                                    onChange={e => setFormData({...formData, originalPrice: e.target.value})}
+                                    placeholder="OPTIONAL"
+                                    className="pl-12 bg-zinc-50 border-[#e5e7eb] rounded-3xl h-16 font-bold text-zinc-400 focus:border-blue-600 text-xl"
+                                />
+                            </div>
+                        </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Submission Panel */}
-          <div className="flex flex-col items-center gap-8 pb-20">
-            <div className="max-w-xl w-full p-6 bg-zinc-900 rounded-[28px] shadow-2xl relative overflow-hidden text-center">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <CheckCircle2 className="w-5 h-5 text-blue-400" />
-                <span className="text-white font-black text-xs uppercase tracking-[0.2em]">Final Authorization</span>
-              </div>
-              <p className="text-zinc-400 text-sm font-medium leading-relaxed mb-8">
-                Your project will be indexed by our quality control board. Once verified, it will be visible to 15,000+ students. <strong>You earn 85% commission per sale.</strong>
-              </p>
-              
-              <div className="flex gap-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="flex-1 text-zinc-500 font-bold hover:text-white rounded-full py-7 uppercase text-[10px] tracking-widest"
-                  onClick={() => navigate.back()}
-                >
-                  Discard
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white rounded-full py-7 font-black shadow-xl shadow-blue-900/20 transition-all active:scale-[0.98] uppercase text-[10px] tracking-widest"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Check className="w-5 h-5 mr-3" />
-                      Publish to Marketplace
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </form>
+                    <Button onClick={nextStep} className="w-full bg-black text-white rounded-full py-9 font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-blue-600 transition-all">Continue to Technical Details</Button>
+                </div>
+            )}
+
+            {step === 2 && (
+                <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
+                    <div className="text-center">
+                        <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-[24px] flex items-center justify-center mx-auto mb-6">
+                            <Code2 className="w-8 h-8" />
+                        </div>
+                        <h1 className="text-4xl font-black text-[#111827] tracking-tight uppercase tracking-tighter">Technical Depth</h1>
+                        <p className="text-[#6b7280] font-medium mt-2 uppercase text-[10px] tracking-widest">Stage 02 • Content Previews</p>
+                    </div>
+
+                    <div className="space-y-8">
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Technologies Used</Label>
+                            <Input 
+                                value={formData.technologies} 
+                                onChange={e => setFormData({...formData, technologies: e.target.value})}
+                                placeholder="E.G. REACT, ARDUINO, MATLAB, PYTHON..."
+                                className="bg-zinc-50 border-[#e5e7eb] rounded-3xl h-16 font-black text-[#111827] focus:border-blue-600"
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Abstract Preview <span className="text-red-500">*</span></Label>
+                            <Textarea 
+                                value={formData.abstract} 
+                                onChange={e => setFormData({...formData, abstract: e.target.value})}
+                                placeholder="COPY AND PASTE THE COMPLETE PROJECT ABSTRACT HERE..."
+                                className="bg-zinc-50 border-[#e5e7eb] rounded-[32px] p-8 font-medium text-zinc-700 min-h-[150px] focus:border-blue-600 leading-relaxed"
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Chapter 1 Full Content <span className="text-red-500">*</span></Label>
+                            <Textarea 
+                                value={formData.chapter1} 
+                                onChange={e => setFormData({...formData, chapter1: e.target.value})}
+                                placeholder="PASTE THE ENTIRE INTRODUCTION / CHAPTER 1..."
+                                className="bg-zinc-50 border-[#e5e7eb] rounded-[32px] p-8 font-medium text-zinc-700 min-h-[300px] focus:border-blue-600 leading-relaxed"
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Source Code Snippet (Optional)</Label>
+                            <Textarea 
+                                value={formData.codeSnippet} 
+                                onChange={e => setFormData({...formData, codeSnippet: e.target.value})}
+                                placeholder="PASTE A SAMPLE OF THE CORE PROGRAM / SCRIPT..."
+                                className="bg-zinc-900 border-zinc-800 rounded-[32px] p-8 font-mono text-emerald-400 min-h-[150px] focus:border-emerald-500 leading-relaxed"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                        <Button variant="ghost" onClick={prevStep} className="flex-1 rounded-full py-9 font-black text-xs uppercase tracking-widest hover:bg-zinc-50">Back</Button>
+                        <Button onClick={nextStep} className="flex-[2] bg-black text-white rounded-full py-9 font-black text-xs uppercase tracking-widest shadow-2xl">Continue to Assets</Button>
+                    </div>
+                </div>
+            )}
+
+            {step === 3 && (
+                <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
+                    <div className="text-center">
+                        <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-[24px] flex items-center justify-center mx-auto mb-6">
+                            <Sparkles className="w-8 h-8" />
+                        </div>
+                        <h1 className="text-4xl font-black text-[#111827] tracking-tight uppercase tracking-tighter">Asset Hub</h1>
+                        <p className="text-[#6b7280] font-medium mt-2 uppercase text-[10px] tracking-widest">Stage 03 • Secure Submission</p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-10">
+                        {/* Main Archive */}
+                        <div className="space-y-4">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">
+                                {formData.projectType === 'documentation' ? 'Document (PDF/DOCX)' : 'Project Archive (ZIP)'}
+                            </Label>
+                            <div 
+                                onClick={() => fileInputRef.current.click()}
+                                className="aspect-square rounded-[40px] border-4 border-dashed border-zinc-100 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-blue-600 hover:bg-blue-50/30 transition-all group"
+                            >
+                                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    {formData.projectType === 'documentation' ? <FileText className="w-8 h-8 text-zinc-400 group-hover:text-blue-600" /> : <Upload className="w-8 h-8 text-zinc-400 group-hover:text-blue-600" />}
+                                </div>
+                                <div className="text-center px-4">
+                                    <p className="font-black text-xs uppercase tracking-widest">Upload Package</p>
+                                    <p className="text-[10px] text-zinc-400 font-bold mt-1 uppercase">
+                                        {formData.projectType === 'documentation' ? 'MAX 20MB • PDF/DOCX' : 'MAX 100MB • ZIP FILE'}
+                                    </p>
+                                </div>
+                                {formData.mainFile && (
+                                    <div className="mt-2 flex items-center gap-2 bg-emerald-500 text-white px-4 py-1.5 rounded-full text-[10px] font-black">
+                                        <Check className="w-3 h-3" /> {formData.mainFile.name.slice(0, 15)}...
+                                    </div>
+                                )}
+                            </div>
+                            <input type="file" ref={fileInputRef} onChange={e => handleFileUpload(e, 'main')} className="hidden" />
+                        </div>
+
+                        {/* Images */}
+                        <div className="space-y-4">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Visual showcase (Max 3)</Label>
+                            <div 
+                                onClick={() => imageInputRef.current.click()}
+                                className="aspect-square rounded-[40px] border-4 border-dashed border-zinc-100 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-indigo-600 hover:bg-indigo-50/30 transition-all group"
+                            >
+                                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <ImageIcon className="w-8 h-8 text-zinc-400 group-hover:text-indigo-600" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-black text-xs uppercase tracking-widest">Add Gallery</p>
+                                    <p className="text-[10px] text-zinc-400 font-bold mt-1 uppercase">{formData.images.length} / 3 UPLOADED</p>
+                                </div>
+                            </div>
+                            <input type="file" ref={imageInputRef} onChange={e => handleFileUpload(e, 'gallery')} multiple accept="image/*" className="hidden" />
+                            
+                            <div className="flex flex-wrap gap-3 mt-4 justify-center">
+                                {imagePreviews.map((url, i) => (
+                                    <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-zinc-200 group">
+                                        <img src={url} className="w-full h-full object-cover" />
+                                        <button onClick={() => removeImage(i)} className="absolute inset-0 bg-red-600/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <X className="w-4 h-4 text-white" />
+                                        </button>
+                                        {i === 0 && <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] font-black text-center py-0.5">COVER</div>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                        <Button variant="ghost" onClick={prevStep} className="flex-1 rounded-full py-9 font-black text-xs uppercase tracking-widest hover:bg-zinc-50">Back</Button>
+                        <Button 
+                            disabled={isSubmitting}
+                            onClick={handleSubmit} 
+                            className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white rounded-full py-9 font-black text-xs uppercase tracking-widest shadow-2xl shadow-blue-900/20"
+                        >
+                            {isSubmitting ? 'Securing Blueprint...' : 'Publish Technical Work'}
+                        </Button>
+                    </div>
+                </div>
+            )}
+        </div>
       </div>
     </div>
   );
