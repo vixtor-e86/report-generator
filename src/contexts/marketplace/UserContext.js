@@ -6,25 +6,34 @@ const UserContext = createContext(undefined);
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [sellerStatus, setSellerStatus] = useState(null); // 'none', 'pending', 'approved', 'rejected'
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = useCallback(async (authUser) => {
     if (!authUser) {
       setUser(null);
+      setSellerStatus(null);
       setLoading(false);
       return;
     }
 
     try {
+      // 1. Fetch user profile
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', authUser.id)
         .single();
 
+      // 2. Fetch seller application status
+      const { data: sellerApp } = await supabase
+        .from('marketplace_sellers')
+        .select('status')
+        .eq('user_id', authUser.id)
+        .single();
+
       if (error) {
         console.error('Error fetching profile:', error);
-        // Fallback to auth user info if profile fetch fails
         setUser({
           id: authUser.id,
           name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0],
@@ -36,10 +45,12 @@ export function UserProvider({ children }) {
           id: authUser.id,
           name: profile.username || profile.full_name || authUser.email?.split('@')[0],
           email: profile.email || authUser.email,
-          isSeller: profile.is_seller || false, // We'll add this column later if needed, for now default to false
-          sellerProfile: null, // We'll build marketplace tables later
+          isSeller: profile.is_seller || false,
         });
       }
+
+      setSellerStatus(sellerApp?.status || 'none');
+
     } catch (err) {
       console.error('Unexpected error:', err);
     } finally {
@@ -47,19 +58,20 @@ export function UserProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
-    // Initial fetch
-    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
-      fetchUserProfile(authUser);
-    });
+  const refreshUser = useCallback(async () => {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    await fetchUserProfile(authUser);
+  }, [fetchUserProfile]);
 
-    // Listen for auth changes
+  useEffect(() => {
+    refreshUser();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       fetchUserProfile(session?.user || null);
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchUserProfile]);
+  }, [refreshUser, fetchUserProfile]);
 
   const login = useCallback(async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -70,21 +82,6 @@ export function UserProvider({ children }) {
     await supabase.auth.signOut();
   }, []);
 
-  const becomeSeller = useCallback(async (profileData) => {
-    if (!user) return;
-    
-    // For now, just update local state since we don't have marketplace tables yet
-    // Later we will create 'marketplace_sellers' table
-    setUser(prev => ({
-      ...prev,
-      isSeller: true,
-      sellerProfile: {
-        displayName: profileData.displayName || prev.name,
-        ...profileData
-      }
-    }));
-  }, [user]);
-
   const updateUser = useCallback((updates) => {
     if (!user) return;
     setUser(prev => ({ ...prev, ...updates }));
@@ -93,11 +90,12 @@ export function UserProvider({ children }) {
   return (
     <UserContext.Provider value={{
       user,
+      sellerStatus,
       loading,
       isAuthenticated: !!user,
+      refreshUser,
       login,
       logout,
-      becomeSeller,
       updateUser,
     }}>
       {children}

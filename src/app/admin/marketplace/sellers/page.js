@@ -29,8 +29,8 @@ export default function SellerAccreditationAdmin() {
   const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending'); // pending, approved, rejected
-  const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [previewPassport, setPreviewPassport] = useState(null);
 
   const fetchApplicants = useCallback(async () => {
     setLoading(true);
@@ -64,7 +64,6 @@ export default function SellerAccreditationAdmin() {
 
       toast.success(`Applicant ${status} successfully`);
       setApplicants(prev => prev.filter(a => a.id !== id));
-      setSelectedApplicant(null);
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -105,7 +104,7 @@ export default function SellerAccreditationAdmin() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {applicants.map((applicant) => (
-            <div key={applicant.id} className="bg-white border border-slate-200 rounded-[40px] p-8 shadow-sm hover:border-blue-500 transition-all group relative overflow-hidden">
+            <div key={applicant.id} className="bg-white border border-slate-200 rounded-[40px] p-8 shadow-sm hover:border-blue-500 transition-all group relative overflow-hidden flex flex-col">
                <div className="absolute top-0 right-0 p-4">
                   <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
                     applicant.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
@@ -117,8 +116,11 @@ export default function SellerAccreditationAdmin() {
                </div>
 
                <div className="flex items-center gap-4 mb-8">
-                  <div className="w-16 h-16 rounded-[24px] bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0">
-                    <img src={applicant.passport_url} alt="Passport" className="w-full h-full object-cover" />
+                  <div 
+                    onClick={() => setPreviewPassport(applicant.passport_url)}
+                    className="w-16 h-16 rounded-[24px] bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all group/img"
+                  >
+                    <img src={applicant.passport_url} alt="Passport" className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-500" />
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-black text-slate-900 truncate">{applicant.first_name} {applicant.last_name}</h3>
@@ -126,16 +128,16 @@ export default function SellerAccreditationAdmin() {
                   </div>
                </div>
 
-               <div className="space-y-4 mb-8">
+               <div className="space-y-4 mb-8 flex-1">
                   <div className="flex items-start gap-3">
-                    <Icons.Building className="w-4 h-4 text-slate-400 mt-1" />
+                    <Icons.Building className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Institution</p>
                       <p className="text-xs font-bold text-slate-700">{applicant.universities?.name || applicant.custom_institution}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <Icons.Check className="w-4 h-4 text-slate-400 mt-1" />
+                    <Icons.Check className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Department</p>
                       <p className="text-xs font-bold text-slate-700">{applicant.department} ({applicant.faculty})</p>
@@ -146,21 +148,45 @@ export default function SellerAccreditationAdmin() {
                {applicant.status === 'pending' && (
                  <div className="flex gap-3">
                     <button 
+                      disabled={processing}
                       onClick={() => handleUpdateStatus(applicant.id, 'rejected')}
-                      className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 hover:text-red-600 transition"
+                      className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 hover:text-red-600 transition disabled:opacity-50"
                     >
                       Reject
                     </button>
                     <button 
+                      disabled={processing}
                       onClick={() => handleUpdateStatus(applicant.id, 'approved')}
-                      className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-200 transition"
+                      className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-200 transition disabled:opacity-50"
                     >
-                      Approve
+                      {processing ? '...' : 'Approve'}
                     </button>
                  </div>
                )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Passport Preview Modal */}
+      {previewPassport && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-md" onClick={() => setPreviewPassport(null)} />
+          <div className="relative max-w-2xl w-full flex flex-col items-center">
+            <button 
+              onClick={() => setPreviewPassport(null)}
+              className="absolute -top-12 right-0 text-white hover:text-red-400 transition-colors flex items-center gap-2 font-black uppercase text-xs tracking-widest"
+            >
+              Close Identity <Icons.X className="w-5 h-5" />
+            </button>
+            <div className="bg-white p-2 rounded-[40px] shadow-2xl overflow-hidden ring-4 ring-white/10">
+              <img 
+                src={previewPassport} 
+                className="max-h-[75vh] w-auto rounded-[32px] object-contain" 
+                alt="Enlarged Identity" 
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

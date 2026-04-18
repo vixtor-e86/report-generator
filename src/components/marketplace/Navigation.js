@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   Menu, X, Home, ShoppingBag, Wrench, User, 
-  Wallet, Bell, ChevronDown, LogOut 
+  Wallet, Bell, ChevronDown, LayoutDashboard 
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/marketplace/ui/sheet';
@@ -137,29 +137,19 @@ export default function Navigation() {
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator className="bg-[#e5e7eb]" />
-                    <DropdownMenuItem
-                      onClick={logout}
-                      className="text-red-500 hover:text-red-600 hover:bg-red-50/50 cursor-pointer rounded-lg m-1"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Logout
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/dashboard"
+                        className="text-[#6b7280] hover:text-black hover:bg-[#f3f4f6] cursor-pointer rounded-lg m-1 font-bold"
+                      >
+                        <LayoutDashboard className="w-4 h-4 mr-2 text-blue-600" />
+                        Back to Workspace
+                      </Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  className="text-[#6b7280] hover:text-black hover:bg-[#f3f4f6] rounded-full px-6"
-                >
-                  Sign In
-                </Button>
-                <Button className="bg-black hover:bg-zinc-800 text-white rounded-full px-6">
-                  Get Started
-                </Button>
-              </div>
-            )}
+            ) : null}
 
             {/* Mobile Menu */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -197,14 +187,25 @@ export default function Navigation() {
                         onClick={() => setIsOpen(false)}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors mb-2 ${
                           isActive(item.path)
-                            ? 'text-black bg-[#f3f4f6] font-semibold'
-                            : 'text-[#6b7280] hover:text-black hover:bg-[#f3f4f6]'
+                            ? 'text-black bg-[#f3f4f6] font-bold shadow-sm border border-[#e5e7eb]'
+                            : 'text-[#6b7280] hover:text-black hover:bg-[#f3f4f6] font-semibold'
                         }`}
                       >
                         <item.icon className="w-5 h-5" />
                         {item.label}
                       </Link>
                     ))}
+
+                    {isAuthenticated && (
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-blue-600 hover:bg-blue-50 font-black mt-4 transition-colors border border-blue-50"
+                      >
+                        <LayoutDashboard className="w-5 h-5" />
+                        Back to Workspace
+                      </Link>
+                    )}
                   </div>
 
                   {isAuthenticated && (
