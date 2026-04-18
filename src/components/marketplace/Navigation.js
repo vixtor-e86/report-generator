@@ -21,7 +21,7 @@ import { formatCurrency } from '@/lib/utils';
 
 export default function Navigation() {
   const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useUser();
+  const { user, isAuthenticated, logout, notifications, unreadCount, markNotificationsAsRead } = useUser();
   const { wallet } = useWallet();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -77,14 +77,55 @@ export default function Navigation() {
                 </div>
 
                 {/* Notifications */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative text-[#6b7280] hover:text-black hover:bg-[#f3f4f6] rounded-full"
-                >
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
-                </Button>
+                <DropdownMenu onOpenChange={(open) => open && markNotificationsAsRead()}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative text-[#6b7280] hover:text-black hover:bg-[#f3f4f6] rounded-full transition-all"
+                    >
+                      <Bell className="w-5 h-5" />
+                      {unreadCount > 0 && (
+                        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-600 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80 bg-white border-[#e5e7eb] rounded-2xl shadow-2xl p-0 overflow-hidden">
+                    <div className="p-4 border-b border-[#e5e7eb] bg-zinc-50/50 flex justify-between items-center">
+                      <h3 className="font-black text-xs uppercase tracking-widest text-zinc-900">Notifications</h3>
+                      {unreadCount > 0 && <span className="text-[10px] font-bold text-blue-600">New Alerts</span>}
+                    </div>
+                    <div className="max-h-[400px] overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-10 text-center">
+                          <Bell className="w-8 h-8 text-zinc-200 mx-auto mb-3" />
+                          <p className="text-xs font-bold text-zinc-400 uppercase tracking-tighter">No notifications yet</p>
+                        </div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div 
+                            key={notif.id} 
+                            className={`p-4 border-b border-[#f3f4f6] last:border-0 hover:bg-zinc-50 transition-colors ${!notif.is_read ? 'bg-blue-50/30' : ''}`}
+                          >
+                            <div className="flex gap-3">
+                              <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                                notif.type === 'success' ? 'bg-emerald-500' :
+                                notif.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                              }`} />
+                              <div>
+                                <p className="text-sm font-black text-zinc-900 leading-tight mb-1">{notif.title}</p>
+                                <p className="text-xs font-medium text-zinc-500 leading-relaxed">{notif.message}</p>
+                                <p className="text-[9px] font-black text-zinc-300 uppercase mt-2">{new Date(notif.created_at).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* User Menu */}
                 <DropdownMenu>

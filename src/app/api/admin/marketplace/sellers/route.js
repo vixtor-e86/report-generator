@@ -47,6 +47,22 @@ export async function PATCH(request) {
         .eq('id', seller.user_id);
 
       if (profileError) console.error('Profile Update Error:', profileError);
+
+      // Create Success Notification
+      await supabaseAdmin.from('marketplace_notifications').insert({
+        user_id: seller.user_id,
+        title: 'Accreditation Approved!',
+        message: 'Congratulations! You are now a verified seller. You can start uploading projects.',
+        type: 'success'
+      });
+    } else if (status === 'rejected') {
+      // Create Rejection Notification
+      await supabaseAdmin.from('marketplace_notifications').insert({
+        user_id: seller.user_id,
+        title: 'Application Update',
+        message: `Your seller accreditation was not approved. Reason: ${notes || 'Information provided was insufficient.'}`,
+        type: 'error'
+      });
     }
 
     return NextResponse.json({ success: true });

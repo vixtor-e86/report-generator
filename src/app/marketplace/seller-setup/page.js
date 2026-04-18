@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 
 export default function SellerSetupPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, refreshUser, sellerStatus } = useUser();
   const fileInputRef = useRef(null);
   
   const [step, setStep] = useState(1);
@@ -44,6 +44,12 @@ export default function SellerSetupPage() {
   });
 
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (sellerStatus === 'pending' || user?.isSeller) {
+      router.push('/marketplace/dashboard');
+    }
+  }, [sellerStatus, user, router]);
 
   useEffect(() => {
     async function fetchSchools() {
@@ -117,11 +123,31 @@ export default function SellerSetupPage() {
     setIsSubmitting(true);
 
     try {
-      // 1. Upload to Cloudflare R2 (Simulated for now, would use your R2 utility)
-      // For now we'll store a placeholder URL to test the flow
-      const passportUrl = `https://r2.w3writelab.com/passports/${user.id}_${Date.now()}.jpg`;
+      // 1. Get signed URL for Cloudflare R2
+      const uploadRes = await fetch('/api/marketplace/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: formData.passportFile.name,
+          contentType: formData.passportFile.type,
+          userId: user.id,
+          folder: 'passports'
+        })
+      });
 
-      // 2. Insert into marketplace_sellers
+      const { uploadUrl, publicUrl } = await uploadRes.json();
+      if (!uploadUrl) throw new Error("Failed to get upload authorization");
+
+      // 2. Upload actual file to R2
+      const putRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': formData.passportFile.type },
+        body: formData.passportFile
+      });
+
+      if (!putRes.ok) throw new Error("Cloudflare R2 upload failed");
+
+      // 3. Insert into marketplace_sellers
       const { error } = await supabase
         .from('marketplace_sellers')
         .insert({
@@ -134,13 +160,22 @@ export default function SellerSetupPage() {
           custom_institution: isManualSchool ? formData.customInstitution : null,
           faculty: formData.faculty,
           department: formData.department,
-          passport_url: passportUrl,
+          passport_url: publicUrl, // This is the real Cloudflare URL
           status: 'pending'
         });
 
       if (error) throw error;
 
+      // 4. Create Notification
+      await supabase.from('marketplace_notifications').insert({
+        user_id: user.id,
+        title: 'Application Submitted',
+        message: 'Your seller accreditation request has been received and is under review.',
+        type: 'success'
+      });
+
       toast.success("Application submitted successfully!");
+      await refreshUser();
       router.push('/marketplace/dashboard');
     } catch (err) {
       console.error(err);
@@ -157,7 +192,7 @@ export default function SellerSetupPage() {
   return (
     <div className="min-h-screen bg-[#f8f9fc] pt-12 pb-20">
       <div className="max-w-2xl mx-auto px-4">
-        {/* BACK BUTTON - FIXED VISIBILITY */}
+        {/* BACK BUTTON */}
         <button 
           onClick={() => router.back()} 
           className="flex items-center gap-2 text-zinc-900 hover:text-black mb-10 text-xs font-black uppercase tracking-widest transition-all"
@@ -177,13 +212,13 @@ export default function SellerSetupPage() {
           {step === 1 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div>
-                <h1 className="text-3xl font-black text-[#111827] tracking-tight uppercase">Personal Check</h1>
+                <h1 className="text-3xl font-black text-[#111827] tracking-tight uppercase tracking-tighter">Personal Check</h1>
                 <p className="text-[#6b7280] font-medium mt-1 uppercase text-[10px] tracking-widest">Stage 01 • Legal Identity</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">First Name</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">First Name</Label>
                   <Input 
                     value={formData.firstName} 
                     onChange={e => setFormData({...formData, firstName: e.target.value})}
@@ -192,7 +227,7 @@ export default function SellerSetupPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Surname</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Surname</Label>
                   <Input 
                     value={formData.lastName} 
                     onChange={e => setFormData({...formData, lastName: e.target.value})}
@@ -203,7 +238,7 @@ export default function SellerSetupPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Contact Email (Required)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Contact Email (Required)</Label>
                 <Input 
                   value={formData.emailUpdates} 
                   onChange={e => setFormData({...formData, emailUpdates: e.target.value})}
@@ -213,7 +248,7 @@ export default function SellerSetupPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Phone Number</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Phone Number</Label>
                 <Input 
                   value={formData.phone} 
                   onChange={e => setFormData({...formData, phone: e.target.value})}
@@ -229,13 +264,13 @@ export default function SellerSetupPage() {
           {step === 2 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               <div>
-                <h1 className="text-3xl font-black text-[#111827] tracking-tight uppercase">Academic</h1>
+                <h1 className="text-3xl font-black text-[#111827] tracking-tight uppercase tracking-tighter">Academic</h1>
                 <p className="text-[#6b7280] font-medium mt-1 uppercase text-[10px] tracking-widest">Stage 02 • Institutional Info</p>
               </div>
 
               <div className="space-y-4">
                 <div className="relative">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 block">Institution / School</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">Institution / School</Label>
                   {!isManualSchool ? (
                     <>
                       <div className="relative">
@@ -278,23 +313,21 @@ export default function SellerSetupPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#9ca3af]">Faculty</Label>
-                    <select 
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Faculty</Label>
+                    <Input 
                       value={formData.faculty} 
                       onChange={e => setFormData({...formData, faculty: e.target.value})}
-                      className="w-full px-4 bg-zinc-50 border-[#e5e7eb] border rounded-2xl h-14 font-bold focus:border-black outline-none appearance-none"
-                    >
-                      <option value="">Select Faculty</option>
-                      {faculties.filter(f => f !== 'All').map(f => <option key={f} value={f}>{f}</option>)}
-                    </select>
+                      placeholder="e.g. Engineering"
+                      className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Department</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Department</Label>
                     <Input 
                       value={formData.department} 
                       onChange={e => setFormData({...formData, department: e.target.value})}
                       placeholder="e.g. Computer Science"
-                      className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-bold focus:border-black"
+                      className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
                     />
                   </div>
                 </div>
@@ -310,8 +343,8 @@ export default function SellerSetupPage() {
           {step === 3 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="text-center">
-                <h1 className="text-3xl font-black text-[#111827] tracking-tight">Facial Identification</h1>
-                <p className="text-[#6b7280] font-medium mt-1">Upload a clear passport photo of your face</p>
+                <h1 className="text-3xl font-black text-[#111827] tracking-tight uppercase tracking-tighter">Facial Identification</h1>
+                <p className="text-[#6b7280] font-medium mt-1 uppercase text-[10px] tracking-widest">Stage 03 • Biometric Check</p>
               </div>
 
               <div className="flex justify-center">
@@ -327,7 +360,7 @@ export default function SellerSetupPage() {
                     onClick={() => fileInputRef.current?.click()}
                     className="absolute bottom-4 right-4 w-12 h-12 bg-white rounded-2xl shadow-2xl border border-[#e5e7eb] flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
                   >
-                    <Landmark className="w-5 h-5 text-black" />
+                    <Camera className="w-5 h-5 text-black" />
                   </button>
                   <input type="file" ref={fileInputRef} onChange={handlePassportUpload} accept="image/*" className="hidden" />
                 </div>
@@ -343,7 +376,7 @@ export default function SellerSetupPage() {
               </div>
 
               <div className="flex gap-4 pt-4">
-                <Button variant="ghost" onClick={prevStep} className="flex-1 rounded-full py-8 font-black text-xs uppercase tracking-widest">Back</Button>
+                <Button variant="ghost" onClick={prevStep} className="flex-1 rounded-full py-8 font-black text-xs uppercase tracking-widest text-zinc-900 hover:bg-zinc-100 border border-zinc-200">Back</Button>
                 <Button 
                   onClick={handleSubmit} 
                   disabled={isSubmitting}

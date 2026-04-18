@@ -7,12 +7,16 @@ const UserContext = createContext(undefined);
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [sellerStatus, setSellerStatus] = useState(null); // 'none', 'pending', 'approved', 'rejected'
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = useCallback(async (authUser) => {
     if (!authUser) {
       setUser(null);
       setSellerStatus(null);
+      setNotifications([]);
+      setUnreadCount(0);
       setLoading(false);
       return;
     }
@@ -32,6 +36,14 @@ export function UserProvider({ children }) {
         .eq('user_id', authUser.id)
         .single();
 
+      // 3. Fetch Notifications
+      const { data: notifs } = await supabase
+        .from('marketplace_notifications')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
       if (error) {
         console.error('Error fetching profile:', error);
         setUser({
@@ -50,6 +62,8 @@ export function UserProvider({ children }) {
       }
 
       setSellerStatus(sellerApp?.status || 'none');
+      setNotifications(notifs || []);
+      setUnreadCount(notifs?.filter(n => !n.is_read).length || 0);
 
     } catch (err) {
       console.error('Unexpected error:', err);
@@ -62,6 +76,18 @@ export function UserProvider({ children }) {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     await fetchUserProfile(authUser);
   }, [fetchUserProfile]);
+
+  const markNotificationsAsRead = useCallback(async () => {
+    if (!user) return;
+    await supabase
+        .from('marketplace_notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+    
+    setUnreadCount(0);
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  }, [user]);
 
   useEffect(() => {
     refreshUser();
@@ -91,6 +117,9 @@ export function UserProvider({ children }) {
     <UserContext.Provider value={{
       user,
       sellerStatus,
+      notifications,
+      unreadCount,
+      markNotificationsAsRead,
       loading,
       isAuthenticated: !!user,
       refreshUser,
