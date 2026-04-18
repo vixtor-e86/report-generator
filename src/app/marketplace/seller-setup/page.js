@@ -147,10 +147,10 @@ export default function SellerSetupPage() {
 
       if (!putRes.ok) throw new Error("Cloudflare R2 upload failed");
 
-      // 3. Insert into marketplace_sellers
+      // 2. Upsert into marketplace_sellers (Allows re-applying)
       const { error } = await supabase
         .from('marketplace_sellers')
-        .insert({
+        .upsert({
           user_id: user.id,
           first_name: formData.firstName,
           last_name: formData.lastName,
@@ -160,8 +160,11 @@ export default function SellerSetupPage() {
           custom_institution: isManualSchool ? formData.customInstitution : null,
           faculty: formData.faculty,
           department: formData.department,
-          passport_url: publicUrl, // This is the real Cloudflare URL
-          status: 'pending'
+          passport_url: publicUrl,
+          status: 'pending',
+          updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'user_id' 
         });
 
       if (error) throw error;

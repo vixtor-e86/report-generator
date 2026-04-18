@@ -31,7 +31,7 @@ export default function MarketplaceHomePage() {
       // Hero animations
       gsap.from('.hero-title', {
         y: 30,
-        opacity: 1, // Changed from 0 to 1 for instant visibility
+        opacity: 1,
         duration: 0.8,
         ease: 'power3.out',
       });
@@ -137,7 +137,7 @@ export default function MarketplaceHomePage() {
                     className="border-blue-600 border-2 bg-white text-blue-600 hover:bg-zinc-50 px-8 py-6 text-base font-bold rounded-full shadow-sm"
                   >
                     <Clock className="w-5 h-5 mr-2" />
-                    Pending Clearance
+                    Verification Pending
                   </Button>
                 ) : (
                   <Link href="/marketplace/seller-setup">
@@ -165,7 +165,7 @@ export default function MarketplaceHomePage() {
               </div>
             </div>
 
-            {/* Right content - Abstract visual */}
+            {/* Right content */}
             <div className="hidden lg:block relative">
               <div className="relative z-10 bg-white rounded-[40px] border border-[#e5e7eb] shadow-2xl p-4 overflow-hidden">
                 <div className="bg-zinc-50 rounded-[32px] overflow-hidden border border-zinc-100">
@@ -192,10 +192,6 @@ export default function MarketplaceHomePage() {
                   </div>
                 </div>
               </div>
-              
-              {/* Decorative elements */}
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-100 rounded-full blur-3xl opacity-60 animate-pulse" />
-              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-indigo-100 rounded-full blur-3xl opacity-60 animate-pulse" />
             </div>
           </div>
         </div>
@@ -310,7 +306,7 @@ export default function MarketplaceHomePage() {
                   className="bg-white text-zinc-900 hover:bg-zinc-100 px-10 py-7 text-base font-black rounded-full shadow-2xl"
                 >
                   <LayoutDashboard className="w-5 h-5 mr-2" />
-                  Access Seller Panel
+                  Seller Dashboard
                 </Button>
               </Link>
             ) : sellerStatus === 'pending' ? (
@@ -320,7 +316,7 @@ export default function MarketplaceHomePage() {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-7 text-base font-black rounded-full shadow-2xl"
               >
                 <Clock className="w-5 h-5 mr-2" />
-                Under Review
+                Review Pending
               </Button>
             ) : (
               <Link href="/marketplace/seller-setup">
@@ -329,7 +325,7 @@ export default function MarketplaceHomePage() {
                   className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-7 text-base font-black rounded-full shadow-2xl"
                 >
                   <Sparkles className="w-5 h-5 mr-2" />
-                  Open Seller Account
+                  Become a Seller
                 </Button>
               </Link>
             )}
@@ -340,7 +336,7 @@ export default function MarketplaceHomePage() {
                 className="border-zinc-700 bg-transparent text-white hover:bg-zinc-800 px-10 py-7 text-base font-bold rounded-full"
               >
                 <ShoppingBag className="w-5 h-5 mr-2" />
-                Browse Projects
+                Browse Catalog
               </Button>
             </Link>
           </div>
@@ -355,7 +351,7 @@ export default function MarketplaceHomePage() {
             <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-[30px] flex items-center justify-center mx-auto mb-6">
               <Landmark className="w-10 h-10" />
             </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Application Pending</h3>
+            <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight uppercase tracking-tighter">Accreditation Pending</h3>
             <p className="text-sm text-slate-500 font-medium mb-8 leading-relaxed">
               Your seller accreditation request is currently being reviewed by our admin panel. You'll be notified once you're cleared to publish.
             </p>

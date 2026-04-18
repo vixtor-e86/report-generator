@@ -45,12 +45,13 @@ export function UserProvider({ children }) {
           isSeller: false,
         });
       } else {
-        // ✅ CRITICAL: Using profile.is_seller directly from the database
+        // ✅ Sync isSeller with DB profile or approved status
+        const isApproved = sellerApp?.status === 'approved' || profile.is_seller;
         setUser({
           id: authUser.id,
           name: profile.username || profile.full_name || authUser.email?.split('@')[0],
           email: profile.email || authUser.email,
-          isSeller: profile.is_seller || false,
+          isSeller: isApproved,
         });
       }
 
@@ -96,28 +97,22 @@ export function UserProvider({ children }) {
   useEffect(() => {
     refreshUser();
 
-    // Set up real-time subscription for profile changes (to catch admin approvals)
-    const profileSubscription = supabase
-      .channel('profile-changes')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'user_profiles',
-        filter: `id=eq.${user?.id}` 
-      }, () => {
-        refreshUser();
-      })
-      .subscribe();
-
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       fetchUserProfile(session?.user || null);
     });
 
+    // 🔄 FALLBACK POLLING: Check every 5 seconds for status changes 
+    // (In case Realtime is not enabled in user's DB)
+    const interval = setInterval(() => {
+        refreshUser();
+    }, 5000);
+
     return () => {
-      subscription.unsubscribe();
-      supabase.removeChannel(profileSubscription);
+        subscription.unsubscribe();
+        clearInterval(interval);
     };
-  }, [refreshUser, fetchUserProfile, user?.id]);
+  }, [refreshUser, fetchUserProfile]);
 
   const login = useCallback(async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
