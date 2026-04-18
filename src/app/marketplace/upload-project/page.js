@@ -98,13 +98,28 @@ export default function UploadProjectPage() {
 
   const validateStep = (s) => {
     if (s === 1) {
-        if (!formData.title || !formData.price || !formData.faculty || !formData.department) return toast.error("Please fill all mandatory fields");
+        if (!formData.title || !formData.price || !formData.faculty || !formData.department) {
+            toast.error("Please fill all mandatory fields");
+            return false;
+        }
     } else if (s === 2) {
-        if (formData.abstract.length < 100) return toast.error("Abstract too short.");
-        if (formData.chapter1.length < 500) return toast.error("Chapter 1 content too short.");
+        if (formData.abstract.length < 100) {
+            toast.error("Abstract too short (min 100 characters).");
+            return false;
+        }
+        if (formData.chapter1.length < 500) {
+            toast.error("Chapter 1 content too short (min 500 characters).");
+            return false;
+        }
     } else if (s === 3) {
-        if (!formData.mainFile) return toast.error("Upload the project archive.");
-        if (formData.images.length === 0) return toast.error("Thumbnail is required.");
+        if (!formData.mainFile) {
+            toast.error("Upload the project archive.");
+            return false;
+        }
+        if (formData.images.length === 0) {
+            toast.error("Thumbnail is required.");
+            return false;
+        }
     }
     return true;
   };
