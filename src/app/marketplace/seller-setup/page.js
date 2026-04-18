@@ -82,7 +82,13 @@ export default function SellerSetupPage() {
       if (!formData.firstName) newErrors.firstName = "Required";
       if (!formData.lastName) newErrors.lastName = "Required";
       if (!formData.phone) newErrors.phone = "Required";
-      if (!formData.emailUpdates) newErrors.emailUpdates = "Required";
+      if (!formData.emailUpdates) {
+        newErrors.emailUpdates = "Required";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailUpdates)) {
+        newErrors.emailUpdates = "Invalid email format";
+        toast.error("Please enter a valid email address");
+        return false;
+      }
     } else if (s === 2) {
       if (!isManualSchool && !formData.institutionId) newErrors.institution = "Please select your school";
       if (isManualSchool && !formData.customInstitution) newErrors.institution = "Please enter your school name";
@@ -91,8 +97,16 @@ export default function SellerSetupPage() {
     } else if (s === 3) {
       if (!formData.passportFile) newErrors.passport = "Passport photo is required";
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    if (Object.keys(newErrors).length > 0) {
+      const firstError = Object.values(newErrors)[0];
+      toast.error(`Missing Info: ${firstError}`);
+      setErrors(newErrors);
+      return false;
+    }
+    
+    setErrors({});
+    return true;
   };
 
   const nextStep = () => validateStep(step) && setStep(step + 1);
@@ -143,6 +157,15 @@ export default function SellerSetupPage() {
   return (
     <div className="min-h-screen bg-[#f8f9fc] pt-12 pb-20">
       <div className="max-w-2xl mx-auto px-4">
+        {/* BACK BUTTON - FIXED VISIBILITY */}
+        <button 
+          onClick={() => router.back()} 
+          className="flex items-center gap-2 text-zinc-900 hover:text-black mb-10 text-xs font-black uppercase tracking-widest transition-all"
+        >
+          <ArrowLeft className="w-4 h-4 stroke-[3]" />
+          Abort Accreditation
+        </button>
+
         {/* Progress Bar */}
         <div className="flex gap-2 mb-12">
           {[1, 2, 3].map(i => (
@@ -154,48 +177,48 @@ export default function SellerSetupPage() {
           {step === 1 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div>
-                <h1 className="text-3xl font-black text-[#111827] tracking-tight">Personal Verification</h1>
-                <p className="text-[#6b7280] font-medium mt-1">Tell us who you are</p>
+                <h1 className="text-3xl font-black text-[#111827] tracking-tight uppercase">Personal Check</h1>
+                <p className="text-[#6b7280] font-medium mt-1 uppercase text-[10px] tracking-widest">Stage 01 • Legal Identity</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#9ca3af]">First Name</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">First Name</Label>
                   <Input 
                     value={formData.firstName} 
                     onChange={e => setFormData({...formData, firstName: e.target.value})}
-                    placeholder="e.g. Victor"
-                    className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-bold focus:border-black"
+                    placeholder="ENTER NAME"
+                    className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#9ca3af]">Surname</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Surname</Label>
                   <Input 
                     value={formData.lastName} 
                     onChange={e => setFormData({...formData, lastName: e.target.value})}
-                    placeholder="e.g. Okafor"
-                    className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-bold focus:border-black"
+                    placeholder="ENTER SURNAME"
+                    className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#9ca3af]">Email for Updates</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Contact Email (Required)</Label>
                 <Input 
                   value={formData.emailUpdates} 
                   onChange={e => setFormData({...formData, emailUpdates: e.target.value})}
-                  placeholder="contact@example.com"
-                  className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-bold focus:border-black"
+                  placeholder="name@university.com"
+                  className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#9ca3af]">Phone Number</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Phone Number</Label>
                 <Input 
                   value={formData.phone} 
                   onChange={e => setFormData({...formData, phone: e.target.value})}
                   placeholder="+234 ..."
-                  className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-bold focus:border-black"
+                  className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
                 />
               </div>
 
@@ -206,13 +229,13 @@ export default function SellerSetupPage() {
           {step === 2 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               <div>
-                <h1 className="text-3xl font-black text-[#111827] tracking-tight">Academic Details</h1>
-                <p className="text-[#6b7280] font-medium mt-1">Select your current institution</p>
+                <h1 className="text-3xl font-black text-[#111827] tracking-tight uppercase">Academic</h1>
+                <p className="text-[#6b7280] font-medium mt-1 uppercase text-[10px] tracking-widest">Stage 02 • Institutional Info</p>
               </div>
 
               <div className="space-y-4">
                 <div className="relative">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#9ca3af] mb-2 block">Institution / School</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 block">Institution / School</Label>
                   {!isManualSchool ? (
                     <>
                       <div className="relative">
@@ -221,8 +244,8 @@ export default function SellerSetupPage() {
                           value={schoolSearch}
                           onChange={e => { setSchoolSearch(e.target.value); setShowSchoolDropdown(true); }}
                           onFocus={() => setShowSchoolDropdown(true)}
-                          placeholder="Search for your school..."
-                          className="pl-12 bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-bold focus:border-black"
+                          placeholder="SEARCH SCHOOLS..."
+                          className="pl-12 bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
                         />
                       </div>
                       {showSchoolDropdown && schoolSearch && (
@@ -245,40 +268,40 @@ export default function SellerSetupPage() {
                        <Input 
                         value={formData.customInstitution}
                         onChange={e => setFormData({...formData, customInstitution: e.target.value})}
-                        placeholder="Enter full school name manually"
-                        className="bg-zinc-50 border-blue-200 border-2 rounded-2xl h-14 font-bold focus:border-black"
+                        placeholder="ENTER FULL SCHOOL NAME"
+                        className="bg-zinc-50 border-blue-200 border-2 rounded-2xl h-14 font-black text-[#111827] focus:border-black text-base"
                       />
-                      <Button variant="outline" onClick={() => setIsManualSchool(false)} className="rounded-2xl h-14"><X className="w-4 h-4" /></Button>
+                      <Button variant="outline" onClick={() => setIsManualSchool(false)} className="rounded-2xl h-14 bg-white border-[#e5e7eb]"><X className="w-4 h-4 text-black stroke-[3]" /></Button>
                     </div>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#9ca3af]">Faculty</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Faculty</Label>
                     <select 
                       value={formData.faculty} 
                       onChange={e => setFormData({...formData, faculty: e.target.value})}
-                      className="w-full px-4 bg-zinc-50 border-[#e5e7eb] border rounded-2xl h-14 font-bold focus:border-black outline-none appearance-none"
+                      className="w-full px-4 bg-zinc-50 border-[#e5e7eb] border rounded-2xl h-14 font-black text-[#111827] focus:border-black outline-none appearance-none text-base"
                     >
-                      <option value="">Select Faculty</option>
+                      <option value="">SELECT FACULTY</option>
                       {faculties.filter(f => f !== 'All').map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#9ca3af]">Department</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Department</Label>
                     <Input 
                       value={formData.department} 
                       onChange={e => setFormData({...formData, department: e.target.value})}
-                      placeholder="e.g. Computer Science"
-                      className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-bold focus:border-black"
+                      placeholder="ENTER DEPT"
+                      className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
                     />
                   </div>
                 </div>
               </div>
 
               <div className="flex gap-4">
-                <Button variant="ghost" onClick={prevStep} className="flex-1 rounded-full py-8 font-black text-xs uppercase tracking-widest">Back</Button>
+                <Button variant="ghost" onClick={prevStep} className="flex-1 rounded-full py-8 font-black text-xs uppercase tracking-widest text-zinc-900 hover:bg-zinc-100 border border-zinc-200">Back</Button>
                 <Button onClick={nextStep} className="flex-[2] bg-black text-white rounded-full py-8 font-black text-xs uppercase tracking-widest shadow-xl">Verify Identity</Button>
               </div>
             </div>
