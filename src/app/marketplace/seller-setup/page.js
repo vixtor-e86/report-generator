@@ -278,13 +278,15 @@ export default function SellerSetupPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Faculty</Label>
-                    <Input 
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#9ca3af]">Faculty</Label>
+                    <select 
                       value={formData.faculty} 
                       onChange={e => setFormData({...formData, faculty: e.target.value})}
-                      placeholder="e.g. Engineering"
-                      className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
-                    />
+                      className="w-full px-4 bg-zinc-50 border-[#e5e7eb] border rounded-2xl h-14 font-bold focus:border-black outline-none appearance-none"
+                    >
+                      <option value="">Select Faculty</option>
+                      {faculties.filter(f => f !== 'All').map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Department</Label>
@@ -292,7 +294,7 @@ export default function SellerSetupPage() {
                       value={formData.department} 
                       onChange={e => setFormData({...formData, department: e.target.value})}
                       placeholder="e.g. Computer Science"
-                      className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
+                      className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-bold focus:border-black"
                     />
                   </div>
                 </div>
