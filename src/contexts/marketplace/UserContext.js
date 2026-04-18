@@ -22,7 +22,7 @@ export function UserProvider({ children }) {
     }
 
     try {
-      // 1. Fetch user profile
+      // 1. Fetch user profile (Fresh fetch from DB)
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -36,14 +36,6 @@ export function UserProvider({ children }) {
         .eq('user_id', authUser.id)
         .single();
 
-      // 3. Fetch Notifications
-      const { data: notifs } = await supabase
-        .from('marketplace_notifications')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
       if (error) {
         console.error('Error fetching profile:', error);
         setUser({
@@ -53,6 +45,7 @@ export function UserProvider({ children }) {
           isSeller: false,
         });
       } else {
+        // ✅ CRITICAL: Using profile.is_seller directly from the database
         setUser({
           id: authUser.id,
           name: profile.username || profile.full_name || authUser.email?.split('@')[0],
@@ -62,6 +55,15 @@ export function UserProvider({ children }) {
       }
 
       setSellerStatus(sellerApp?.status || 'none');
+
+      // 3. Fetch Notifications
+      const { data: notifs } = await supabase
+        .from('marketplace_notifications')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
       setNotifications(notifs || []);
       setUnreadCount(notifs?.filter(n => !n.is_read).length || 0);
 
@@ -74,7 +76,9 @@ export function UserProvider({ children }) {
 
   const refreshUser = useCallback(async () => {
     const { data: { user: authUser } } = await supabase.auth.getUser();
-    await fetchUserProfile(authUser);
+    if (authUser) {
+      await fetchUserProfile(authUser);
+    }
   }, [fetchUserProfile]);
 
   const markNotificationsAsRead = useCallback(async () => {
@@ -92,12 +96,28 @@ export function UserProvider({ children }) {
   useEffect(() => {
     refreshUser();
 
+    // Set up real-time subscription for profile changes (to catch admin approvals)
+    const profileSubscription = supabase
+      .channel('profile-changes')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'user_profiles',
+        filter: `id=eq.${user?.id}` 
+      }, () => {
+        refreshUser();
+      })
+      .subscribe();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       fetchUserProfile(session?.user || null);
     });
 
-    return () => subscription.unsubscribe();
-  }, [refreshUser, fetchUserProfile]);
+    return () => {
+      subscription.unsubscribe();
+      supabase.removeChannel(profileSubscription);
+    };
+  }, [refreshUser, fetchUserProfile, user?.id]);
 
   const login = useCallback(async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });

@@ -145,12 +145,25 @@ export default function MarketplaceDashboardPage() {
                 <div className="bg-zinc-900 rounded-[32px] p-8 shadow-2xl text-white">
                   <p className="text-zinc-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Available Funds</p>
                   <p className="text-4xl font-black text-white tracking-tight mb-8">{formatCurrency(wallet.balance)}</p>
-                  <Button 
-                    onClick={() => setShowRefillModal(true)}
-                    className="w-full bg-white text-black hover:bg-zinc-100 rounded-xl py-6 font-bold"
-                  >
-                    Refill Wallet
-                  </Button>
+                  <div className="space-y-3">
+                    <Button 
+                        onClick={() => setShowRefillModal(true)}
+                        className="w-full bg-white text-black hover:bg-zinc-100 rounded-xl py-6 font-bold"
+                    >
+                        Refill Wallet
+                    </Button>
+                    
+                    {user?.isSeller && (
+                        <Link href="/marketplace/upload-project" className="block w-full">
+                            <Button 
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-6 font-bold flex items-center justify-center gap-2"
+                            >
+                                <ShoppingBag className="w-4 h-4" />
+                                Upload Project
+                            </Button>
+                        </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

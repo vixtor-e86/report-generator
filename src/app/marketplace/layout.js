@@ -2,7 +2,7 @@
 import { UserProvider } from '@/contexts/marketplace/UserContext';
 import { WalletProvider } from '@/contexts/marketplace/WalletContext';
 import Navigation from '@/components/marketplace/Navigation';
-import { Toaster } from '@/components/marketplace/ui/sonner';
+import { Toaster } from 'sonner';
 
 export default function MarketplaceLayout({ children }) {
   return (
@@ -12,7 +12,8 @@ export default function MarketplaceLayout({ children }) {
           <Navigation />
           <main className="pt-[70px]">
             {children}
-          </main>          <Toaster position="top-right" />
+          </main>
+          <Toaster richColors closeButton position="top-right" />
         </div>
       </WalletProvider>
     </UserProvider>
