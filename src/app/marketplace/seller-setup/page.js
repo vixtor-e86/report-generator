@@ -251,11 +251,11 @@ export default function SellerSetupPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Phone Number</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">WhatsApp Number</Label>
                 <Input 
                   value={formData.phone} 
                   onChange={e => setFormData({...formData, phone: e.target.value})}
-                  placeholder="+234 ..."
+                  placeholder="+234 ... (WhatsApp required)"
                   className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
                 />
               </div>
