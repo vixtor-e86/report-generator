@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Upload, X, File, 
   Image as ImageIcon, AlertCircle, ChevronDown, Check, CheckCircle2,
-  Code2, BookOpen, Layers, Sparkles, FileText
+  Code2, BookOpen, Layers, DollarSign, Sparkles, FileText
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
@@ -22,6 +22,7 @@ export default function UploadProjectPage() {
 
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -130,11 +131,14 @@ export default function UploadProjectPage() {
   const handleSubmit = async () => {
     if (!validateStep(3)) return;
     setIsSubmitting(true);
+    setUploadStatus('Securing Handshake...');
 
     try {
       const { data: seller } = await supabase.from('marketplace_sellers').select('id').eq('user_id', user.id).single();
       if (!seller) throw new Error("Seller profile not found");
 
+      // 1. Upload Main File
+      setUploadStatus('Uploading Project Bundle (1/2)...');
       const mainFileRes = await fetch('/api/marketplace/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,8 +147,9 @@ export default function UploadProjectPage() {
       const { uploadUrl: mainUrl, publicUrl: mainFileUrl } = await mainFileRes.json();
       await fetch(mainUrl, { method: 'PUT', headers: { 'Content-Type': formData.mainFile.type }, body: formData.mainFile });
 
-      const imageUrls = [];
-      for (const img of formData.images) {
+      // 2. Parallel Image Uploads
+      setUploadStatus('Syncing Visual Assets (2/2)...');
+      const imageUploadPromises = formData.images.map(async (img) => {
         const res = await fetch('/api/marketplace/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -152,9 +157,13 @@ export default function UploadProjectPage() {
         });
         const { uploadUrl, publicUrl } = await res.json();
         await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': img.type }, body: img });
-        imageUrls.push(publicUrl);
-      }
+        return publicUrl;
+      });
 
+      const imageUrls = await Promise.all(imageUploadPromises);
+
+      // 3. Save to DB
+      setUploadStatus('Registering Technical Blueprint...');
       const { error } = await supabase.from('marketplace_projects').insert({
         seller_id: seller.id,
         user_id: user.id,
@@ -184,6 +193,7 @@ export default function UploadProjectPage() {
       toast.error(err.message || "Upload failed");
     } finally {
       setIsSubmitting(false);
+      setUploadStatus('');
     }
   };
 
@@ -355,7 +365,7 @@ export default function UploadProjectPage() {
                     </div>
 
                     <div className="flex gap-4">
-                        <Button variant="ghost" onClick={prevStep} className="flex-1 rounded-full py-7 sm:py-9 font-black text-xs uppercase tracking-widest hover:bg-zinc-50 text-zinc-900 border border-zinc-200">Back</Button>
+                        <Button variant="ghost" onClick={prevStep} className="flex-1 rounded-full py-7 sm:py-9 font-black text-xs uppercase tracking-widest hover:bg-zinc-50 text-zinc-900 border border-zinc-200 transition-all">Back</Button>
                         <Button onClick={nextStep} className="flex-[2] bg-black text-white rounded-full py-7 sm:py-9 font-black text-xs uppercase tracking-widest shadow-2xl active:scale-95">Continue to Assets</Button>
                     </div>
                 </div>
@@ -437,7 +447,7 @@ export default function UploadProjectPage() {
                             onClick={handleSubmit} 
                             className="flex-[2] bg-black text-white rounded-full py-7 sm:py-9 font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-zinc-800 transition-all active:scale-95"
                         >
-                            {isSubmitting ? 'Verifying Payload...' : 'Submit for Approval'}
+                            {isSubmitting ? uploadStatus || 'Verifying Payload...' : 'Submit for Approval'}
                         </Button>
                     </div>
                 </div>
