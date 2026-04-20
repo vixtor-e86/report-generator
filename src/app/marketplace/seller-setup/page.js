@@ -14,6 +14,7 @@ import { useUser } from '@/contexts/marketplace/UserContext';
 import { faculties, departments } from '@/data/marketplace/projects';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 export default function SellerSetupPage() {
   const router = useRouter();
@@ -34,6 +35,7 @@ export default function SellerSetupPage() {
     lastName: '',
     emailUpdates: user?.email || '',
     phone: '',
+    gender: '', // ✅ NEW
     institutionId: '',
     institutionName: '',
     customInstitution: '',
@@ -88,6 +90,7 @@ export default function SellerSetupPage() {
       if (!formData.firstName) newErrors.firstName = "Required";
       if (!formData.lastName) newErrors.lastName = "Required";
       if (!formData.phone) newErrors.phone = "Required";
+      if (!formData.gender) newErrors.gender = "Gender required"; // ✅ NEW
       if (!formData.emailUpdates) {
         newErrors.emailUpdates = "Required";
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailUpdates)) {
@@ -147,7 +150,7 @@ export default function SellerSetupPage() {
 
       if (!putRes.ok) throw new Error("Cloudflare R2 upload failed");
 
-      // 2. Upsert into marketplace_sellers (Allows re-applying)
+      // 3. Upsert into marketplace_sellers
       const { error } = await supabase
         .from('marketplace_sellers')
         .upsert({
@@ -156,6 +159,7 @@ export default function SellerSetupPage() {
           last_name: formData.lastName,
           email_updates: formData.emailUpdates,
           phone_number: formData.phone,
+          gender: formData.gender, // ✅ NEW
           institution_id: isManualSchool ? null : formData.institutionId,
           custom_institution: isManualSchool ? formData.customInstitution : null,
           faculty: formData.faculty,
@@ -258,6 +262,27 @@ export default function SellerSetupPage() {
                   placeholder="+234 ... (WhatsApp required)"
                   className="bg-zinc-50 border-[#e5e7eb] rounded-2xl h-14 font-black text-[#111827] placeholder:text-zinc-300 focus:border-black text-base"
                 />
+              </div>
+
+              {/* ✅ GENDER SELECTION */}
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Gender (For Marketplace Avatar)</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {['male', 'female'].map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setFormData({...formData, gender: g})}
+                      className={`py-4 rounded-2xl border-2 font-black uppercase text-xs tracking-widest transition-all ${
+                        formData.gender === g 
+                        ? 'border-black bg-zinc-900 text-white shadow-lg' 
+                        : 'border-zinc-100 bg-zinc-50 text-zinc-400 hover:border-zinc-200'
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <Button onClick={nextStep} className="w-full bg-black text-white rounded-full py-8 font-black text-xs uppercase tracking-widest shadow-xl hover:bg-zinc-800 transition-all">Continue to Education</Button>

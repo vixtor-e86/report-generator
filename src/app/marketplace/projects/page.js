@@ -6,10 +6,11 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { 
   Search, Grid3X3, List, Star,
   ChevronDown, SlidersHorizontal, ArrowRight,
-  Sparkles, Layers
+  Sparkles, Layers, CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
+import { Badge } from '@/components/marketplace/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 
