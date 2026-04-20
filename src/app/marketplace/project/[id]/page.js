@@ -78,8 +78,38 @@ export default function ProjectDetailPage({ params }) {
       const success = await deductFunds(project.price, `Purchase: ${project.title}`);
       
       if (success) {
-        // Increment sales count in DB
+        // 1. Calculate Seller Earnings (70%)
+        const sellerEarnings = Math.floor(project.price * 0.7);
+
+        // 2. Increment seller wallet balance
+        const { data: sellerWallet } = await supabase
+            .from('marketplace_seller_wallets')
+            .select('balance, total_earned')
+            .eq('seller_id', project.seller_id)
+            .single();
+        
+        if (sellerWallet) {
+            await supabase
+                .from('marketplace_seller_wallets')
+                .update({ 
+                    balance: sellerWallet.balance + sellerEarnings,
+                    total_earned: (sellerWallet.total_earned || 0) + sellerEarnings,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('seller_id', project.seller_id);
+        }
+
+        // 3. Notify Seller
+        await supabase.from('marketplace_notifications').insert({
+            user_id: project.user_id_seller, // Ensure this exists or use seller_id join
+            title: 'New Sale!',
+            message: `You earned ${formatCurrency(sellerEarnings)} from a sale of "${project.title}".`,
+            type: 'success'
+        });
+
+        // 4. Increment global sales count
         await supabase.rpc('increment_project_sales', { row_id: project.id });
+        
         setIsPurchased(true);
         toast.success("Purchase successful! Download unlocked.");
       } else {

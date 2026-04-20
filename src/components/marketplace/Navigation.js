@@ -148,11 +148,19 @@ export default function Navigation() {
                     className="w-56 bg-white border-[#e5e7eb] rounded-xl shadow-lg p-1"
                   >
                     <div className="px-3 py-2 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-900 text-sm font-black uppercase">
+                      <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-900 text-sm font-black uppercase relative">
                         {user?.name?.charAt(0) || 'U'}
+                        {user?.isSeller && (
+                          <div className="absolute -bottom-1 -right-1 bg-blue-600 rounded-full p-0.5 border-2 border-white">
+                            <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+                          </div>
+                        )}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-black font-semibold text-sm truncate">{user?.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-black font-semibold text-sm truncate">{user?.name}</p>
+                          {user?.isSeller && <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 fill-blue-600/10" />}
+                        </div>
                         <p className="text-[#6b7280] text-xs truncate">{user?.email}</p>
                       </div>
                     </div>

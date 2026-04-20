@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Upload, X, File, 
   Image as ImageIcon, AlertCircle, ChevronDown, Check, CheckCircle2,
-  Code2, BookOpen, Layers, DollarSign, Sparkles, FileText
+  Code2, BookOpen, Layers, DollarSign, Sparkles, FileText, Clock
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
@@ -13,6 +13,7 @@ import { Textarea } from '@/components/marketplace/ui/textarea';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 export default function UploadProjectPage() {
   const router = useRouter();
@@ -23,6 +24,8 @@ export default function UploadProjectPage() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [hasPendingProject, setHasPendingProject] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -42,12 +45,34 @@ export default function UploadProjectPage() {
 
   const [imagePreviews, setImagePreviews] = useState([]);
 
+  // 1. Seller Access Check
   useEffect(() => {
     if (user && !user.isSeller) {
       toast.error("Access Denied: You must be a verified seller.");
       router.push('/marketplace/dashboard');
     }
   }, [user, router]);
+
+  // 2. ✅ NEW: Pending Project Guard
+  useEffect(() => {
+    async function checkPending() {
+      if (!user) return;
+      try {
+        const { count, error } = await supabase
+          .from('marketplace_projects')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'pending');
+        
+        if (count > 0) setHasPendingProject(true);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setPageLoading(false);
+      }
+    }
+    checkPending();
+  }, [user]);
 
   const handleFileUpload = (e, type) => {
     const files = e.target.files;
@@ -97,48 +122,79 @@ export default function UploadProjectPage() {
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
+  // 3. ✅ STRICT VALIDATION LOGIC
   const validateStep = (s) => {
     if (s === 1) {
         if (!formData.title || !formData.price || !formData.faculty || !formData.department) {
-            toast.error("Please fill all mandatory fields");
+            toast.error("All Stage 01 fields are mandatory");
             return false;
         }
     } else if (s === 2) {
         if (formData.abstract.length < 100) {
-            toast.error("Abstract too short (min 100 characters).");
+            toast.error("Abstract must be at least 100 characters");
             return false;
         }
         if (formData.chapter1.length < 500) {
-            toast.error("Chapter 1 content too short (min 500 characters).");
+            toast.error("Chapter 1 content must be at least 500 characters");
             return false;
         }
     } else if (s === 3) {
         if (!formData.mainFile) {
-            toast.error("Upload the project archive.");
+            toast.error("The project archive file is required");
             return false;
         }
         if (formData.images.length === 0) {
-            toast.error("Thumbnail is required.");
+            toast.error("A thumbnail image is required");
             return false;
         }
     }
     return true;
   };
 
-  const nextStep = () => validateStep(step) && setStep(step + 1);
+  const nextStep = () => {
+    if (validateStep(step)) {
+        setStep(step + 1);
+    }
+  };
+  
   const prevStep = () => setStep(step - 1);
+
+  // Loading Screen
+  if (pageLoading) return <div className="py-40 text-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto" /></div>;
+
+  // ✅ QUEUE GUARD UI
+  if (hasPendingProject) {
+    return (
+        <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center p-4">
+            <div className="text-center p-12 bg-white border border-[#e5e7eb] rounded-[48px] shadow-sm max-w-lg animate-in fade-in zoom-in-95 duration-500">
+                <div className="w-20 h-20 bg-amber-50 text-amber-600 rounded-[30px] flex items-center justify-center mb-8 mx-auto">
+                    <Clock className="w-10 h-10" />
+                </div>
+                <h2 className="text-2xl font-black text-[#111827] mb-2 tracking-tight uppercase">Queue Restricted</h2>
+                <p className="text-[#6b7280] font-medium mb-10 leading-relaxed">
+                    You already have a technical blueprint awaiting approval. To maintain marketplace quality, you can only list one project at a time in the review queue.
+                </p>
+                <Link href="/marketplace/dashboard">
+                    <Button className="bg-black text-white rounded-full px-10 py-7 font-black shadow-xl uppercase text-xs tracking-widest">
+                        Return to Dashboard
+                    </Button>
+                </Link>
+            </div>
+        </div>
+    );
+  }
 
   const handleSubmit = async () => {
     if (!validateStep(3)) return;
     setIsSubmitting(true);
-    setUploadStatus('Securing Handshake...');
+    setUploadStatus('Securing Connection...');
 
     try {
       const { data: seller } = await supabase.from('marketplace_sellers').select('id').eq('user_id', user.id).single();
       if (!seller) throw new Error("Seller profile not found");
 
       // 1. Upload Main File
-      setUploadStatus('Uploading Project Bundle (1/2)...');
+      setUploadStatus('Uploading Project Archive...');
       const mainFileRes = await fetch('/api/marketplace/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -148,7 +204,7 @@ export default function UploadProjectPage() {
       await fetch(mainUrl, { method: 'PUT', headers: { 'Content-Type': formData.mainFile.type }, body: formData.mainFile });
 
       // 2. Parallel Image Uploads
-      setUploadStatus('Syncing Visual Assets (2/2)...');
+      setUploadStatus('Syncing Visual Assets...');
       const imageUploadPromises = formData.images.map(async (img) => {
         const res = await fetch('/api/marketplace/upload', {
             method: 'POST',
@@ -234,6 +290,7 @@ export default function UploadProjectPage() {
                                 ].map((type) => (
                                     <button
                                         key={type.id}
+                                        type="button"
                                         onClick={() => setFormData({...formData, projectType: type.id})}
                                         className={`flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-6 rounded-2xl sm:rounded-[28px] border-2 transition-all ${
                                             formData.projectType === type.id 
@@ -365,7 +422,7 @@ export default function UploadProjectPage() {
                     </div>
 
                     <div className="flex gap-4">
-                        <Button variant="ghost" onClick={prevStep} className="flex-1 rounded-full py-7 sm:py-9 font-black text-xs uppercase tracking-widest hover:bg-zinc-50 text-zinc-900 border border-zinc-200 transition-all">Back</Button>
+                        <Button variant="ghost" onClick={prevStep} className="flex-1 rounded-full py-7 sm:py-9 font-black text-xs uppercase tracking-widest hover:bg-zinc-50 text-zinc-900 border border-zinc-200">Back</Button>
                         <Button onClick={nextStep} className="flex-[2] bg-black text-white rounded-full py-7 sm:py-9 font-black text-xs uppercase tracking-widest shadow-2xl active:scale-95">Continue to Assets</Button>
                     </div>
                 </div>
