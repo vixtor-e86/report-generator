@@ -286,7 +286,7 @@ export default function ProjectApprovalAdmin() {
                     value={rejectModal.reason}
                     onChange={(e) => setRejectModal({...rejectModal, reason: e.target.value})}
                     placeholder="e.g. Documentation is incomplete or abstract is too short..."
-                    className="w-full h-40 p-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-2 focus:ring-red-500 font-medium text-sm leading-relaxed mb-6"
+                    className="w-full h-40 p-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-2 focus:ring-red-500 font-black text-slate-900 text-sm leading-relaxed mb-6 placeholder:text-slate-400"
                 />
 
                 <div className="flex gap-4">

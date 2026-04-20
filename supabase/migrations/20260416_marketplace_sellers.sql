@@ -81,3 +81,13 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
     CREATE POLICY "Admins full access items" ON marketplace_items FOR ALL USING (EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = 'admin'));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- 5. RPC: Increment Sales Count
+CREATE OR REPLACE FUNCTION increment_project_sales(row_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE marketplace_projects
+  SET sales_count = sales_count + 1
+  WHERE id = row_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
