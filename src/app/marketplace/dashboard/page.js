@@ -5,7 +5,7 @@ import {
   LayoutDashboard, ShoppingBag, Wrench, Wallet, 
   TrendingUp, Download, Eye, Star, ArrowUpRight,
   ChevronRight, Zap, FileText, CheckCircle2, Clock,
-  Plus, Users, BarChart3, Landmark
+  Plus, Users, BarChart3, Landmark, Layers
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Badge } from '@/components/marketplace/ui/badge'; // ✅ ADDED
