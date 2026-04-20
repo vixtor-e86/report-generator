@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   Menu, X, Home, ShoppingBag, Wrench, User, 
-  Wallet, Bell, ChevronDown, LayoutDashboard 
+  Wallet, Bell, ChevronDown, LayoutDashboard, CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/marketplace/ui/sheet';
