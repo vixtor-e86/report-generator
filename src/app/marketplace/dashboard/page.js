@@ -8,6 +8,7 @@ import {
   Plus, Users, BarChart3, Landmark
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
+import { Badge } from '@/components/marketplace/ui/badge'; // ✅ ADDED
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/marketplace/ui/tabs';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
