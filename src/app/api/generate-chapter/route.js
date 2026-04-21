@@ -97,7 +97,7 @@ export async function POST(request) {
 
     // Generate using DeepSeek (via callAI which defaults to DeepSeek)
     const result = await callAI(prompt, {
-      maxTokens: 5000, // Reduced from 6000 for faster response on cloud servers
+      maxTokens: 4000, // Reduced to prevent server timeout
       temperature: 0.7,
       provider: 'deepseek'
     });
@@ -213,7 +213,7 @@ ${sections}
 8. Keep paragraphs well-spaced
 
 **CONTENT REQUIREMENTS:**
-1. Write 3000 words for this chapter
+1. Write 2000 words for this chapter
 2. Use professional Nigerian academic tone
 3. Be SPECIFIC to the project components: ${components}
 4. Include ${faculty}-appropriate technical details

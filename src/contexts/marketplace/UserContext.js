@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const UserContext = createContext(undefined);
@@ -10,6 +10,9 @@ export function UserProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  
+  const userRef = useRef(null);
+  const statusRef = useRef(null);
 
   const fetchUserProfile = useCallback(async (authUser) => {
     if (!authUser) {
@@ -18,44 +21,25 @@ export function UserProvider({ children }) {
       setNotifications([]);
       setUnreadCount(0);
       setLoading(false);
+      userRef.current = null;
+      statusRef.current = null;
       return;
     }
 
     try {
-      // 1. Fetch user profile (Fresh fetch from DB)
-      const { data: profile, error } = await supabase
+      // 1. Fetch fresh user profile
+      const { data: profile } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', authUser.id)
         .single();
 
-      // 2. Fetch seller application status
+      // 2. Fetch seller status
       const { data: sellerApp } = await supabase
         .from('marketplace_sellers')
         .select('status')
         .eq('user_id', authUser.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        setUser({
-          id: authUser.id,
-          name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0],
-          email: authUser.email,
-          isSeller: false,
-        });
-      } else {
-        // ✅ Sync isSeller with DB profile or approved status
-        const isApproved = sellerApp?.status === 'approved' || profile.is_seller;
-        setUser({
-          id: authUser.id,
-          name: profile.username || profile.full_name || authUser.email?.split('@')[0],
-          email: profile.email || authUser.email,
-          isSeller: isApproved,
-        });
-      }
-
-      setSellerStatus(sellerApp?.status || 'none');
+        .maybeSingle();
 
       // 3. Fetch Notifications
       const { data: notifs } = await supabase
@@ -64,12 +48,32 @@ export function UserProvider({ children }) {
         .eq('user_id', authUser.id)
         .order('created_at', { ascending: false })
         .limit(10);
-      
+
+      const isApproved = sellerApp?.status === 'approved' || profile?.is_seller;
+      const currentStatus = sellerApp?.status || 'none';
+
+      // Avoid redundant state updates
+      if (!userRef.current || userRef.current.id !== authUser.id || userRef.current.isSeller !== !!isApproved || userRef.current.name !== (profile?.username || profile?.full_name)) {
+        const newUser = {
+            id: authUser.id,
+            name: profile?.username || profile?.full_name || authUser.email?.split('@')[0],
+            email: authUser.email,
+            isSeller: !!isApproved,
+        };
+        setUser(newUser);
+        userRef.current = newUser;
+      }
+
+      if (statusRef.current !== currentStatus) {
+        setSellerStatus(currentStatus);
+        statusRef.current = currentStatus;
+      }
+
       setNotifications(notifs || []);
       setUnreadCount(notifs?.filter(n => !n.is_read).length || 0);
 
     } catch (err) {
-      console.error('Unexpected error:', err);
+      console.error('User context fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -79,6 +83,8 @@ export function UserProvider({ children }) {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (authUser) {
       await fetchUserProfile(authUser);
+    } else {
+        setLoading(false);
     }
   }, [fetchUserProfile]);
 
@@ -97,20 +103,52 @@ export function UserProvider({ children }) {
   useEffect(() => {
     refreshUser();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // 1. Listen for auth changes
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
       fetchUserProfile(session?.user || null);
     });
 
-    // 🔄 FALLBACK POLLING: Check every 5 seconds for status changes 
-    // (In case Realtime is not enabled in user's DB)
-    const interval = setInterval(() => {
+    // 2. ✅ REAL-TIME STATUS SYNC (Sellers Table)
+    const statusSub = supabase
+      .channel('seller-status-channel')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'marketplace_sellers' 
+      }, () => {
         refreshUser();
-    }, 5000);
+      })
+      .subscribe();
+
+    // 3. ✅ REAL-TIME PROFILE SYNC (User Profiles Table - Critical for Approval)
+    const profileSub = supabase
+      .channel('profile-sync-channel')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'user_profiles' 
+      }, () => {
+        refreshUser();
+      })
+      .subscribe();
+
+    // 4. ✅ REAL-TIME NOTIFICATIONS
+    const notifSub = supabase
+      .channel('notifications-channel')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'marketplace_notifications' 
+      }, () => {
+        refreshUser();
+      })
+      .subscribe();
 
     return () => {
-        subscription.unsubscribe();
-        clearInterval(interval);
+        authSub.unsubscribe();
+        supabase.removeChannel(statusSub);
+        supabase.removeChannel(profileSub);
+        supabase.removeChannel(notifSub);
     };
   }, [refreshUser, fetchUserProfile]);
 
@@ -125,7 +163,11 @@ export function UserProvider({ children }) {
 
   const updateUser = useCallback((updates) => {
     if (!user) return;
-    setUser(prev => ({ ...prev, ...updates }));
+    setUser(prev => {
+        const next = { ...prev, ...updates };
+        userRef.current = next;
+        return next;
+    });
   }, [user]);
 
   return (
