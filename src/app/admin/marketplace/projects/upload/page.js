@@ -24,6 +24,8 @@ export default function AdminUploadProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const [user, setUser] = useState(null);
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const [aiStep, setAiStep] = useState('');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -102,6 +104,38 @@ export default function AdminUploadProjectPage() {
     }
 
     setIsSubmitting(true);
+
+    // AI Processing Step
+    setAiProcessing(true);
+    setAiStep('Analyzing abstract...');
+    
+    let processedAbstract = formData.abstract;
+    let processedChapter1 = formData.chapter1;
+
+    try {
+      const aiRes = await fetch('/api/marketplace/process-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ abstract: formData.abstract, chapter1: formData.chapter1 })
+      });
+      
+      const aiData = await aiRes.json();
+      
+      if (!aiRes.ok) throw new Error(aiData.error || "AI Processing failed");
+      
+      setAiStep('Restructuring Chapter 1...');
+      processedAbstract = aiData.abstract;
+      processedChapter1 = aiData.chapter1;
+      
+    } catch (err) {
+      console.error("AI Error:", err);
+      toast.error(err.message || "Something went wrong during AI analysis. Please try again later.");
+      setAiProcessing(false);
+      setIsSubmitting(false);
+      return;
+    }
+
+    setAiProcessing(false);
     setUploadStatus('Initializing Admin Secure Upload...');
 
     try {
@@ -143,8 +177,8 @@ export default function AdminUploadProjectPage() {
         level: formData.level,
         project_type: formData.projectType,
         technologies: formData.technologies,
-        abstract: formData.abstract,
-        chapter_1_preview: formData.chapter1,
+        abstract: processedAbstract,
+        chapter_1_preview: processedChapter1,
         code_snippet: formData.codeSnippet,
         file_url: mainFileUrl,
         preview_images: imageUrls,
@@ -167,6 +201,25 @@ export default function AdminUploadProjectPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
+      {/* AI Processing Modal */}
+      {aiProcessing && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white rounded-[40px] p-12 max-w-sm w-full text-center shadow-2xl animate-in zoom-in-95 duration-300">
+                <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[32px] flex items-center justify-center mx-auto mb-8 relative">
+                    <Sparkles className="w-10 h-10 animate-pulse" />
+                    <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-[32px] animate-spin" />
+                </div>
+                <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-2">AI Restructuring</h3>
+                <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest animate-pulse">{aiStep}</p>
+                <div className="mt-8 flex gap-1 justify-center">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />
+                    ))}
+                </div>
+            </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
