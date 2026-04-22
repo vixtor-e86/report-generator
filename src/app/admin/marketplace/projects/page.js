@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 
 const Icons = {
@@ -118,8 +119,9 @@ export default function ProjectApprovalAdmin() {
           ))}
         </div>
       </div>
+    </div>
 
-      {loading ? (
+    {loading ? (
         <div className="py-20 text-center"><div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mx-auto"></div></div>
       ) : projects.length === 0 ? (
         <div className="bg-white rounded-[40px] border border-slate-200 p-20 text-center">
