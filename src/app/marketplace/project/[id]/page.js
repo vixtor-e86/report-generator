@@ -162,7 +162,7 @@ export default function ProjectDetailPage({ params }) {
         await supabase.rpc('increment_project_sales', { row_id: project.id });
         setIsPurchased(true);
         setShowPurchaseModal(false);
-        toast.success("Purchase successful! Check your email for the copy.");
+        toast.success("Purchase successful! Check your inbox (and spam folder) for the project copy.");
       } else {
         toast.error("Transaction failed. Try again.");
       }
