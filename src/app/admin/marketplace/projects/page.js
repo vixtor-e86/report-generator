@@ -177,77 +177,79 @@ export default function ProjectApprovalAdmin() {
 
       {/* DETAIL MODAL */}
       {selectedProject && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-xl animate-in fade-in duration-300">
-          <div className="relative bg-zinc-900 border border-zinc-800 rounded-[56px] shadow-[0_0_100px_rgba(0,0,0,0.8)] w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onClick={() => setSelectedProject(null)} />
+          <div className="relative bg-white rounded-[40px] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
              {/* Modal Header */}
-             <div className="p-10 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50">
-                <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-zinc-800 rounded-[24px] shadow-2xl border border-zinc-700 flex items-center justify-center text-emerald-500">
-                        <Icons.FileText className="w-8 h-8" />
+             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center">
+                        <Icons.FileText className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black text-white tracking-tighter uppercase">{selectedProject.title}</h2>
-                        <div className="flex gap-3 mt-2">
-                           <Badge className="bg-zinc-800 text-zinc-500 border-none px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest">Ref: {selectedProject.id.slice(0,8)}</Badge>
-                           <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest">{selectedProject.status}</Badge>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">{selectedProject.title}</h2>
+                        <div className="flex gap-2 mt-1">
+                           <Badge className="bg-slate-100 text-slate-500 border-none px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all">Ref: {selectedProject.id.slice(0,8)}</Badge>
+                           <Badge className="bg-blue-50 text-blue-600 border-none px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all">{selectedProject.status}</Badge>
                         </div>
                     </div>
                 </div>
-                <button onClick={() => setSelectedProject(null)} className="p-4 bg-zinc-800 rounded-2xl hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all">
+                <button onClick={() => setSelectedProject(null)} className="p-3 bg-white rounded-2xl hover:bg-red-50 hover:text-red-500 transition-colors shadow-sm">
                     <Icons.X className="w-6 h-6" />
                 </button>
              </div>
 
              {/* Modal Body */}
-             <div className="flex-1 overflow-y-auto p-10 custom-scrollbar space-y-16">
-                <div className="grid md:grid-cols-3 gap-12">
-                    <div className="md:col-span-2 space-y-12">
+             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-12">
+                <div className="grid md:grid-cols-3 gap-8">
+                    <div className="md:col-span-2 space-y-8">
                         <section>
-                            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
-                                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> Project Abstract
+                            <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> Abstract
                             </h3>
-                            <div className="bg-zinc-950 rounded-[32px] p-8 border border-zinc-800 prose prose-invert prose-emerald max-w-none prose-p:text-zinc-400 prose-p:leading-relaxed shadow-inner">
+                            <div className="bg-slate-50 rounded-3xl p-6 text-sm text-slate-600 leading-relaxed font-medium h-[400px] overflow-y-auto custom-scrollbar border border-slate-100 shadow-inner">
                                 <ReactMarkdown>{selectedProject.abstract}</ReactMarkdown>
                             </div>
                         </section>
 
                         <section>
-                            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
-                                <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" /> Chapter 1 Full Preview
+                            <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full" /> Chapter 1 Preview
                             </h3>
-                            <div className="bg-zinc-950 rounded-[32px] p-8 border border-zinc-800 prose prose-invert prose-emerald max-w-none prose-p:text-zinc-400 prose-p:leading-relaxed shadow-inner max-h-[500px] overflow-y-auto custom-scrollbar">
+                            <div className="bg-slate-50 rounded-3xl p-6 text-sm text-slate-600 leading-relaxed font-medium h-[500px] overflow-y-auto custom-scrollbar border border-slate-100 shadow-inner">
                                 <ReactMarkdown>{selectedProject.chapter_1_preview}</ReactMarkdown>
                             </div>
                         </section>
 
                         {selectedProject.code_snippet && (
                             <section>
-                                <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" /> Technical Code Snippet
+                                <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full" /> Technical Code Snippet
                                 </h3>
-                                <pre className="bg-black rounded-[32px] p-8 text-[13px] text-emerald-400 font-mono leading-relaxed overflow-x-auto shadow-2xl border border-zinc-800">
-                                    {selectedProject.code_snippet}
-                                </pre>
+                                <div className="h-[400px] overflow-y-auto custom-scrollbar">
+                                    <pre className="bg-zinc-900 rounded-3xl p-6 text-xs text-emerald-400 font-mono leading-relaxed overflow-x-auto shadow-2xl">
+                                        <code>{selectedProject.code_snippet}</code>
+                                    </pre>
+                                </div>
                             </section>
                         )}
                     </div>
 
-                    <div className="space-y-8">
-                        <div className="bg-zinc-950 rounded-[40px] p-8 text-white shadow-2xl border border-zinc-800 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-3xl rounded-full" />
-                            <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] mb-8">Asset Intel</p>
-                            <div className="space-y-6">
-                                <div className="group">
-                                    <p className="text-[9px] font-black text-zinc-700 uppercase tracking-widest mb-1">Architecture</p>
-                                    <p className="text-sm font-black text-zinc-300 group-hover:text-emerald-500 transition-colors capitalize">{selectedProject.project_type?.replace('_', ' ')}</p>
+                    <div className="space-y-6">
+                        <div className="bg-zinc-900 rounded-[32px] p-6 text-white shadow-xl">
+                            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4">Metadata Analysis</p>
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-[9px] font-black text-zinc-600 uppercase">Architecture</p>
+                                    <p className="text-xs font-bold text-white capitalize">{selectedProject.project_type?.replace('_', ' ')}</p>
                                 </div>
-                                <div className="group">
-                                    <p className="text-[9px] font-black text-zinc-700 uppercase tracking-widest mb-1">Stack/Tech</p>
-                                    <p className="text-sm font-black text-zinc-300 group-hover:text-emerald-500 transition-colors">{selectedProject.technologies || 'Standard technical setup'}</p>
+                                <div>
+                                    <p className="text-[9px] font-black text-zinc-600 uppercase">Technologies</p>
+                                    <p className="text-xs font-bold text-white">{selectedProject.technologies || 'Not specified'}</p>
                                 </div>
-                                <div className="group">
-                                    <p className="text-[9px] font-black text-zinc-700 uppercase tracking-widest mb-1">Grade Level</p>
-                                    <p className="text-sm font-black text-zinc-300 group-hover:text-emerald-500 transition-colors">{selectedProject.level} Academic Level</p>
+                                <div>
+                                    <p className="text-[9px] font-black text-zinc-600 uppercase">Academic Level</p>
+                                    <p className="text-xs font-bold text-white">{selectedProject.level} Level</p>
                                 </div>
                             </div>
 
@@ -255,15 +257,15 @@ export default function ProjectApprovalAdmin() {
                                 href={selectedProject.file_url} 
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="mt-10 flex items-center justify-center gap-3 w-full py-5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-[22px] font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl"
+                                className="mt-8 flex items-center justify-center gap-3 w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg"
                             >
                                 <Icons.Download className="w-4 h-4" /> Download Package
                             </a>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                             {selectedProject.preview_images?.map((img, i) => (
-                                <div key={i} className="aspect-square rounded-[24px] overflow-hidden border border-zinc-800 shadow-lg hover:border-emerald-500/50 transition-all cursor-pointer">
+                                <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-200">
                                     <img src={img} className="w-full h-full object-cover" />
                                 </div>
                             ))}
@@ -274,17 +276,17 @@ export default function ProjectApprovalAdmin() {
 
              {/* Modal Footer */}
              {selectedProject.status === 'pending' && (
-                <div className="p-10 border-t border-zinc-800 bg-zinc-900/80 flex gap-6">
+                <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex gap-4">
                     <button 
                         onClick={() => setRejectModal({ open: true, projectId: selectedProject.id, reason: '' })}
-                        className="flex-1 py-6 bg-transparent border border-zinc-800 text-zinc-500 rounded-[28px] font-black text-[10px] uppercase tracking-[0.2em] hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 transition-all"
+                        className="flex-1 py-5 bg-white border border-slate-200 text-slate-600 rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all"
                     >
                         Reject Blueprint
                     </button>
                     <button 
                         disabled={processing}
                         onClick={() => handleUpdateStatus(selectedProject.id, 'active')}
-                        className="flex-[2] py-6 bg-emerald-500 text-zinc-950 rounded-[28px] font-black text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.2)] transition-all active:scale-95"
+                        className="flex-[2] py-5 bg-blue-600 text-white rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all active:scale-95"
                     >
                         {processing ? 'Processing...' : 'Verify & Authorize Inject'}
                     </button>

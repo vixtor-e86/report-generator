@@ -91,8 +91,8 @@ export default function AdminProjectsPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Project Title</th>
-                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">User</th>
+                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider w-1/4">Project Title</th>
+                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider w-1/3">User</th>
                 <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Tier</th>
                 <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Date</th>
@@ -103,14 +103,14 @@ export default function AdminProjectsPage() {
               {filteredProjects.map((project) => (
                 <tr key={project.id} className="hover:bg-slate-50 transition">
                   <td className="px-6 py-4">
-                    <div className="font-medium text-slate-900 line-clamp-1 max-w-xs" title={project.title}>
+                    <div className="font-medium text-slate-900 line-clamp-1 max-w-[200px]" title={project.title}>
                       {project.title}
                     </div>
                     <div className="text-xs text-slate-500">{project.department}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-slate-900">{project.user_profiles?.username}</div>
-                    <div className="text-xs text-slate-500">{project.user_profiles?.email}</div>
+                  <td className="px-6 py-4">
+                    <div className="text-slate-900 font-bold">{project.user_profiles?.username || 'No Username'}</div>
+                    <div className="text-xs text-slate-500 font-medium">{project.user_profiles?.email || 'No Email'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full capitalize ${
