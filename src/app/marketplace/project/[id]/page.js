@@ -6,7 +6,8 @@ import {
   Copy, Download, RefreshCw, ShieldCheck,
   BookOpen, Play, Code2, Star, Heart, Share2,
   Clock, CheckCircle2, ChevronRight, Bookmark,
-  FileText, Landmark, X, User, Phone, Mail, Sparkles
+  FileText, Landmark, X, User, Phone, Mail, Sparkles,
+  Wallet, ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Badge } from '@/components/marketplace/ui/badge';
@@ -32,6 +33,8 @@ export default function ProjectDetailPage({ params }) {
   const [activeImage, setActiveTab] = useState(0);
   const [sellerUsername, setSellerUsername] = useState('');
   const [showContactModal, setShowContactModal] = useState(false);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
     async function loadProject() {
@@ -66,6 +69,7 @@ export default function ProjectDetailPage({ params }) {
             .maybeSingle();
 
           if (purchase) setIsPurchased(true);
+          setUserEmail(user.email || '');
         }
       } catch (err) {
         console.error(err);
@@ -79,6 +83,12 @@ export default function ProjectDetailPage({ params }) {
 
   const handlePurchase = async () => {
     if (!user) return toast.error("Please login to purchase");
+    
+    // Validate email for ordinary users
+    if (!user.isSeller && !userEmail) {
+        return toast.error("Please enter an email to receive your copy.");
+    }
+    
     if (wallet.balance < project.price) {
         return toast.error("Insufficient balance. Please refill your wallet.");
     }
@@ -88,38 +98,56 @@ export default function ProjectDetailPage({ params }) {
       const success = await deductFunds(project.price, `Purchase: ${project.title}`);
       
       if (success) {
-        const sellerEarnings = Math.floor(project.price * 0.7);
-        const { data: sellerWallet } = await supabase
-            .from('marketplace_seller_wallets')
-            .select('balance, total_earned')
-            .eq('seller_id', project.seller_id)
-            .single();
-        
-        if (sellerWallet) {
-            await supabase
-                .from('marketplace_seller_wallets')
-                .update({ 
-                    balance: sellerWallet.balance + sellerEarnings,
-                    total_earned: (sellerWallet.total_earned || 0) + sellerEarnings,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('seller_id', project.seller_id);
-        }
-
-        await supabase.from('marketplace_notifications').insert({
-            user_id: project.user_id_seller,
-            title: 'New Sale!',
-            message: `You earned ${formatCurrency(sellerEarnings)} from a sale of "${project.title}".`,
-            type: 'success'
+        // 1. Send Email Copy
+        const recipientEmail = user.isSeller ? user.email : userEmail;
+        await fetch('/api/marketplace/send-purchase-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: recipientEmail,
+                projectTitle: project.title,
+                price: project.price,
+                downloadUrl: project.file_url
+            })
         });
+
+        // 2. Handle Seller Earnings
+        const sellerEarnings = Math.floor(project.price * 0.7);
+        if (project.seller_id) {
+            const { data: sellerWallet } = await supabase
+                .from('marketplace_seller_wallets')
+                .select('balance, total_earned')
+                .eq('seller_id', project.seller_id)
+                .single();
+            
+            if (sellerWallet) {
+                await supabase
+                    .from('marketplace_seller_wallets')
+                    .update({ 
+                        balance: sellerWallet.balance + sellerEarnings,
+                        total_earned: (sellerWallet.total_earned || 0) + sellerEarnings,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('seller_id', project.seller_id);
+            }
+
+            await supabase.from('marketplace_notifications').insert({
+                user_id: project.marketplace_sellers.user_id,
+                title: 'New Sale!',
+                message: `You earned ${formatCurrency(sellerEarnings)} from a sale of "${project.title}".`,
+                type: 'success'
+            });
+        }
 
         await supabase.rpc('increment_project_sales', { row_id: project.id });
         setIsPurchased(true);
-        toast.success("Purchase successful! Download unlocked.");
+        setShowPurchaseModal(false);
+        toast.success("Purchase successful! Check your email for the copy.");
       } else {
         toast.error("Transaction failed. Try again.");
       }
     } catch (err) {
+      console.error(err);
       toast.error("An error occurred during purchase");
     } finally {
       setProcessing(false);
@@ -266,11 +294,10 @@ export default function ProjectDetailPage({ params }) {
                 </div>
                ) : (
                 <Button 
-                    onClick={handlePurchase}
-                    disabled={purchasing}
+                    onClick={() => setShowPurchaseModal(true)}
                     className="w-full bg-zinc-900 hover:bg-black text-white rounded-full py-8 font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"
                 >
-                    {purchasing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
+                    <Zap className="w-5 h-5" />
                     Unlock Full Access
                 </Button>
                )}
@@ -329,7 +356,77 @@ export default function ProjectDetailPage({ params }) {
         </div>
       </div>
 
-      {/* Contact Modal */}
+      {/* Purchase Modal */}
+      {showPurchaseModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-black text-zinc-900 tracking-tighter uppercase">Get Access</h2>
+                <button onClick={() => setShowPurchaseModal(false)} className="p-2 hover:bg-zinc-100 rounded-full transition-colors">
+                  <X className="w-6 h-6 text-zinc-400" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="p-6 bg-zinc-50 rounded-3xl border border-zinc-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-zinc-400"><Wallet className="w-5 h-5" /></div>
+                        <div>
+                            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Wallet Balance</p>
+                            <p className="text-zinc-900 font-black">{formatCurrency(wallet.balance)}</p>
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Price</p>
+                        <p className="text-zinc-900 font-black">{formatCurrency(project.price)}</p>
+                    </div>
+                </div>
+
+                {!user?.isSeller && (
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Delivery Email</label>
+                        <div className="relative">
+                            <input 
+                                type="email" 
+                                value={userEmail}
+                                onChange={(e) => setUserEmail(e.target.value)}
+                                placeholder="Enter email address"
+                                className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl h-14 px-12 font-bold text-zinc-900 focus:border-zinc-900 transition-all outline-none"
+                            />
+                            <Mail className="absolute left-4 top-4.5 w-5 h-5 text-zinc-300" />
+                        </div>
+                        <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest ml-1">A copy will be sent here immediately.</p>
+                    </div>
+                )}
+
+                {wallet.balance < project.price ? (
+                    <div className="p-4 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-500" />
+                        <p className="text-[10px] text-red-600 font-black uppercase tracking-widest">Insufficient funds in your wallet.</p>
+                    </div>
+                ) : (
+                    <Button 
+                        onClick={handlePurchase}
+                        disabled={purchasing}
+                        className="w-full bg-zinc-900 hover:bg-black text-white rounded-2xl py-6 font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"
+                    >
+                        {purchasing ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : <Download className="w-5 h-5" />}
+                        {purchasing ? 'Processing Access...' : 'Confirm & Download'}
+                    </Button>
+                )}
+              </div>
+            </div>
+            <div className="bg-zinc-50 p-6 text-center border-t border-zinc-100">
+                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Secure Technical Exchange Protocol</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contact Seller Modal */}
       {showContactModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-[40px] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
@@ -379,7 +476,7 @@ export default function ProjectDetailPage({ params }) {
                 </a>
               </div>
             </div>
-            <div className="bg-zinc-50 p-6 text-center">
+            <div className="bg-zinc-50 p-6 text-center border-t border-zinc-100">
               <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
                 {isAdminProject ? 'Official W3 Hub Project • Verified & Trusted' : 'Always keep transactions within the platform for your protection.'}
               </p>

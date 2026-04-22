@@ -207,7 +207,7 @@ export default function ProjectApprovalAdmin() {
                             <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> Abstract
                             </h3>
-                            <div className="bg-slate-50 rounded-3xl p-6 text-sm text-slate-600 leading-relaxed font-medium h-[400px] overflow-y-auto custom-scrollbar border border-slate-100 shadow-inner">
+                            <div className="bg-slate-50 rounded-3xl p-6 text-sm text-slate-600 leading-relaxed font-medium h-[400px] overflow-y-auto custom-scrollbar border border-slate-100 shadow-inner prose prose-zinc max-w-none">
                                 <ReactMarkdown>{selectedProject.abstract}</ReactMarkdown>
                             </div>
                         </section>
@@ -216,7 +216,7 @@ export default function ProjectApprovalAdmin() {
                             <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-4 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full" /> Chapter 1 Preview
                             </h3>
-                            <div className="bg-slate-50 rounded-3xl p-6 text-sm text-slate-600 leading-relaxed font-medium h-[500px] overflow-y-auto custom-scrollbar border border-slate-100 shadow-inner">
+                            <div className="bg-slate-50 rounded-3xl p-6 text-sm text-slate-600 leading-relaxed font-medium h-[500px] overflow-y-auto custom-scrollbar border border-slate-100 shadow-inner prose prose-zinc max-w-none">
                                 <ReactMarkdown>{selectedProject.chapter_1_preview}</ReactMarkdown>
                             </div>
                         </section>
