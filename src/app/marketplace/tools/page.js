@@ -6,7 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { 
   Search, Wrench, ShieldCheck, BookOpen, Presentation, 
   BarChart3, Code2, Lightbulb, RefreshCw, SpellCheck, 
-  Quote, Image, ArrowRight, Zap, Check, Star
+  Quote, Image, ArrowRight, Zap, Check, Star, Wallet
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
@@ -36,7 +36,7 @@ const iconMap = {
 export default function AcademicToolsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const { wallet } = useWallet();
+  const { wallet, setShowFundingModal } = useWallet();
 
   const toolsRef = useRef(null);
 
@@ -78,15 +78,18 @@ export default function AcademicToolsPage() {
                 Professional research and writing tools to elevate your academic work
               </p>
             </div>
-            <div className="flex items-center gap-4 px-6 py-3 bg-[#f8f9fc] border border-[#e5e7eb] rounded-[20px] shadow-sm">
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-100">
-                <Zap className="w-5 h-5 text-white" />
+            <button 
+              onClick={() => setShowFundingModal(true)}
+              className="flex items-center gap-4 px-6 py-3 bg-[#f8f9fc] border border-[#e5e7eb] rounded-[20px] shadow-sm hover:border-black transition-all active:scale-95 group text-left"
+            >
+              <div className="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                <Wallet className="w-5 h-5 text-white" />
               </div>
               <div>
                 <p className="text-[#9ca3af] text-[10px] font-bold uppercase tracking-wider">Wallet Balance</p>
                 <p className="text-[#111827] font-black text-lg">{formatCurrency(wallet.balance)}</p>
               </div>
-            </div>
+            </button>
           </div>
         </div>
       </div>

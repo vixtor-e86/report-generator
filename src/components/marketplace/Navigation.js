@@ -22,7 +22,7 @@ import { formatCurrency } from '@/lib/utils';
 export default function Navigation() {
   const pathname = usePathname();
   const { user, isAuthenticated, logout, notifications, unreadCount, markNotificationsAsRead } = useUser();
-  const { wallet } = useWallet();
+  const { wallet, setShowFundingModal } = useWallet();
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
@@ -69,12 +69,15 @@ export default function Navigation() {
             {isAuthenticated ? (
               <>
                 {/* Wallet */}
-                <div className="hidden sm:flex items-center gap-2 px-4 py-1.5 bg-white rounded-full border border-[#e5e7eb] shadow-sm">
-                  <Wallet className="w-4 h-4 text-black" />
+                <button 
+                  onClick={() => setShowFundingModal(true)}
+                  className="hidden sm:flex items-center gap-2 px-4 py-1.5 bg-white rounded-full border border-[#e5e7eb] shadow-sm hover:border-black transition-all active:scale-95 group"
+                >
+                  <Wallet className="w-4 h-4 text-black group-hover:scale-110 transition-transform" />
                   <span className="text-black text-sm font-semibold">
                     {formatCurrency(wallet.balance)}
                   </span>
-                </div>
+                </button>
 
                 {/* Notifications */}
                 <DropdownMenu onOpenChange={(open) => open && markNotificationsAsRead()}>
@@ -268,12 +271,18 @@ export default function Navigation() {
                           <p className="text-[#6b7280] text-sm truncate">{user?.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 px-4 py-3 bg-[#f3f4f6] rounded-xl border border-[#e5e7eb]">
-                        <Wallet className="w-4 h-4 text-black" />
+                      <button 
+                        onClick={() => {
+                          setShowFundingModal(true);
+                          setIsOpen(false);
+                        }}
+                        className="flex items-center gap-2 px-4 py-3 bg-[#f3f4f6] rounded-xl border border-[#e5e7eb] w-full text-left active:scale-95 transition-all group"
+                      >
+                        <Wallet className="w-4 h-4 text-black group-hover:scale-110 transition-transform" />
                         <span className="text-black font-bold">
                           {formatCurrency(wallet.balance)}
                         </span>
-                      </div>
+                      </button>
                     </div>
                   )}
                 </div>

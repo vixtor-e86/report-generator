@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/marketplace/UserContext';
+import FundingModal from '@/components/marketplace/FundingModal';
 
 const WalletContext = createContext(undefined);
 
@@ -9,6 +10,7 @@ export function WalletProvider({ children }) {
   const { user } = useUser();
   const [wallet, setWallet] = useState({ balance: 0, currency: 'NGN', transactions: [] });
   const [loading, setLoading] = useState(true);
+  const [showFundingModal, setShowFundingModal] = useState(false);
 
   const fetchWalletData = useCallback(async () => {
     if (!user) return;
@@ -55,8 +57,6 @@ export function WalletProvider({ children }) {
   const deductFunds = useCallback(async (amount, description) => {
     if (wallet.balance < amount) return false;
 
-    // This should ideally be an Edge Function or RPC for atomicity
-    // For now we do a simple update
     const { error } = await supabase
       .from('marketplace_wallets')
       .update({ balance: wallet.balance - amount })
@@ -86,8 +86,11 @@ export function WalletProvider({ children }) {
       loading,
       refreshWallet: fetchWalletData,
       deductFunds,
+      showFundingModal,
+      setShowFundingModal
     }}>
       {children}
+      <FundingModal open={showFundingModal} onOpenChange={setShowFundingModal} />
     </WalletContext.Provider>
   );
 }

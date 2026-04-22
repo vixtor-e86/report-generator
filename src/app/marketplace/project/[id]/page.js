@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   ArrowLeft, ShoppingBag, Wrench, Zap, AlertCircle, Check, 
   Copy, Download, RefreshCw, ShieldCheck,
@@ -23,8 +23,9 @@ export default function ProjectDetailPage({ params }) {
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useUser();
-  const { wallet, deductFunds } = useWallet();
+  const { wallet, deductFunds, setShowFundingModal } = useWallet();
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -84,7 +85,6 @@ export default function ProjectDetailPage({ params }) {
   const handlePurchase = async () => {
     if (!user) return toast.error("Please login to purchase");
     
-    // Validate email for ordinary users
     if (!user.isSeller && !userEmail) {
         return toast.error("Please enter an email to receive your copy.");
     }
@@ -98,7 +98,6 @@ export default function ProjectDetailPage({ params }) {
       const success = await deductFunds(project.price, `Purchase: ${project.title}`);
       
       if (success) {
-        // 1. Send Email Copy
         const recipientEmail = user.isSeller ? user.email : userEmail;
         await fetch('/api/marketplace/send-purchase-email', {
             method: 'POST',
@@ -111,7 +110,6 @@ export default function ProjectDetailPage({ params }) {
             })
         });
 
-        // 2. Handle Seller Earnings
         const sellerEarnings = Math.floor(project.price * 0.7);
         if (project.seller_id) {
             const { data: sellerWallet } = await supabase
@@ -370,13 +368,19 @@ export default function ProjectDetailPage({ params }) {
 
               <div className="space-y-6">
                 <div className="p-6 bg-zinc-50 rounded-3xl border border-zinc-100 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-zinc-400"><Wallet className="w-5 h-5" /></div>
+                    <button 
+                        onClick={() => {
+                            setShowFundingModal(true);
+                            setShowPurchaseModal(false);
+                        }}
+                        className="flex items-center gap-3 hover:opacity-70 transition-opacity"
+                    >
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-zinc-400 border border-zinc-100 shadow-sm"><Wallet className="w-5 h-5" /></div>
                         <div>
                             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Wallet Balance</p>
                             <p className="text-zinc-900 font-black">{formatCurrency(wallet.balance)}</p>
                         </div>
-                    </div>
+                    </button>
                     <div className="text-right">
                         <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Price</p>
                         <p className="text-zinc-900 font-black">{formatCurrency(project.price)}</p>
@@ -401,9 +405,20 @@ export default function ProjectDetailPage({ params }) {
                 )}
 
                 {wallet.balance < project.price ? (
-                    <div className="p-4 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3">
-                        <AlertCircle className="w-5 h-5 text-red-500" />
-                        <p className="text-[10px] text-red-600 font-black uppercase tracking-widest">Insufficient funds in your wallet.</p>
+                    <div className="space-y-4">
+                        <div className="p-4 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3">
+                            <AlertCircle className="w-5 h-5 text-red-500" />
+                            <p className="text-[10px] text-red-600 font-black uppercase tracking-widest">Insufficient funds in your wallet.</p>
+                        </div>
+                        <Button 
+                            onClick={() => {
+                                setShowFundingModal(true);
+                                setShowPurchaseModal(false);
+                            }}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-6 font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"
+                        >
+                            <Zap className="w-4 h-4" /> Fund Wallet Now
+                        </Button>
                     </div>
                 ) : (
                     <Button 
