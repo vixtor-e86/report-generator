@@ -96,18 +96,30 @@ export default function MarketplaceDashboardPage() {
                   <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Recent Acquisitions</h2>
                 </div>
                 <div className="space-y-4">
-                  {wallet.transactions.filter(t => t.type === 'purchase').slice(0, 3).map(tx => (
-                    <div key={tx.id} className="flex items-center justify-between p-5 bg-zinc-50 rounded-3xl border border-zinc-100">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-zinc-100"><FileText className="w-5 h-5 text-zinc-400" /></div>
-                        <div>
-                          <p className="font-bold text-slate-900 text-sm">{tx.description.replace('Purchase: ', '')}</p>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(tx.created_at).toLocaleDateString()}</p>
+                  {wallet.transactions.filter(t => t.type === 'purchase').slice(0, 3).map(tx => {
+                    const projectUrl = tx.metadata?.project_id 
+                        ? `/marketplace/project/${tx.metadata.project_id}` 
+                        : null;
+                        
+                    return (
+                        <Link 
+                            key={tx.id} 
+                            href={projectUrl || '#'} 
+                            className={`flex items-center justify-between p-5 bg-zinc-50 rounded-3xl border border-zinc-100 hover:border-black transition-all group ${!projectUrl ? 'cursor-default' : ''}`}
+                        >
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-zinc-100 group-hover:bg-black group-hover:text-white transition-colors">
+                                <FileText className="w-5 h-5" />
+                            </div>
+                            <div>
+                            <p className="font-bold text-slate-900 text-sm">{tx.description.replace('Purchase: ', '')}</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(tx.created_at).toLocaleDateString()}</p>
+                            </div>
                         </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-zinc-300" />
-                    </div>
-                  ))}
+                        {projectUrl && <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-black transition-colors" />}
+                        </Link>
+                    );
+                  })}
                   {wallet.transactions.filter(t => t.type === 'purchase').length === 0 && (
                     <p className="text-center py-10 text-slate-400 font-bold italic">No projects purchased yet</p>
                   )}

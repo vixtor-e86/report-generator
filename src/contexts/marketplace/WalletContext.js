@@ -54,7 +54,7 @@ export function WalletProvider({ children }) {
     fetchWalletData();
   }, [fetchWalletData]);
 
-  const deductFunds = useCallback(async (amount, description) => {
+  const deductFunds = useCallback(async (amount, description, metadata = {}) => {
     if (wallet.balance < amount) return false;
 
     const { error } = await supabase
@@ -74,6 +74,7 @@ export function WalletProvider({ children }) {
       type: 'purchase',
       status: 'completed',
       description,
+      metadata,
     });
 
     fetchWalletData();

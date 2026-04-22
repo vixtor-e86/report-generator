@@ -60,16 +60,32 @@ export default function ProjectDetailPage({ params }) {
         }
 
         if (user) {
+          // Check for purchase using project_id in metadata
           const { data: purchase } = await supabase
             .from('wallet_transactions')
             .select('*')
             .eq('user_id', user.id)
             .eq('type', 'purchase')
             .eq('status', 'completed')
-            .filter('description', 'ilike', `%${data.title}%`)
+            .contains('metadata', { project_id: projectId })
             .maybeSingle();
 
-          if (purchase) setIsPurchased(true);
+          if (purchase) {
+            setIsPurchased(true);
+          } else {
+            // Fallback for older transactions that didn't have project_id in metadata
+            const { data: legacyPurchase } = await supabase
+              .from('wallet_transactions')
+              .select('*')
+              .eq('user_id', user.id)
+              .eq('type', 'purchase')
+              .eq('status', 'completed')
+              .filter('description', 'ilike', `%${data.title}%`)
+              .maybeSingle();
+            
+            if (legacyPurchase) setIsPurchased(true);
+          }
+          
           setUserEmail(user.email || '');
         }
       } catch (err) {
@@ -95,9 +111,15 @@ export default function ProjectDetailPage({ params }) {
 
     setProcessing(true);
     try {
-      const success = await deductFunds(project.price, `Purchase: ${project.title}`);
+      // Pass project_id in metadata to avoid collisions
+      const success = await deductFunds(
+        project.price, 
+        `Purchase: ${project.title}`,
+        { project_id: project.id }
+      );
       
       if (success) {
+        // 1. Send Email Copy
         const recipientEmail = user.isSeller ? user.email : userEmail;
         await fetch('/api/marketplace/send-purchase-email', {
             method: 'POST',
