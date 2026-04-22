@@ -6,7 +6,7 @@ import {
   Copy, Download, RefreshCw, ShieldCheck,
   BookOpen, Play, Code2, Star, Heart, Share2,
   Clock, CheckCircle2, ChevronRight, Bookmark,
-  FileText, Landmark
+  FileText, Landmark, X, User, Phone, Mail
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Badge } from '@/components/marketplace/ui/badge';
@@ -29,6 +29,8 @@ export default function ProjectDetailPage({ params }) {
   const [isPurchased, setIsPurchased] = useState(false);
   const [purchasing, setProcessing] = useState(false);
   const [activeImage, setActiveTab] = useState(0);
+  const [sellerUsername, setSellerUsername] = useState('');
+  const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
     async function loadProject() {
@@ -43,6 +45,16 @@ export default function ProjectDetailPage({ params }) {
 
         if (error) throw error;
         setProject(data);
+
+        // Fetch seller username from user_profiles
+        if (data.marketplace_sellers) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('username')
+            .eq('id', data.marketplace_sellers.user_id)
+            .maybeSingle();
+          if (profile) setSellerUsername(profile.username);
+        }
 
         // 2. Check if already purchased
         if (user) {
@@ -125,11 +137,12 @@ export default function ProjectDetailPage({ params }) {
   if (loading) return <div className="py-40 text-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto" /></div>;
   if (!project) return <div className="py-40 text-center font-black uppercase tracking-widest text-zinc-400">Project Not Found</div>;
 
-  const sellerName = project.marketplace_sellers ? `${project.marketplace_sellers.first_name} ${project.marketplace_sellers.last_name}` : 'Verified Seller';
+  const sellerName = project.marketplace_sellers ? `${project.marketplace_sellers.first_name} ${project.marketplace_sellers.last_name}` : 'W3 Hub';
+  const isAdminProject = !project.seller_id;
 
   return (
     <div className="min-h-screen bg-[#f8f9fc] pb-20 font-sans">
-      {/* Header Nav */}
+      {/* ... rest of the component ... */}
       <div className="bg-white border-b border-[#e5e7eb] sticky top-[70px] z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <button onClick={() => router.back()} className="flex items-center gap-2 text-[#6b7280] hover:text-black font-black text-[10px] uppercase tracking-widest transition-all">
@@ -267,15 +280,26 @@ export default function ProjectDetailPage({ params }) {
             </div>
 
             {/* Seller Info */}
-            <div className="bg-zinc-900 rounded-[40px] p-8 text-white shadow-2xl">
-               <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-6">Verified Architect</h3>
+            <div className="bg-zinc-900 rounded-[40px] p-8 text-white shadow-2xl relative overflow-hidden">
+               {isAdminProject && (
+                  <div className="absolute top-0 right-0 p-4">
+                     <Badge className="bg-blue-600 text-white border-none px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest">Official W3 Hub</Badge>
+                  </div>
+               )}
+               <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-6">
+                  {isAdminProject ? 'Master Architect' : 'Verified Architect'}
+               </h3>
                <div className="flex items-center gap-5 mb-8">
-                  <div className="w-16 h-16 rounded-[24px] bg-white/10 border border-white/5 flex items-center justify-center text-white text-xl font-black">
-                    {sellerName.charAt(0)}
+                  <div className="w-16 h-16 rounded-[24px] bg-white/10 border border-white/5 flex items-center justify-center text-white text-xl font-black overflow-hidden">
+                    {isAdminProject ? (
+                        <img src="/favicon.ico" className="w-8 h-8" alt="W3" />
+                    ) : (
+                        sellerName.charAt(0)
+                    )}
                   </div>
                   <div>
                     <p className="text-white font-black text-lg leading-tight">{sellerName}</p>
-                    <p className="text-zinc-500 text-xs font-bold mt-1 uppercase tracking-widest">{project.faculty}</p>
+                    <p className="text-zinc-500 text-xs font-bold mt-1 uppercase tracking-widest">{isAdminProject ? 'W3 Hub Engineering' : project.faculty}</p>
                   </div>
                </div>
                <div className="space-y-4">
@@ -288,13 +312,84 @@ export default function ProjectDetailPage({ params }) {
                     <span className="text-white font-black">{project.level} Level</span>
                   </div>
                </div>
-               <button className="w-full mt-10 py-5 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-3xl font-black text-[10px] uppercase tracking-widest transition-all">
+               
+               {isAdminProject && (
+                  <div className="mt-6 p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <p className="text-[10px] text-zinc-400 font-medium leading-relaxed">
+                        This project was <b>made, verified, tested and trusted</b> by the W3 HUB team.
+                    </p>
+                  </div>
+               )}
+
+               <button 
+                  onClick={() => setShowContactModal(true)}
+                  className="w-full mt-10 py-5 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-3xl font-black text-[10px] uppercase tracking-widest transition-all"
+               >
                   Contact Seller
                </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Contact Seller Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-black text-zinc-900 tracking-tighter uppercase">Contact Seller</h2>
+                <button onClick={() => setShowContactModal(false)} className="p-2 hover:bg-zinc-100 rounded-full transition-colors">
+                  <X className="w-6 h-6 text-zinc-400" />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 p-4 bg-zinc-50 rounded-3xl border border-zinc-100">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-zinc-400 overflow-hidden">
+                    {isAdminProject ? (
+                        <img src="/favicon.ico" className="w-6 h-6" alt="W3" />
+                    ) : (
+                        <User className="w-6 h-6" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Username</p>
+                    <p className="text-zinc-900 font-black">{isAdminProject ? 'W3 Hub' : (sellerUsername || sellerName)}</p>
+                  </div>
+                </div>
+
+                {!isAdminProject && (
+                    <a href={`https://wa.me/${project.marketplace_sellers?.phone_number?.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 bg-emerald-50 rounded-3xl border border-emerald-100 hover:bg-emerald-100 transition-colors group">
+                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-emerald-600 group-hover:scale-110 transition-transform">
+                        <Phone className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">WhatsApp</p>
+                        <p className="text-zinc-900 font-black">{project.marketplace_sellers?.phone_number}</p>
+                    </div>
+                    </a>
+                )}
+
+                <a href={`mailto:${isAdminProject ? 'w3writelab@gmail.com' : project.marketplace_sellers?.email_updates}`} className="flex items-center gap-4 p-4 bg-blue-50 rounded-3xl border border-blue-100 hover:bg-blue-100 transition-colors group">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 group-hover:scale-110 transition-transform">
+                    <Mail className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Email Address</p>
+                    <p className="text-zinc-900 font-black">{isAdminProject ? 'w3writelab@gmail.com' : project.marketplace_sellers?.email_updates}</p>
+                  </div>
+                </a>
+              </div>
+            </div>
+            <div className="bg-zinc-50 p-6 text-center">
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                {isAdminProject ? 'Official W3 Hub Project • Verified & Trusted' : 'Always keep transactions within the platform for your protection.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
