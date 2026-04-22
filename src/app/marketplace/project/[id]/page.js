@@ -126,56 +126,53 @@ export default function ProjectDetailPage({ params }) {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent" /></div>;
-  if (!project) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center font-black uppercase tracking-widest text-zinc-800">Project Not Found</div>;
+  if (loading) return <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-zinc-900 border-t-transparent mx-auto" /></div>;
+  if (!project) return <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center font-black uppercase tracking-widest text-zinc-400">Project Not Found</div>;
 
   const sellerName = project.marketplace_sellers ? `${project.marketplace_sellers.first_name} ${project.marketplace_sellers.last_name}` : 'W3 Hub';
   const isAdminProject = !project.seller_id;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-20 font-sans selection:bg-emerald-500 selection:text-white">
-      {/* Sticky Navigation */}
-      <div className="bg-zinc-950/80 backdrop-blur-md border-b border-zinc-900 sticky top-0 z-[60]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <button onClick={() => router.back()} className="flex items-center gap-3 text-zinc-500 hover:text-white font-black text-[10px] uppercase tracking-widest transition-all group">
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
-            Back to technical market
+    <div className="min-h-screen bg-[#f8f9fc] pb-20 font-sans selection:bg-zinc-900 selection:text-white">
+      {/* Navigation */}
+      <div className="bg-white/80 backdrop-blur-md border-b border-zinc-200 sticky top-0 z-[60]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <button onClick={() => router.back()} className="flex items-center gap-2 text-zinc-500 hover:text-black font-black text-[10px] uppercase tracking-widest transition-all">
+            <ArrowLeft className="w-4 h-4 stroke-[3]" /> Back to market
           </button>
           <div className="flex items-center gap-4">
-             <button className="p-3 text-zinc-500 hover:text-white transition-colors"><Share2 className="w-5 h-5" /></button>
-             <button className="p-3 text-zinc-500 hover:text-white transition-colors"><Bookmark className="w-5 h-5" /></button>
+             <button className="p-2 text-zinc-400 hover:text-black transition-colors"><Share2 className="w-4 h-4" /></button>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid lg:grid-cols-3 gap-16">
+        <div className="grid lg:grid-cols-3 gap-12">
           
           {/* Left: Images and Technical Previews */}
-          <div className="lg:col-span-2 space-y-16">
+          <div className="lg:col-span-2 space-y-12">
             
-            {/* Main Showcase */}
+            {/* Gallery */}
             <div className="space-y-6">
-              <div className="aspect-video bg-zinc-900 rounded-[48px] overflow-hidden border border-zinc-800 shadow-3xl relative group">
+              <div className="aspect-video bg-zinc-900 rounded-[40px] overflow-hidden border border-zinc-800 shadow-2xl relative">
                 <img 
                   src={project.preview_images?.[activeImage]} 
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
+                  className="w-full h-full object-cover animate-in fade-in duration-700" 
                   alt={project.title} 
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/60 to-transparent" />
-                <div className="absolute top-8 left-8">
-                   <Badge className="bg-emerald-500 text-black border-none px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl">
+                <div className="absolute top-6 left-6">
+                   <Badge className="bg-zinc-900 text-white border-none px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">
                       Blueprint Preview
                    </Badge>
                 </div>
               </div>
               
-              <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+              <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
                 {project.preview_images?.map((img, i) => (
                   <button 
                     key={i} 
                     onClick={() => setActiveTab(i)}
-                    className={`w-32 h-24 rounded-3xl overflow-hidden border-2 flex-shrink-0 transition-all ${activeImage === i ? 'border-emerald-500 scale-105 shadow-xl shadow-emerald-500/10' : 'border-zinc-800 opacity-40 hover:opacity-100'}`}
+                    className={`w-24 h-20 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 ${activeImage === i ? 'border-zinc-900 scale-105 shadow-md' : 'border-transparent opacity-50 hover:opacity-100'}`}
                   >
                     <img src={img} className="w-full h-full object-cover" alt="" />
                   </button>
@@ -185,42 +182,35 @@ export default function ProjectDetailPage({ params }) {
 
             {/* Content Discovery */}
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="bg-zinc-900/50 border border-zinc-800 p-1.5 mb-12 rounded-[28px] shadow-2xl inline-flex">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-100 data-[state=active]:text-zinc-950 rounded-[22px] text-zinc-500 px-10 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all">Abstract</TabsTrigger>
-                <TabsTrigger value="chapter1" className="data-[state=active]:bg-zinc-100 data-[state=active]:text-zinc-950 rounded-[22px] text-zinc-500 px-10 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all">Chapter 1</TabsTrigger>
+              <TabsList className="bg-zinc-100 border border-zinc-200 p-1 mb-8 rounded-full shadow-inner inline-flex">
+                <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-900 data-[state=active]:text-white data-[state=active]:shadow-md rounded-full text-zinc-500 px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Abstract</TabsTrigger>
+                <TabsTrigger value="chapter1" className="data-[state=active]:bg-zinc-900 data-[state=active]:text-white data-[state=active]:shadow-md rounded-full text-zinc-500 px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Chapter 1</TabsTrigger>
                 {project.code_snippet && (
-                    <TabsTrigger value="code" className="data-[state=active]:bg-zinc-100 data-[state=active]:text-zinc-950 rounded-[22px] text-zinc-500 px-10 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all">Code Sample</TabsTrigger>
+                    <TabsTrigger value="code" className="data-[state=active]:bg-zinc-900 data-[state=active]:text-white data-[state=active]:shadow-md rounded-full text-zinc-500 px-8 py-2.5 text-xs font-black uppercase tracking-widest transition-all">Code Sample</TabsTrigger>
                 )}
               </TabsList>
 
-              <TabsContent value="overview" className="bg-zinc-900/30 border border-zinc-900 rounded-[56px] p-12 shadow-2xl animate-in fade-in zoom-in-95 duration-500">
-                <div className="flex items-center gap-3 mb-8">
-                    <Sparkles className="w-5 h-5 text-emerald-500" />
-                    <h3 className="text-sm font-black text-zinc-500 uppercase tracking-[0.3em]">AI Restructured Abstract</h3>
-                </div>
-                <div className="prose prose-invert prose-emerald max-w-none prose-p:text-zinc-400 prose-p:leading-relaxed prose-p:text-lg">
+              <TabsContent value="overview" className="bg-white border border-zinc-200 rounded-[40px] p-10 shadow-sm animate-in fade-in duration-500">
+                <h3 className="text-xl font-black text-zinc-900 mb-6 uppercase tracking-tight">Abstract</h3>
+                <div className="prose prose-zinc max-w-none text-zinc-600 font-medium leading-relaxed h-[400px] overflow-y-auto custom-scrollbar pr-4">
                   <ReactMarkdown>{project.abstract}</ReactMarkdown>
                 </div>
               </TabsContent>
 
-              <TabsContent value="chapter1" className="bg-zinc-900/30 border border-zinc-900 rounded-[56px] p-12 shadow-2xl animate-in fade-in zoom-in-95 duration-500">
-                <div className="flex items-center gap-3 mb-8">
-                    <Sparkles className="w-5 h-5 text-emerald-500" />
-                    <h3 className="text-sm font-black text-zinc-500 uppercase tracking-[0.3em]">Chapter 01 : Introduction</h3>
-                </div>
-                <div className="prose prose-invert prose-emerald max-w-none prose-p:text-zinc-400 prose-p:leading-relaxed prose-p:text-lg">
+              <TabsContent value="chapter1" className="bg-white border border-zinc-200 rounded-[40px] p-10 shadow-sm animate-in fade-in duration-500">
+                <h3 className="text-xl font-black text-zinc-900 mb-6 uppercase tracking-tight">Chapter 1</h3>
+                <div className="prose prose-zinc max-w-none text-zinc-600 font-medium leading-relaxed h-[500px] overflow-y-auto custom-scrollbar pr-4">
                   <ReactMarkdown>{project.chapter_1_preview}</ReactMarkdown>
                 </div>
               </TabsContent>
 
-              <TabsContent value="code" className="bg-black border border-zinc-900 rounded-[56px] p-12 shadow-3xl animate-in fade-in zoom-in-95 duration-500">
-                <div className="flex justify-between items-center mb-10">
-                  <h3 className="text-xl font-black text-white uppercase tracking-tighter">Technical Implementation</h3>
-                  <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest">Live Script Snippet</Badge>
+              <TabsContent value="code" className="bg-zinc-900 border border-zinc-800 rounded-[40px] p-10 shadow-2xl animate-in fade-in duration-500">
+                <div className="flex justify-between items-center mb-6 text-white">
+                  <h3 className="text-xl font-black uppercase tracking-tight">Code Sample</h3>
+                  <Badge className="bg-emerald-500 text-black border-none px-3 py-1 rounded-full text-[10px] font-black uppercase">Live Snippet</Badge>
                 </div>
-                <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-[32px] blur opacity-25" />
-                    <pre className="relative text-[13px] text-emerald-400/90 font-mono leading-relaxed overflow-x-auto custom-scrollbar p-8 bg-zinc-950 rounded-[32px] border border-zinc-900">
+                <div className="h-[400px] overflow-y-auto custom-scrollbar">
+                    <pre className="text-xs text-emerald-400 font-mono leading-relaxed p-4 bg-black/40 rounded-2xl">
                         <code>{project.code_snippet}</code>
                     </pre>
                 </div>
@@ -228,64 +218,49 @@ export default function ProjectDetailPage({ params }) {
             </Tabs>
           </div>
 
-          {/* Right: Pricing and Core Actions */}
-          <div className="space-y-10">
-            
-            {/* Purchase Hub */}
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-[56px] p-10 shadow-3xl relative overflow-hidden">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[80px] rounded-full" />
-               
-               <div className="mb-10">
-                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-4">Official Blueprint</p>
-                  <h1 className="text-3xl font-black text-white tracking-tighter leading-[1.1] mb-6">{project.title}</h1>
-                  <div className="flex flex-wrap gap-2">
-                     <Badge className="bg-zinc-800 text-zinc-400 border-none px-3 py-1 rounded-lg text-[9px] font-black uppercase">{project.level} Level</Badge>
-                     <Badge className="bg-zinc-800 text-zinc-400 border-none px-3 py-1 rounded-lg text-[9px] font-black uppercase">{project.project_type?.replace('_', ' ')}</Badge>
-                  </div>
+          {/* Right: Pricing and Action */}
+          <div className="space-y-8">
+            <div className="bg-white border border-zinc-200 rounded-[40px] p-8 shadow-sm relative overflow-hidden">
+               <div className="absolute top-0 left-0 w-full h-2 bg-zinc-900" />
+               <div className="mb-8">
+                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Standard License</p>
+                  <h1 className="text-3xl font-black text-zinc-900 tracking-tighter leading-tight">{project.title}</h1>
                </div>
 
-               <div className="space-y-8 mb-10">
-                  <div className="flex items-end gap-3">
-                    <span className="text-4xl font-black text-white tracking-tighter">{formatCurrency(project.price)}</span>
+               <div className="space-y-6 mb-10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-4xl font-black text-zinc-900">{formatCurrency(project.price)}</span>
                     {project.original_price && (
-                      <span className="text-lg text-zinc-600 line-through font-bold mb-1">{formatCurrency(project.original_price)}</span>
+                      <span className="text-lg text-zinc-400 line-through font-bold">{formatCurrency(project.original_price)}</span>
                     )}
                   </div>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 text-xs font-bold text-zinc-400 group">
-                      <div className="w-8 h-8 rounded-xl bg-zinc-800/50 flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      </div>
-                      Documentation Included
+                  <div className="bg-zinc-50 rounded-2xl p-6 border border-zinc-100 space-y-4">
+                    <div className="flex items-center gap-3 text-xs font-bold text-zinc-600">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Full Documentation
                     </div>
                     {project.project_type !== 'documentation' && (
-                        <div className="flex items-center gap-4 text-xs font-bold text-zinc-400 group">
-                             <div className="w-8 h-8 rounded-xl bg-zinc-800/50 flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors">
-                                <Code2 className="w-4 h-4 text-emerald-500" />
-                             </div>
-                             Complete Source Code
+                        <div className="flex items-center gap-3 text-xs font-bold text-zinc-600">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Complete Source Code
                         </div>
                     )}
-                    <div className="flex items-center gap-4 text-xs font-bold text-zinc-400 group">
-                      <div className="w-8 h-8 rounded-xl bg-zinc-800/50 flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors">
-                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                      </div>
-                      Tested Technical Blueprint
+                    <div className="flex items-center gap-3 text-xs font-bold text-zinc-600">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Technical Accuracy Verified
                     </div>
                   </div>
                </div>
 
                {isPurchased ? (
-                <div className="space-y-4 animate-in slide-in-from-bottom-2 duration-500">
-                    <div className="bg-emerald-500/5 text-emerald-500 p-8 rounded-[32px] border border-emerald-500/10 text-center">
-                        <ShieldCheck className="w-10 h-10 mx-auto mb-4 opacity-50" />
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-1">Ownership Verified</p>
-                        <p className="text-xs font-bold opacity-60">Full Access Unlocked</p>
+                <div className="space-y-4">
+                    <div className="bg-emerald-50 text-emerald-700 p-6 rounded-3xl border border-emerald-100 flex items-center gap-4">
+                        <ShieldCheck className="w-6 h-6" />
+                        <div>
+                            <p className="text-sm font-black uppercase tracking-widest">Access Unlocked</p>
+                            <p className="text-xs font-medium">Download the full package below.</p>
+                        </div>
                     </div>
                     <a href={project.file_url} target="_blank" rel="noopener noreferrer" className="block w-full">
-                        <Button className="w-full bg-white text-zinc-950 hover:bg-zinc-200 rounded-[28px] py-9 font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all">
-                            <Download className="w-5 h-5" /> Download Repository
+                        <Button className="w-full bg-zinc-900 text-white rounded-full py-8 font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95">
+                            <Download className="w-5 h-5" /> Download Full Package
                         </Button>
                     </a>
                 </div>
@@ -293,123 +268,120 @@ export default function ProjectDetailPage({ params }) {
                 <Button 
                     onClick={handlePurchase}
                     disabled={purchasing}
-                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 rounded-[28px] py-9 font-black text-[11px] uppercase tracking-[0.2em] shadow-3xl shadow-emerald-500/20 flex items-center justify-center gap-3 active:scale-95 transition-all border-none"
+                    className="w-full bg-zinc-900 hover:bg-black text-white rounded-full py-8 font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"
                 >
-                    {purchasing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-zinc-950" />}
-                    Inject Into Dashboard
+                    {purchasing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
+                    Unlock Full Access
                 </Button>
                )}
             </div>
 
-            {/* Seller Hub Card */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-[56px] p-10 shadow-3xl relative overflow-hidden group">
+            {/* Seller Info - Dark Card */}
+            <div className="bg-zinc-900 rounded-[40px] p-8 text-white shadow-2xl relative overflow-hidden">
                {isAdminProject && (
-                  <div className="absolute top-0 right-0 p-6">
-                     <div className="bg-emerald-500 text-black px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-xl">Official Platform</div>
+                  <div className="absolute top-0 right-0 p-4">
+                     <Badge className="bg-emerald-500 text-black border-none px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest">Official W3 Hub</Badge>
                   </div>
                )}
-               
-               <h3 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] mb-10">
+               <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-6">
                   {isAdminProject ? 'Master Architect' : 'Verified Seller'}
                </h3>
-               
-               <div className="flex items-center gap-6 mb-12">
-                  <div className="w-20 h-20 rounded-[32px] bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white text-2xl font-black overflow-hidden group-hover:border-emerald-500/30 transition-colors">
+               <div className="flex items-center gap-5 mb-8">
+                  <div className="w-16 h-16 rounded-[24px] bg-white/10 border border-white/5 flex items-center justify-center text-white text-xl font-black overflow-hidden">
                     {isAdminProject ? (
-                        <img src="/favicon.ico" className="w-10 h-10" alt="W3" />
+                        <img src="/favicon.ico" className="w-8 h-8" alt="W3" />
                     ) : (
-                        <span className="opacity-40">{sellerName.charAt(0)}</span>
+                        sellerName.charAt(0)
                     )}
                   </div>
                   <div>
-                    <p className="text-white font-black text-xl tracking-tight leading-tight mb-1">{sellerName}</p>
-                    <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{isAdminProject ? 'W3 Hub Core' : project.faculty}</p>
+                    <p className="text-white font-black text-lg leading-tight">{sellerName}</p>
+                    <p className="text-zinc-500 text-xs font-bold mt-1 uppercase tracking-widest">{isAdminProject ? 'W3 Hub Engineering' : project.faculty}</p>
                   </div>
                </div>
-               
-               <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Department</span>
-                    <span className="text-zinc-300 font-black text-xs">{project.department}</span>
+               <div className="space-y-4">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-zinc-500 font-bold">DEPARTMENT</span>
+                    <span className="text-white font-black">{project.department}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Faculty</span>
-                    <span className="text-zinc-300 font-black text-xs">{project.faculty}</span>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-zinc-500 font-bold">FACULTY</span>
+                    <span className="text-white font-black">{project.faculty}</span>
                   </div>
                </div>
                
                {isAdminProject && (
-                  <div className="mt-10 p-6 bg-zinc-950/50 rounded-[32px] border border-zinc-800">
-                    <p className="text-[11px] text-zinc-500 font-medium leading-relaxed">
-                        This blueprint has been <span className="text-emerald-500 font-black">Verified & Tested</span> by the W3 HUB engineering team. Quality is guaranteed.
+                  <div className="mt-6 p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <p className="text-[10px] text-zinc-400 font-medium leading-relaxed">
+                        This project was <b>made, verified, tested and trusted</b> by the W3 HUB team.
                     </p>
                   </div>
                )}
 
                <button 
                   onClick={() => setShowContactModal(true)}
-                  className="w-full mt-10 py-6 bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 rounded-[28px] font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl"
+                  className="w-full mt-10 py-5 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-3xl font-black text-[10px] uppercase tracking-widest transition-all"
                >
-                  Contact Architect
+                  Contact Seller
                </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Contact Architect Modal */}
+      {/* Contact Modal */}
       {showContactModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-xl animate-in fade-in duration-500">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[56px] w-full max-w-lg overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-500">
-            <div className="p-12">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-3xl font-black text-white tracking-tighter uppercase">Direct Contact</h2>
-                <button onClick={() => setShowContactModal(false)} className="p-3 hover:bg-zinc-800 rounded-2xl transition-all">
-                  <X className="w-6 h-6 text-zinc-500" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-black text-zinc-900 tracking-tighter uppercase">Contact Seller</h2>
+                <button onClick={() => setShowContactModal(false)} className="p-2 hover:bg-zinc-100 rounded-full transition-colors">
+                  <X className="w-6 h-6 text-zinc-400" />
                 </button>
               </div>
               
-              <div className="space-y-8">
-                <div className="flex items-center gap-6 p-6 bg-zinc-950/50 rounded-[32px] border border-zinc-800">
-                  <div className="w-16 h-16 bg-zinc-800 rounded-[24px] flex items-center justify-center text-zinc-500 overflow-hidden">
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 p-4 bg-zinc-50 rounded-3xl border border-zinc-100">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-zinc-400 overflow-hidden">
                     {isAdminProject ? (
-                        <img src="/favicon.ico" className="w-8 h-8" alt="W3" />
+                        <img src="/favicon.ico" className="w-6 h-6" alt="W3" />
                     ) : (
-                        <User className="w-8 h-8" />
+                        <User className="w-6 h-6" />
                     )}
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1">Architect</p>
-                    <p className="text-white font-black text-lg">{isAdminProject ? 'W3 Hub' : (sellerUsername || sellerName)}</p>
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Username</p>
+                    <p className="text-zinc-900 font-black">{isAdminProject ? 'W3 Hub' : (sellerUsername || sellerName)}</p>
                   </div>
                 </div>
 
                 {!isAdminProject && (
-                    <a href={`https://wa.me/${project.marketplace_sellers?.phone_number?.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-6 p-6 bg-zinc-950 hover:bg-emerald-500/5 rounded-[32px] border border-zinc-800 hover:border-emerald-500/20 transition-all group">
-                    <div className="w-16 h-16 bg-zinc-800 rounded-[24px] flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform shadow-2xl">
-                        <Phone className="w-8 h-8" />
+                    <a href={`https://wa.me/${project.marketplace_sellers?.phone_number?.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 bg-emerald-50 rounded-3xl border border-emerald-100 hover:bg-emerald-100 transition-colors group">
+                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-emerald-600 group-hover:scale-110 transition-transform">
+                        <Phone className="w-6 h-6" />
                     </div>
                     <div>
-                        <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">WhatsApp Channel</p>
-                        <p className="text-white font-black text-lg">{project.marketplace_sellers?.phone_number}</p>
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">WhatsApp</p>
+                        <p className="text-zinc-900 font-black">{project.marketplace_sellers?.phone_number}</p>
                     </div>
                     </a>
                 )}
 
-                <a href={`mailto:${isAdminProject ? 'w3writelab@gmail.com' : project.marketplace_sellers?.email_updates}`} className="flex items-center gap-6 p-6 bg-zinc-950 hover:bg-emerald-500/5 rounded-[32px] border border-zinc-800 hover:border-emerald-500/20 transition-all group">
-                  <div className="w-16 h-16 bg-zinc-800 rounded-[24px] flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform shadow-2xl">
-                    <Mail className="w-8 h-8" />
+                <a href={`mailto:${isAdminProject ? 'w3writelab@gmail.com' : project.marketplace_sellers?.email_updates}`} className="flex items-center gap-4 p-4 bg-blue-50 rounded-3xl border border-blue-100 hover:bg-blue-100 transition-colors group">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 group-hover:scale-110 transition-transform">
+                    <Mail className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">Electronic Mail</p>
-                    <p className="text-white font-black text-lg truncate max-w-[200px]">{isAdminProject ? 'w3writelab@gmail.com' : project.marketplace_sellers?.email_updates}</p>
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Email Address</p>
+                    <p className="text-zinc-900 font-black">{isAdminProject ? 'w3writelab@gmail.com' : project.marketplace_sellers?.email_updates}</p>
                   </div>
                 </a>
               </div>
             </div>
-            <div className="bg-zinc-950/80 p-8 text-center border-t border-zinc-800/50">
-              <p className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
-                {isAdminProject ? 'Official W3 Hub Project • Enterprise Grade' : 'Secure Technical Exchange Protocol'}
+            <div className="bg-zinc-50 p-6 text-center">
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                {isAdminProject ? 'Official W3 Hub Project • Verified & Trusted' : 'Always keep transactions within the platform for your protection.'}
               </p>
             </div>
           </div>
