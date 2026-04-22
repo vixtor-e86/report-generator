@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
+import { Badge } from '@/components/marketplace/ui/badge';
 
 const Icons = {
   Check: ({ className }) => (
