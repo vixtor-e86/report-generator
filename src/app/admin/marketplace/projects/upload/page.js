@@ -257,6 +257,31 @@ export default function AdminUploadProjectPage() {
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-6">
+                        <div className="md:col-span-2 space-y-4">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Archive Classification</Label>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                {[
+                                    { id: 'source_code', label: 'Source Code', icon: Code2 },
+                                    { id: 'documentation', label: 'Manuscript Only', icon: BookOpen },
+                                    { id: 'both', label: 'Full Package', icon: CheckCircle2 },
+                                ].map((type) => (
+                                    <button
+                                        key={type.id}
+                                        type="button"
+                                        onClick={() => setFormData({...formData, projectType: type.id})}
+                                        className={`flex flex-col items-center gap-3 p-6 rounded-[28px] border-2 transition-all ${
+                                            formData.projectType === type.id 
+                                            ? 'border-blue-600 bg-blue-600 text-white shadow-xl shadow-blue-100' 
+                                            : 'border-slate-50 bg-slate-50 text-slate-400 hover:border-slate-200'
+                                        }`}
+                                    >
+                                        <type.icon className={`w-6 h-6 ${formData.projectType === type.id ? 'text-white' : 'text-slate-400'}`} />
+                                        <span className="font-black text-[10px] uppercase tracking-widest">{type.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="md:col-span-2 space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Project Title</Label>
                             <Input 
