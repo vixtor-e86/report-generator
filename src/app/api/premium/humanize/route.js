@@ -8,7 +8,7 @@ export async function POST(request) {
 
     // 1. Env Validation
     const limit = parseInt(process.env.HUMANIZER_LIMIT);
-    const apiKey = process.env.RYNE_API_KEY;
+    const apiKey = process.env.STEALTHGPT_API_KEY; // Using STEALTHGPT_API_KEY as requested
     if (isNaN(limit) || !apiKey) throw new Error('Server configuration error (Limit/API Key).');
 
     if (!content || !projectId) return NextResponse.json({ error: 'Missing content or projectId' }, { status: 400 });
@@ -34,7 +34,6 @@ export async function POST(request) {
         const headerText = trimmedLine.replace(/^#+\s*/, '').trim().toLowerCase();
         const headerLevel = (trimmedLine.match(/^#+/) || ['#'])[0].length;
         
-        // Expanded list of reference indicators
         const refIndicators = [
           'references', 'bibliography', 'works cited', 'reference list', 
           'list of references', 'selected bibliography', 'sources',
@@ -44,7 +43,6 @@ export async function POST(request) {
         if (refIndicators.some(indicator => headerText.includes(indicator))) {
           isReferenceSection = true;
         } else if (headerLevel <= 2) {
-          // Reset reference flag for new major chapters/sections
           isReferenceSection = false;
         }
         
@@ -61,7 +59,7 @@ export async function POST(request) {
       });
     }
 
-    // Calculate word count for limit check (only humanizable blocks)
+    // Calculate word count
     let wordCount = 0;
     blocks.forEach(block => {
       if (block.type === 'body') {
@@ -84,40 +82,37 @@ export async function POST(request) {
       return NextResponse.json({ error: `Limit reached. ${limit - currentUsed} words remaining.` }, { status: 403 });
     }
 
-    // --- 3. PARALLEL HUMANIZATION ---
+    // --- 3. PARALLEL HUMANIZATION WITH STEALTHGPT ---
     const humanizeBlock = async (text) => {
       if (text.trim().length < 5) return text;
 
       try {
-        const response = await fetch("https://ryne.ai/api/humanizer/models/supernova", {
+        const response = await fetch("https://api.stealthgpt.ai/v1/stealthifier", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "api-key": apiKey 
+          },
           body: JSON.stringify({
-            // Send text CLEANLY without "Instruction:" prefix to prevent the AI from repeating it
-            text: text,
-            tone: "professional",
-            // Move structural instructions here
-            purpose: "academic technical report. IMPORTANT: Use Nigerian Naira (₦) for all currency mentioned.",
-            user_id: apiKey,
-            shouldStream: false,
+            prompt: text,
+            rephrase_level: "standard", // standard, medium, high
+            tone: "academic"
           }),
         });
 
         const data = await response.json();
-        if (!response.ok) return text;
+        if (!response.ok) {
+            console.error("StealthGPT Error response:", data);
+            return text;
+        }
 
-        let result = data.content || data.text || text;
-        
-        // CLEANUP: Aggressively remove any AI conversational filler or repeated prompts
-        // This removes phrases like "Here is the rewrite:", "Sure, here is the text:", etc.
-        result = result.replace(/^(Here is the rewrite:|Rewritten content:|Sure, here is the text:|Rewritten text:|Output:|Analysis:)/i, '').trim();
-        
-        // Remove common intro sentences if AI repeats the instruction
-        result = result.replace(/^.*?(sound professional and human-written|Nigerian Naira|academic report).*?(\n|$)/si, '').trim();
+        // StealthGPT typically returns { result: "humanized text" }
+        let result = data.result || text;
         
         // Manual currency fail-safe (Mandatory for Nigerian localization)
         return result.replace(/\$/g, '₦');
       } catch (e) {
+        console.error("StealthGPT Fetch Error:", e);
         return text;
       }
     };
