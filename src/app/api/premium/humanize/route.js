@@ -81,7 +81,7 @@ export async function POST(request) {
       return NextResponse.json({ error: `Limit reached. ${limit - currentUsed} words remaining.` }, { status: 403 });
     }
 
-    // --- 3. PARALLEL HUMANIZATION WITH STEALTHGPT (CORRECTED) ---
+    // --- 3. PARALLEL HUMANIZATION WITH STEALTHGPT ---
     const humanizeBlock = async (text) => {
       if (text.trim().length < 5) return text;
 
@@ -90,27 +90,30 @@ export async function POST(request) {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "api-token": apiKey // Documentation says api-token
+            "api-token": apiKey
           },
           body: JSON.stringify({
             prompt: text,
             rephrase: true,
-            tone: "College", // Standard, HighSchool, College, PhD
-            mode: "quality"
+            tone: "College",
+            mode: "Medium",        // ✅ FIXED: was "quality" which is wrong
+            qualityMode: "quality" // ✅ ADDED: this is the actual quality setting
           }),
         });
 
         const data = await response.json();
+
+        // ✅ Log the FULL response for debugging
+        console.log("StealthGPT response:", JSON.stringify(data));
+
         if (!response.ok) {
-            console.error("StealthGPT Error response:", data);
-            return text;
+          console.error("StealthGPT Error:", data);
+          return text;
         }
 
-        // StealthGPT returns { result: "..." }
         let result = data.result || text;
-        
-        // Manual currency fail-safe
         return result.replace(/\$/g, '₦');
+
       } catch (e) {
         console.error("StealthGPT Fetch Error:", e);
         return text;
