@@ -8,7 +8,7 @@ export async function POST(request) {
 
     // 1. Env Validation
     const limit = parseInt(process.env.HUMANIZER_LIMIT);
-    const apiKey = process.env.STEALTHGPT_API_KEY; // Using STEALTHGPT_API_KEY as requested
+    const apiKey = process.env.STEALTHGPT_API_KEY; 
     if (isNaN(limit) || !apiKey) throw new Error('Server configuration error (Limit/API Key).');
 
     if (!content || !projectId) return NextResponse.json({ error: 'Missing content or projectId' }, { status: 400 });
@@ -30,7 +30,6 @@ export async function POST(request) {
           currentBody = [];
         }
         
-        // Detect references section header (skip humanization for everything under it)
         const headerText = trimmedLine.replace(/^#+\s*/, '').trim().toLowerCase();
         const headerLevel = (trimmedLine.match(/^#+/) || ['#'])[0].length;
         
@@ -82,21 +81,22 @@ export async function POST(request) {
       return NextResponse.json({ error: `Limit reached. ${limit - currentUsed} words remaining.` }, { status: 403 });
     }
 
-    // --- 3. PARALLEL HUMANIZATION WITH STEALTHGPT ---
+    // --- 3. PARALLEL HUMANIZATION WITH STEALTHGPT (CORRECTED) ---
     const humanizeBlock = async (text) => {
       if (text.trim().length < 5) return text;
 
       try {
-        const response = await fetch("https://api.stealthgpt.ai/v1/stealthifier", {
+        const response = await fetch("https://stealthgpt.ai/api/stealthify", {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "api-key": apiKey 
+            "api-token": apiKey // Documentation says api-token
           },
           body: JSON.stringify({
             prompt: text,
-            rephrase_level: "standard", // standard, medium, high
-            tone: "academic"
+            rephrase: true,
+            tone: "College", // Standard, HighSchool, College, PhD
+            mode: "quality"
           }),
         });
 
@@ -106,10 +106,10 @@ export async function POST(request) {
             return text;
         }
 
-        // StealthGPT typically returns { result: "humanized text" }
+        // StealthGPT returns { result: "..." }
         let result = data.result || text;
         
-        // Manual currency fail-safe (Mandatory for Nigerian localization)
+        // Manual currency fail-safe
         return result.replace(/\$/g, '₦');
       } catch (e) {
         console.error("StealthGPT Fetch Error:", e);
