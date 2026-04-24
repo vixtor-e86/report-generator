@@ -258,7 +258,7 @@ export default function ReferralFAB({ userId }) {
                   <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
                     <h4 className="font-bold text-amber-900 text-xs mb-1">Important Payout Rules:</h4>
                     <ul className="text-[11px] text-amber-800 space-y-1 list-disc ml-3">
-                      <li>Bonuses expire <span className="font-bold">7 days</span> after your first earning of the week.</li>
+                      <li>Bonuses expire <span className="font-bold">30 days</span> after your first earning of the week.</li>
                       <li>You must accumulate at least <span className="font-bold">₦10,000</span> to redeem.</li>
                       <li>Payouts for redeemed bonuses happen every <span className="font-bold">Monday</span>.</li>
                     </ul>
@@ -321,7 +321,7 @@ export default function ReferralFAB({ userId }) {
             </div>
 
             <div className="p-4 bg-slate-50 border-t border-slate-100">
-               <p className="text-[10px] text-slate-400 text-center">Bonuses expire 7 days after the first earning of each period.</p>
+               <p className="text-[10px] text-slate-400 text-center">Bonuses expire 30 days after the first earning of each period.</p>
             </div>
           </div>
         </div>

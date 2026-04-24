@@ -71,11 +71,11 @@ function ProjectDescriptionContent() {
 
           const payment = unusedPayments[0];
           const paymentDate = new Date(payment.paid_at);
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-          if (paymentDate < sevenDaysAgo) {
-            showNotification('Payment Expired', 'Your Premium payment has expired (valid for 7 days).', 'error');
+          if (paymentDate < thirtyDaysAgo) {
+            showNotification('Payment Expired', 'Your Premium payment has expired (valid for 30 days).', 'error');
             setTimeout(() => router.push('/dashboard'), 3000);
             return;
           }

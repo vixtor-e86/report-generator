@@ -367,7 +367,7 @@ export async function POST(request) {
       const generatedDoc = await PDFDocument.load(pdf.output('arraybuffer'));
       const finalPdf = await PDFDocument.create();
       if (orderedDocIds?.length > 0) {
-        const sorted = orderedDocIds.map(id => assets.find(a => id === id)).filter(Boolean);
+        const sorted = orderedDocIds.map(id => assets.find(a => a.id === id)).filter(Boolean);
         for (const a of sorted) {
           try {
             const res = await fetch(a.file_url);

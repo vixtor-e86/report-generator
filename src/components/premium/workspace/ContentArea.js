@@ -369,7 +369,7 @@ export default function ContentArea({
               <div style={{ padding: '32px', background: '#fffbeb', borderRadius: '32px', border: '1px solid #fef3c7' }}>
                 <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '800', color: '#92400e' }}>Weekly Rules</h4>
                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Expiry: 7 days from first earning</li>
+                  <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Expiry: 30 days from first earning</li>
                   <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Min. ₦10,000 to redeem</li>
                   <li style={{ fontSize: '13px', color: '#b45309', display: 'flex', gap: '8px' }}><span>•</span> Payouts every Monday</li>
                 </ul>
@@ -768,7 +768,7 @@ export default function ContentArea({
                 <p style={{ color: '#6b7280', lineHeight: '1.8', fontSize: '16px', maxWidth: '800px' }}>
                   Did you know you can fund your research by referring others? Use the <strong>Affiliate Dashboard</strong> to copy your unique referral link. 
                   You earn <strong>10% commission</strong> (Standard) on every successful upgrade. 
-                  Bonuses expire 7 days after your first earning of each period, and payouts are processed directly to your bank every Monday once you reach ₦10,000.
+                  Bonuses expire 30 days after your first earning of each period, and payouts are processed directly to your bank every Monday once you reach ₦10,000.
                 </p>
               </div>
             </div>

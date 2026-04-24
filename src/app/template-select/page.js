@@ -181,10 +181,10 @@ function TemplateSelectContent() {
           
           // ✅ NEW: Check 7-day expiry
           const paymentDate = new Date(payment.paid_at);
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-          if (paymentDate < sevenDaysAgo) {
+          if (paymentDate < thirtyDaysAgo) {
             setPaymentExpired(true);
           } else {
             // Found valid existing payment - allow them to proceed
@@ -326,7 +326,7 @@ function TemplateSelectContent() {
 
           <h2 className="text-2xl font-bold text-gray-900 mb-3">Payment Expired</h2>
           <p className="text-gray-600 mb-6">
-            Your previous payment has expired (valid for 7 days). You need to make a new payment to create a standard project.
+            Your previous payment has expired (valid for 30 days). You need to make a new payment to create a standard project.
           </p>
 
           <button
