@@ -239,6 +239,8 @@ function NewProjectContent() {
   };
 
   const handleCreateProject = async () => {
+    if (creating) return; // Prevent multiple clicks
+
     const validObjectives = manualObjectives.filter(o => o.trim());
     
     if (isSIWES) {
@@ -262,6 +264,38 @@ function NewProjectContent() {
     setCreating(true);
 
     try {
+      // 🛡️ IDEMPOTENCY CHECK: Prevent duplicates
+      // 1. Check if this specific payment is already linked to a project
+      if (!isAdmin && pendingPayment) {
+        const { data: alreadyLinked } = await supabase
+          .from('payment_transactions')
+          .select('project_id')
+          .eq('id', pendingPayment.id)
+          .single();
+        
+        if (alreadyLinked?.project_id) {
+          console.log('Standard payment already linked, redirecting...');
+          router.replace(`/standard/${alreadyLinked.project_id}`);
+          return;
+        }
+      }
+
+      // 2. Check for recent project with same title (Safety fallback)
+      const finalTitle = isSIWES ? `${companyName} - Industrial Training Report` : projectTitle;
+      const { data: existingRecent } = await supabase
+        .from('standard_projects')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('title', finalTitle.trim())
+        .gt('created_at', new Date(Date.now() - 60000).toISOString()) // Last 60 seconds
+        .maybeSingle();
+
+      if (existingRecent) {
+        console.log('Recent identical standard project found, redirecting...');
+        router.replace(`/standard/${existingRecent.id}`);
+        return;
+      }
+
       const projectData = {
         user_id: user.id,
         template_id: templateId,

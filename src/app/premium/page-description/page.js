@@ -134,11 +134,44 @@ function ProjectDescriptionContent() {
   };
 
   const handleCreateProject = async () => {
+    if (isLoading) return; // Prevent multiple clicks
+
     if (validateForm()) {
       setIsLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
+
+        // 🛡️ IDEMPOTENCY CHECK: Prevent duplicates
+        // 1. Check if this specific payment is already linked to a project
+        if (pendingPayment) {
+          const { data: alreadyLinked } = await supabase
+            .from('payment_transactions')
+            .select('project_id')
+            .eq('id', pendingPayment.id)
+            .single();
+          
+          if (alreadyLinked?.project_id) {
+            console.log('Payment already linked, redirecting...');
+            router.replace(`/premium/workspace?id=${alreadyLinked.project_id}`);
+            return;
+          }
+        }
+
+        // 2. Check for recent project with same title (Safety fallback)
+        const { data: existingRecent } = await supabase
+          .from('premium_projects')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('title', formData.projectTitle.trim())
+          .gt('created_at', new Date(Date.now() - 60000).toISOString()) // Last 60 seconds
+          .maybeSingle();
+
+        if (existingRecent) {
+          console.log('Recent identical project found, redirecting...');
+          router.replace(`/premium/workspace?id=${existingRecent.id}`);
+          return;
+        }
 
         let sourceTemplate = null;
         let finalStructure = { chapters: [] };

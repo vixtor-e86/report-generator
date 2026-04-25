@@ -151,6 +151,8 @@ function NewProjectContent() {
   const removeComponent = (index) => setComponents(components.filter((_, i) => i !== index));
 
   const handleCreateProject = async () => {
+    if (creating) return; // Prevent multiple clicks
+    
     if (!projectTitle || !department || !description) {
       showNotification('Form Incomplete', 'Please fill in all mandatory fields (Title, Department, and Description)', 'warning');
       return;
@@ -158,6 +160,23 @@ function NewProjectContent() {
 
     setCreating(true);
     try {
+      // 🛡️ IDEMPOTENCY CHECK: Prevent duplicates
+      if (profile.role !== 'admin') {
+        const { data: existingRecent } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('title', projectTitle.trim())
+          .gt('created_at', new Date(Date.now() - 60000).toISOString()) // Last 60 seconds
+          .maybeSingle();
+
+        if (existingRecent) {
+          console.log('Recent identical free project found, redirecting...');
+          router.replace(`/project/${existingRecent.id}`);
+          return;
+        }
+      }
+
       // Create project
       const { data: project, error: projectError } = await supabase
         .from('projects')

@@ -145,31 +145,46 @@ function WorkspaceContent() {
     } catch (err) { console.error('Config fetch failed'); }
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      router.push('/');
+      return;
+    }
     setCurrentUser(user);
 
-    const { data: project, error: pError } = await supabase
-      .from('premium_projects')
-      .select('*, custom_templates(*)')
-      .eq('id', projectId)
-      .single();
-    
-    if (pError || !project) return;
+    try {
+      const { data: project, error: pError } = await supabase
+        .from('premium_projects')
+        .select('*, custom_templates(*)')
+        .eq('id', projectId)
+        .single();
+      
+      if (pError || !project) {
+        console.error('Project load error:', pError);
+        showNotification('Workspace Error', 'Failed to load project data. Returning to dashboard.', 'error');
+        setTimeout(() => router.push('/dashboard'), 2000);
+        return;
+      }
 
-    setProjectData({ ...project, template: project.custom_templates });
-    
-    const { data: profile } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
-    if (profile) setUserProfile(profile);
-    setProjectStorageUsed(project.storage_used || 0);
+      setProjectData({ ...project, template: project.custom_templates });
+      
+      const { data: profile } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
+      if (profile) setUserProfile(profile);
+      setProjectStorageUsed(project.storage_used || 0);
 
-    const { data: chapterContent } = await supabase.from('premium_chapters').select('*').eq('project_id', projectId);
+      const { data: chapterContent } = await supabase.from('premium_chapters').select('*').eq('project_id', projectId);
 
-    if (project.custom_templates?.structure?.chapters) {
-      setChapters(project.custom_templates.structure.chapters.map(ch => {
-        const chNum = ch.number || ch.chapter;
-        const existing = chapterContent?.find(cc => cc.chapter_number === chNum);
-        return { id: existing?.id || chNum, number: chNum, title: ch.title, content: existing?.content || '' };
-      }));
+      if (project.custom_templates?.structure?.chapters) {
+        setChapters(project.custom_templates.structure.chapters.map(ch => {
+          const chNum = ch.number || ch.chapter;
+          const existing = chapterContent?.find(cc => cc.chapter_number === chNum);
+          return { id: existing?.id || chNum, number: chNum, title: ch.title, content: existing?.content || '' };
+        }));
+      }
+    } catch (err) {
+      console.error('Fatal workspace load error:', err);
+      showNotification('Workspace Error', 'A fatal error occurred. Returning to dashboard.', 'error');
+      setTimeout(() => router.push('/dashboard'), 2000);
+      return;
     }
 
     const { data: assets } = await supabase.from('premium_assets').select('*').eq('user_id', user.id).eq('project_id', projectId).order('created_at', { ascending: false });
