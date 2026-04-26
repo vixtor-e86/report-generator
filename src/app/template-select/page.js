@@ -215,7 +215,8 @@ function TemplateSelectContent() {
       'Education': '📚',
       'Agricultural Sciences': '🌾',
       'Environmental Science': '🌍',
-      'Basic Medical Sciences': '🩺'
+      'Basic Medical Sciences': '🩺',
+      'Pharmacy': '💊'
     };
     return icons[faculty] || '📖';
   };

@@ -212,6 +212,13 @@ function WorkspaceContent() {
     return () => { supabase.removeChannel(channel); };
   }, [projectId]);
 
+  // Land on Preview Mode when switching chapters
+  useEffect(() => {
+    if (activeView.startsWith('chapter-')) {
+      setWorkspaceMode('preview');
+    }
+  }, [activeView]);
+
   const activeChapter = activeView.startsWith('chapter-') 
     ? chapters.find(ch => `chapter-${ch.id}` === activeView || `chapter-${ch.number}` === activeView)
     : null;
