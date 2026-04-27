@@ -6,7 +6,7 @@ import {
   Copy, Download, RefreshCw, ShieldCheck,
   BookOpen, Presentation, BarChart3, Search, Lightbulb,
   SpellCheck, Quote, Image, Code2, RefreshCw as RefreshIcon,
-  ClipboardCheck, Wallet
+  ClipboardCheck, Wallet, Sparkles, UserCheck
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Textarea } from '@/components/marketplace/ui/textarea';
@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 
 const iconMap = {
   ShieldCheck,
-  UserCheck: ShieldCheck,
+  UserCheck,
   Presentation,
   BookOpen,
   Search,
@@ -43,6 +43,11 @@ export default function ToolInterfacePage() {
   const [hasPaid, setHasPaid] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
+  // Word count logic
+  const wordCount = input.trim() ? input.trim().split(/\s+/).length : 0;
+  const MAX_WORDS = 1500;
+  const isOverLimit = wordCount > MAX_WORDS;
+
   useEffect(() => {
     if (toolId) {
       const found = getToolById(toolId);
@@ -56,6 +61,11 @@ export default function ToolInterfacePage() {
       return;
     }
 
+    if (isOverLimit) {
+        toast.error(`Exceeded maximum limit of ${MAX_WORDS} words.`);
+        return;
+    }
+
     if (!hasPaid) {
       setShowPaymentDialog(true);
       return;
@@ -63,11 +73,27 @@ export default function ToolInterfacePage() {
 
     setIsProcessing(true);
 
-    setTimeout(() => {
-      setOutput(`PROCESSED_RESULT_FOR_${toolId.toUpperCase()}`);
+    try {
+      if (toolId === 'ai-humanizer') {
+        const response = await fetch('/api/marketplace/tools/humanize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: input })
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        setOutput(data.result);
+      } else {
+        // Generic fallback for other tools (mock)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setOutput(`PROCESSED_RESULT_FOR_${toolId.toUpperCase()}`);
+      }
       setIsProcessing(false);
       toast.success('Processing complete!');
-    }, 2000);
+    } catch (err) {
+      toast.error(err.message || 'Processing failed');
+      setIsProcessing(false);
+    }
   };
 
   const handlePayment = async () => {
@@ -101,9 +127,11 @@ export default function ToolInterfacePage() {
           <button onClick={() => navigate.back()} className="flex items-center gap-2 text-[#6b7280] hover:text-black transition-colors mb-6 text-xs font-black uppercase tracking-widest"><ArrowLeft className="w-4 h-4" />Back</button>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 bg-blue-50 border border-blue-100 rounded-[24px] flex items-center justify-center"><Icon className="w-10 h-10 text-blue-600" /></div>
+              <div className="w-20 h-20 bg-blue-50 border border-blue-100 rounded-[24px] flex items-center justify-center">
+                <Icon className="w-10 h-10 text-blue-600" />
+              </div>
               <div>
-                <h1 className="text-3xl font-black text-[#111827] tracking-tight">{tool.name}</h1>
+                <h1 className="text-3xl font-black text-[#111827] tracking-tight uppercase">{tool.name}</h1>
                 <p className="text-[#6b7280] font-medium mt-1">{tool.description}</p>
               </div>
             </div>
@@ -114,27 +142,60 @@ export default function ToolInterfacePage() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid lg:grid-cols-2 gap-10">
-          <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
-            <h2 className="text-lg font-black text-[#111827] uppercase mb-6 tracking-tighter">Input Source</h2>
-            <Textarea value={input} onChange={(e) => setInput(e.target.value)} className="min-h-[400px] bg-[#f8f9fc] border-[#e5e7eb] rounded-[20px] p-6 focus:border-black focus:ring-0" placeholder="Paste content here..." />
-            <Button className="w-full bg-black hover:bg-zinc-800 text-white rounded-full py-7 font-black mt-8" onClick={handleProcess} disabled={isProcessing || !input.trim()}>
-              {isProcessing ? 'Processing...' : 'Execute Tool'}
+          <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-black text-[#111827] uppercase tracking-tighter">Input Source</h2>
+                <Badge variant="outline" className={`rounded-full px-3 py-1 font-bold ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-400'}`}>
+                    {wordCount.toLocaleString()} / {MAX_WORDS} WORDS
+                </Badge>
+            </div>
+            <Textarea 
+                value={input} 
+                onChange={(e) => setInput(e.target.value)} 
+                className={`flex-1 min-h-[400px] bg-[#f8f9fc] border-[#e5e7eb] rounded-[20px] p-6 focus:border-black focus:ring-0 text-slate-700 leading-relaxed font-medium ${isOverLimit ? 'border-red-300' : ''}`} 
+                placeholder="Paste content here..." 
+            />
+            <Button 
+                className="w-full bg-black hover:bg-zinc-800 text-white rounded-full py-8 font-black mt-8 shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all" 
+                onClick={handleProcess} 
+                disabled={isProcessing || !input.trim() || isOverLimit}
+            >
+              {isProcessing ? (
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                    <Sparkles className="w-5 h-5 text-blue-400" />
+                    Execute {tool.name}
+                </>
+              )}
             </Button>
           </div>
-          <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
+          <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm flex flex-col">
             <h2 className="text-lg font-black text-[#111827] uppercase mb-6 tracking-tighter">Results</h2>
-            <div className="min-h-[400px] bg-zinc-900 rounded-[20px] p-8 text-zinc-300 font-mono text-sm leading-relaxed overflow-auto">
-              {output || 'Output will appear here'}
+            <div className="flex-1 min-h-[400px] bg-zinc-900 rounded-[20px] p-8 text-zinc-300 font-medium text-sm leading-relaxed overflow-auto custom-scrollbar">
+              {output || (
+                <div className="h-full flex items-center justify-center text-zinc-600 italic">
+                    Output will appear here after processing
+                </div>
+              )}
             </div>
-            {output && <Button variant="outline" className="w-full border-[#e5e7eb] rounded-full py-6 font-bold mt-8" onClick={handleCopy}>Copy Results</Button>}
+            {output && (
+                <Button 
+                    variant="outline" 
+                    className="w-full border-[#e5e7eb] rounded-full py-8 font-black mt-8 flex items-center justify-center gap-2 hover:bg-zinc-50 transition-all uppercase text-[11px] tracking-widest" 
+                    onClick={handleCopy}
+                >
+                    <Copy className="w-4 h-4" /> Copy Results
+                </Button>
+            )}
           </div>
         </div>
       </div>
 
       {showPaymentDialog && (
         <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[40px] p-10 max-w-md w-full shadow-2xl">
-            <h2 className="text-2xl font-black text-center mb-8 tracking-tight">Authorize Payment</h2>
+          <div className="bg-white rounded-[40px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+            <h2 className="text-2xl font-black text-center mb-8 tracking-tight uppercase">Authorize Tool Usage</h2>
             
             <div className="flex items-center justify-between p-6 bg-zinc-50 rounded-3xl border border-zinc-100 mb-8">
                 <button 
@@ -167,16 +228,16 @@ export default function ToolInterfacePage() {
                             setShowFundingModal(true);
                             setShowPaymentDialog(false);
                         }}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-6 font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-7 font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"
                     >
                         <Zap className="w-4 h-4" /> Fund Wallet Now
                     </Button>
-                    <Button variant="ghost" className="w-full text-slate-400 font-bold" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
+                    <Button variant="ghost" className="w-full text-slate-400 font-black uppercase text-[10px] tracking-widest" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
                 </div>
             ) : (
                 <div className="flex gap-4">
-                    <Button variant="ghost" className="flex-1 font-bold rounded-full py-7" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
-                    <Button className="flex-[2] bg-black text-white rounded-full py-7 font-black shadow-xl" onClick={handlePayment}>Pay Now</Button>
+                    <Button variant="ghost" className="flex-1 font-black uppercase text-[10px] tracking-widest rounded-full py-8" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
+                    <Button className="flex-[2] bg-black text-white rounded-full py-8 font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all" onClick={handlePayment}>Authorize & Pay</Button>
                 </div>
             )}
           </div>
