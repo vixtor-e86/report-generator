@@ -1,20 +1,24 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Wrench, Zap, AlertCircle, Check, 
   Copy, Download, RefreshCw, ShieldCheck,
   BookOpen, Presentation, BarChart3, Search, Lightbulb,
   SpellCheck, Quote, Image, Code2, RefreshCw as RefreshIcon,
-  ClipboardCheck, Wallet, Sparkles, UserCheck
+  ClipboardCheck, Wallet, Sparkles, UserCheck, X, ChevronLeft, ChevronRight,
+  Monitor, Palette, FileText, Type, Plus, Upload, MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Textarea } from '@/components/marketplace/ui/textarea';
+import { Input } from '@/components/marketplace/ui/input';
 import { Badge } from '@/components/marketplace/ui/badge';
 import { getToolById } from '@/data/marketplace/tools';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
+import { SLIDE_TEMPLATES } from '@/lib/slideTemplates';
+import pptxgen from "pptxgenjs";
 
 const iconMap = {
   ShieldCheck,
@@ -31,6 +35,57 @@ const iconMap = {
   RefreshCw: RefreshIcon,
 };
 
+// --- Slide Preview Component ---
+const SlideRenderer = ({ slide, template }) => {
+    if (!slide) return <div className="w-full h-full bg-slate-900" />;
+    const commonStyles = { width: '100%', height: '100%', position: 'relative', overflow: 'hidden', fontFamily: 'Inter, sans-serif' };
+  
+    switch (slide.type) {
+      case 'title':
+        return (
+          <div style={{ ...commonStyles, backgroundColor: template.primaryColor, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10%', textAlign: 'center' }}>
+            <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: 'white', textTransform: 'uppercase', marginBottom: '1rem', lineHeight: '1.2' }}>{slide.title}</h1>
+            <p style={{ fontSize: '1rem', color: template.accentColor, fontWeight: '600' }}>{slide.subtitle}</p>
+            <div style={{ marginTop: '2rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem' }}>
+              <p>By: {slide.author}</p>
+              <p>{slide.institution}</p>
+            </div>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4%', background: template.accentColor }} />
+          </div>
+        );
+      case 'section':
+        return (
+          <div style={{ ...commonStyles, backgroundColor: template.secondaryColor, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10%', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: '900', color: 'white', textTransform: 'uppercase' }}>{slide.title}</h2>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4%', background: template.accentColor }} />
+          </div>
+        );
+      default:
+        return (
+          <div style={{ ...commonStyles, backgroundColor: 'white', padding: '8%' }}>
+            <div style={{ width: '40px', height: '4px', background: template.accentColor, marginBottom: '1rem' }} />
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '900', color: template.primaryColor, marginBottom: '1.5rem' }}>{slide.title}</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: slide.imageData ? '1fr 1fr' : '1fr', gap: '2rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                {slide.bullets?.slice(0, 5).map((b, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '12px', fontSize: '0.85rem', color: '#334155', lineHeight: '1.4', fontWeight: '500' }}>
+                    <span style={{ color: template.accentColor }}>•</span>
+                    <span>{b}</span>
+                  </div>
+                ))}
+              </div>
+              {slide.imageData && (
+                <div style={{ borderRadius: '16px', overflow: 'hidden', height: '200px' }}>
+                  <img src={slide.imageData} className="w-full h-full object-cover" alt="" />
+                </div>
+              )}
+            </div>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4px', background: template.accentColor }} />
+          </div>
+        );
+    }
+};
+
 export default function ToolInterfacePage() {
   const { id: toolId } = useParams();
   const navigate = useRouter();
@@ -38,14 +93,23 @@ export default function ToolInterfacePage() {
 
   const [tool, setTool] = useState(undefined);
   const [input, setInput] = useState('');
+  const [prompt, setPrompt] = useState('');
   const [output, setOutput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPaid, setHasPaid] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
+  // --- Slide Generator Specific States ---
+  const [selectedTemplate, setSelectedTemplate] = useState(SLIDE_TEMPLATES[0]);
+  const [uploadedImages, setUploadedImages] = useState([]); // [{id, data, caption}]
+  const [generatedSlides, setSlides] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [refinementPrompt, setRefinementPrompt] = useState('');
+  const fileInputRef = useRef(null);
+
   // Word count logic
   const wordCount = input.trim() ? input.trim().split(/\s+/).length : 0;
-  const MAX_WORDS = 1500;
+  const MAX_WORDS = toolId === 'slide-generator' ? 10000 : 1500;
   const isOverLimit = wordCount > MAX_WORDS;
 
   useEffect(() => {
@@ -55,8 +119,8 @@ export default function ToolInterfacePage() {
     }
   }, [toolId]);
 
-  const handleProcess = async () => {
-    if (!input.trim()) {
+  const handleProcess = async (isIterative = false) => {
+    if (!input.trim() && !isIterative) {
       toast.error('Please enter some text to process');
       return;
     }
@@ -83,17 +147,82 @@ export default function ToolInterfacePage() {
         const data = await response.json();
         if (data.error) throw new Error(data.error);
         setOutput(data.result);
-      } else {
-        // Generic fallback for other tools (mock)
+      } 
+      else if (toolId === 'slide-generator') {
+        const response = await fetch('/api/marketplace/tools/generate-slides', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            content: input, 
+            prompt: isIterative ? refinementPrompt : prompt,
+            images: uploadedImages.map(img => ({ id: img.id, caption: img.caption })),
+            currentSlides: isIterative ? generatedSlides : null
+          })
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        
+        // Match images with placeholders
+        const processed = processSlidesWithImages(data.data);
+        setSlides(processed);
+        setCurrentIndex(0);
+        setRefinementPrompt('');
+      }
+      else {
         await new Promise(resolve => setTimeout(resolve, 2000));
         setOutput(`PROCESSED_RESULT_FOR_${toolId.toUpperCase()}`);
       }
-      setIsProcessing(false);
-      toast.success('Processing complete!');
+      toast.success('Ready!');
     } catch (err) {
       toast.error(err.message || 'Processing failed');
+    } finally {
       setIsProcessing(false);
     }
+  };
+
+  const processSlidesWithImages = (data) => {
+    const slideList = [];
+    slideList.push({ type: 'title', title: data.title, subtitle: data.subtitle, author: data.author, institution: data.institution });
+    
+    data.sections.forEach((sec) => {
+      slideList.push({ type: 'section', title: sec.title });
+      sec.slides.forEach((s) => {
+        const slide = { type: 'content', title: s.title, bullets: s.bullets };
+        if (s.imageCaption) {
+          const img = uploadedImages.find(i => i.caption.toLowerCase() === s.imageCaption.toLowerCase());
+          if (img) slide.imageData = img.data;
+        }
+        slideList.push(slide);
+      });
+    });
+
+    if (data.conclusion) slideList.push({ type: 'conclusion', title: data.conclusion.title, bullets: data.conclusion.bullets });
+    return slideList;
+  };
+
+  const handleImageUpload = (e) => {
+    const files = e.target.files;
+    if (!files) return;
+    
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImages(prev => [...prev, {
+          id: Date.now() + Math.random(),
+          data: reader.result,
+          caption: ''
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const updateImageCaption = (id, caption) => {
+    setUploadedImages(prev => prev.map(img => img.id === id ? { ...img, caption } : img));
+  };
+
+  const removeImage = (id) => {
+    setUploadedImages(prev => prev.filter(img => img.id !== id));
   };
 
   const handlePayment = async () => {
@@ -111,19 +240,64 @@ export default function ToolInterfacePage() {
     }
   };
 
+  const handleDownloadPPTX = async () => {
+    const pptx = new pptxgen();
+    pptx.layout = 'LAYOUT_16x9';
+    
+    const template = selectedTemplate;
+    const primaryColor = template.primaryColor.replace('#', '');
+    const secondaryColor = template.secondaryColor.replace('#', '');
+    const accentColor = template.accentColor.replace('#', '');
+
+    generatedSlides.forEach((slide) => {
+      const pptSlide = pptx.addSlide();
+      switch (slide.type) {
+        case 'title':
+          pptSlide.background = { color: primaryColor };
+          pptSlide.addText(slide.title.toUpperCase(), { x: '10%', y: '30%', w: '80%', h: '20%', fontSize: 32, bold: true, color: 'FFFFFF', align: 'center' });
+          if (slide.subtitle) pptSlide.addText(slide.subtitle, { x: '10%', y: '50%', w: '80%', h: '10%', fontSize: 18, color: accentColor, align: 'center', italic: true });
+          pptSlide.addText(`By: ${slide.author}\n${slide.institution}`, { x: '10%', y: '70%', w: '80%', h: '15%', fontSize: 14, color: 'CCCCCC', align: 'center' });
+          break;
+        case 'section':
+          pptSlide.background = { color: secondaryColor };
+          pptSlide.addText(slide.title.toUpperCase(), { x: '10%', y: '40%', w: '80%', h: '20%', fontSize: 36, bold: true, color: 'FFFFFF', align: 'center' });
+          break;
+        case 'content':
+        case 'conclusion':
+          pptSlide.background = { color: slide.type === 'conclusion' ? primaryColor : 'FFFFFF' };
+          const textColor = slide.type === 'conclusion' ? 'FFFFFF' : '334155';
+          const headingColor = slide.type === 'conclusion' ? 'FFFFFF' : primaryColor;
+          
+          pptSlide.addText(slide.title, { x: '8%', y: '8%', w: '84%', h: '12%', fontSize: 24, bold: true, color: headingColor });
+          if (slide.bullets) {
+            const bulletObjs = slide.bullets.map(text => ({ text, options: { bullet: true, paraSpaceBefore: 8, indent: 20 } }));
+            if (slide.imageData) {
+              pptSlide.addText(bulletObjs, { x: '8%', y: '22%', w: '42%', h: '65%', fontSize: 13, color: textColor, valign: 'top' });
+              pptSlide.addImage({ data: slide.imageData, x: '55%', y: '22%', w: '38%', h: '60%' });
+            } else {
+              pptSlide.addText(bulletObjs, { x: '8%', y: '22%', w: '84%', h: '65%', fontSize: 14, color: textColor, valign: 'top' });
+            }
+          }
+          break;
+      }
+    });
+
+    await pptx.writeFile({ fileName: `${generatedSlides[0]?.title || 'Presentation'}.pptx` });
+  };
+
   const handleCopy = () => {
     navigator.clipboard.writeText(output);
     toast.success('Copied!');
   };
 
   if (!tool) return null;
-
   const Icon = iconMap[tool.icon] || Wrench;
 
   return (
     <div className="min-h-screen bg-[#f8f9fc]">
+      {/* Header */}
       <div className="bg-white border-b border-[#e5e7eb]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <button onClick={() => navigate.back()} className="flex items-center gap-2 text-[#6b7280] hover:text-black transition-colors mb-6 text-xs font-black uppercase tracking-widest"><ArrowLeft className="w-4 h-4" />Back</button>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-6">
@@ -135,61 +309,223 @@ export default function ToolInterfacePage() {
                 <p className="text-[#6b7280] font-medium mt-1">{tool.description}</p>
               </div>
             </div>
-            <div className="bg-zinc-900 rounded-[24px] px-8 py-4 text-center text-white font-black text-2xl">{formatCurrency(tool.pricePerUse)}</div>
+            <div className="bg-zinc-900 rounded-[24px] px-8 py-4 text-center text-white font-black text-2xl shadow-xl">{formatCurrency(tool.pricePerUse)}</div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid lg:grid-cols-2 gap-10">
-          <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-black text-[#111827] uppercase tracking-tighter">Input Source</h2>
-                <Badge variant="outline" className={`rounded-full px-3 py-1 font-bold ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-400'}`}>
-                    {wordCount.toLocaleString()} / {MAX_WORDS} WORDS
-                </Badge>
-            </div>
-            <Textarea 
-                value={input} 
-                onChange={(e) => setInput(e.target.value)} 
-                className={`flex-1 min-h-[400px] bg-[#f8f9fc] border-[#e5e7eb] rounded-[20px] p-6 focus:border-black focus:ring-0 text-slate-700 leading-relaxed font-medium ${isOverLimit ? 'border-red-300' : ''}`} 
-                placeholder="Paste content here..." 
-            />
-            <Button 
-                className="w-full bg-black hover:bg-zinc-800 text-white rounded-full py-8 font-black mt-8 shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all" 
-                onClick={handleProcess} 
-                disabled={isProcessing || !input.trim() || isOverLimit}
-            >
-              {isProcessing ? (
-                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                    <Sparkles className="w-5 h-5 text-blue-400" />
-                    Execute {tool.name}
-                </>
-              )}
-            </Button>
-          </div>
-          <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm flex flex-col">
-            <h2 className="text-lg font-black text-[#111827] uppercase mb-6 tracking-tighter">Results</h2>
-            <div className="flex-1 min-h-[400px] bg-zinc-900 rounded-[20px] p-8 text-zinc-300 font-medium text-sm leading-relaxed overflow-auto custom-scrollbar">
-              {output || (
-                <div className="h-full flex items-center justify-center text-zinc-600 italic">
-                    Output will appear here after processing
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {generatedSlides.length > 0 ? (
+          // --- PREVIEW MODE ---
+          <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col lg:flex-row gap-12">
+                {/* Slide Preview */}
+                <div className="flex-1">
+                    <div className="bg-white p-8 rounded-[48px] shadow-2xl border border-slate-100">
+                        <div className="flex justify-between items-center mb-8">
+                            <div>
+                                <h3 className="text-xl font-black uppercase tracking-tight">Technical Preview</h3>
+                                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Slide {currentIndex + 1} of {generatedSlides.length}</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setCurrentIndex(p => Math.max(0, p-1))} className="p-3 bg-slate-50 hover:bg-zinc-900 hover:text-white rounded-2xl transition-all shadow-sm"><ChevronLeft className="w-5 h-5" /></button>
+                                <button onClick={() => setCurrentIndex(p => Math.min(generatedSlides.length-1, p+1))} className="p-3 bg-slate-50 hover:bg-zinc-900 hover:text-white rounded-2xl transition-all shadow-sm"><ChevronRight className="w-5 h-5" /></button>
+                            </div>
+                        </div>
+
+                        <div className="aspect-video rounded-[32px] overflow-hidden shadow-inner border border-slate-100 bg-slate-50">
+                            <SlideRenderer slide={generatedSlides[currentIndex]} template={selectedTemplate} />
+                        </div>
+
+                        <div className="mt-8 flex gap-2 overflow-x-auto pb-4 custom-scrollbar">
+                            {generatedSlides.map((_, i) => (
+                                <button 
+                                    key={i} 
+                                    onClick={() => setCurrentIndex(i)}
+                                    className={`h-2 rounded-full transition-all flex-shrink-0 ${i === currentIndex ? 'w-12 bg-zinc-900' : 'w-2 bg-slate-200'}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
                 </div>
-              )}
+
+                {/* Refinement & Download */}
+                <div className="lg:w-96 space-y-8">
+                    <div className="bg-zinc-900 p-8 rounded-[40px] text-white shadow-2xl">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-6">Remodification Suite</h4>
+                        <div className="space-y-4">
+                            <Textarea 
+                                value={refinementPrompt}
+                                onChange={(e) => setRefinementPrompt(e.target.value)}
+                                placeholder="E.g. Add more detail about the hardware, or make it more visual..."
+                                className="bg-white/5 border-white/10 rounded-2xl min-h-[120px] text-sm focus:border-white/20 focus:ring-0 placeholder:text-zinc-600"
+                            />
+                            <Button 
+                                onClick={() => handleProcess(true)}
+                                disabled={isProcessing || !refinementPrompt.trim()}
+                                className="w-full bg-white text-zinc-900 hover:bg-zinc-100 rounded-2xl py-6 font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2"
+                            >
+                                {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                Apply Refinement
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-6">Export Package</h4>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-3 gap-2 mb-6">
+                                {SLIDE_TEMPLATES.map(t => (
+                                    <button 
+                                        key={t.id} 
+                                        onClick={() => setSelectedTemplate(t)}
+                                        className={`aspect-square rounded-xl transition-all border-2 flex items-center justify-center relative overflow-hidden ${selectedTemplate.id === t.id ? 'border-zinc-900 scale-105' : 'border-slate-50'}`}
+                                        title={t.name}
+                                    >
+                                        <div className="absolute inset-0 opacity-20" style={{ backgroundColor: t.primaryColor }} />
+                                        <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: t.accentColor }} />
+                                    </button>
+                                ))}
+                            </div>
+                            <Button 
+                                onClick={handleDownloadPPTX}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-8 font-black uppercase text-[11px] tracking-widest shadow-lg flex items-center justify-center gap-3"
+                            >
+                                <Download className="w-5 h-5" /> Download PowerPoint
+                            </Button>
+                            <button 
+                                onClick={() => { setSlides([]); setInput(''); }}
+                                className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors"
+                            >
+                                Create New Project
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            {output && (
-                <Button 
-                    variant="outline" 
-                    className="w-full border-[#e5e7eb] rounded-full py-8 font-black mt-8 flex items-center justify-center gap-2 hover:bg-zinc-50 transition-all uppercase text-[11px] tracking-widest" 
-                    onClick={handleCopy}
-                >
-                    <Copy className="w-4 h-4" /> Copy Results
-                </Button>
-            )}
           </div>
-        </div>
+        ) : (
+          // --- INPUT MODE ---
+          <div className="grid lg:grid-cols-3 gap-12 animate-in fade-in duration-700">
+            <div className="lg:col-span-2 space-y-10">
+              {/* Context Input */}
+              <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col">
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Content Core</h2>
+                        <p className="text-sm text-slate-500 font-medium">Paste your research paper or technical documentation</p>
+                    </div>
+                    <Badge variant="outline" className={`rounded-full px-4 py-1.5 font-black text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-400'}`}>
+                        {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()} WORDS
+                    </Badge>
+                </div>
+                <Textarea 
+                    value={input} 
+                    onChange={(e) => setInput(e.target.value)} 
+                    className={`flex-1 min-h-[400px] bg-slate-50/50 border-[#e5e7eb] rounded-[32px] p-8 focus:border-black focus:ring-0 text-slate-700 leading-relaxed font-medium ${isOverLimit ? 'border-red-300' : ''}`} 
+                    placeholder="Enter project content here..." 
+                />
+              </div>
+
+              {/* Instructions */}
+              <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm">
+                <div className="flex items-center gap-4 mb-8">
+                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center"><MessageSquare className="w-6 h-6" /></div>
+                    <div>
+                        <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Strategic Directives</h2>
+                        <p className="text-sm text-slate-500 font-medium">Any specific goals or style instructions?</p>
+                    </div>
+                </div>
+                <Input 
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="E.g. Focus on the mathematical models, or make it simplified for non-technical audience..."
+                    className="h-16 bg-slate-50 border-slate-100 rounded-2xl px-6 font-bold focus:border-black transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Sidebar Configuration */}
+            <div className="space-y-8">
+              {/* Image Matrix */}
+              <div className="bg-white border border-slate-200 rounded-[40px] p-8 shadow-sm">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-8">Technical Visuals</h3>
+                
+                <div 
+                    onClick={() => fileInputRef.current.click()}
+                    className="border-2 border-dashed border-slate-100 rounded-[28px] p-8 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-zinc-900 hover:bg-slate-50 transition-all group"
+                >
+                    <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Add Figures/Charts</p>
+                </div>
+                <input type="file" ref={fileInputRef} onChange={handleImageUpload} multiple accept="image/*" className="hidden" />
+
+                <div className="mt-8 space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                    {uploadedImages.map(img => (
+                        <div key={img.id} className="bg-slate-50 rounded-2xl p-4 flex gap-4 border border-slate-100 relative group">
+                            <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-white shadow-sm">
+                                <img src={img.data} className="w-full h-full object-cover" alt="" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <input 
+                                    value={img.caption}
+                                    onChange={(e) => updateImageCaption(img.id, e.target.value)}
+                                    placeholder="Add caption..."
+                                    className="w-full bg-transparent border-none p-0 text-xs font-black uppercase tracking-tighter focus:ring-0 placeholder:text-slate-300"
+                                />
+                                <p className="text-[9px] text-slate-400 font-bold mt-1">AI PLACEHOLDER KEY</p>
+                            </div>
+                            <button onClick={() => removeImage(img.id)} className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity border border-slate-100"><X className="w-3 h-3" /></button>
+                        </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Template Select */}
+              <div className="bg-zinc-900 rounded-[40px] p-8 text-white shadow-2xl">
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-8">Design Language</h3>
+                 <div className="grid grid-cols-2 gap-4">
+                    {SLIDE_TEMPLATES.map(t => {
+                        const ThemeIcon = t.id === 'academic' ? BookOpen : 
+                                          t.id === 'modern' ? Monitor : 
+                                          t.id === 'sunset' ? Palette :
+                                          t.id === 'forest' ? Layers :
+                                          t.id === 'royal' ? Sparkles : Search;
+                        return (
+                            <button 
+                                key={t.id} 
+                                onClick={() => setSelectedTemplate(t)}
+                                className={`p-5 rounded-2xl border-2 transition-all text-left relative overflow-hidden group ${selectedTemplate.id === t.id ? 'border-white shadow-lg scale-[1.02]' : 'border-zinc-800 hover:border-zinc-700'}`}
+                            >
+                                <div className="absolute inset-0 opacity-10" style={{ backgroundColor: t.primaryColor }} />
+                                <div className="relative z-10">
+                                    <ThemeIcon className={`w-5 h-5 mb-3 ${selectedTemplate.id === t.id ? 'text-white' : 'text-zinc-500'}`} />
+                                    <p className={`text-[9px] font-black uppercase tracking-tighter ${selectedTemplate.id === t.id ? 'text-white' : 'text-zinc-500'}`}>{t.name}</p>
+                                    <div className="mt-2 w-full h-1 rounded-full overflow-hidden flex">
+                                        <div className="h-full w-1/3" style={{ backgroundColor: t.primaryColor }} />
+                                        <div className="h-full w-1/3" style={{ backgroundColor: t.secondaryColor }} />
+                                        <div className="h-full w-1/3" style={{ backgroundColor: t.accentColor }} />
+                                    </div>
+                                </div>
+                            </button>
+                        );
+                    })}
+                 </div>
+              </div>
+
+              <Button 
+                onClick={() => handleProcess()}
+                disabled={isProcessing || !input.trim() || isOverLimit}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-[32px] py-10 font-black uppercase text-xs tracking-[0.2em] shadow-2xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-4"
+              >
+                {isProcessing ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Monitor className="w-6 h-6" />}
+                {isProcessing ? 'Architecting...' : 'Build Presentation'}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {showPaymentDialog && (
