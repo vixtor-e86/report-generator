@@ -7,7 +7,7 @@ import {
   BookOpen, Presentation, BarChart3, Search, Lightbulb,
   SpellCheck, Quote, Image, Code2, RefreshCw as RefreshIcon,
   ClipboardCheck, Wallet, Sparkles, UserCheck, X, ChevronLeft, ChevronRight,
-  Monitor, Palette, FileText, Type, Plus, Upload, MessageSquare
+  Monitor, Palette, FileText, Type, Plus, Upload, MessageSquare, Layers
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Textarea } from '@/components/marketplace/ui/textarea';
