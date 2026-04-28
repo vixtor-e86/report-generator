@@ -3,16 +3,25 @@ import { callAI } from '@/lib/aiProvider';
 
 export async function POST(request) {
   try {
-    const { content, prompt, images, currentSlides } = await request.json();
+    const { content, prompt, images, currentSlides, customOutline, slideCountRange } = await request.json();
 
     if (!content && !currentSlides) {
       return NextResponse.json({ error: 'Content or existing slides are required' }, { status: 400 });
     }
 
-    // Prepare image context if provided
+    // Prepare image context
     const imageContext = images && images.length > 0 
-      ? `The user has provided the following images with captions: ${images.map(img => `"${img.caption}"`).join(', ')}. Use these captions as placeholders in the "imageCaption" field where appropriate.`
+      ? `The user has provided the following images with captions: ${images.map(img => `"${img.caption}"`).join(', ')}. Use these exact captions as placeholders in the "imageCaption" field where appropriate.`
       : '';
+
+    // Prepare structure context
+    const structureContext = customOutline && customOutline.length > 0
+      ? `The user requires the presentation to follow this specific structure/outline: ${customOutline.join(' -> ')}. Ensure every point in this outline is represented as a section or slide.`
+      : '';
+
+    const lengthContext = slideCountRange 
+      ? `The presentation should aim for a total length within the range of ${slideCountRange} slides.`
+      : 'Aim for a comprehensive technical length (approx 12-18 slides).';
 
     const isRefinement = !!currentSlides;
 
@@ -28,6 +37,8 @@ export async function POST(request) {
       Return the MODIFIED valid JSON object with the same structure.`
       : `You are an academic presentation expert. 
       Transform the provided content into DETAILED technical slides for a professional PowerPoint presentation.
+      ${structureContext}
+      ${lengthContext}
       ${imageContext}
       
       Structure the response as a valid JSON object with this EXACT structure:
@@ -58,7 +69,7 @@ export async function POST(request) {
       
       CRITICAL RULES:
       - Use full, informative, technical sentences (approx 15-25 words per bullet).
-      - Each section should have 2-4 slides.
+      - Ensure the content is academic and technical.
       - Return ONLY the JSON object. No markdown.
       
       Content:
