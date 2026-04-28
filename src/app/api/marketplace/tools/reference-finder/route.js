@@ -17,7 +17,7 @@ export async function POST(request) {
       Query: ${query}
       Preferred Year Range: ${yearRange || 'Recent'}
       
-      Your task is to provide a list of 5-8 highly relevant academic papers, journals, or technical reports.
+      Your task is to provide a list of 10-15 highly relevant academic papers, journals, or technical reports.
       For EACH reference, provide:
       1. Title of the work
       2. Authors (Full list)

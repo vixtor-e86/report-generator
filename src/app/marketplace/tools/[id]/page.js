@@ -284,7 +284,7 @@ export default function ToolInterfacePage() {
 
   const handlePayment = async () => {
     if (!tool) return;
-    const price = toolId === 'reference-finder' && searchMode === 'deep' ? 200 : tool.pricePerUse;
+    const price = toolId === 'reference-finder' && searchMode === 'deep' ? 500 : tool.pricePerUse;
     if (wallet.balance < price) {
       toast.error('Insufficient balance.');
       return;
@@ -368,7 +368,7 @@ export default function ToolInterfacePage() {
               </div>
             </div>
             <div className="bg-zinc-900 rounded-[24px] px-8 py-4 text-center text-white font-black text-2xl shadow-xl">
-                {toolId === 'reference-finder' && searchMode === 'deep' ? '₦200' : formatCurrency(tool.pricePerUse)}
+                {toolId === 'reference-finder' && searchMode === 'deep' ? '₦500' : formatCurrency(tool.pricePerUse)}
             </div>
           </div>
         </div>
@@ -391,9 +391,9 @@ export default function ToolInterfacePage() {
                             />
                         </div>
                         <div className="flex gap-2">
-                            <Input type="number" value={yearStart} onChange={(e) => setYearStart(e.target.value)} className="w-24 h-16 bg-slate-50 rounded-2xl text-center font-black" />
-                            <div className="flex items-center text-slate-300 font-bold">to</div>
-                            <Input type="number" value={yearEnd} onChange={(e) => setYearEnd(e.target.value)} className="w-24 h-16 bg-slate-50 rounded-2xl text-center font-black" />
+                            <Input type="number" value={yearStart} onChange={(e) => setYearStart(e.target.value)} className="w-24 h-16 bg-slate-50 border-slate-100 rounded-2xl text-center font-black text-zinc-900 focus:border-black transition-all" />
+                            <div className="flex items-center text-zinc-400 font-black uppercase text-[10px] tracking-widest px-1">to</div>
+                            <Input type="number" value={yearEnd} onChange={(e) => setYearEnd(e.target.value)} className="w-24 h-16 bg-slate-50 border-slate-100 rounded-2xl text-center font-black text-zinc-900 focus:border-black transition-all" />
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-4 mt-8">
@@ -409,7 +409,7 @@ export default function ToolInterfacePage() {
                             disabled={isProcessing}
                             className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 transition-all ${searchMode === 'deep' ? 'bg-blue-600 text-white shadow-xl shadow-blue-200' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
                         >
-                            <Sparkles className="w-4 h-4 text-blue-200" /> Claude DeepSearch (₦200)
+                            <Sparkles className="w-4 h-4 text-blue-200" /> DeepSearch (₦500)
                         </button>
                         {searchMode === 'deep' && (
                             <Button 
@@ -518,8 +518,8 @@ export default function ToolInterfacePage() {
             </div>
           ) : (
             // --- STANDARD INPUT MODE ---
-            <div className={`grid ${toolId === 'slide-generator' ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-12 animate-in fade-in duration-700`}>
-                <div className={toolId === 'slide-generator' ? 'lg:col-span-2 space-y-10' : 'max-w-4xl mx-auto w-full space-y-10'}>
+            <div className={`grid ${toolId === 'slide-generator' ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-12 animate-in fade-in duration-700`}>
+                <div className={toolId === 'slide-generator' ? 'lg:col-span-2 space-y-10' : 'space-y-10'}>
                 
                 {/* Slide Structure / Outline */}
                 {toolId === 'slide-generator' && (
@@ -563,13 +563,13 @@ export default function ToolInterfacePage() {
                 )}
 
                 {/* Context Input */}
-                <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[550px]">
+                <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[600px]">
                     <div className="flex justify-between items-center mb-8 shrink-0">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center"><FileText className="w-6 h-6" /></div>
                             <div>
                                 <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Content Core</h2>
-                                <p className="text-sm text-slate-500 font-medium">Research paper or technical text</p>
+                                <p className="text-sm text-slate-500 font-medium">{toolId === 'ai-humanizer' ? 'AI generated text' : 'Research or technical text'}</p>
                             </div>
                         </div>
                         <Badge variant="outline" className={`rounded-full px-4 py-1.5 font-black text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-400'}`}>
@@ -583,10 +583,10 @@ export default function ToolInterfacePage() {
                         placeholder="Enter project content here..." 
                     />
                     
-                    {toolId !== 'slide-generator' && (
-                        <Button onClick={() => handleProcess()} disabled={isProcessing || !input.trim() || isOverLimit} className="w-full bg-black hover:bg-zinc-800 text-white rounded-[24px] py-8 font-black uppercase text-xs tracking-[0.2em] shadow-xl mt-8 flex items-center justify-center gap-4">
+                    {toolId === 'ai-humanizer' && (
+                        <Button onClick={() => handleProcess()} disabled={isProcessing || !input.trim() || isOverLimit} className="w-full bg-black hover:bg-zinc-800 text-white rounded-[24px] py-8 font-black uppercase text-xs tracking-[0.2em] shadow-xl mt-8 flex items-center justify-center gap-4 shrink-0">
                             {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-blue-400" />}
-                            {isProcessing ? 'Processing...' : `Execute ${tool.name} (${formatCurrency(tool.pricePerUse)})`}
+                            {isProcessing ? 'Humanizing...' : `Execute Humanizer (₦1,000)`}
                         </Button>
                     )}
                 </div>
@@ -602,6 +602,24 @@ export default function ToolInterfacePage() {
                             </div>
                         </div>
                         <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="E.g. Focus on mathematical models..." className="h-16 bg-slate-50 border-slate-100 rounded-2xl px-6 font-black text-zinc-900 focus:border-black transition-all placeholder:text-slate-400" />
+                    </div>
+                )}
+
+                {/* AI Humanizer Output Section - INSIDE GRID */}
+                {toolId === 'ai-humanizer' && (
+                    <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[600px] animate-in fade-in duration-500">
+                        <div className="flex justify-between items-center mb-8 shrink-0">
+                            <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Result</h2>
+                            {output && <Button onClick={handleCopy} variant="outline" className="rounded-full px-6 border-[#e5e7eb] font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all"><Copy className="w-4 h-4 mr-2" /> Copy Results</Button>}
+                        </div>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-900 rounded-[32px] p-8 text-zinc-300 font-bold leading-relaxed whitespace-pre-wrap">
+                            {output || (
+                                <div className="h-full flex flex-col items-center justify-center text-zinc-600 italic">
+                                    <UserCheck className="w-12 h-12 mb-4 opacity-10" />
+                                    Humanized output will appear here
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
                 </div>
@@ -677,19 +695,6 @@ export default function ToolInterfacePage() {
             </div>
           )
         )}
-
-        {/* AI Humanizer Output Section */}
-        {toolId === 'ai-humanizer' && output && (
-            <div className="mt-12 bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[500px] animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex justify-between items-center mb-8 shrink-0">
-                    <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Humanized Result</h2>
-                    <Button onClick={handleCopy} variant="outline" className="rounded-full px-6 border-[#e5e7eb] font-black uppercase text-[10px] tracking-widest"><Copy className="w-4 h-4 mr-2" /> Copy to clipboard</Button>
-                </div>
-                <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-900 rounded-[32px] p-8 text-zinc-300 font-bold leading-relaxed whitespace-pre-wrap">
-                    {output}
-                </div>
-            </div>
-        )}
       </div>
 
       {showPaymentDialog && (
@@ -704,11 +709,11 @@ export default function ToolInterfacePage() {
                 <div className="text-right">
                     <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Fee</p>
                     <p className="text-blue-600 font-black">
-                        {toolId === 'reference-finder' && searchMode === 'deep' ? '₦200' : formatCurrency(tool.pricePerUse)}
+                        {toolId === 'reference-finder' && searchMode === 'deep' ? '₦500' : formatCurrency(tool.pricePerUse)}
                     </p>
                 </div>
             </div>
-            {wallet.balance < (toolId === 'reference-finder' && searchMode === 'deep' ? 200 : tool.pricePerUse) ? (
+            {wallet.balance < (toolId === 'reference-finder' && searchMode === 'deep' ? 500 : tool.pricePerUse) ? (
                 <div className="space-y-4">
                     <div className="p-4 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3"><AlertCircle className="w-5 h-5 text-red-500" /><p className="text-[10px] text-red-600 font-black uppercase tracking-widest leading-tight">Insufficient funds to launch tool.</p></div>
                     <Button onClick={() => { setShowFundingModal(true); setShowPaymentDialog(false); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-7 font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"><Zap className="w-4 h-4" /> Fund Wallet Now</Button>
