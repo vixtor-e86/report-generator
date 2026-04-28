@@ -19,7 +19,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Maximum 1500 words per request allowed.' }, { status: 400 });
     }
 
-    // Call StealthGPT
+    // Call StealthGPT with CORRECTED parameters
     const response = await fetch("https://stealthgpt.ai/api/stealthify", {
       method: "POST",
       headers: { 
@@ -30,8 +30,8 @@ export async function POST(request) {
         prompt: content,
         rephrase: true,
         tone: "College",
-        mode: "Medium",
-        qualityMode: "quality"
+        mode: "Medium",        // Corrected mode
+        qualityMode: "quality" // Added quality flag
       }),
     });
 

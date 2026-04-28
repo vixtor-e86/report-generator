@@ -34,7 +34,7 @@ export const academicTools = [
     name: 'Reference Finder',
     description: 'Find relevant academic papers and generate properly formatted citations in APA, MLA, Chicago, or Harvard style.',
     icon: 'BookOpen',
-    pricePerUse: 400,
+    pricePerUse: 500,
     category: 'research',
     isAvailable: true,
     usageCount: 2100,
