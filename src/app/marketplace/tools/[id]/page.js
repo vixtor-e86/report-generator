@@ -98,6 +98,7 @@ export default function ToolInterfacePage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPaid, setHasPaid] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [pendingIterative, setPendingIterative] = useState(false);
 
   // --- Slide Generator Specific States ---
   const [selectedTemplate, setSelectedTemplate] = useState(SLIDE_TEMPLATES[0]);
@@ -130,7 +131,9 @@ export default function ToolInterfacePage() {
         return;
     }
 
+    // Always require payment for Humanizer or refinements
     if (!hasPaid) {
+      setPendingIterative(isIterative);
       setShowPaymentDialog(true);
       return;
     }
@@ -173,8 +176,14 @@ export default function ToolInterfacePage() {
         setOutput(`PROCESSED_RESULT_FOR_${toolId.toUpperCase()}`);
       }
       toast.success('Ready!');
+      
+      // RESET payment for next use
+      setHasPaid(false);
+      setPendingIterative(false);
+
     } catch (err) {
       toast.error(err.message || 'Processing failed');
+      setHasPaid(false);
     } finally {
       setIsProcessing(false);
     }
@@ -189,7 +198,7 @@ export default function ToolInterfacePage() {
       sec.slides.forEach((s) => {
         const slide = { type: 'content', title: s.title, bullets: s.bullets };
         if (s.imageCaption) {
-          const img = uploadedImages.find(i => i.caption.toLowerCase() === s.imageCaption.toLowerCase());
+          const img = uploadedImages.find(i => i.caption && i.caption.trim().toLowerCase() === s.imageCaption.toLowerCase());
           if (img) slide.imageData = img.data;
         }
         slideList.push(slide);
@@ -203,6 +212,11 @@ export default function ToolInterfacePage() {
   const handleImageUpload = (e) => {
     const files = e.target.files;
     if (!files) return;
+
+    if (uploadedImages.length + files.length > 5) {
+        toast.error("Maximum 5 images allowed for the Slide Generator.");
+        return;
+    }
     
     Array.from(files).forEach(file => {
       const reader = new FileReader();
@@ -212,6 +226,7 @@ export default function ToolInterfacePage() {
           data: reader.result,
           caption: ''
         }]);
+        toast.info("Image added. Please provide a caption for the AI.");
       };
       reader.readAsDataURL(file);
     });
@@ -231,12 +246,13 @@ export default function ToolInterfacePage() {
       toast.error('Insufficient balance.');
       return;
     }
-    const success = await deductFunds(tool.pricePerUse, `Tool: ${tool.name}`);
+    const label = pendingIterative ? `Refinement: ${tool.name}` : `Tool: ${tool.name}`;
+    const success = await deductFunds(tool.pricePerUse, label);
     if (success) {
       setHasPaid(true);
       setShowPaymentDialog(false);
       toast.success('Payment successful!');
-      handleProcess();
+      handleProcess(pendingIterative);
     }
   };
 
@@ -324,12 +340,12 @@ export default function ToolInterfacePage() {
                     <div className="bg-white p-8 rounded-[48px] shadow-2xl border border-slate-100">
                         <div className="flex justify-between items-center mb-8">
                             <div>
-                                <h3 className="text-xl font-black uppercase tracking-tight">Technical Preview</h3>
+                                <h3 className="text-xl font-black uppercase tracking-tight text-zinc-900">Technical Preview</h3>
                                 <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Slide {currentIndex + 1} of {generatedSlides.length}</p>
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={() => setCurrentIndex(p => Math.max(0, p-1))} className="p-3 bg-slate-50 hover:bg-zinc-900 hover:text-white rounded-2xl transition-all shadow-sm"><ChevronLeft className="w-5 h-5" /></button>
-                                <button onClick={() => setCurrentIndex(p => Math.min(generatedSlides.length-1, p+1))} className="p-3 bg-slate-50 hover:bg-zinc-900 hover:text-white rounded-2xl transition-all shadow-sm"><ChevronRight className="w-5 h-5" /></button>
+                                <button onClick={() => setCurrentIndex(p => Math.max(0, p-1))} className="p-3 bg-zinc-900/5 hover:bg-zinc-900 hover:text-white rounded-2xl transition-all shadow-sm"><ChevronLeft className="w-5 h-5" /></button>
+                                <button onClick={() => setCurrentIndex(p => Math.min(generatedSlides.length-1, p+1))} className="p-3 bg-zinc-900/5 hover:bg-zinc-900 hover:text-white rounded-2xl transition-all shadow-sm"><ChevronRight className="w-5 h-5" /></button>
                             </div>
                         </div>
 
@@ -358,7 +374,7 @@ export default function ToolInterfacePage() {
                                 value={refinementPrompt}
                                 onChange={(e) => setRefinementPrompt(e.target.value)}
                                 placeholder="E.g. Add more detail about the hardware, or make it more visual..."
-                                className="bg-white/5 border-white/10 rounded-2xl min-h-[120px] text-sm focus:border-white/20 focus:ring-0 placeholder:text-zinc-600"
+                                className="bg-white/5 border-white/10 rounded-2xl min-h-[120px] text-sm focus:border-white/20 focus:ring-0 placeholder:text-zinc-600 text-white font-medium"
                             />
                             <Button 
                                 onClick={() => handleProcess(true)}
@@ -366,7 +382,7 @@ export default function ToolInterfacePage() {
                                 className="w-full bg-white text-zinc-900 hover:bg-zinc-100 rounded-2xl py-6 font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2"
                             >
                                 {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                Apply Refinement
+                                Refine Structure (₦500)
                             </Button>
                         </div>
                     </div>
@@ -409,8 +425,8 @@ export default function ToolInterfacePage() {
           <div className="grid lg:grid-cols-3 gap-12 animate-in fade-in duration-700">
             <div className="lg:col-span-2 space-y-10">
               {/* Context Input */}
-              <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col">
-                <div className="flex justify-between items-center mb-8">
+              <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[600px]">
+                <div className="flex justify-between items-center mb-8 shrink-0">
                     <div>
                         <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Content Core</h2>
                         <p className="text-sm text-slate-500 font-medium">Paste your research paper or technical documentation</p>
@@ -422,7 +438,7 @@ export default function ToolInterfacePage() {
                 <Textarea 
                     value={input} 
                     onChange={(e) => setInput(e.target.value)} 
-                    className={`flex-1 min-h-[400px] bg-slate-50/50 border-[#e5e7eb] rounded-[32px] p-8 focus:border-black focus:ring-0 text-slate-700 leading-relaxed font-medium ${isOverLimit ? 'border-red-300' : ''}`} 
+                    className={`flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 border-[#e5e7eb] rounded-[32px] p-8 focus:border-black focus:ring-0 text-zinc-900 leading-relaxed font-bold resize-none ${isOverLimit ? 'border-red-300' : ''}`} 
                     placeholder="Enter project content here..." 
                 />
               </div>
@@ -440,7 +456,7 @@ export default function ToolInterfacePage() {
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="E.g. Focus on the mathematical models, or make it simplified for non-technical audience..."
-                    className="h-16 bg-slate-50 border-slate-100 rounded-2xl px-6 font-bold focus:border-black transition-all"
+                    className="h-16 bg-slate-50 border-slate-100 rounded-2xl px-6 font-black text-zinc-900 focus:border-black transition-all placeholder:text-slate-400"
                 />
               </div>
             </div>
@@ -458,7 +474,7 @@ export default function ToolInterfacePage() {
                     <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Upload className="w-6 h-6 text-slate-400" />
                     </div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Add Figures/Charts</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Add Figures (Max 5)</p>
                 </div>
                 <input type="file" ref={fileInputRef} onChange={handleImageUpload} multiple accept="image/*" className="hidden" />
 
@@ -470,12 +486,13 @@ export default function ToolInterfacePage() {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <input 
+                                    autoFocus={!img.caption}
                                     value={img.caption}
                                     onChange={(e) => updateImageCaption(img.id, e.target.value)}
-                                    placeholder="Add caption..."
-                                    className="w-full bg-transparent border-none p-0 text-xs font-black uppercase tracking-tighter focus:ring-0 placeholder:text-slate-300"
+                                    placeholder="Enter Caption..."
+                                    className="w-full bg-transparent border-none p-0 text-xs font-black uppercase tracking-tighter focus:ring-0 placeholder:text-red-400 text-zinc-900"
                                 />
-                                <p className="text-[9px] text-slate-400 font-bold mt-1">AI PLACEHOLDER KEY</p>
+                                <p className="text-[9px] text-zinc-400 font-bold mt-1">REQUIRED FOR AI PLACEMENT</p>
                             </div>
                             <button onClick={() => removeImage(img.id)} className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity border border-slate-100"><X className="w-3 h-3" /></button>
                         </div>
@@ -521,17 +538,30 @@ export default function ToolInterfacePage() {
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-[32px] py-10 font-black uppercase text-xs tracking-[0.2em] shadow-2xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-4"
               >
                 {isProcessing ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Monitor className="w-6 h-6" />}
-                {isProcessing ? 'Architecting...' : 'Build Presentation'}
+                {isProcessing ? 'Architecting...' : `Build Presentation (${formatCurrency(tool.pricePerUse)})`}
               </Button>
             </div>
           </div>
+        )}
+
+        {/* AI Humanizer Output Section */}
+        {toolId === 'ai-humanizer' && output && (
+            <div className="mt-12 bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[500px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex justify-between items-center mb-8 shrink-0">
+                    <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Humanized Result</h2>
+                    <Button onClick={handleCopy} variant="outline" className="rounded-full px-6 border-[#e5e7eb] font-black uppercase text-[10px] tracking-widest"><Copy className="w-4 h-4 mr-2" /> Copy to clipboard</Button>
+                </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-900 rounded-[32px] p-8 text-zinc-300 font-bold leading-relaxed whitespace-pre-wrap">
+                    {output}
+                </div>
+            </div>
         )}
       </div>
 
       {showPaymentDialog && (
         <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[40px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
-            <h2 className="text-2xl font-black text-center mb-8 tracking-tight uppercase">Authorize Tool Usage</h2>
+            <h2 className="text-2xl font-black text-center mb-8 tracking-tight uppercase text-zinc-900">Authorize Tool Usage</h2>
             
             <div className="flex items-center justify-between p-6 bg-zinc-50 rounded-3xl border border-zinc-100 mb-8">
                 <button 
