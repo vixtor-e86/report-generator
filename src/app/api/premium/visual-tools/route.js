@@ -5,27 +5,31 @@ import { callAI } from '@/lib/aiProvider';
 
 export async function POST(request) {
   try {
-    const { type, prompt, projectId, userId } = await request.json();
+    const { type, prompt, projectId, userId, isMarketplace } = await request.json();
 
-    if (!type || !prompt || !projectId || !userId) {
+    if (!type || !prompt || (!isMarketplace && (!projectId || !userId))) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // 1. Token Check (1,000 tokens per visual)
-    const { data: project, error: projectError } = await supabaseAdmin
-      .from('premium_projects')
-      .select('tokens_used, tokens_limit')
-      .eq('id', projectId)
-      .single();
+    // 1. Token Check (Skip if Marketplace, as it pays via wallet)
+    let project = null;
+    if (!isMarketplace) {
+      const { data: proj, error: projectError } = await supabaseAdmin
+        .from('premium_projects')
+        .select('tokens_used, tokens_limit')
+        .eq('id', projectId)
+        .single();
 
-    if (projectError || !project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
+      if (projectError || !proj) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      }
 
-    if (project.tokens_used + 1000 > (project.tokens_limit || 300000)) {
-      return NextResponse.json({ 
-        error: 'Insufficient tokens. Generating a visual requires 1,000 tokens. Please upgrade your limit.' 
-      }, { status: 403 });
+      if (proj.tokens_used + 1000 > (proj.tokens_limit || 300000)) {
+        return NextResponse.json({ 
+          error: 'Insufficient tokens. Generating a visual requires 1,000 tokens. Please upgrade your limit.' 
+        }, { status: 403 });
+      }
+      project = proj;
     }
 
     let resultData = null;
@@ -90,17 +94,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
     }
 
-    // 4. Deduct Tokens (1,000 tokens)
-    const { error: updateError } = await supabaseAdmin
-      .from('premium_projects')
-      .update({
-        tokens_used: (project.tokens_used || 0) + 1000,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', projectId);
+    // 4. Deduct Tokens (Skip if Marketplace)
+    if (!isMarketplace && project) {
+      const { error: updateError } = await supabaseAdmin
+        .from('premium_projects')
+        .update({
+          tokens_used: (project.tokens_used || 0) + 1000,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', projectId);
 
-    if (updateError) {
-      console.error('Failed to update tokens:', updateError);
+      if (updateError) {
+        console.error('Failed to update tokens:', updateError);
+      }
     }
 
     return NextResponse.json(resultData);

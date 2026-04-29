@@ -86,7 +86,7 @@ export default function VisualStudio({
                 value={prompt} 
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder={activeVisualTool === 'diagram' ? "e.g. A flowchart of a solar irrigation system..." : "e.g. A realistic 3D render of a robotic arm..."}
-                className="min-h-[160px] p-4 rounded-2xl border-2 border-slate-100 focus:border-slate-900 outline-none text-sm font-medium leading-relaxed resize-none transition-all bg-slate-50/50"
+                className="min-h-[160px] p-4 rounded-2xl border-2 border-slate-100 focus:border-slate-900 outline-none text-sm font-bold text-zinc-900 leading-relaxed resize-none transition-all bg-slate-50/50"
               />
             </div>
 

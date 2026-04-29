@@ -68,7 +68,9 @@ export default function ToolInterfacePage() {
       return;
     }
 
-    const label = `Tool: ${tool.name}`;
+    const label = toolId === 'reference-finder' ? `DeepSearch: ${tool.name}` : 
+                  toolId === 'diagram-studio' ? `Visual Studio Generation` :
+                  `Tool: ${tool.name}`;
     const success = await deductFunds(price, label);
     if (success) {
       setHasPaid(true);
