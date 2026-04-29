@@ -180,10 +180,13 @@ function ProjectDescriptionContent() {
           const stored = sessionStorage.getItem('custom_template_structure');
           if (stored) finalStructure = JSON.parse(stored);
         } else {
-          const { data: templates } = await supabase.from('templates').select('*').eq('template_type', formData.templateType).ilike('faculty', `%${formData.faculty}%`).limit(1);
+          // Map UI 'thesis' to database '6-chapter-thesis'
+          const dbTemplateType = formData.templateType === 'thesis' ? '6-chapter-thesis' : formData.templateType;
+
+          const { data: templates } = await supabase.from('templates').select('*').eq('template_type', dbTemplateType).ilike('faculty', `%${formData.faculty}%`).limit(1);
           if (templates && templates.length > 0) sourceTemplate = templates[0];
           else {
-            const { data: generic } = await supabase.from('templates').select('*').eq('template_type', formData.templateType).limit(1);
+            const { data: generic } = await supabase.from('templates').select('*').eq('template_type', dbTemplateType).limit(1);
             if (generic) sourceTemplate = generic[0];
           }
           if (sourceTemplate) finalStructure = sourceTemplate.structure;
