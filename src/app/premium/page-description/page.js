@@ -339,7 +339,7 @@ function ProjectDescriptionContent() {
           </div>
 
           <div className="form-actions">
-            <button type="button" className="btn-back" onClick={() => router.back()}>← Back</button>
+            <button type="button" className="btn-back" onClick={() => router.replace('/premium/template-selection')}>← Back</button>
             <button type="button" className="btn-create" onClick={handleCreateProject}>Create Project →</button>
           </div>
         </motion.div>

@@ -93,7 +93,7 @@ export default function FreeTemplateSelect() {
   const handleFacultySelect = (faculty) => {
     const template = faculty.template;
     if (template) {
-      router.push(`/project/new?template=${template.id}`);
+      router.replace(`/project/new?template=${template.id}`);
     }
   };
 

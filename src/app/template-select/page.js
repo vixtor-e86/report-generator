@@ -258,9 +258,9 @@ function TemplateSelectContent() {
       // For SIWES, skip faculty selection and proceed directly
       const siwesTemplate = templates.find(t => t.template_type === 'siwes');
       if (siwesTemplate) {
-        router.push(`/standard/new?template=${siwesTemplate.id}`);
+        router.replace(`/standard/new?template=${siwesTemplate.id}`);
       } else {
-        router.push(`/standard/new?type=${typeId}&faculty=general`);
+        router.replace(`/standard/new?type=${typeId}&faculty=general`);
       }
     } else {
       // Load ALL available templates for this type
@@ -281,7 +281,7 @@ function TemplateSelectContent() {
   // Handle template selection
   const handleFacultySelect = (item) => {
     // Proceed to project creation with selected template ID
-    router.push(`/standard/new?template=${item.id}`);
+    router.replace(`/standard/new?template=${item.id}`);
   };
 
   // Handle back button

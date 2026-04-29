@@ -98,7 +98,7 @@ export default function TemplateSelection() {
       if (additionalData.department) params.set('department', additionalData.department.name || additionalData.department);
       
       // Navigate
-      router.push(`/premium/page-description?${params.toString()}`);
+      router.replace(`/premium/page-description?${params.toString()}`);
     } catch (err) {
       setIsLoading(false);
       showNotification('Error', 'An unexpected error occurred. Please try again.', 'error');
