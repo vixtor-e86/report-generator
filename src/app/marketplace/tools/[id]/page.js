@@ -518,8 +518,8 @@ export default function ToolInterfacePage() {
             </div>
           ) : (
             // --- STANDARD INPUT MODE ---
-            <div className={`grid ${toolId === 'slide-generator' ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-12 animate-in fade-in duration-700`}>
-                <div className={toolId === 'slide-generator' ? 'lg:col-span-2 space-y-10' : 'space-y-10'}>
+            <div className={`grid ${toolId === 'slide-generator' ? 'lg:grid-cols-3' : 'md:grid-cols-2'} gap-12 animate-in fade-in duration-700`}>
+                <div className={toolId === 'slide-generator' ? 'lg:col-span-2 space-y-10' : toolId === 'ai-humanizer' ? 'space-y-10' : 'space-y-10'}>
                 
                 {/* Slide Structure / Outline */}
                 {toolId === 'slide-generator' && (
@@ -604,8 +604,9 @@ export default function ToolInterfacePage() {
                         <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="E.g. Focus on mathematical models..." className="h-16 bg-slate-50 border-slate-100 rounded-2xl px-6 font-black text-zinc-900 focus:border-black transition-all placeholder:text-slate-400" />
                     </div>
                 )}
+                </div>
 
-                {/* AI Humanizer Output Section - INSIDE GRID */}
+                {/* AI Humanizer Output Section - SIDE COLUMN */}
                 {toolId === 'ai-humanizer' && (
                     <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[600px] animate-in fade-in duration-500">
                         <div className="flex justify-between items-center mb-8 shrink-0">
@@ -622,7 +623,6 @@ export default function ToolInterfacePage() {
                         </div>
                     </div>
                 )}
-                </div>
 
                 {/* Sidebar Configuration - Only for Slide Gen */}
                 {toolId === 'slide-generator' && (
