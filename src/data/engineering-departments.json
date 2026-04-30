@@ -82,5 +82,13 @@
     "Nursing Science",
     "Physiology",
     "Public Health"
+  ],
+  "Pharmaceutical Sciences": [
+    "Clinical Pharmacy & Pharmacy Practice",
+    "Pharmaceutical & Medicinal Chemistry",
+    "Pharmaceutics & Pharmaceutical Technology",
+    "Pharmacognosy & Phytotherapy",
+    "Pharmacology & Toxicology",
+    "Pharmaceutical Microbiology & Biotechnology"
   ]
 }
