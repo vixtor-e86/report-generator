@@ -19,6 +19,7 @@ import SlideGenerator from '@/components/marketplace/tools/SlideGenerator';
 import AIHumanizer from '@/components/marketplace/tools/AIHumanizer';
 import VisualStudio from '@/components/marketplace/tools/VisualStudio';
 import ProjectFinder from '@/components/marketplace/tools/ProjectFinder';
+import CodeExplainer from '@/components/marketplace/tools/CodeExplainer';
 
 const iconMap = {
   ShieldCheck,
@@ -123,13 +124,14 @@ export default function ToolInterfacePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Render Specialized Tool Component */}
         {toolId === 'project-finder' && <ProjectFinder {...toolProps} />}
+        {toolId === 'code-explainer' && <CodeExplainer {...toolProps} />}
         {toolId === 'reference-finder' && <ReferenceFinder {...toolProps} />}
         {toolId === 'slide-generator' && <SlideGenerator {...toolProps} />}
         {toolId === 'ai-humanizer' && <AIHumanizer {...toolProps} />}
         {toolId === 'diagram-studio' && <VisualStudio {...toolProps} />}
         
         {/* Fallback for other tools */}
-        {!['project-finder', 'reference-finder', 'slide-generator', 'ai-humanizer', 'diagram-studio'].includes(toolId) && (
+        {!['project-finder', 'code-explainer', 'reference-finder', 'slide-generator', 'ai-humanizer', 'diagram-studio'].includes(toolId) && (
             <div className="py-20 text-center">
                 <Wrench className="w-16 h-16 text-slate-200 mx-auto mb-6" />
                 <h2 className="text-2xl font-black text-slate-900 uppercase">Tool Under Development</h2>

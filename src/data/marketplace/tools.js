@@ -10,6 +10,16 @@ export const academicTools = [
     usageCount: 1240,
   },
   {
+    id: 'code-explainer',
+    name: 'Code Explainer',
+    description: 'Paste up to 500 lines of code for a detailed, line-by-line breakdown. Perfect for understanding complex algorithms and documentation.',
+    icon: 'Code2',
+    pricePerUse: 300,
+    category: 'analysis',
+    isAvailable: true,
+    usageCount: 720,
+  },
+  {
     id: 'plagiarism-checker',
     name: 'Plagiarism Checker',
     description: 'Check your work against millions of academic papers and web sources. Get detailed similarity reports with source links.',
@@ -78,16 +88,6 @@ export const academicTools = [
     category: 'generation',
     isAvailable: true,
     usageCount: 380,
-  },
-  {
-    id: 'code-explainer',
-    name: 'Code Explainer',
-    description: 'Get detailed explanations of code snippets with line-by-line breakdown and documentation generation.',
-    icon: 'Code2',
-    pricePerUse: 450,
-    category: 'analysis',
-    isAvailable: true,
-    usageCount: 720,
   },
 ];
 
