@@ -20,6 +20,16 @@ export const academicTools = [
     usageCount: 720,
   },
   {
+    id: 'data-analysis',
+    name: 'Data Analysis',
+    description: 'Upload your dataset (CSV, XLSX) and get automated statistical analysis with charts, summaries, and interpretation.',
+    icon: 'BarChart3',
+    pricePerUse: 1200,
+    category: 'analysis',
+    isAvailable: true,
+    usageCount: 430,
+  },
+  {
     id: 'plagiarism-checker',
     name: 'Plagiarism Checker',
     description: 'Check your work against millions of academic papers and web sources. Get detailed similarity reports with source links.',
@@ -58,16 +68,6 @@ export const academicTools = [
     category: 'research',
     isAvailable: true,
     usageCount: 2100,
-  },
-  {
-    id: 'data-analysis',
-    name: 'Data Analysis',
-    description: 'Upload your dataset and get automated statistical analysis with charts, summaries, and interpretation.',
-    icon: 'BarChart3',
-    pricePerUse: 1200,
-    category: 'analysis',
-    isAvailable: true,
-    usageCount: 430,
   },
   {
     id: 'language-converter',
