@@ -18,6 +18,7 @@ import ReferenceFinder from '@/components/marketplace/tools/ReferenceFinder';
 import SlideGenerator from '@/components/marketplace/tools/SlideGenerator';
 import AIHumanizer from '@/components/marketplace/tools/AIHumanizer';
 import VisualStudio from '@/components/marketplace/tools/VisualStudio';
+import ProjectFinder from '@/components/marketplace/tools/ProjectFinder';
 
 const iconMap = {
   ShieldCheck,
@@ -112,8 +113,8 @@ export default function ToolInterfacePage() {
                 <p className="text-[#6b7280] font-medium mt-1">{tool.description}</p>
               </div>
             </div>
-            <div className="bg-zinc-900 rounded-[24px] px-8 py-4 text-center text-white font-black text-2xl shadow-xl">
-                {toolId === 'reference-finder' ? '₦200' : formatCurrency(tool.pricePerUse)}
+            <div className={`rounded-[24px] px-8 py-4 text-center font-black text-2xl shadow-xl ${tool.pricePerUse === 0 && toolId !== 'reference-finder' ? 'bg-green-600 text-white' : 'bg-zinc-900 text-white'}`}>
+                {toolId === 'reference-finder' ? '₦200' : (tool.pricePerUse === 0 ? 'FREE' : formatCurrency(tool.pricePerUse))}
             </div>
           </div>
         </div>
@@ -121,13 +122,14 @@ export default function ToolInterfacePage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Render Specialized Tool Component */}
+        {toolId === 'project-finder' && <ProjectFinder {...toolProps} />}
         {toolId === 'reference-finder' && <ReferenceFinder {...toolProps} />}
         {toolId === 'slide-generator' && <SlideGenerator {...toolProps} />}
         {toolId === 'ai-humanizer' && <AIHumanizer {...toolProps} />}
         {toolId === 'diagram-studio' && <VisualStudio {...toolProps} />}
         
         {/* Fallback for other tools */}
-        {!['reference-finder', 'slide-generator', 'ai-humanizer', 'diagram-studio'].includes(toolId) && (
+        {!['project-finder', 'reference-finder', 'slide-generator', 'ai-humanizer', 'diagram-studio'].includes(toolId) && (
             <div className="py-20 text-center">
                 <Wrench className="w-16 h-16 text-slate-200 mx-auto mb-6" />
                 <h2 className="text-2xl font-black text-slate-900 uppercase">Tool Under Development</h2>

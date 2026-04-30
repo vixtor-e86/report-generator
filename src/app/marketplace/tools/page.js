@@ -138,8 +138,8 @@ export default function AcademicToolsPage() {
                   <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 transition-colors duration-300">
                     <Icon className="w-7 h-7 text-blue-600 group-hover:text-white transition-colors duration-300" />
                   </div>
-                  <Badge variant="secondary" className="bg-zinc-100 text-zinc-900 border-none px-3 py-1 rounded-full text-[10px] font-black">
-                    {formatCurrency(tool.pricePerUse)}
+                  <Badge variant="secondary" className={`border-none px-3 py-1 rounded-full text-[10px] font-black ${tool.pricePerUse === 0 ? 'bg-green-100 text-green-700' : 'bg-zinc-100 text-zinc-900'}`}>
+                    {tool.pricePerUse === 0 ? 'FREE' : formatCurrency(tool.pricePerUse)}
                   </Badge>
                 </div>
                 <h3 className="text-lg font-bold text-[#111827] mb-3 group-hover:text-blue-600 transition-colors">{tool.name}</h3>

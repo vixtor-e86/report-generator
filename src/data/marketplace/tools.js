@@ -1,5 +1,15 @@
 export const academicTools = [
   {
+    id: 'project-finder',
+    name: 'Project Finder',
+    description: 'Find unique and trending academic project topics. Powered by AI with web search to ensure relevance and novelty.',
+    icon: 'Search',
+    pricePerUse: 0,
+    category: 'research',
+    isAvailable: true,
+    usageCount: 1240,
+  },
+  {
     id: 'plagiarism-checker',
     name: 'Plagiarism Checker',
     description: 'Check your work against millions of academic papers and web sources. Get detailed similarity reports with source links.',
@@ -38,16 +48,6 @@ export const academicTools = [
     category: 'research',
     isAvailable: true,
     usageCount: 2100,
-  },
-  {
-    id: 'project-topic-research',
-    name: 'Project Topic Research',
-    description: 'Get AI-powered suggestions for research topics based on your field, interests, and current academic trends.',
-    icon: 'Lightbulb',
-    pricePerUse: 600,
-    category: 'research',
-    isAvailable: true,
-    usageCount: 920,
   },
   {
     id: 'data-analysis',
