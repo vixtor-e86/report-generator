@@ -87,7 +87,6 @@ export default function ProjectFinder({
           <div className="flex items-center justify-between pt-4">
             <div className="flex items-center gap-2 text-blue-600">
               <Badge className="bg-blue-100 text-blue-600 border-none px-3 py-1 rounded-full font-black text-[10px] uppercase tracking-widest">Free Tool</Badge>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Powered by Claude AI</span>
             </div>
             
             <Button 
@@ -178,7 +177,7 @@ export default function ProjectFinder({
               </div>
             </div>
             <p className="text-blue-600 font-black uppercase text-[10px] tracking-[0.3em] animate-bounce">
-              Claude is analyzing academic trends...
+              Analyzing academic trends...
             </p>
           </div>
         )}
@@ -197,7 +196,7 @@ export default function ProjectFinder({
               When you find a topic you like, use the <span className="text-white font-bold">Reference Finder</span> to get preliminary sources and the <span className="text-white font-bold">Slide Generator</span> to prepare your project proposal presentation.
             </p>
           </div>
-          <Button variant="outline" className="border-white/20 hover:bg-white/10 text-white rounded-full px-8 py-6 font-black uppercase text-[10px] tracking-widest backdrop-blur-md">
+          <Button variant="outline" className="border-blue-500/50 hover:bg-blue-600 hover:text-white text-blue-400 rounded-full px-8 py-6 font-black uppercase text-[10px] tracking-widest backdrop-blur-md transition-all">
             Learn More
           </Button>
         </div>

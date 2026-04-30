@@ -103,7 +103,7 @@ export default function CodeExplainer({
               onChange={(e) => setCode(e.target.value)}
               placeholder="// Paste your code here...
 function example() {
-  console.log('Let Claude explain this!');
+  console.log('Let AI explain this!');
 }"
               className="w-full h-[400px] p-8 bg-zinc-900 text-emerald-400 font-mono text-sm rounded-[32px] border-4 border-zinc-800 focus:border-emerald-500/30 focus:outline-none transition-all resize-none shadow-2xl"
             />
@@ -194,9 +194,8 @@ function example() {
             </div>
           </div>
           <p className="text-emerald-600 font-black uppercase text-[10px] tracking-[0.3em] animate-bounce">
-            Claude is deconstructing your code...
-          </p>
-        </div>
+            Deconstructing your code...
+          </p>        </div>
       )}
 
       {/* Warning Card */}
