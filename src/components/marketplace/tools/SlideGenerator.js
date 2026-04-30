@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   Monitor, RefreshCw, ChevronLeft, ChevronRight, Sparkles, Download, ListTree, FileText, Plus, X, MessageSquare, Hash, Upload, BookOpen, Palette, Layers, Search
 } from 'lucide-react';
@@ -68,7 +68,8 @@ export default function SlideGenerator({
   hasPaid, 
   setHasPaid, 
   setShowPaymentDialog,
-  setPendingIterative 
+  setPendingIterative,
+  pendingIterative
 }) {
   const [input, setInput] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -85,6 +86,13 @@ export default function SlideGenerator({
   const wordCount = input.trim() ? input.trim().split(/\s+/).length : 0;
   const MAX_WORDS = 10000;
   const isOverLimit = wordCount > MAX_WORDS;
+
+  // Auto-execute after payment
+  useEffect(() => {
+    if (hasPaid && (input.trim() || pendingIterative)) {
+      handleProcess(pendingIterative, true);
+    }
+  }, [hasPaid]);
 
   const handleAddOutline = () => {
     if (newOutlineItem.trim()) {
@@ -349,7 +357,7 @@ export default function SlideGenerator({
             <Textarea 
                 value={input} 
                 onChange={(e) => setInput(e.target.value)} 
-                className={`flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 border-[#e5e7eb] rounded-[32px] p-8 focus:border-black focus:ring-0 text-zinc-900 leading-relaxed font-bold resize-none ${isOverLimit ? 'border-red-300' : ''}`} 
+                className={`flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 border-[#e5e7eb] rounded-[32px] p-8 focus:border-black focus:ring-0 text-zinc-900 leading-relaxed font-bold resize-none`} 
                 placeholder="Enter project content here..." 
             />
         </div>

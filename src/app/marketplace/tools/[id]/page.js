@@ -90,7 +90,8 @@ export default function ToolInterfacePage() {
     hasPaid,
     setHasPaid,
     setShowPaymentDialog,
-    setPendingIterative // Only used by SlideGenerator
+    setPendingIterative, // Only used by SlideGenerator
+    pendingIterative
   };
 
   return (

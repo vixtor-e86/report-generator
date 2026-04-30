@@ -43,7 +43,7 @@ export async function POST(request) {
 
       const aiResponse = await callAI(systemPrompt, {
         temperature: 0.2, // Lower temperature for more consistent code
-        provider: 'gemini' // Gemini is good at this
+        provider: 'claude' // Switched from gemini as requested
       });
 
       // Clean up response if AI included markdown blocks anyway

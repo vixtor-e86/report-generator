@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Sparkles, RefreshCw, Copy, UserCheck, FileText
 } from 'lucide-react';
@@ -21,6 +21,13 @@ export default function AIHumanizer({
   const wordCount = input.trim() ? input.trim().split(/\s+/).length : 0;
   const MAX_WORDS = 1500;
   const isOverLimit = wordCount > MAX_WORDS;
+
+  // Auto-execute after payment
+  useEffect(() => {
+    if (hasPaid && input.trim()) {
+      handleProcess(true);
+    }
+  }, [hasPaid]);
 
   const handleProcess = async (skipPaymentCheck = false) => {
     if (!input.trim()) {
@@ -85,7 +92,7 @@ export default function AIHumanizer({
         <Textarea 
           value={input} 
           onChange={(e) => setInput(e.target.value)} 
-          className={`flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 border-[#e5e7eb] rounded-[32px] p-8 focus:border-black focus:ring-0 text-zinc-900 leading-relaxed font-bold resize-none ${isOverLimit ? 'border-red-300' : ''}`} 
+          className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 border-[#e5e7eb] rounded-[32px] p-8 focus:border-black focus:ring-0 text-zinc-900 leading-relaxed font-bold resize-none" 
           placeholder="Enter project content here..." 
         />
         

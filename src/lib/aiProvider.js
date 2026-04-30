@@ -43,7 +43,8 @@ async function callDeepSeek(prompt, maxTokens, temperature, modelOverride = null
       throw new Error('DEEPSEEK_API_KEY not found in environment variables');
     }
 
-    const modelName = modelOverride || process.env.DEEPSEEK_MODEL || process.env.AI_MODEL || "deepseek-chat";
+    // Only fallback to AI_MODEL if it looks like a deepseek model
+    const modelName = modelOverride || process.env.DEEPSEEK_MODEL || (process.env.AI_MODEL?.includes('deepseek') ? process.env.AI_MODEL : null) || "deepseek-chat";
 
     const response = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
@@ -92,7 +93,8 @@ async function callGemini(prompt, maxTokens, temperature, fileParts = null, mode
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    const modelName = modelOverride || process.env.GEMINI_MODEL || process.env.AI_MODEL || 'gemini-1.5-pro';
+    // Only fallback to AI_MODEL if it looks like a gemini model
+    const modelName = modelOverride || process.env.GEMINI_MODEL || (process.env.AI_MODEL?.includes('gemini') ? process.env.AI_MODEL : null) || 'gemini-1.5-pro';
     
     const model = genAI.getGenerativeModel({
       model: modelName,
@@ -146,7 +148,8 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
       throw new Error('ANTHROPIC_API_KEY not found in environment variables');
     }
 
-    const modelName = modelOverride || process.env.CLAUDE_MODEL || process.env.AI_MODEL || "claude-3-5-sonnet-20240620";
+    // Only fallback to AI_MODEL if it looks like a claude model
+    const modelName = modelOverride || process.env.CLAUDE_MODEL || (process.env.AI_MODEL?.includes('claude') ? process.env.AI_MODEL : null) || "claude-3-5-sonnet-20240620";
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Search, Globe, Sparkles, RefreshCw, ExternalLink, GraduationCap, ChevronLeft, ChevronRight
 } from 'lucide-react';
@@ -20,6 +20,13 @@ export default function ReferenceFinder({
   const [yearEnd, setYearEnd] = useState(new Date().getFullYear().toString());
   const [searchResults, setSearchResults] = useState([]);
   const [searchMode, setSearchMode] = useState('free'); // 'free' or 'deep'
+
+  // Auto-execute after payment
+  useEffect(() => {
+    if (hasPaid && searchQuery.trim()) {
+      handleReferenceSearch(true);
+    }
+  }, [hasPaid]);
 
   const handleReferenceSearch = async (skipPaymentCheck = false) => {
     if (!searchQuery.trim()) return toast.error("Enter a research topic");

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Zap, RefreshCw, Copy, Download, Image, Activity, Palette
 } from 'lucide-react';
@@ -19,6 +19,13 @@ export default function VisualStudio({
   const [prompt, setPrompt] = useState('');
   const [visualResult, setVisualResult] = useState(null);
   const [visualCaption, setVisualCaption] = useState('');
+
+  // Auto-execute after payment
+  useEffect(() => {
+    if (hasPaid && prompt.trim()) {
+      handleVisualGeneration(true);
+    }
+  }, [hasPaid]);
 
   const handleVisualGeneration = async (skipPaymentCheck = false) => {
     if (!prompt.trim()) return toast.error("Please describe your visual");
