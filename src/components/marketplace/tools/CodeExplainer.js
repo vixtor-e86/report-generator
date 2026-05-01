@@ -155,7 +155,7 @@ function example() {
               <Button 
                 onClick={handleCopy} 
                 variant="outline" 
-                className="rounded-full px-6 border-[#e5e7eb] font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all"
+                className="rounded-full px-6 border-[#e5e7eb] text-zinc-900 font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all"
               >
                 {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
                 {copied ? 'Copied' : 'Copy Results'}

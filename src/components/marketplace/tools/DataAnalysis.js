@@ -139,7 +139,28 @@ export default function DataAnalysis({
         margin: [15, 15, 15, 15],
         filename: `Analysis_Report_${file?.name?.split('.')[0] || 'Dataset'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          letterRendering: true,
+          // Important: Sanitize styles to avoid modern color functions like 'lab' or 'oklch'
+          onclone: (clonedDoc) => {
+            const style = clonedDoc.createElement('style');
+            style.innerHTML = `
+              .prose { 
+                color: #374151 !important; 
+                background: white !important; 
+              }
+              h1, h2, h3, h4, strong { color: #111827 !important; }
+              table { border-collapse: collapse !important; width: 100% !important; margin-bottom: 1em !important; }
+              th, td { border: 1px solid #e5e7eb !important; padding: 12px !important; text-align: left !important; color: #374151 !important; }
+              th { background-color: #f9fafb !important; font-weight: bold !important; }
+              code { background-color: #f3f4f6 !important; color: #1d4ed8 !important; padding: 2px 4px !important; border-radius: 4px !important; }
+              pre { background-color: #111827 !important; color: #e5e7eb !important; padding: 16px !important; border-radius: 8px !important; }
+            `;
+            clonedDoc.body.appendChild(style);
+          }
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
@@ -147,7 +168,7 @@ export default function DataAnalysis({
       toast.success('PDF downloaded successfully!');
     } catch (err) {
       console.error('PDF Error:', err);
-      toast.error('Failed to generate PDF');
+      toast.error('Failed to generate PDF. Please copy the text instead.');
     } finally {
       setIsDownloading(false);
     }
@@ -284,7 +305,7 @@ export default function DataAnalysis({
                 size="sm" 
                 onClick={handleDownloadPDF}
                 disabled={isDownloading}
-                className="rounded-full px-6 border-[#e5e7eb] font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all gap-2"
+                className="rounded-full px-6 border-[#e5e7eb] text-zinc-900 font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all gap-2"
               >
                 {isDownloading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3 text-blue-600" />}
                 {isDownloading ? 'Generating...' : 'Download PDF'}
@@ -292,9 +313,10 @@ export default function DataAnalysis({
               <Button 
                 onClick={handleCopy} 
                 variant="outline" 
-                className="rounded-full px-6 border-[#e5e7eb] font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all"
+                size="sm" 
+                className="rounded-full px-6 border-[#e5e7eb] text-zinc-900 font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all"
               >
-                {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                {copied ? <Check className="w-3 h-3 text-green-400 mr-2" /> : <Copy className="w-3 h-3 mr-2" />}
                 {copied ? 'Copied' : 'Copy Report'}
               </Button>
             </div>
