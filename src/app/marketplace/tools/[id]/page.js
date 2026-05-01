@@ -22,6 +22,7 @@ import ProjectFinder from '@/components/marketplace/tools/ProjectFinder';
 import CodeExplainer from '@/components/marketplace/tools/CodeExplainer';
 import LanguageConverter from '@/components/marketplace/tools/LanguageConverter';
 import DataAnalysis from '@/components/marketplace/tools/DataAnalysis';
+import PlagiarismChecker from '@/components/marketplace/tools/PlagiarismChecker';
 
 const iconMap = {
   ShieldCheck,
@@ -50,6 +51,7 @@ export default function ToolInterfacePage() {
   const [hasPaid, setHasPaid] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [pendingIterative, setPendingIterative] = useState(false);
+  const [customPrice, setCustomPrice] = useState(null);
 
   useEffect(() => {
     if (toolId) {
@@ -58,29 +60,26 @@ export default function ToolInterfacePage() {
     }
   }, [toolId]);
 
+  const activePrice = customPrice !== null ? customPrice : 
+                    (toolId === 'reference-finder' ? 200 : (tool?.pricePerUse || 0));
+
   const handlePayment = async () => {
     if (!tool) return;
     
-    // Custom price handling for DeepSearch in Reference Finder
-    const isDeepSearch = toolId === 'reference-finder'; // Component handles state, but we need price here
-    // Note: Since state is in component, we assume any payment trigger for ref-finder is for deep search if it shows 200
-    // Simplified: Use tool.pricePerUse or custom logic based on toolId
-    const price = toolId === 'reference-finder' ? 200 : tool.pricePerUse;
-    
-    if (wallet.balance < price) {
+    if (wallet.balance < activePrice) {
       toast.error('Insufficient balance.');
       return;
     }
 
     const label = toolId === 'reference-finder' ? `DeepSearch: ${tool.name}` : 
                   toolId === 'diagram-studio' ? `Visual Studio Generation` :
+                  toolId === 'plagiarism-checker' ? `Integrity Scan` :
                   `Tool: ${tool.name}`;
-    const success = await deductFunds(price, label);
+    const success = await deductFunds(activePrice, label);
     if (success) {
       setHasPaid(true);
       setShowPaymentDialog(false);
       toast.success('Payment successful!');
-      // Components will watch for hasPaid change or we could pass a callback
     }
   };
 
@@ -94,8 +93,9 @@ export default function ToolInterfacePage() {
     hasPaid,
     setHasPaid,
     setShowPaymentDialog,
-    setPendingIterative, // Only used by SlideGenerator
-    pendingIterative
+    setPendingIterative, 
+    pendingIterative,
+    setCustomPrice
   };
 
   return (
@@ -116,8 +116,8 @@ export default function ToolInterfacePage() {
                 <p className="text-[#6b7280] font-medium mt-1">{tool.description}</p>
               </div>
             </div>
-            <div className={`rounded-[24px] px-8 py-4 text-center font-black text-2xl shadow-xl ${tool.pricePerUse === 0 && toolId !== 'reference-finder' ? 'bg-green-600 text-white' : 'bg-zinc-900 text-white'}`}>
-                {toolId === 'reference-finder' ? '₦200' : (tool.pricePerUse === 0 ? 'FREE' : formatCurrency(tool.pricePerUse))}
+            <div className={`rounded-[24px] px-8 py-4 text-center font-black text-2xl shadow-xl ${activePrice === 0 ? 'bg-green-600 text-white' : 'bg-zinc-900 text-white'}`}>
+                {activePrice === 0 ? 'FREE' : formatCurrency(activePrice)}
             </div>
           </div>
         </div>
@@ -129,13 +129,14 @@ export default function ToolInterfacePage() {
         {toolId === 'code-explainer' && <CodeExplainer {...toolProps} />}
         {toolId === 'language-converter' && <LanguageConverter {...toolProps} />}
         {toolId === 'data-analysis' && <DataAnalysis {...toolProps} />}
+        {toolId === 'plagiarism-checker' && <PlagiarismChecker {...toolProps} />}
         {toolId === 'reference-finder' && <ReferenceFinder {...toolProps} />}
         {toolId === 'slide-generator' && <SlideGenerator {...toolProps} />}
         {toolId === 'ai-humanizer' && <AIHumanizer {...toolProps} />}
         {toolId === 'diagram-studio' && <VisualStudio {...toolProps} />}
         
         {/* Fallback for other tools */}
-        {!['project-finder', 'code-explainer', 'language-converter', 'data-analysis', 'reference-finder', 'slide-generator', 'ai-humanizer', 'diagram-studio'].includes(toolId) && (
+        {!['project-finder', 'code-explainer', 'language-converter', 'data-analysis', 'plagiarism-checker', 'reference-finder', 'slide-generator', 'ai-humanizer', 'diagram-studio'].includes(toolId) && (
             <div className="py-20 text-center">
                 <Wrench className="w-16 h-16 text-slate-200 mx-auto mb-6" />
                 <h2 className="text-2xl font-black text-slate-900 uppercase">Tool Under Development</h2>
@@ -156,11 +157,11 @@ export default function ToolInterfacePage() {
                 <div className="text-right">
                     <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Fee</p>
                     <p className="text-blue-600 font-black">
-                        {toolId === 'reference-finder' ? '₦200' : formatCurrency(tool.pricePerUse)}
+                        {formatCurrency(activePrice)}
                     </p>
                 </div>
             </div>
-            {wallet.balance < (toolId === 'reference-finder' ? 200 : tool.pricePerUse) ? (
+            {wallet.balance < activePrice ? (
                 <div className="space-y-4">
                     <div className="p-4 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3"><AlertCircle className="w-5 h-5 text-red-500" /><p className="text-[10px] text-red-600 font-black uppercase tracking-widest leading-tight">Insufficient funds to launch tool.</p></div>
                     <Button onClick={() => { setShowFundingModal(true); setShowPaymentDialog(false); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-7 font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"><Zap className="w-4 h-4" /> Fund Wallet Now</Button>
