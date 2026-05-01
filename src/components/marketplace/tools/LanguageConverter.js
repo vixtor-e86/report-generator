@@ -61,16 +61,22 @@ export default function LanguageConverter({
     }
   }, [hasPaid]);
 
+  const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
+  const MAX_WORDS = 500;
+  const isOverLimit = wordCount > MAX_WORDS;
+
   const handleConvert = async (skipPaymentCheck = false) => {
     if (!inputText.trim()) return toast.error("Please enter text to convert.");
     
+    if (isOverLimit) {
+      toast.error(`Exceeded maximum limit of ${MAX_WORDS} words.`);
+      return;
+    }
+
     if (!hasPaid && !skipPaymentCheck) {
       setShowPaymentDialog(true);
       return;
     }
-
-    const wordCount = inputText.trim().split(/\s+/).length;
-    if (wordCount > 1000) return toast.error("Text exceeds the 1000-word limit.");
 
     setIsProcessing(true);
     try {
@@ -102,10 +108,8 @@ export default function LanguageConverter({
     toast.success('Converted text copied!');
   };
 
-  const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
-
   return (
-    <div className="max-w-6xl mx-auto space-y-12">
+    <div className="max-w-7xl mx-auto space-y-12">
       {/* Settings Bar */}
       <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-6 shadow-sm flex flex-wrap items-center gap-6">
         <div className="flex items-center gap-3">
@@ -141,20 +145,26 @@ export default function LanguageConverter({
         </div>
 
         <div className="ml-auto">
-          <Badge className={`px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest ${wordCount > 1000 ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
-            {wordCount} / 1000 Words
+          <Badge variant="outline" className={`rounded-full px-4 py-1.5 font-black text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-400'}`}>
+            {wordCount} / {MAX_WORDS} Words
           </Badge>
         </div>
       </div>
 
       {/* Main Interface */}
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-12">
         {/* Input Pane */}
-        <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-8 shadow-sm relative flex flex-col h-[600px]">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-indigo-600" /> Source Text
-            </h3>
+        <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[600px]">
+          <div className="flex items-center justify-between mb-8 shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+                <MessageSquare className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Source Content</h2>
+                <p className="text-sm text-slate-500 font-medium">Text to convert</p>
+              </div>
+            </div>
             <button 
               onClick={() => setInputText('')}
               className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors"
@@ -162,71 +172,56 @@ export default function LanguageConverter({
               Clear
             </button>
           </div>
-          <div className="flex-1 relative">
-            <textarea 
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Paste or type your text here (up to 1000 words)..."
-              className="w-full h-full p-6 bg-slate-50 border-none rounded-[32px] font-medium text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none scrollbar-thin scrollbar-thumb-slate-200"
-            />
-          </div>
-          <div className="mt-8">
-            <Button 
-              onClick={() => handleConvert()}
-              disabled={isProcessing || !inputText.trim() || wordCount > 1000}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl py-8 font-black uppercase text-sm tracking-widest shadow-xl shadow-indigo-200 active:scale-95 transition-all flex items-center justify-center gap-3"
-            >
-              {isProcessing ? (
-                <>
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Languages className="w-5 h-5" />
-                  Convert Language
-                </>
-              )}
-            </Button>
-          </div>
+          
+          <textarea 
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Paste or type your text here..."
+            className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 border-[#e5e7eb] rounded-[32px] p-8 focus:border-black focus:ring-0 text-zinc-900 leading-relaxed font-bold resize-none"
+          />
+
+          <Button 
+            onClick={() => handleConvert()}
+            disabled={isProcessing || !inputText.trim() || isOverLimit}
+            className="w-full bg-black hover:bg-zinc-800 text-white rounded-[24px] py-8 font-black uppercase text-xs tracking-[0.2em] shadow-xl mt-8 flex items-center justify-center gap-4 shrink-0"
+          >
+            {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-blue-400" />}
+            {isProcessing ? 'Converting...' : `Execute Conversion (₦500)`}
+          </Button>
         </div>
 
         {/* Output Pane */}
-        <div className="bg-zinc-900 rounded-[48px] p-8 shadow-2xl relative flex flex-col h-[600px] overflow-hidden group">
-          <div className="absolute inset-0 bg-indigo-600/5 blur-3xl rounded-full -mr-20 -mt-20 group-hover:bg-indigo-600/10 transition-all duration-700" />
-          <div className="relative flex flex-col h-full">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-400" /> Result
-              </h3>
-              {convertedText && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleCopy}
-                  className="text-white hover:bg-white/10 rounded-full px-4 font-black uppercase text-[10px] tracking-widest gap-2"
-                >
-                  {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
-                  {copied ? 'Copied' : 'Copy'}
-                </Button>
-              )}
+        <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[600px]">
+          <div className="flex justify-between items-center mb-8 shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Result</h2>
+                <p className="text-sm text-slate-500 font-medium">Converted output</p>
+              </div>
             </div>
-            <div className="flex-1 bg-white/5 backdrop-blur-sm rounded-[32px] p-8 border border-white/10 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
-              {convertedText ? (
-                <p className="text-slate-300 font-medium leading-relaxed whitespace-pre-wrap">
-                  {convertedText}
-                </p>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
-                  <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-white/20">
-                    <Languages className="w-8 h-8" />
-                  </div>
-                  <p className="text-white/20 font-black uppercase text-[10px] tracking-[0.2em] max-w-[200px]">
-                    Your converted text will appear here after processing
-                  </p>
-                </div>
-              )}
-            </div>
+            {convertedText && (
+              <Button 
+                onClick={handleCopy} 
+                variant="outline" 
+                className="rounded-full px-6 border-[#e5e7eb] font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all"
+              >
+                {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                {copied ? 'Copied' : 'Copy Results'}
+              </Button>
+            )}
+          </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-900 rounded-[32px] p-8 text-zinc-300 font-bold leading-relaxed whitespace-pre-wrap">
+            {convertedText ? (
+              convertedText
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-zinc-600 italic">
+                <Globe2 className="w-12 h-12 mb-4 opacity-10" />
+                Converted output will appear here
+              </div>
+            )}
           </div>
         </div>
       </div>

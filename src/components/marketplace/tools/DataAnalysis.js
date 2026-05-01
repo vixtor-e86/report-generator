@@ -26,6 +26,7 @@ export default function DataAnalysis({
   const [analysis, setAnalysis] = useState('');
   const [query, setQuery] = useState('');
   const [isParsing, setIsParsing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Auto-execute after payment
   useEffect(() => {
@@ -118,90 +119,155 @@ export default function DataAnalysis({
     }
   };
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(analysis);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast.success('Analysis report copied!');
+  };
+
   return (
-    <div className="max-w-6xl mx-auto space-y-12">
-      {/* Upload & Config Section */}
-      <div className="grid lg:grid-cols-5 gap-8">
-        <div className="lg:col-span-3 bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full -mr-20 -mt-20" />
-          
-          <div className="relative space-y-8">
+    <div className="max-w-7xl mx-auto space-y-12">
+      {/* Settings Bar */}
+      <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-6 shadow-sm flex flex-wrap items-center gap-6">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+            <Calculator className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-zinc-900 uppercase tracking-tight">Focus Area</h3>
+          </div>
+        </div>
+        <input 
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="e.g. Identify peak sales periods or age-score correlations..."
+          className="flex-1 bg-slate-50 border-slate-100 rounded-xl px-6 py-2.5 font-bold text-xs text-zinc-900 focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-300"
+        />
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-12">
+        {/* Input Pane */}
+        <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[600px]">
+          <div className="flex items-center justify-between mb-8 shrink-0">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
                 <Upload className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tight">Upload Dataset</h3>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">CSV, XLSX, or XLS files up to 5MB</p>
+                <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Data Core</h2>
+                <p className="text-sm text-slate-500 font-medium">CSV or Excel files</p>
               </div>
             </div>
-
-            <label className={`block w-full cursor-pointer group transition-all`}>
+            {file && (
+              <button 
+                onClick={() => { setFile(null); setDataPreview([]); }}
+                className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+          
+          <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+            <label className="block cursor-pointer group shrink-0">
               <input type="file" accept=".csv, .xlsx, .xls" onChange={handleFileChange} className="hidden" />
-              <div className={`border-4 border-dashed rounded-[32px] p-12 text-center transition-all ${file ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 bg-slate-50 group-hover:border-blue-200 group-hover:bg-blue-50/50'}`}>
+              <div className={`border-4 border-dashed rounded-[32px] p-8 text-center transition-all ${file ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 bg-slate-50 group-hover:border-blue-200 group-hover:bg-blue-50/50'}`}>
                 {isParsing ? (
-                  <div className="flex flex-col items-center gap-4">
-                    <RefreshCw className="w-12 h-12 text-blue-600 animate-spin" />
-                    <p className="text-sm font-black text-blue-600 uppercase tracking-widest">Extracting Data...</p>
-                  </div>
+                  <RefreshCw className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
                 ) : file ? (
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600">
-                      <FileSpreadsheet className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <p className="text-lg font-black text-zinc-900 truncate max-w-xs">{file.name}</p>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{(file.size / 1024).toFixed(1)} KB • {dataPreview.length} Rows</p>
-                    </div>
+                  <div className="flex items-center justify-center gap-4">
+                    <FileSpreadsheet className="w-6 h-6 text-blue-600" />
+                    <span className="text-sm font-black text-zinc-900 truncate max-w-[200px]">{file.name}</span>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm text-slate-300">
-                      <Table className="w-8 h-8" />
-                    </div>
-                    <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]">Click or drag file to upload</p>
+                  <div className="flex flex-col items-center gap-2">
+                    <Table className="w-6 h-6 text-slate-300" />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Click to upload dataset</p>
                   </div>
                 )}
               </div>
             </label>
-          </div>
-        </div>
 
-        <div className="lg:col-span-2 bg-zinc-900 rounded-[48px] p-10 text-white relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[80px] rounded-full -mr-20 -mt-20" />
-          
-          <div className="relative space-y-6">
-            <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-3">
-              <Calculator className="w-5 h-5 text-blue-400" /> Analysis Focus
-            </h3>
-            <p className="text-xs font-medium text-slate-400 leading-relaxed">
-              Tell the Analyst what to look for. (e.g., "Look for correlations between age and score" or "Identify the peak sales periods").
-            </p>
-            <textarea 
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Enter your research questions or focus area (Optional)..."
-              className="w-full h-32 p-6 bg-white/5 border border-white/10 rounded-3xl text-sm font-medium focus:outline-none focus:border-blue-500/50 transition-all resize-none placeholder:text-white/20"
-            />
+            <div className="flex-1 bg-slate-50/50 border border-[#e5e7eb] rounded-[32px] overflow-hidden flex flex-col">
+              <div className="p-4 border-b border-[#e5e7eb] bg-white/50 flex justify-between items-center">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Preview</span>
+                {dataPreview.length > 0 && <Badge className="bg-blue-100 text-blue-600 border-none px-2 py-0.5 rounded-full text-[9px]">{dataPreview.length} Rows</Badge>}
+              </div>
+              <div className="flex-1 overflow-auto custom-scrollbar p-4">
+                {dataPreview.length > 0 ? (
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr>
+                        {Object.keys(dataPreview[0]).map(header => (
+                          <th key={header} className="p-2 bg-slate-100/50 text-[9px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100">{header}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dataPreview.slice(0, 10).map((row, idx) => (
+                        <tr key={idx}>
+                          {Object.values(row).map((val, vIdx) => (
+                            <td key={vIdx} className="p-2 text-[10px] font-bold text-slate-600 border-b border-slate-50/50 truncate max-w-[100px]">{String(val)}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-slate-300 italic text-xs">
+                    No data loaded
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <Button 
             onClick={() => handleAnalyze()}
             disabled={isProcessing || isParsing || dataPreview.length === 0}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-8 font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 mt-8"
+            className="w-full bg-black hover:bg-zinc-800 text-white rounded-[24px] py-8 font-black uppercase text-xs tracking-[0.2em] shadow-xl mt-8 flex items-center justify-center gap-4 shrink-0"
           >
-            {isProcessing ? (
-              <>
-                <RefreshCw className="w-5 h-5 animate-spin" />
-                Crunching Numbers...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                Analyze Dataset
-              </>
-            )}
+            {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-blue-400" />}
+            {isProcessing ? 'Analyzing...' : `Execute Analyst (₦1,200)`}
           </Button>
+        </div>
+
+        {/* Output Pane */}
+        <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[600px]">
+          <div className="flex justify-between items-center mb-8 shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Insights</h2>
+                <p className="text-sm text-slate-500 font-medium">Statistical breakdown</p>
+              </div>
+            </div>
+            {analysis && (
+              <Button 
+                onClick={handleCopy} 
+                variant="outline" 
+                className="rounded-full px-6 border-[#e5e7eb] font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all"
+              >
+                {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                {copied ? 'Copied' : 'Copy Report'}
+              </Button>
+            )}
+          </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-900 rounded-[32px] p-8 text-zinc-300 font-medium leading-relaxed prose prose-invert prose-blue max-w-none">
+            {analysis ? (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {analysis}
+              </ReactMarkdown>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-zinc-600 italic">
+                <BarChart3 className="w-12 h-12 mb-4 opacity-10" />
+                Analysis report will appear here
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

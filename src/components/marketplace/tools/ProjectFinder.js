@@ -92,16 +92,16 @@ export default function ProjectFinder({
             <Button 
               onClick={handleSearch}
               disabled={isProcessing || !query.trim()}
-              className="bg-black hover:bg-zinc-800 text-white rounded-full px-12 py-8 font-black uppercase text-sm tracking-widest shadow-2xl active:scale-95 transition-all flex items-center gap-3"
+              className="bg-black hover:bg-zinc-800 text-white rounded-[24px] py-8 px-12 font-black uppercase text-xs tracking-[0.2em] shadow-xl flex items-center justify-center gap-4 transition-all"
             >
               {isProcessing ? (
                 <>
-                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  <RefreshCw className="w-5 h-5 animate-spin text-blue-400" />
                   Searching...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5" />
+                  <Sparkles className="w-5 h-5 text-blue-400" />
                   Find Topics
                 </>
               )}
