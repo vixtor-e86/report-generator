@@ -4,7 +4,7 @@ import {
   BarChart3, Sparkles, RefreshCw, Upload, 
   FileSpreadsheet, Table, FileText, Download,
   Check, Zap, Info, ArrowRight, AlertCircle,
-  TrendingUp, Calculator, Search
+  TrendingUp, Calculator, Search, Copy
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Badge } from '@/components/marketplace/ui/badge';
