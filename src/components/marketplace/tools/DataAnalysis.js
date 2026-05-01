@@ -1,10 +1,9 @@
-"use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   BarChart3, Sparkles, RefreshCw, Upload, 
   FileSpreadsheet, Table, FileText, Download,
   Check, Zap, Info, ArrowRight, AlertCircle,
-  TrendingUp, Calculator, Search, Copy
+  TrendingUp, Calculator, Search, Copy, FileDown
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Badge } from '@/components/marketplace/ui/badge';
@@ -27,6 +26,8 @@ export default function DataAnalysis({
   const [query, setQuery] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const resultsRef = useRef(null);
 
   // Auto-execute after payment
   useEffect(() => {
@@ -124,6 +125,32 @@ export default function DataAnalysis({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast.success('Analysis report copied!');
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!analysis || !resultsRef.current) return;
+    setIsDownloading(true);
+    
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const element = resultsRef.current;
+      const opt = {
+        margin: [15, 15, 15, 15],
+        filename: `Analysis_Report_${file?.name?.split('.')[0] || 'Dataset'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+      toast.success('PDF downloaded successfully!');
+    } catch (err) {
+      console.error('PDF Error:', err);
+      toast.error('Failed to generate PDF');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -251,12 +278,29 @@ export default function DataAnalysis({
               </div>
               <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tight">Statistical Insights</h3>
             </div>
-            <Badge className="bg-green-100 text-green-700 px-4 py-2 rounded-full font-black uppercase text-[10px] tracking-widest">
-              Report Generated
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleDownloadPDF}
+                disabled={isDownloading}
+                className="rounded-full px-6 border-[#e5e7eb] font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all gap-2"
+              >
+                {isDownloading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3 text-blue-600" />}
+                {isDownloading ? 'Generating...' : 'Download PDF'}
+              </Button>
+              <Button 
+                onClick={handleCopy} 
+                variant="outline" 
+                className="rounded-full px-6 border-[#e5e7eb] font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all"
+              >
+                {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                {copied ? 'Copied' : 'Copy Report'}
+              </Button>
+            </div>
           </div>
 
-          <div className="prose prose-slate max-w-none 
+          <div ref={resultsRef} className="prose prose-slate max-w-none 
             prose-headings:text-zinc-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tight
             prose-p:text-slate-600 prose-p:font-medium prose-p:leading-relaxed
             prose-strong:text-zinc-900 prose-strong:font-black
@@ -272,7 +316,6 @@ export default function DataAnalysis({
           </div>
         </div>
       )}
-
       {!analysis && !isProcessing && (
         <div className="py-32 text-center bg-white border border-dashed border-slate-200 rounded-[64px]">
           <div className="w-24 h-24 bg-slate-50 rounded-[40px] flex items-center justify-center mx-auto mb-8 text-slate-200">
