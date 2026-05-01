@@ -134,7 +134,76 @@ export default function DataAnalysis({
     try {
       const html2pdf = (await import('html2pdf.js')).default;
       
-      const element = resultsRef.current;
+      // 1. Create a "Clean Room" worker element to avoid Tailwind v4 color issues
+      const worker = document.createElement('div');
+      worker.style.position = 'absolute';
+      worker.style.left = '-9999px';
+      worker.style.top = '-9999px';
+      worker.style.width = '750px'; // Standard A4 width-ish
+      worker.style.padding = '40px';
+      worker.style.backgroundColor = 'white';
+      worker.style.fontFamily = 'Arial, sans-serif';
+      
+      // 2. Clone the rendered Markdown HTML
+      const clone = resultsRef.current.cloneNode(true);
+      
+      // 3. Aggressive Sanitization: Strip all classes and apply safe inline styles
+      // This prevents html2canvas from trying to parse oklch/lab colors in Tailwind classes
+      const elements = clone.querySelectorAll('*');
+      clone.style.all = 'unset';
+      clone.style.display = 'block';
+      clone.style.backgroundColor = 'white';
+      
+      elements.forEach(el => {
+        el.removeAttribute('class'); // Strip all Tailwind classes
+        const tag = el.tagName;
+        
+        // Apply professional PDF styles manually using hex colors
+        if (['H1', 'H2', 'H3', 'H4'].includes(tag)) {
+          el.style.color = '#111827';
+          el.style.fontWeight = 'bold';
+          el.style.marginTop = '20px';
+          el.style.marginBottom = '10px';
+          el.style.borderBottom = '1px solid #eee';
+          el.style.paddingBottom = '5px';
+          el.style.textTransform = 'uppercase';
+          el.style.fontSize = tag === 'H1' ? '24px' : tag === 'H2' ? '20px' : '16px';
+        } else if (tag === 'P') {
+          el.style.color = '#374151';
+          el.style.fontSize = '12px';
+          el.style.lineHeight = '1.6';
+          el.style.marginBottom = '10px';
+        } else if (tag === 'TABLE') {
+          el.style.width = '100%';
+          el.style.borderCollapse = 'collapse';
+          el.style.marginBottom = '20px';
+          el.style.marginTop = '10px';
+        } else if (tag === 'TH' || tag === 'TD') {
+          el.style.border = '1px solid #e5e7eb';
+          el.style.padding = '8px';
+          el.style.fontSize = '10px';
+          el.style.textAlign = 'left';
+          if (tag === 'TH') {
+            el.style.backgroundColor = '#f9fafb';
+            el.style.color = '#111827';
+          } else {
+            el.style.color = '#4b5563';
+          }
+        } else if (tag === 'STRONG') {
+          el.style.color = '#111827';
+          el.style.fontWeight = 'bold';
+        } else if (tag === 'CODE') {
+          el.style.backgroundColor = '#f3f4f6';
+          el.style.color = '#1d4ed8';
+          el.style.padding = '2px 4px';
+          el.style.borderRadius = '4px';
+          el.style.fontSize = '11px';
+        }
+      });
+      
+      worker.appendChild(clone);
+      document.body.appendChild(worker);
+      
       const opt = {
         margin: [15, 15, 15, 15],
         filename: `Analysis_Report_${file?.name?.split('.')[0] || 'Dataset'}.pdf`,
@@ -143,32 +212,19 @@ export default function DataAnalysis({
           scale: 2, 
           useCORS: true, 
           letterRendering: true,
-          // Important: Sanitize styles to avoid modern color functions like 'lab' or 'oklch'
-          onclone: (clonedDoc) => {
-            const style = clonedDoc.createElement('style');
-            style.innerHTML = `
-              .prose { 
-                color: #374151 !important; 
-                background: white !important; 
-              }
-              h1, h2, h3, h4, strong { color: #111827 !important; }
-              table { border-collapse: collapse !important; width: 100% !important; margin-bottom: 1em !important; }
-              th, td { border: 1px solid #e5e7eb !important; padding: 12px !important; text-align: left !important; color: #374151 !important; }
-              th { background-color: #f9fafb !important; font-weight: bold !important; }
-              code { background-color: #f3f4f6 !important; color: #1d4ed8 !important; padding: 2px 4px !important; border-radius: 4px !important; }
-              pre { background-color: #111827 !important; color: #e5e7eb !important; padding: 16px !important; border-radius: 8px !important; }
-            `;
-            clonedDoc.body.appendChild(style);
-          }
+          logging: false
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      await html2pdf().set(opt).from(element).save();
+      await html2pdf().from(worker).set(opt).save();
+      
+      // Cleanup
+      document.body.removeChild(worker);
       toast.success('PDF downloaded successfully!');
     } catch (err) {
       console.error('PDF Error:', err);
-      toast.error('Failed to generate PDF. Please copy the text instead.');
+      toast.error('PDF generation failed. Please copy the text instead.');
     } finally {
       setIsDownloading(false);
     }
