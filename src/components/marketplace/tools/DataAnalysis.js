@@ -212,7 +212,81 @@ export default function DataAnalysis({
           scale: 2, 
           useCORS: true, 
           letterRendering: true,
-          logging: false
+          logging: false,
+          // CRITICAL FIX: Remove all existing site styles that contain 'lab' or 'oklch'
+          onclone: (clonedDoc) => {
+            // 1. Remove every single style and link tag from the clone
+            const styles = clonedDoc.querySelectorAll('style, link[rel="stylesheet"]');
+            styles.forEach(s => s.remove());
+
+            // 2. Inject a completely fresh, safe stylesheet
+            const style = clonedDoc.createElement('style');
+            style.innerHTML = `
+              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+              body { 
+                background: white !important; 
+                font-family: 'Inter', Arial, sans-serif !important; 
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              .pdf-content { 
+                padding: 20px !important;
+                color: #374151 !important;
+              }
+              h1, h2, h3, h4 { 
+                color: #111827 !important; 
+                font-weight: 800 !important;
+                text-transform: uppercase !important;
+                margin-top: 24px !important;
+                margin-bottom: 12px !important;
+                border-bottom: 2px solid #f3f4f6 !important;
+                padding-bottom: 8px !important;
+              }
+              h1 { font-size: 28px !important; }
+              h2 { font-size: 22px !important; }
+              h3 { font-size: 18px !important; }
+              p { 
+                font-size: 13px !important; 
+                line-height: 1.7 !important; 
+                margin-bottom: 16px !important; 
+                color: #4b5563 !important;
+              }
+              table { 
+                width: 100% !important; 
+                border-collapse: collapse !important; 
+                margin: 20px 0 !important;
+                border: 1px solid #e5e7eb !important;
+              }
+              th { 
+                background-color: #f9fafb !important; 
+                color: #111827 !important;
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                font-size: 11px !important;
+                padding: 12px !important;
+                border: 1px solid #e5e7eb !important;
+              }
+              td { 
+                padding: 10px !important; 
+                border: 1px solid #e5e7eb !important;
+                font-size: 11px !important;
+                color: #374151 !important;
+              }
+              strong { color: #111827 !important; font-weight: 700 !important; }
+              code { 
+                background: #f3f4f6 !important; 
+                color: #2563eb !important; 
+                padding: 2px 6px !important; 
+                border-radius: 4px !important; 
+                font-family: monospace !important;
+              }
+            `;
+            clonedDoc.head.appendChild(style);
+            
+            // Wrap the clone in a styled container
+            const wrapper = clonedDoc.querySelector('div');
+            if (wrapper) wrapper.className = 'pdf-content';
+          }
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };

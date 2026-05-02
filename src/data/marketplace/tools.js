@@ -32,9 +32,9 @@ export const academicTools = [
   {
     id: 'plagiarism-checker',
     name: 'Plagiarism Checker',
-    description: 'Advanced integrity scan powered by Winston AI. Supports DOCX uploads and text paste. ₦1,500 per 10,000 words.',
+    description: 'Enterprise-grade integrity scan. Supports direct document uploads (PDF, DOCX) and text paste. ₦1,500 per 10,000 words.',
     icon: 'ShieldCheck',
-    pricePerUse: 1500, // This will be the base price in the UI
+    pricePerUse: 1500,
     category: 'writing',
     isAvailable: true,
     usageCount: 1250,
