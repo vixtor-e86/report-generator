@@ -17,22 +17,38 @@ async function getCopyleaksToken() {
 
 export async function POST(request) {
   try {
-    const { text, fileBase64, filename, scanId } = await request.json();
+    const bodyText = await request.text();
+    if (!bodyText) {
+      return NextResponse.json({ error: 'Empty request body' }, { status: 400 });
+    }
+
+    let payload;
+    try {
+      payload = JSON.parse(bodyText);
+    } catch (e) {
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
+
+    const { text, fileBase64, filename, scanId } = payload;
 
     if (!text && !fileBase64) {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 });
+    }
+
+    if (!process.env.COPYLEAKS_EMAIL || !process.env.COPYLEAKS_API_KEY) {
+      return NextResponse.json({ error: 'Copyleaks configuration is missing on server' }, { status: 500 });
     }
 
     const token = await getCopyleaksToken();
     
     // Determine submission type
     let endpoint = `https://api.copyleaks.com/v3/scans/submit/file/${scanId}`;
-    let body = {
+    let submitBody = {
       base64: fileBase64 || Buffer.from(text).toString('base64'),
       filename: filename || 'document.txt',
       properties: {
         webhooks: {
-          status: `${process.env.NEXT_PUBLIC_APP_URL || 'https://example.com'}/api/marketplace/tools/plagiarism-checker/webhook/${scanId}`
+          status: `${process.env.NEXT_PUBLIC_APP_URL || 'https://w3writelab.com'}/api/marketplace/tools/plagiarism-checker/webhook/${scanId}`
         },
         scanning: {
             internet: true
@@ -41,16 +57,21 @@ export async function POST(request) {
     };
 
     const response = await fetch(endpoint, {
-      method: 'PUT', // Copyleaks uses PUT for submission
+      method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(submitBody)
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { message: `Upstream error: ${response.statusText}` };
+      }
       console.error('Copyleaks Submit Error:', errorData);
       return NextResponse.json({ error: errorData.message || 'Submission failed' }, { status: response.status });
     }

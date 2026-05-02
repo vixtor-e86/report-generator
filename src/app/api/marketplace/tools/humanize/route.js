@@ -2,11 +2,23 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { content } = await request.json();
+    const bodyText = await request.text();
+    if (!bodyText) {
+      return NextResponse.json({ error: 'Empty request body' }, { status: 400 });
+    }
+
+    let payload;
+    try {
+      payload = JSON.parse(bodyText);
+    } catch (e) {
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
+
+    const { content } = payload;
     const apiKey = process.env.STEALTHGPT_API_KEY;
 
     if (!apiKey) {
-      return NextResponse.json({ error: 'Server configuration error (API Key missing)' }, { status: 500 });
+      return NextResponse.json({ error: 'Humanization engine configuration missing on server' }, { status: 500 });
     }
 
     if (!content) {
@@ -19,7 +31,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Maximum 1500 words per request allowed.' }, { status: 400 });
     }
 
-    // Call StealthGPT with CORRECTED parameters
+    // Call StealthGPT
     const response = await fetch("https://stealthgpt.ai/api/stealthify", {
       method: "POST",
       headers: { 
@@ -30,16 +42,22 @@ export async function POST(request) {
         prompt: content,
         rephrase: true,
         tone: "College",
-        mode: "Medium",        // Corrected mode
-        qualityMode: "quality" // Added quality flag
+        mode: "Medium",
+        qualityMode: "quality"
       }),
     });
 
-    const data = await response.json();
+    let data;
+    const responseText = await response.text();
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      data = { message: `Engine returned non-JSON response: ${response.statusText}` };
+    }
 
     if (!response.ok) {
       console.error("StealthGPT Tool Error:", data);
-      return NextResponse.json({ error: "Humanization engine error" }, { status: 500 });
+      return NextResponse.json({ error: data.message || "Humanization engine error" }, { status: 500 });
     }
 
     let result = data.result || content;
@@ -54,6 +72,6 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Humanizer Tool API Error:', error);
-    return NextResponse.json({ error: "Something went wrong, please try again later" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Something went wrong, please try again later" }, { status: 500 });
   }
 }

@@ -53,7 +53,15 @@ export default function AIHumanizer({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: input })
       });
-      const data = await response.json();
+      
+      let data;
+      const responseText = await response.text();
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(`Server returned an invalid response format (Status: ${response.status})`);
+      }
+
       if (data.error) throw new Error(data.error);
       setOutput(data.result);
       toast.success('Ready!');

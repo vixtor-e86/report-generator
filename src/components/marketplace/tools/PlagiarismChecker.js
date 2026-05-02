@@ -110,7 +110,14 @@ export default function PlagiarismChecker({
         })
       });
       
-      const data = await response.json();
+      let data;
+      const responseText = await response.text();
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(`Server returned an invalid response format (Status: ${response.status})`);
+      }
+
       if (data.error) throw new Error(data.error);
       
       setScanStatus('processing');
@@ -128,8 +135,15 @@ export default function PlagiarismChecker({
     pollingInterval.current = setInterval(async () => {
       try {
         const response = await fetch(`/api/marketplace/tools/plagiarism-checker/results?scanId=${id}`);
-        const data = await response.json();
         
+        let data;
+        const responseText = await response.text();
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          throw new Error(`Server returned an invalid response format (Status: ${response.status})`);
+        }
+
         if (data.status === 'completed') {
           clearInterval(pollingInterval.current);
           setResult(data.data);
