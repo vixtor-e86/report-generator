@@ -8,7 +8,7 @@ async function getCopyleaksToken() {
     throw new Error('Copyleaks credentials (email or API key) are missing in environment variables.');
   }
 
-  const loginUrl = 'https://id.copyleaks.com/v3/auth/login/api';
+  const loginUrl = 'https://id.copyleaks.com/v3/auth/login';
   const response = await fetch(loginUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
