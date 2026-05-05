@@ -129,7 +129,7 @@ export default function PlagiarismChecker({
 
       if (!response.ok) {
           if (response.status === 403) {
-              throw new Error("Access Denied: Please verify your Winston AI API key and credit balance.");
+              throw new Error("Access Denied: Please verify your plagiarism service API key and credit balance.");
           }
           throw new Error(data.error || 'Scan failed');
       }
@@ -156,7 +156,7 @@ export default function PlagiarismChecker({
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-black text-white uppercase tracking-tight">Winston AI Scan</h3>
+            <h3 className="text-sm font-black text-white uppercase tracking-tight">Enterprise Plagiarism Scan</h3>
           </div>
         </div>
         
@@ -226,7 +226,7 @@ export default function PlagiarismChecker({
                     <div className="flex items-center gap-3">
                         <Timer className="w-5 h-5 text-zinc-900 animate-pulse" />
                         <span className="text-xs font-black text-zinc-900 uppercase tracking-widest">
-                            Winston AI Analyzing...
+                            Analyzing Manuscript...
                         </span>
                     </div>
                 </div>
@@ -252,7 +252,7 @@ export default function PlagiarismChecker({
               </div>
               <div>
                 <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">Audit Results</h3>
-                <p className="text-zinc-400 font-medium max-w-md">Winston AI has completed the analysis. A score of 0% indicates complete originality.</p>
+                <p className="text-zinc-400 font-medium max-w-md">Our advanced engine has completed the analysis. A score of 0% indicates complete originality.</p>
               </div>
             </div>
             
@@ -315,7 +315,7 @@ export default function PlagiarismChecker({
                         <Check className="w-10 h-10" />
                     </div>
                     <p className="text-xl font-black text-white uppercase tracking-widest mb-2">100% Original</p>
-                    <p className="text-zinc-500 font-medium max-w-xs mx-auto">Winston AI found no matching records in its database.</p>
+                    <p className="text-zinc-500 font-medium max-w-xs mx-auto">No matching records were found in our global database.</p>
                 </div>
             )}
           </div>
