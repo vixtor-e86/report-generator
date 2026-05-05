@@ -104,7 +104,7 @@ export async function POST(request) {
             
             if (projectId) {
               console.log('Unlocking Project ID:', projectId);
-              // Check projects table for free project unlocks
+              // 1. Update project status
               const { error: unlockError } = await supabaseAdmin
                 .from('projects')
                 .update({ 
@@ -117,6 +117,12 @@ export async function POST(request) {
                 console.error('Error unlocking project:', unlockError);
               } else {
                 console.log('Project successfully unlocked!');
+                
+                // 2. Link transaction to project record to mark as 'used'
+                await supabaseAdmin
+                  .from('payment_transactions')
+                  .update({ project_id: projectId })
+                  .eq('id', existingTx.id);
               }
             } else {
               console.error('Could not extract Project ID from reference');

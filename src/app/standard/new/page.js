@@ -112,9 +112,11 @@ function NewProjectContent() {
           .select('*')
           .eq('user_id', user.id)
           .eq('status', 'paid')
-          .eq('tier', 'standard') // ✅ FIX: Only use standard payments for standard projects
+          .eq('tier', 'standard') 
+          .eq('amount', PRICING.STANDARD) // Use constant
           .is('project_id', null)
-          .not('paystack_reference', 'ilike', 'W3WL_UNLOCK_%') // ✅ FIX: Exclude unlock payments
+          .not('paystack_reference', 'ilike', '%UNLOCK%')
+          .not('paystack_reference', 'ilike', '%FUND%')
           .order('paid_at', { ascending: false })
           .limit(1);
 

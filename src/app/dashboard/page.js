@@ -86,8 +86,10 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .eq('status', 'paid')
         .eq('tier', 'standard')
+        .eq('amount', PRICING.STANDARD) // Use constant instead of hardcoded
         .is('project_id', null)
-        .not('paystack_reference', 'ilike', 'W3WL_UNLOCK_%') // ✅ FIX: Exclude unlock payments
+        .not('paystack_reference', 'ilike', '%UNLOCK%')
+        .not('paystack_reference', 'ilike', '%FUND%')
         .order('paid_at', { ascending: false })
         .limit(1);
 
@@ -102,7 +104,10 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .eq('status', 'paid')
         .eq('tier', 'premium')
+        .eq('amount', PRICING.PREMIUM) // Use constant instead of hardcoded
         .is('project_id', null)
+        .not('paystack_reference', 'ilike', '%UNLOCK%')
+        .not('paystack_reference', 'ilike', '%FUND%')
         .order('paid_at', { ascending: false })
         .limit(1);
 

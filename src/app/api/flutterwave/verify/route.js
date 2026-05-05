@@ -100,11 +100,12 @@ export async function GET(request) {
     }
 
     if (projectIdToUnlock) {
+      // 1. Update project status
       const { error: unlockError } = await supabaseAdmin
         .from('projects')
         .update({ 
           is_unlocked: true,
-          tier: 'unlocked' // Change tier to unlocked upon payment
+          tier: 'unlocked' 
         })
         .eq('id', projectIdToUnlock);
 
@@ -112,6 +113,12 @@ export async function GET(request) {
         console.error('Failed to unlock project:', unlockError);
       } else {
         console.log(`Project ${projectIdToUnlock} unlocked successfully.`);
+        
+        // 2. Link transaction to this project ID to mark it as 'used'
+        await supabaseAdmin
+          .from('payment_transactions')
+          .update({ project_id: projectIdToUnlock })
+          .eq('id', updatedTx.id);
       }
     }
 

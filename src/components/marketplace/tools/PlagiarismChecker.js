@@ -31,7 +31,7 @@ export default function PlagiarismChecker({
 
   // Price Calculation
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
-  const currentPrice = Math.ceil(wordCount / 1000) * 100 || 500; // Simplified pricing
+  const currentPrice = Math.max(1500, Math.ceil(wordCount / 10000) * 1500); 
 
   useEffect(() => {
     if (setCustomPrice) setCustomPrice(currentPrice);

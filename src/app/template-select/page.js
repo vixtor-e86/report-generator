@@ -169,9 +169,11 @@ function TemplateSelectContent() {
           .select('*')
           .eq('user_id', user.id)
           .eq('status', 'paid')
-          .eq('tier', 'standard') // ✅ FIX: Only look for standard payments here
+          .eq('tier', 'standard') 
+          .eq('amount', PRICING.STANDARD) // Use constant
           .is('project_id', null)
-          .not('paystack_reference', 'ilike', 'W3WL_UNLOCK_%') // ✅ FIX: Exclude unlock payments
+          .not('paystack_reference', 'ilike', '%UNLOCK%') 
+          .not('paystack_reference', 'ilike', '%FUND%') 
           .order('paid_at', { ascending: false })
           .limit(1);
 
