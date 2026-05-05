@@ -96,7 +96,7 @@ function MarketplaceProtection({ children }) {
                         onChange={(e) => { setPasscode(e.target.value); setError(''); }}
                         placeholder="Enter access code"
                         autoFocus
-                        className={`w-full px-6 py-4 bg-slate-50 border ${error ? 'border-red-200' : 'border-slate-100'} rounded-2xl outline-none focus:ring-2 focus:ring-indigo-600/10 focus:border-indigo-600 transition-all font-bold text-center tracking-[0.5em]`}
+                        className={`w-full px-6 py-4 bg-slate-100 border ${error ? 'border-red-200' : 'border-slate-200'} rounded-2xl outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all font-black text-center text-slate-900 text-xl tracking-[0.3em] placeholder:text-slate-400 placeholder:tracking-normal`}
                     />
                     {error && <p className="text-xs font-bold text-red-500 text-center">{error}</p>}
                 </div>
