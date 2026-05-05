@@ -110,6 +110,10 @@ export default function PlagiarismChecker({
 
   const startScanProcess = async () => {
     if (!inputText.trim()) return;
+    
+    if (inputText.length < 100) {
+        return toast.error("Content too short. Please provide at least 100 characters for an accurate scan.");
+    }
 
     setScanStatus('processing');
     setIsProcessing(true);
@@ -123,7 +127,12 @@ export default function PlagiarismChecker({
       
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || 'Scan failed');
+      if (!response.ok) {
+          if (response.status === 403) {
+              throw new Error("Access Denied: Please verify your Winston AI API key and credit balance.");
+          }
+          throw new Error(data.error || 'Scan failed');
+      }
       
       setResult(data.data);
       setScanStatus('completed');

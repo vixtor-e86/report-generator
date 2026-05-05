@@ -2,17 +2,17 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { text, language = 'en' } = await request.json();
+    const { text, language = 'auto' } = await request.json();
 
-    if (!text) {
-      return NextResponse.json({ error: 'Text content is required' }, { status: 400 });
+    if (!text || text.length < 100) {
+      return NextResponse.json({ error: 'Content must be at least 100 characters long.' }, { status: 400 });
     }
 
-    const WINSTON_API_KEY = process.env.WINSTON_API_KEY;
+    const WINSTON_API_KEY = (process.env.WINSTON_API_KEY || '').trim().replace(/^["'](.+)["']$/, '$1');
 
     if (!WINSTON_API_KEY) {
-      console.error('WINSTON_API_KEY is missing in environment variables');
-      return NextResponse.json({ error: 'System configuration error. Please contact support.' }, { status: 500 });
+      console.error('WINSTON_API_KEY is missing or empty in environment variables');
+      return NextResponse.json({ error: 'Plagiarism service not configured on server.' }, { status: 500 });
     }
 
     // Winston AI Plagiarism Endpoint
@@ -28,25 +28,39 @@ export async function POST(request) {
       })
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+    let data;
+    try {
+        data = JSON.parse(responseText);
+    } catch (e) {
+        console.error('Winston AI Parse Error (Status ' + response.status + '):', responseText);
+        return NextResponse.json({ error: `Upstream service error (${response.status})` }, { status: response.status });
+    }
 
     if (!response.ok) {
-      console.error('Winston AI Error:', data);
+      console.error('Winston AI Error Response:', data);
+      
+      if (response.status === 403) {
+          return NextResponse.json({ 
+            error: 'Access Denied: Please check if your Winston API key is valid and has remaining credits.' 
+          }, { status: 403 });
+      }
+      
       return NextResponse.json({ error: data.message || 'Plagiarism scan failed' }, { status: response.status });
     }
 
     return NextResponse.json({ 
       success: true, 
       data: {
-        score: data.score, // Similarity score percentage
-        total_words: data.total_words,
-        sources: data.sources || [], // Array of matching sources
-        credits_used: data.credits_used
+        score: data.score || 0,
+        total_words: data.total_words || 0,
+        sources: Array.isArray(data.sources) ? data.sources : [],
+        credits_used: data.credits_used || 0
       }
     });
 
   } catch (error) {
-    console.error('Plagiarism Checker Error:', error);
+    console.error('Plagiarism Checker Route Exception:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
