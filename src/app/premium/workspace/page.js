@@ -247,9 +247,13 @@ function WorkspaceContent() {
 
       <div className="main-workspace">
         <TopToolbar
-          onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)} isRightSidebarOpen={isRightSidebarOpen}
-          onToggleLeftSidebar={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)} onGenerate={() => activeChapter?.content ? setIsModifyModalOpen(true) : setIsGenerationModalOpen(true)}
-          onPrint={() => { setWorkspaceMode('preview'); setTimeout(() => window.print(), 500); }} activeChapter={activeChapter}
+          onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)} 
+          isRightSidebarOpen={isRightSidebarOpen}
+          onToggleLeftSidebar={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)} 
+          onGenerate={() => setIsGenerationModalOpen(true)}
+          onModify={() => setIsModifyModalOpen(true)}
+          onPrint={() => { setWorkspaceMode('preview'); setTimeout(() => window.print(), 500); }} 
+          activeChapter={activeChapter}
           onExportClick={handleExportClick}
         />
 

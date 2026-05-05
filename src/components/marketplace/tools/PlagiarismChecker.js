@@ -250,12 +250,12 @@ export default function PlagiarismChecker({
             <div className="flex gap-4">
                 <div className="bg-white/5 backdrop-blur-md rounded-[32px] p-8 text-center border border-white/10 w-40">
                     <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Words</p>
-                    <p className="text-2xl font-black text-white">{result.total_words.toLocaleString()}</p>
+                    <p className="text-2xl font-black text-white">{(result?.total_words || 0).toLocaleString()}</p>
                 </div>
                 <div className="bg-white text-black rounded-[32px] p-8 text-center w-40 shadow-xl">
                     <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Integrity</p>
                     <p className="text-xl font-black uppercase tracking-tighter">
-                        {result.score < 5 ? 'Elite' : result.score < 20 ? 'High' : 'Flagged'}
+                        {(result?.score || 0) < 5 ? 'Elite' : (result?.score || 0) < 20 ? 'High' : 'Flagged'}
                     </p>
                 </div>
             </div>
@@ -269,7 +269,7 @@ export default function PlagiarismChecker({
                     </div>
                     <h4 className="text-lg font-black text-white uppercase tracking-widest">Matched Sources</h4>
                 </div>
-                <Badge className="bg-zinc-800 text-zinc-400 border-none font-black text-[10px] uppercase px-4 py-2">{result.sources?.length || 0} Matches Found</Badge>
+                <Badge className="bg-zinc-800 text-zinc-400 border-none font-black text-[10px] uppercase px-4 py-2">{(result?.sources?.length || 0)} Matches Found</Badge>
             </div>
 
             {result.sources && result.sources.length > 0 ? (

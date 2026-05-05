@@ -92,11 +92,7 @@ export default function Dashboard() {
         .limit(1);
 
       if (unusedStandard && unusedStandard.length > 0) {
-        const payment = unusedStandard[0];
-        const paymentDate = new Date(payment.paid_at);
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        if (paymentDate >= sevenDaysAgo) setPendingStandardPayment(payment);
+        setPendingStandardPayment(unusedStandard[0]);
       }
 
       // Check for unused payments (Premium)
@@ -111,11 +107,7 @@ export default function Dashboard() {
         .limit(1);
 
       if (unusedPremium && unusedPremium.length > 0) {
-        const payment = unusedPremium[0];
-        const paymentDate = new Date(payment.paid_at);
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        if (paymentDate >= sevenDaysAgo) setPendingPremiumPayment(payment);
+        setPendingPremiumPayment(unusedPremium[0]);
       }
 
       setUser(user);

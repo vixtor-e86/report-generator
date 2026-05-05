@@ -59,6 +59,7 @@ export default function TopToolbar({
   isRightSidebarOpen,
   onToggleLeftSidebar,
   onGenerate,
+  onModify,
   onPrint,
   activeChapter,
   onExportClick
@@ -91,26 +92,36 @@ export default function TopToolbar({
       </div>
 
       <div className="toolbar-actions">
+        {hasContent && (
+          <button 
+            onClick={onModify}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px', 
+              padding: '10px 20px', 
+              borderRadius: '10px', 
+              border: '1px solid #e5e7eb', 
+              background: 'white', 
+              color: '#111827', 
+              fontSize: '14px', 
+              fontWeight: '600', 
+              cursor: 'pointer' 
+            }}
+          >
+            <Icons.Zap style={{ color: '#6366f1' }} />
+            <span>Modify</span>
+          </button>
+        )}
+
         <button 
           id="step-generate"
-          className={hasContent ? "btn-white" : "btn-black"}
+          className="btn-black"
           onClick={onGenerate}
-          style={hasContent ? { 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            padding: '10px 20px', 
-            borderRadius: '10px', 
-            border: '1px solid #e5e7eb', 
-            background: 'white', 
-            color: '#111827', 
-            fontSize: '14px', 
-            fontWeight: '600', 
-            cursor: 'pointer' 
-          } : {}}
+          style={{ height: '40px', padding: '0 20px' }}
         >
-          <Icons.Zap style={{ color: hasContent ? '#6366f1' : 'white' }} />
-          <span>{hasContent ? 'Modify' : 'Generate'}</span>
+          <Icons.Zap style={{ color: 'white' }} />
+          <span>{hasContent ? 'Regenerate' : 'Generate'}</span>
         </button>
         
         <button 

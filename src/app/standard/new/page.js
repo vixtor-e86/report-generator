@@ -131,15 +131,6 @@ function NewProjectContent() {
           return;
         }
 
-        const paymentDate = new Date(unusedPayments[0].paid_at || unusedPayments[0].created_at);
-        const hoursSincePayment = (Date.now() - paymentDate.getTime()) / (1000 * 60 * 60);
-
-        if (hoursSincePayment > 24) {
-          showNotification('Payment Expired', 'This payment session has expired. Please make a new payment.', 'error');
-          router.push('/dashboard');
-          return;
-        }
-
         setPendingPayment(unusedPayments[0]);
       }
 

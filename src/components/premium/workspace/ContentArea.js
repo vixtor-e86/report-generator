@@ -339,14 +339,10 @@ export default function ContentArea({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
               <div style={{ background: '#111827', borderRadius: '32px', padding: '40px', color: 'white' }}>
-                <p style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px' }}>Weekly Earnings</p>
+                <p style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px' }}>Accumulated Earnings</p>
                 <h2 style={{ fontSize: '42px', fontWeight: '900', margin: '0 0 12px 0' }}>₦{weeklyEarnings.toLocaleString()}</h2>
                 
-                {userProfile?.referral_period_expiry && (
-                  <p style={{ fontSize: '10px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', margin: '0 0 24px 0', background: 'rgba(99, 102, 241, 0.1)', display: 'inline-block', padding: '4px 12px', borderRadius: '8px' }}>
-                    Ends: {new Date(userProfile.referral_period_expiry).toLocaleDateString()} {new Date(userProfile.referral_period_expiry).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                )}
+                {/* Expiry display removed */}
 
                 <div style={{ marginBottom: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '8px' }}>
@@ -768,7 +764,7 @@ export default function ContentArea({
                 <p style={{ color: '#6b7280', lineHeight: '1.8', fontSize: '16px', maxWidth: '800px' }}>
                   Did you know you can fund your research by referring others? Use the <strong>Affiliate Dashboard</strong> to copy your unique referral link. 
                   You earn <strong>10% commission</strong> (Standard) on every successful upgrade. 
-                  Bonuses expire 30 days after your first earning of each period, and payouts are processed directly to your bank every Monday once you reach ₦10,000.
+                  Payouts are processed directly to your bank every Monday once you reach ₦10,000.
                 </p>
               </div>
             </div>
