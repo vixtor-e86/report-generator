@@ -74,7 +74,7 @@ export default function ReferenceFinder({
           </div>
           <div className="flex gap-2">
             <Input type="number" value={yearStart} onChange={(e) => setYearStart(e.target.value)} className="w-24 h-16 bg-slate-50 border-slate-100 rounded-2xl text-center font-black text-zinc-900 focus:border-black transition-all" />
-            <div className="flex items-center text-zinc-400 font-black uppercase text-[10px] tracking-widest px-1">to</div>
+            <div className="flex items-center text-zinc-600 font-black uppercase text-[10px] tracking-widest px-1">to</div>
             <Input type="number" value={yearEnd} onChange={(e) => setYearEnd(e.target.value)} className="w-24 h-16 bg-slate-50 border-slate-100 rounded-2xl text-center font-black text-zinc-900 focus:border-black transition-all" />
           </div>
         </div>
@@ -82,14 +82,14 @@ export default function ReferenceFinder({
           <button 
             onClick={() => { setSearchMode('free'); handleReferenceSearch(); }}
             disabled={isProcessing}
-            className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 transition-all ${searchMode === 'free' ? 'bg-zinc-900 text-white shadow-xl' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+            className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 transition-all ${searchMode === 'free' ? 'bg-zinc-900 text-white shadow-xl' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
           >
             <Globe className="w-4 h-4" /> Semantic Search (Free)
           </button>
           <button 
             onClick={() => setSearchMode('deep')}
             disabled={isProcessing}
-            className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 transition-all ${searchMode === 'deep' ? 'bg-blue-600 text-white shadow-xl shadow-blue-200' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+            className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 transition-all ${searchMode === 'deep' ? 'bg-blue-600 text-white shadow-xl shadow-blue-200' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
           >
             <Sparkles className="w-4 h-4 text-blue-200" /> DeepSearch (₦200)
           </button>
@@ -128,7 +128,7 @@ export default function ReferenceFinder({
         {!isProcessing && searchResults.length === 0 && (
           <div className="py-20 text-center">
             <div className="w-20 h-20 bg-slate-100 rounded-[32px] flex items-center justify-center mx-auto mb-6 text-slate-300"><Search className="w-10 h-10" /></div>
-            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]">Academic discovery results will appear here</p>
+            <p className="text-slate-600 font-bold uppercase text-[10px] tracking-[0.2em]">Academic discovery results will appear here</p>
           </div>
         )}
         {isProcessing && (

@@ -88,7 +88,7 @@ export default function VisualStudio({
             </div>
 
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Describe your vision</label>
+              <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest block">Describe your vision</label>
               <Textarea 
                 value={prompt} 
                 onChange={(e) => setPrompt(e.target.value)}
@@ -170,9 +170,9 @@ export default function VisualStudio({
             ) : (
               <div className="text-center opacity-30">
                 <div className="w-24 h-24 bg-slate-200 rounded-[32px] flex items-center justify-center mx-auto mb-6">
-                  <Palette className="w-10 h-10 text-slate-400" />
+                  <Palette className="w-10 h-10 text-slate-600" />
                 </div>
-                <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Visual preview will appear here</p>
+                <p className="text-xs font-black text-slate-600 uppercase tracking-[0.2em]">Visual preview will appear here</p>
               </div>
             )}
           </div>

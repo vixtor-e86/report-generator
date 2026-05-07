@@ -133,7 +133,7 @@ export default function ProjectFinder({
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Feasibility</span>
+                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Feasibility</span>
                 <div className="flex items-center gap-2">
                   <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div 
@@ -162,7 +162,7 @@ export default function ProjectFinder({
               <Lightbulb className="w-12 h-12" />
             </div>
             <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">Ready to Discover?</h2>
-            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] max-w-xs mx-auto">
+            <p className="text-slate-600 font-bold uppercase text-[10px] tracking-[0.2em] max-w-xs mx-auto">
               Enter a field of interest above to generate trending academic topics
             </p>
           </div>
@@ -192,7 +192,7 @@ export default function ProjectFinder({
           </div>
           <div className="flex-1 text-center md:text-left">
             <h4 className="text-xl font-black uppercase tracking-tight mb-2">Pro Tip for Students</h4>
-            <p className="text-slate-400 font-medium leading-relaxed">
+            <p className="text-slate-600 font-medium leading-relaxed">
               When you find a topic you like, use the <span className="text-white font-bold">Reference Finder</span> to get preliminary sources and the <span className="text-white font-bold">Slide Generator</span> to prepare your project proposal presentation.
             </p>
           </div>

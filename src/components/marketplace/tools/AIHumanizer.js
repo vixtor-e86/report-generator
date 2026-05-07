@@ -67,7 +67,7 @@ export default function AIHumanizer({
       toast.success('Ready!');
       setHasPaid(false);
     } catch (err) {
-      toast.error(err.message || 'Processing failed');
+      toast.error('System under maintenance. Please try again later.');
       setHasPaid(false);
     } finally {
       setIsProcessing(false);
@@ -93,7 +93,7 @@ export default function AIHumanizer({
               <p className="text-sm text-slate-500 font-medium">AI generated text</p>
             </div>
           </div>
-          <Badge variant="outline" className={`rounded-full px-4 py-1.5 font-black text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-400'}`}>
+          <Badge variant="outline" className={`rounded-full px-4 py-1.5 font-black text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-600'}`}>
             {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()}
           </Badge>
         </div>
@@ -122,7 +122,7 @@ export default function AIHumanizer({
             <Button 
               onClick={handleCopy} 
               variant="outline" 
-              className="rounded-full px-6 border-[#e5e7eb] font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all"
+              className="rounded-full px-6 border-[#e5e7eb] text-zinc-900 font-black uppercase text-[10px] tracking-widest hover:bg-black hover:text-white transition-all"
             >
               <Copy className="w-4 h-4 mr-2" /> Copy Results
             </Button>

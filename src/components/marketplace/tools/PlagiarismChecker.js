@@ -140,7 +140,7 @@ export default function PlagiarismChecker({
       toast.success('Plagiarism scan complete!');
       
     } catch (err) {
-      toast.error(err.message);
+      toast.error('System under maintenance. Please try again later.');
       setScanStatus('idle');
     } finally {
       setIsProcessing(false);
@@ -163,7 +163,7 @@ export default function PlagiarismChecker({
         <div className="h-8 w-px bg-zinc-800 mx-2" />
 
         <div className="flex items-center gap-4">
-          <Badge className="bg-zinc-800 text-zinc-400 border-none px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
+          <Badge className="bg-zinc-800 text-zinc-300 border-none px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
             {wordCount.toLocaleString()} Words
           </Badge>
           <Badge className="bg-white text-black border-none px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest">
@@ -194,7 +194,7 @@ export default function PlagiarismChecker({
                 </label>
                 <button 
                   onClick={() => { setInputText(''); setFileName(''); setResult(null); setScanStatus('idle'); }}
-                  className="px-6 py-3 border border-zinc-200 rounded-full text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:text-red-500 hover:border-red-100 transition-all"
+                  className="px-6 py-3 border border-zinc-200 rounded-full text-[10px] font-black text-zinc-600 uppercase tracking-widest hover:text-red-500 hover:border-red-100 transition-all"
                 >
                   Clear
                 </button>
@@ -252,7 +252,7 @@ export default function PlagiarismChecker({
               </div>
               <div>
                 <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">Audit Results</h3>
-                <p className="text-zinc-400 font-medium max-w-md">Our advanced engine has completed the analysis. A score of 0% indicates complete originality.</p>
+                <p className="text-zinc-600 font-medium max-w-md">Our advanced engine has completed the analysis. A score of 0% indicates complete originality.</p>
               </div>
             </div>
             
@@ -262,7 +262,7 @@ export default function PlagiarismChecker({
                     <p className="text-2xl font-black text-white">{(result?.total_words || 0).toLocaleString()}</p>
                 </div>
                 <div className="bg-white text-black rounded-[32px] p-8 text-center w-40 shadow-xl">
-                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Integrity</p>
+                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Integrity</p>
                     <p className="text-xl font-black uppercase tracking-tighter">
                         {(result?.score || 0) < 5 ? 'Elite' : (result?.score || 0) < 20 ? 'High' : 'Flagged'}
                     </p>
@@ -278,7 +278,7 @@ export default function PlagiarismChecker({
                     </div>
                     <h4 className="text-lg font-black text-white uppercase tracking-widest">Matched Sources</h4>
                 </div>
-                <Badge className="bg-zinc-800 text-zinc-400 border-none font-black text-[10px] uppercase px-4 py-2">{(result?.sources?.length || 0)} Matches Found</Badge>
+                <Badge className="bg-zinc-800 text-zinc-600 border-none font-black text-[10px] uppercase px-4 py-2">{(result?.sources?.length || 0)} Matches Found</Badge>
             </div>
 
             {result.sources && result.sources.length > 0 ? (
@@ -291,14 +291,14 @@ export default function PlagiarismChecker({
                                         {source.score}% Match
                                     </div>
                                     {source.url && (
-                                      <a href={source.url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white text-zinc-400 hover:text-black transition-all">
+                                      <a href={source.url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white text-zinc-600 hover:text-black transition-all">
                                           <ExternalLink className="w-4 h-4" />
                                       </a>
                                     )}
                                 </div>
                                 <h5 className="font-black text-white uppercase tracking-tight text-md mb-4 leading-tight line-clamp-2">{source.title || 'Academic Source'}</h5>
                                 <div className="h-px w-12 bg-zinc-700 mb-6 group-hover:w-full transition-all duration-500" />
-                                <p className="text-sm text-zinc-400 leading-relaxed font-medium line-clamp-3 mb-8 italic">"{source.snippet || 'No snippet available'}"</p>
+                                <p className="text-sm text-zinc-600 leading-relaxed font-medium line-clamp-3 mb-8 italic">"{source.snippet || 'No snippet available'}"</p>
                             </div>
                             <div className="flex items-center gap-2 text-zinc-500 group-hover:text-white transition-colors">
                                 <Search className="w-3 h-3" />

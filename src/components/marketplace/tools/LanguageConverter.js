@@ -136,7 +136,7 @@ export default function LanguageConverter({
               <button 
                 key={m.id}
                 onClick={() => setMode(m.id)}
-                className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${mode === m.id ? 'bg-white text-zinc-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${mode === m.id ? 'bg-white text-zinc-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
               >
                 {m.name}
               </button>
@@ -145,7 +145,7 @@ export default function LanguageConverter({
         </div>
 
         <div className="ml-auto">
-          <Badge variant="outline" className={`rounded-full px-4 py-1.5 font-black text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-400'}`}>
+          <Badge variant="outline" className={`rounded-full px-4 py-1.5 font-black text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-600'}`}>
             {wordCount} / {MAX_WORDS} Words
           </Badge>
         </div>
@@ -167,7 +167,7 @@ export default function LanguageConverter({
             </div>
             <button 
               onClick={() => setInputText('')}
-              className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors"
+              className="text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-red-500 transition-colors"
             >
               Clear
             </button>

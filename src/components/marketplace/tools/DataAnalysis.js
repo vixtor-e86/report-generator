@@ -255,7 +255,7 @@ export default function DataAnalysis({
             {file && (
               <button 
                 onClick={() => { setFile(null); setDataPreview([]); }}
-                className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors"
+                className="text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-red-500 transition-colors"
               >
                 Reset
               </button>
@@ -275,13 +275,13 @@ export default function DataAnalysis({
                     </div>
                     <div className="text-left">
                       <p className="text-lg font-black text-zinc-900 truncate max-w-[300px]">{file.name}</p>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{(file.size / 1024).toFixed(1)} KB • {dataPreview.length} Rows</p>
+                      <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">{(file.size / 1024).toFixed(1)} KB • {dataPreview.length} Rows</p>
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3">
                     <Table className="w-10 h-10 text-slate-300" />
-                    <p className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Click to upload dataset</p>
+                    <p className="text-sm font-black text-slate-600 uppercase tracking-[0.2em]">Click to upload dataset</p>
                   </div>
                 )}
               </div>
@@ -289,7 +289,7 @@ export default function DataAnalysis({
 
             <div className="flex-1 bg-slate-50/50 border border-[#e5e7eb] rounded-[40px] overflow-hidden flex flex-col">
               <div className="p-6 border-b border-[#e5e7eb] bg-white/50 flex justify-between items-center">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
                   <Search className="w-4 h-4" /> Data Preview (Top 10 Rows)
                 </span>
                 {dataPreview.length > 0 && <Badge className="bg-blue-100 text-blue-600 border-none px-3 py-1 rounded-full text-[10px] font-black uppercase">{dataPreview.length} Total Rows</Badge>}
@@ -389,7 +389,7 @@ export default function DataAnalysis({
             <BarChart3 className="w-12 h-12" />
           </div>
           <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">Statistical Engine</h2>
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] max-w-sm mx-auto">
+          <p className="text-slate-600 font-bold uppercase text-[10px] tracking-[0.2em] max-w-sm mx-auto">
             Upload your data and specify your research questions to generate a professional analysis report
           </p>
         </div>
@@ -413,7 +413,7 @@ export default function DataAnalysis({
       {!analysis && dataPreview.length > 0 && (
         <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm overflow-hidden animate-in fade-in duration-500">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
+            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-600">
               <Search className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Dataset Preview (First 5 Rows)</h3>

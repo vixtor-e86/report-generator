@@ -40,13 +40,10 @@ export async function POST(request) {
     if (!response.ok) {
       console.error('Winston AI Error Response:', data);
       
-      if (response.status === 403) {
-          return NextResponse.json({ 
-            error: 'Access Denied: Please check if your Winston API key is valid and has remaining credits.' 
-          }, { status: 403 });
-      }
-      
-      return NextResponse.json({ error: data.message || 'Plagiarism scan failed' }, { status: response.status });
+      // Generic maintenance message for upstream errors (403 usually means quota/auth, but user wants it hidden)
+      return NextResponse.json({ 
+        error: 'Plagiarism engine is currently under maintenance. Please try again later.' 
+      }, { status: response.status });
     }
 
     return NextResponse.json({ 
@@ -61,6 +58,8 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Plagiarism Checker Route Exception:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'System under maintenance. Our engineers are working on it, please try again later.' 
+    }, { status: 500 });
   }
 }

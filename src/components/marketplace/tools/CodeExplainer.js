@@ -92,7 +92,7 @@ export default function CodeExplainer({
         </div>
 
         <div className="ml-auto">
-          <Badge variant="outline" className={`rounded-full px-4 py-1.5 font-black text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-400'}`}>
+          <Badge variant="outline" className={`rounded-full px-4 py-1.5 font-black text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-600'}`}>
             {lineCount} / {MAX_LINES} Lines
           </Badge>
         </div>
@@ -113,7 +113,7 @@ export default function CodeExplainer({
             </div>
             <button 
               onClick={() => setCode('')}
-              className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors"
+              className="text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-red-500 transition-colors"
             >
               Clear
             </button>
@@ -183,7 +183,7 @@ function example() {
             <Code2 className="w-12 h-12" />
           </div>
           <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">Deep Logic Analysis</h2>
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] max-w-xs mx-auto">
+          <p className="text-slate-600 font-bold uppercase text-[10px] tracking-[0.2em] max-w-xs mx-auto">
             Paste your code snippet above to receive a comprehensive line-by-line explanation
           </p>
         </div>

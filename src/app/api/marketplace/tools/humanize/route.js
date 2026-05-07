@@ -57,7 +57,9 @@ export async function POST(request) {
 
     if (!response.ok) {
       console.error("StealthGPT Tool Error:", data);
-      return NextResponse.json({ error: data.message || "Humanization engine error" }, { status: 500 });
+      return NextResponse.json({ 
+        error: "Humanization engine is currently under maintenance. Please try again later." 
+      }, { status: 500 });
     }
 
     let result = data.result || content;
@@ -72,6 +74,8 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Humanizer Tool API Error:', error);
-    return NextResponse.json({ error: error.message || "Something went wrong, please try again later" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "System under maintenance. Our engineers are working on it, please try again later." 
+    }, { status: 500 });
   }
 }
