@@ -17,6 +17,8 @@ export default function ProjectFinder({
   const [query, setQuery] = useState('');
   const [department, setDepartment] = useState('');
   const [level, setLevel] = useState('');
+  const [researchType, setResearchType] = useState('any');
+  const [industry, setIndustry] = useState('');
   const [results, setResults] = useState([]);
 
   const handleSearch = async () => {
@@ -30,7 +32,9 @@ export default function ProjectFinder({
         body: JSON.stringify({
           query,
           department,
-          level
+          level,
+          researchType,
+          industry
         })
       });
       const data = await response.json();
@@ -78,6 +82,31 @@ export default function ProjectFinder({
                   value={level}
                   onChange={(e) => setLevel(e.target.value)}
                   placeholder="Level/Year (Optional)"
+                  className="h-16 pl-14 bg-slate-50 border-slate-100 rounded-2xl font-bold text-zinc-900 focus:border-black transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="relative">
+                <BookOpen className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+                <select 
+                  value={researchType}
+                  onChange={(e) => setResearchType(e.target.value)}
+                  className="w-full h-16 pl-14 pr-4 bg-slate-50 border-slate-100 rounded-2xl font-bold text-zinc-900 focus:border-black transition-all appearance-none outline-none"
+                >
+                  <option value="any">Any Methodology</option>
+                  <option value="quantitative">Quantitative Research</option>
+                  <option value="qualitative">Qualitative Research</option>
+                  <option value="mixed">Mixed Methods</option>
+                </select>
+              </div>
+              <div className="relative">
+                <Zap className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+                <Input 
+                  value={industry}
+                  onChange={(e) => setIndustry(e.target.value)}
+                  placeholder="Industry/Field (e.g. Health, Finance...)"
                   className="h-16 pl-14 bg-slate-50 border-slate-100 rounded-2xl font-bold text-zinc-900 focus:border-black transition-all"
                 />
               </div>

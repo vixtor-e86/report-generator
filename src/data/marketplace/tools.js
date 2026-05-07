@@ -70,6 +70,16 @@ export const academicTools = [
     usageCount: 2100,
   },
   {
+    id: 'questionnaire-generator',
+    name: 'Questionnaire Generator',
+    description: 'Generate professional research questionnaires, surveys, and interview protocols tailored to your project topic and methodology. Export to DOCX.',
+    icon: 'ClipboardList',
+    pricePerUse: 1000,
+    category: 'generation',
+    isAvailable: true,
+    usageCount: 0,
+  },
+  {
     id: 'language-converter',
     name: 'Language Converter',
     description: 'Convert and refine text across 20+ languages, including Nigerian Pidgin, Yoruba, Igbo, Hausa, and global languages. Supports up to 1000 words.',

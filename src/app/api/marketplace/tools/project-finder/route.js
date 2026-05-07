@@ -3,7 +3,7 @@ import { callAI } from '@/lib/aiProvider';
 
 export async function POST(request) {
   try {
-    const { query, department, level } = await request.json();
+    const { query, department, level, researchType, industry } = await request.json();
 
     if (!query) {
       return NextResponse.json({ error: 'Search query or topic interest is required' }, { status: 400 });
@@ -15,18 +15,24 @@ export async function POST(request) {
     The student is interested in: "${query}"
     ${department ? `Department: ${department}` : ''}
     ${level ? `Academic Level: ${level}` : ''}
+    ${researchType && researchType !== 'any' ? `Research Methodology: ${researchType}` : ''}
+    ${industry ? `Industry/Sector Focus: ${industry}` : ''}
     
     Instructions:
     1. Search your knowledge base for the latest trends and "low-hanging fruit" research gaps in this field.
     2. Provide 10 distinct, well-defined project topics.
-    3. For EACH topic, include:
+    3. If a specific Research Methodology is requested (Quantitative, Qualitative, or Mixed), ensure the titles and problem statements reflect that approach.
+       - Quantitative: Focus on measurable variables, statistical correlations, and numerical data.
+       - Qualitative: Focus on lived experiences, case studies, thematic analysis, and deep interviews.
+       - Mixed: Focus on a combination of both for comprehensive understanding.
+    4. For EACH topic, include:
        - A catchy and professional Title.
        - A brief "Problem Statement" or "Gap" it addresses.
        - A "Feasibility" score (1-10).
        - Recommended "Key Tools/Technologies" to use.
-    4. Use emojis and icons creatively to make the results visually appealing and easy to scan.
-    5. Categorize the topics if possible (e.g., AI in Healthcare, Sustainable Energy, etc.).
-    6. Ensure the topics are suitable for the student's department and level if provided.
+    5. Use emojis and icons creatively to make the results visually appealing and easy to scan.
+    6. Categorize the topics if possible (e.g., AI in Healthcare, Sustainable Energy, etc.).
+    7. Ensure the topics are suitable for the student's department, level, and industry if provided.
     
     Structure the response as a valid JSON object with this structure:
     {

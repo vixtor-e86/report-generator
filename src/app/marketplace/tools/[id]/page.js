@@ -5,7 +5,7 @@ import {
   ArrowLeft, Wrench, Zap, AlertCircle, ShieldCheck,
   BookOpen, Presentation, BarChart3, Search, Lightbulb,
   SpellCheck, Quote, Image, Code2, RefreshCw as RefreshIcon,
-  Wallet, UserCheck, Activity, Palette
+  Wallet, UserCheck, Activity, Palette, ClipboardList
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { getToolById } from '@/data/marketplace/tools';
@@ -23,6 +23,7 @@ import CodeExplainer from '@/components/marketplace/tools/CodeExplainer';
 import LanguageConverter from '@/components/marketplace/tools/LanguageConverter';
 import DataAnalysis from '@/components/marketplace/tools/DataAnalysis';
 import PlagiarismChecker from '@/components/marketplace/tools/PlagiarismChecker';
+import QuestionnaireGenerator from '@/components/marketplace/tools/QuestionnaireGenerator';
 
 const iconMap = {
   ShieldCheck,
@@ -38,7 +39,8 @@ const iconMap = {
   Code2,
   RefreshCw: RefreshIcon,
   Activity,
-  Palette
+  Palette,
+  ClipboardList
 };
 
 export default function ToolInterfacePage() {
@@ -134,9 +136,10 @@ export default function ToolInterfacePage() {
         {toolId === 'slide-generator' && <SlideGenerator {...toolProps} />}
         {toolId === 'ai-humanizer' && <AIHumanizer {...toolProps} />}
         {toolId === 'diagram-studio' && <VisualStudio {...toolProps} />}
+        {toolId === 'questionnaire-generator' && <QuestionnaireGenerator {...toolProps} />}
         
         {/* Fallback for other tools */}
-        {!['project-finder', 'code-explainer', 'language-converter', 'data-analysis', 'plagiarism-checker', 'reference-finder', 'slide-generator', 'ai-humanizer', 'diagram-studio'].includes(toolId) && (
+        {!['project-finder', 'code-explainer', 'language-converter', 'data-analysis', 'plagiarism-checker', 'reference-finder', 'slide-generator', 'ai-humanizer', 'diagram-studio', 'questionnaire-generator'].includes(toolId) && (
             <div className="py-20 text-center">
                 <Wrench className="w-16 h-16 text-slate-200 mx-auto mb-6" />
                 <h2 className="text-2xl font-black text-slate-900 uppercase">Tool Under Development</h2>

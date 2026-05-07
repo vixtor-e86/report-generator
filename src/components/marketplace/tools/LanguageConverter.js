@@ -62,7 +62,7 @@ export default function LanguageConverter({
   }, [hasPaid]);
 
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
-  const MAX_WORDS = 500;
+  const MAX_WORDS = 1000;
   const isOverLimit = wordCount > MAX_WORDS;
 
   const handleConvert = async (skipPaymentCheck = false) => {
