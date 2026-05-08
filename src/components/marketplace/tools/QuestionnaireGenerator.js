@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { 
   ClipboardList, Sparkles, RefreshCw, Copy, 
   Check, Zap, Info, FileText, Download,
-  Users, Target, BarChart, GraduationCap
+  Users, Target, BarChart, ListOrdered
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
@@ -12,6 +12,8 @@ import { Textarea } from '@/components/marketplace/ui/textarea';
 import { toast } from 'sonner';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const SCALES = [
   { id: 'likert-5', name: 'Likert 5-point' },
@@ -32,7 +34,7 @@ export default function QuestionnaireGenerator({
   const [objectives, setObjectives] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
   const [scaleType, setScaleType] = useState('likert-5');
-  const [industry, setIndustry] = useState('');
+  const [numQuestions, setNumQuestions] = useState(25);
   const [questionnaire, setQuestionnaire] = useState('');
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -62,7 +64,7 @@ export default function QuestionnaireGenerator({
           objectives,
           targetAudience,
           scaleType: SCALES.find(s => s.id === scaleType)?.name,
-          industry
+          numQuestions: Number(numQuestions)
         })
       });
       const data = await response.json();
@@ -104,7 +106,7 @@ export default function QuestionnaireGenerator({
       ];
 
       lines.forEach(line => {
-        const trimmed = line.trim();
+        const trimmed = line.trim().replace(/[*#]/g, '');
         if (!trimmed) {
           docChildren.push(new Paragraph({ text: "", spacing: { after: 120 } }));
           return;
@@ -112,9 +114,9 @@ export default function QuestionnaireGenerator({
 
         let isHeading = false;
         let headingText = trimmed;
-        if (trimmed.startsWith('# ')) {
+        if (line.trim().startsWith('# ')) {
           isHeading = true;
-          headingText = trimmed.replace('# ', '');
+          headingText = line.trim().replace('# ', '');
         } else if (trimmed.match(/^[A-Z\s]{5,}$/) || trimmed.includes('SECTION')) {
           isHeading = true;
         }
@@ -171,15 +173,20 @@ export default function QuestionnaireGenerator({
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
-            <GraduationCap className="w-5 h-5" />
+          <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+            <ListOrdered className="w-5 h-5" />
           </div>
-          <Input 
-            value={industry}
-            onChange={(e) => setIndustry(e.target.value)}
-            placeholder="Industry Focus (Optional)"
-            className="w-48 bg-slate-50 border-slate-100 rounded-lg px-4 py-2 font-bold text-xs text-zinc-900 focus:border-indigo-500 transition-all"
-          />
+          <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Questions:</span>
+             <input 
+                type="number"
+                min="5"
+                max="50"
+                value={numQuestions}
+                onChange={(e) => setNumQuestions(Math.min(50, Math.max(5, Number(e.target.value))))}
+                className="w-12 bg-transparent border-none font-black text-xs text-zinc-900 focus:ring-0 text-center"
+             />
+          </div>
         </div>
 
         <div className="ml-auto">
@@ -192,7 +199,7 @@ export default function QuestionnaireGenerator({
       {/* Main Interface */}
       <div className="grid lg:grid-cols-2 gap-12">
         {/* Input Pane */}
-        <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col min-h-[600px]">
+        <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[650px]">
           <div className="flex items-center justify-between mb-8 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
@@ -226,7 +233,7 @@ export default function QuestionnaireGenerator({
                 value={objectives}
                 onChange={(e) => setObjectives(e.target.value)}
                 placeholder="Mention specific areas you want the questionnaire to cover..."
-                className="min-h-[120px] bg-slate-50 border-slate-100 rounded-2xl p-4 font-bold text-zinc-900 focus:border-black transition-all resize-none"
+                className="min-h-[140px] bg-slate-50 border-slate-100 rounded-2xl p-6 font-bold text-zinc-900 focus:border-black transition-all resize-none"
               />
             </div>
 
@@ -254,7 +261,7 @@ export default function QuestionnaireGenerator({
         </div>
 
         {/* Output Pane */}
-        <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col min-h-[600px]">
+        <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[650px]">
           <div className="flex justify-between items-center mb-8 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-indigo-900 text-white rounded-2xl flex items-center justify-center">
@@ -269,8 +276,16 @@ export default function QuestionnaireGenerator({
           
           <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50 rounded-[32px] p-8 border border-slate-100 relative group">
             {questionnaire ? (
-              <div className="prose prose-sm max-w-none prose-p:text-zinc-700 prose-headings:text-zinc-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tight whitespace-pre-wrap font-bold text-zinc-800 leading-relaxed">
-                {questionnaire}
+              <div className="prose prose-slate max-w-none 
+                prose-headings:text-zinc-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tight
+                prose-p:text-slate-600 prose-p:font-medium prose-p:leading-relaxed
+                prose-strong:text-zinc-900 prose-strong:font-black
+                prose-ul:list-disc prose-ol:list-decimal
+                font-bold text-zinc-800 leading-relaxed
+              ">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {questionnaire}
+                </ReactMarkdown>
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-slate-300 italic">
@@ -305,7 +320,7 @@ export default function QuestionnaireGenerator({
           </div>
 
           {questionnaire && (
-             <div className="mt-8 p-6 bg-indigo-50 rounded-[24px] border border-indigo-100 flex items-center gap-4">
+             <div className="mt-8 p-6 bg-indigo-50 rounded-[24px] border border-indigo-100 flex items-center gap-4 shrink-0">
                 <Info className="w-5 h-5 text-indigo-600 shrink-0" />
                 <p className="text-[10px] font-bold text-indigo-700 uppercase leading-relaxed tracking-tight">
                     This is an AI-generated draft. Please review and validate with your supervisor before distribution.

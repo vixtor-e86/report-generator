@@ -1,12 +1,14 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { 
-  Sparkles, RefreshCw, Copy, UserCheck, FileText
+  Sparkles, RefreshCw, Copy, UserCheck, FileText, Wallet
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Textarea } from '@/components/marketplace/ui/textarea';
 import { Badge } from '@/components/marketplace/ui/badge';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '@/contexts/marketplace/UserContext';
 
 export default function AIHumanizer({ 
   isProcessing, 
@@ -15,12 +17,30 @@ export default function AIHumanizer({
   setHasPaid, 
   setShowPaymentDialog 
 }) {
+  const { user } = useUser();
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
+  const [wordBalance, setWordBalance] = useState(0);
 
   const wordCount = input.trim() ? input.trim().split(/\s+/).length : 0;
-  const MAX_WORDS = 1500;
+  const MAX_WORDS = 2000;
   const isOverLimit = wordCount > MAX_WORDS;
+
+  // Fetch word balance on mount
+  useEffect(() => {
+    if (user) fetchBalance();
+  }, [user]);
+
+  const fetchBalance = async () => {
+    const { data, error } = await supabase
+      .from('tool_word_balances')
+      .select('balance')
+      .eq('user_id', user.id)
+      .eq('tool_id', 'ai-humanizer')
+      .maybeSingle();
+    
+    if (data) setWordBalance(data.balance);
+  };
 
   // Auto-execute after payment
   useEffect(() => {
@@ -40,14 +60,40 @@ export default function AIHumanizer({
         return;
     }
 
-    if (!hasPaid && !skipPaymentCheck) {
-      setShowPaymentDialog(true);
-      return;
+    // Word Balance Logic
+    if (!skipPaymentCheck) {
+      if (wordBalance < wordCount) {
+        setShowPaymentDialog(true);
+        return;
+      }
     }
 
     setIsProcessing(true);
 
     try {
+      // 1. If we skipped payment check (meaning user just paid), refill balance first
+      if (skipPaymentCheck) {
+        const { data: current } = await supabase
+          .from('tool_word_balances')
+          .select('balance')
+          .eq('user_id', user.id)
+          .eq('tool_id', 'ai-humanizer')
+          .maybeSingle();
+        
+        const newBalance = (current?.balance || 0) + 1000;
+        
+        await supabase
+          .from('tool_word_balances')
+          .upsert({ 
+            user_id: user.id, 
+            tool_id: 'ai-humanizer', 
+            balance: newBalance,
+            updated_at: new Date().toISOString()
+          });
+        
+        setWordBalance(newBalance);
+      }
+
       const response = await fetch('/api/marketplace/tools/humanize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,14 +105,33 @@ export default function AIHumanizer({
       try {
         data = JSON.parse(responseText);
       } catch (e) {
-        throw new Error(`Server returned an invalid response format (Status: ${response.status})`);
+        throw new Error(`Server returned an invalid response format`);
       }
 
       if (data.error) throw new Error(data.error);
+      
+      // 2. Deduct words from balance
+      const { data: finalBalData } = await supabase
+        .from('tool_word_balances')
+        .select('balance')
+        .eq('user_id', user.id)
+        .eq('tool_id', 'ai-humanizer')
+        .single();
+      
+      const updatedBalance = Math.max(0, finalBalData.balance - wordCount);
+      
+      await supabase
+        .from('tool_word_balances')
+        .update({ balance: updatedBalance })
+        .eq('user_id', user.id)
+        .eq('tool_id', 'ai-humanizer');
+
+      setWordBalance(updatedBalance);
       setOutput(data.result);
-      toast.success('Ready!');
+      toast.success('Humanization complete!');
       setHasPaid(false);
     } catch (err) {
+      console.error(err);
       toast.error('System under maintenance. Please try again later.');
       setHasPaid(false);
     } finally {
@@ -82,7 +147,7 @@ export default function AIHumanizer({
   return (
     <div className="grid md:grid-cols-2 gap-12 animate-in fade-in duration-700">
       {/* Input Section */}
-      <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[600px]">
+      <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[650px]">
         <div className="flex justify-between items-center mb-8 shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
@@ -93,9 +158,15 @@ export default function AIHumanizer({
               <p className="text-sm text-slate-500 font-medium">AI generated text</p>
             </div>
           </div>
-          <Badge variant="outline" className={`rounded-full px-4 py-1.5 font-black text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-600'}`}>
-            {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()}
-          </Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge variant="outline" className={`rounded-full px-4 py-1.5 font-black text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-600'}`}>
+              {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()} Words
+            </Badge>
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-zinc-900 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm">
+              <Wallet className="w-3 h-3 text-emerald-400" />
+              {wordBalance.toLocaleString()} Credits
+            </div>
+          </div>
         </div>
         <Textarea 
           value={input} 
@@ -107,17 +178,25 @@ export default function AIHumanizer({
         <Button 
           onClick={() => handleProcess()} 
           disabled={isProcessing || !input.trim() || isOverLimit} 
-          className="w-full bg-black hover:bg-zinc-800 text-white rounded-[24px] py-8 font-black uppercase text-xs tracking-[0.2em] shadow-xl mt-8 flex items-center justify-center gap-4 shrink-0"
+          className="w-full bg-black hover:bg-zinc-800 text-white rounded-[24px] py-10 font-black uppercase text-xs tracking-[0.2em] shadow-xl mt-8 flex items-center justify-center gap-4 shrink-0 transition-all active:scale-95"
         >
           {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-blue-400" />}
-          {isProcessing ? 'Humanizing...' : `Execute Humanizer (₦1,000)`}
+          {isProcessing ? 'Humanizing...' : wordBalance >= wordCount ? 'Execute (Using Credits)' : `Refill & Execute (₦1,000)`}
         </Button>
       </div>
 
       {/* Output Section */}
-      <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[600px] animate-in fade-in duration-500">
+      <div className="bg-white border border-[#e5e7eb] rounded-[48px] p-10 shadow-sm flex flex-col h-[650px] animate-in fade-in duration-500">
         <div className="flex justify-between items-center mb-8 shrink-0">
-          <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Result</h2>
+          <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center">
+                <UserCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-[#111827] uppercase tracking-tighter">Result</h2>
+                <p className="text-sm text-slate-500 font-medium">Humanized output</p>
+              </div>
+            </div>
           {output && (
             <Button 
               onClick={handleCopy} 

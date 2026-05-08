@@ -32,9 +32,9 @@ export const academicTools = [
   {
     id: 'plagiarism-checker',
     name: 'Plagiarism Checker',
-    description: 'Enterprise-grade integrity scan. Supports direct document uploads (PDF, DOCX) and text paste. ₦1,500 per 10,000 words.',
+    description: 'Enterprise-grade integrity scan. Supports direct document uploads (PDF, DOCX) and text paste. ₦2,000 per 10,000 words.',
     icon: 'ShieldCheck',
-    pricePerUse: 1500,
+    pricePerUse: 2000,
     category: 'writing',
     isAvailable: true,
     usageCount: 1250,
@@ -42,7 +42,7 @@ export const academicTools = [
   {
     id: 'ai-humanizer',
     name: 'AI Humanizer',
-    description: 'Transform AI-generated text into natural, human-like writing while preserving your original meaning and academic tone.',
+    description: 'Transform AI-generated text into natural, human-like writing. ₦1,000 per 1,000 words. Remaining balance is saved for later.',
     icon: 'UserCheck',
     pricePerUse: 1000,
     category: 'writing',
@@ -82,9 +82,9 @@ export const academicTools = [
   {
     id: 'language-converter',
     name: 'Language Converter',
-    description: 'Convert and refine text across 20+ languages, including Nigerian Pidgin, Yoruba, Igbo, Hausa, and global languages. Supports up to 1000 words.',
+    description: 'Convert and refine text across 20+ languages. ₦1,000 per 2,000 words. Remaining balance is saved for later.',
     icon: 'SpellCheck',
-    pricePerUse: 500,
+    pricePerUse: 1000,
     category: 'writing',
     isAvailable: true,
     usageCount: 1560,

@@ -4,13 +4,15 @@ import {
   ShieldCheck, RefreshCw, Upload, 
   FileText, AlertTriangle, ExternalLink,
   Check, Zap, Search, Layers,
-  Timer, FileSignature
+  Timer, FileSignature, Wallet
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Badge } from '@/components/marketplace/ui/badge';
 import { toast } from 'sonner';
 import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '@/contexts/marketplace/UserContext';
 
 // Initialize PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -23,15 +25,32 @@ export default function PlagiarismChecker({
   setShowPaymentDialog,
   setCustomPrice
 }) {
+  const { user } = useUser();
   const [inputText, setInputText] = useState('');
   const [fileName, setFileName] = useState('');
   const [result, setResult] = useState(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [scanStatus, setScanStatus] = useState('idle'); // idle, processing, completed
+  const [wordBalance, setWordBalance] = useState(0);
 
   // Price Calculation
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
-  const currentPrice = Math.max(1500, Math.ceil(wordCount / 10000) * 1500); 
+  const currentPrice = 2000; // Fixed refill price
+
+  useEffect(() => {
+    if (user) fetchBalance();
+  }, [user]);
+
+  const fetchBalance = async () => {
+    const { data } = await supabase
+      .from('tool_word_balances')
+      .select('balance')
+      .eq('user_id', user.id)
+      .eq('tool_id', 'plagiarism-checker')
+      .maybeSingle();
+    
+    if (data) setWordBalance(data.balance);
+  };
 
   useEffect(() => {
     if (setCustomPrice) setCustomPrice(currentPrice);
@@ -41,7 +60,7 @@ export default function PlagiarismChecker({
   // Handle Payment Completion
   useEffect(() => {
     if (hasPaid && inputText.trim()) {
-      startScanProcess();
+      startScanProcess(true);
     }
   }, [hasPaid]);
 
@@ -108,17 +127,48 @@ export default function PlagiarismChecker({
     }
   };
 
-  const startScanProcess = async () => {
+  const startScanProcess = async (skipPaymentCheck = false) => {
     if (!inputText.trim()) return;
     
     if (inputText.length < 100) {
         return toast.error("Content too short. Please provide at least 100 characters for an accurate scan.");
     }
 
+    // Word Balance Logic
+    if (!skipPaymentCheck) {
+      if (wordBalance < wordCount) {
+        setShowPaymentDialog(true);
+        return;
+      }
+    }
+
     setScanStatus('processing');
     setIsProcessing(true);
     
     try {
+      // 1. Refill balance if user just paid
+      if (skipPaymentCheck) {
+        const { data: current } = await supabase
+          .from('tool_word_balances')
+          .select('balance')
+          .eq('user_id', user.id)
+          .eq('tool_id', 'plagiarism-checker')
+          .maybeSingle();
+        
+        const newBalance = (current?.balance || 0) + 10000;
+        
+        await supabase
+          .from('tool_word_balances')
+          .upsert({ 
+            user_id: user.id, 
+            tool_id: 'plagiarism-checker', 
+            balance: newBalance,
+            updated_at: new Date().toISOString()
+          });
+        
+        setWordBalance(newBalance);
+      }
+
       const response = await fetch('/api/marketplace/tools/plagiarism-checker', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -128,12 +178,26 @@ export default function PlagiarismChecker({
       const data = await response.json();
 
       if (!response.ok) {
-          if (response.status === 403) {
-              throw new Error("Access Denied: Please verify your plagiarism service API key and credit balance.");
-          }
           throw new Error(data.error || 'Scan failed');
       }
       
+      // 2. Deduct words from balance
+      const { data: finalBalData } = await supabase
+        .from('tool_word_balances')
+        .select('balance')
+        .eq('user_id', user.id)
+        .eq('tool_id', 'plagiarism-checker')
+        .single();
+      
+      const updatedBalance = Math.max(0, finalBalData.balance - wordCount);
+      
+      await supabase
+        .from('tool_word_balances')
+        .update({ balance: updatedBalance })
+        .eq('user_id', user.id)
+        .eq('tool_id', 'plagiarism-checker');
+
+      setWordBalance(updatedBalance);
       setResult(data.data);
       setScanStatus('completed');
       setHasPaid(false);
@@ -166,8 +230,12 @@ export default function PlagiarismChecker({
           <Badge className="bg-zinc-800 text-zinc-300 border-none px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
             {wordCount.toLocaleString()} Words
           </Badge>
+          <div className="flex items-center gap-1.5 px-4 py-1.5 bg-white/10 text-white rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">
+              <Wallet className="w-4 h-4 text-emerald-400" />
+              {wordBalance.toLocaleString()} Credits
+          </div>
           <Badge className="bg-white text-black border-none px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest">
-            Scan Fee: ₦{currentPrice.toLocaleString()}
+            Refill: ₦2,000 / 10k Words
           </Badge>
         </div>
       </div>
