@@ -85,16 +85,16 @@ export default function MarketplaceHomePage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(96,165,250,0.05),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.05),transparent_50%)]" />
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+          <div className="grid lg:grid-cols-2 gap-10 md:gap-12 items-center">
             {/* Left content */}
             <div className="text-center lg:text-left">
               <div className="hero-title">
-                <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-zinc-100 border border-zinc-200 rounded-full text-zinc-900 text-xs font-bold uppercase tracking-wider mb-6">
-                  <GraduationCap className="w-3.5 h-3.5" />
+                <span className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 bg-zinc-100 border border-zinc-200 rounded-full text-zinc-900 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-6">
+                  <GraduationCap className="w-3 h-3 md:w-3.5 md:h-3.5" />
                   Official Academic Marketplace
                 </span>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#111827] leading-[1.1] mb-6 tracking-tight">
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-[#111827] leading-[1.1] mb-6 tracking-tight uppercase">
                   The Gold Standard for{' '}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                     Academic Projects.
@@ -102,31 +102,31 @@ export default function MarketplaceHomePage() {
                 </h1>
               </div>
               
-              <p className="hero-subtitle text-lg sm:text-xl text-[#6b7280] mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              <p className="hero-subtitle text-base md:text-xl text-[#6b7280] mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
                 Unlock access to thousands of vetted, high-quality projects across Engineering, 
                 Science, and the Arts. Buy premium work or sell your own to a global audience.
               </p>
 
-              <div className="hero-cta flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Link href="/marketplace/projects">
+              <div className="hero-cta flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start">
+                <Link href="/marketplace/projects" className="w-full sm:w-auto">
                   <Button 
                     size="lg" 
-                    className="bg-[#111827] hover:bg-black text-white px-8 py-6 text-base font-semibold rounded-full shadow-lg transition-all"
+                    className="w-full sm:w-auto bg-[#111827] hover:bg-black text-white px-8 py-6 text-sm md:text-base font-black uppercase tracking-widest rounded-full shadow-lg transition-all"
                   >
-                    <ShoppingBag className="w-5 h-5 mr-2" />
+                    <ShoppingBag className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                     Browse Catalog
                   </Button>
                 </Link>
                 
                 {user?.isSeller ? (
-                  <Link href="/marketplace/dashboard">
+                  <Link href="/marketplace/dashboard" className="w-full sm:w-auto">
                     <Button 
                       size="lg" 
                       variant="outline"
-                      className="border-[#111827] border-2 bg-white text-[#111827] hover:bg-zinc-50 px-8 py-6 text-base font-bold rounded-full shadow-sm"
+                      className="w-full sm:w-auto border-[#111827] border-2 bg-white text-[#111827] hover:bg-zinc-50 px-8 py-6 text-sm md:text-base font-black uppercase tracking-widest rounded-full shadow-sm"
                     >
-                      <LayoutDashboard className="w-5 h-5 mr-2" />
-                      Seller Dashboard
+                      <LayoutDashboard className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                      Dashboard
                     </Button>
                   </Link>
                 ) : sellerStatus === 'pending' ? (
@@ -134,33 +134,33 @@ export default function MarketplaceHomePage() {
                     onClick={() => setShowPendingModal(true)}
                     size="lg" 
                     variant="outline"
-                    className="border-blue-600 border-2 bg-white text-blue-600 hover:bg-zinc-50 px-8 py-6 text-base font-bold rounded-full shadow-sm"
+                    className="w-full sm:w-auto border-blue-600 border-2 bg-white text-blue-600 hover:bg-zinc-50 px-8 py-6 text-sm md:text-base font-black uppercase tracking-widest rounded-full shadow-sm"
                   >
-                    <Clock className="w-5 h-5 mr-2" />
-                    Verification Pending
+                    <Clock className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                    Pending
                   </Button>
                 ) : (
-                  <Link href="/marketplace/seller-setup">
+                  <Link href="/marketplace/seller-setup" className="w-full sm:w-auto">
                     <Button 
                       size="lg" 
                       variant="outline"
-                      className="border-[#e5e7eb] bg-white text-[#111827] hover:bg-zinc-50 px-8 py-6 text-base font-semibold rounded-full shadow-sm"
+                      className="w-full sm:w-auto border-[#e5e7eb] bg-white text-[#111827] hover:bg-zinc-50 px-8 py-6 text-sm md:text-base font-black uppercase tracking-widest rounded-full shadow-sm"
                     >
-                      <UserCheck className="w-5 h-5 mr-2" />
-                      Become a Seller
+                      <UserCheck className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                      Sell Work
                     </Button>
                   </Link>
                 )}
               </div>
 
-              <div className="mt-8 flex items-center justify-center lg:justify-start gap-6">
+              <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-4 md:gap-6">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-zinc-600">Vetted Content</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-600" />
+                  <span className="text-xs md:text-sm font-bold text-zinc-600 uppercase tracking-tighter">Vetted Content</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-zinc-600">Secure Payments</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-green-600" />
+                  <span className="text-xs md:text-sm font-bold text-zinc-600 uppercase tracking-tighter">Secure Payments</span>
                 </div>
               </div>
             </div>
@@ -198,37 +198,37 @@ export default function MarketplaceHomePage() {
       </section>
 
       {/* Tools Section */}
-      <section ref={toolsRef} className="py-24 bg-white">
+      <section ref={toolsRef} className="py-16 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-12 gap-6">
             <div>
-              <span className="text-blue-600 font-black text-[10px] uppercase tracking-[0.3em] mb-3 block">Research Engine</span>
-              <h2 className="text-3xl sm:text-4xl font-black text-[#111827] tracking-tight">Academic Power Tools</h2>
+              <span className="text-blue-600 font-black text-[9px] md:text-[10px] uppercase tracking-[0.3em] mb-3 block">Research Engine</span>
+              <h2 className="text-2xl md:text-4xl font-black text-[#111827] tracking-tight uppercase">Academic Power Tools</h2>
             </div>
             <Link href="/marketplace/tools">
-              <Button variant="ghost" className="text-zinc-500 hover:text-black font-bold group">
-                View All Research Tools
+              <Button variant="ghost" className="text-zinc-500 hover:text-black font-black uppercase text-[10px] md:text-xs tracking-widest group">
+                View All Tools
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {academicTools.slice(0, 3).map((tool) => (
-              <div key={tool.id} className="tool-card group bg-[#f8f9fc] border border-[#e5e7eb] rounded-[32px] p-8 hover:bg-white hover:shadow-2xl hover:border-blue-200 transition-all duration-500">
-                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-500 border border-zinc-100">
+              <div key={tool.id} className="tool-card group bg-[#f8f9fc] border border-[#e5e7eb] rounded-[28px] md:rounded-[32px] p-6 md:p-8 hover:bg-white hover:shadow-2xl hover:border-blue-200 transition-all duration-500">
+                <div className="w-12 h-12 md:w-14 md:h-14 bg-white rounded-xl md:rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform duration-500 border border-zinc-100">
                   <Wrench className="w-6 h-6 text-blue-600" />
                 </div>
-                <h3 className="text-xl font-bold text-[#111827] mb-3 tracking-tight">{tool.name}</h3>
-                <p className="text-[#6b7280] text-sm leading-relaxed mb-6 font-medium">
+                <h3 className="text-lg md:text-xl font-black text-[#111827] mb-3 tracking-tight uppercase">{tool.name}</h3>
+                <p className="text-[#6b7280] text-xs md:text-sm leading-relaxed mb-6 font-medium line-clamp-3">
                   {tool.description}
                 </p>
-                <div className="flex items-center justify-between pt-6 border-t border-zinc-100">
-                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                <div className="flex items-center justify-between pt-4 md:pt-6 border-t border-zinc-100">
+                  <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">
                     {tool.usageCount.toLocaleString()} USES
                   </span>
                   <Link href={`/marketplace/tools/${tool.id}`}>
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-5">
+                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-4 md:px-5 font-black uppercase text-[9px] md:text-[10px] tracking-widest h-9 md:h-10">
                       Use Tool
                     </Button>
                   </Link>
@@ -240,42 +240,42 @@ export default function MarketplaceHomePage() {
       </section>
 
       {/* Market Preview Section */}
-      <section ref={marketRef} className="py-24 bg-[#f8f9fc] border-y border-[#e5e7eb]">
+      <section ref={marketRef} className="py-16 md:py-24 bg-[#f8f9fc] border-y border-[#e5e7eb]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-12 gap-6">
             <div>
-              <span className="text-indigo-600 font-black text-[10px] uppercase tracking-[0.3em] mb-3 block">Live Marketplace</span>
-              <h2 className="text-3xl sm:text-4xl font-black text-[#111827] tracking-tight">Recent Technical Blueprints</h2>
+              <span className="text-indigo-600 font-black text-[9px] md:text-[10px] uppercase tracking-[0.3em] mb-3 block">Live Marketplace</span>
+              <h2 className="text-2xl md:text-4xl font-black text-[#111827] tracking-tight uppercase">Technical Blueprints</h2>
             </div>
             <Link href="/marketplace/projects">
-              <Button className="bg-zinc-900 hover:bg-black text-white rounded-full px-8 shadow-xl">
-                Explore Full Market
+              <Button className="bg-zinc-900 hover:bg-black text-white rounded-full px-8 py-6 font-black uppercase text-[10px] md:text-xs tracking-widest shadow-xl">
+                Explore Market
               </Button>
             </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {projects.slice(0, 4).map((project) => (
-              <div key={project.id} className="market-card group bg-white border border-[#e5e7eb] rounded-[32px] overflow-hidden hover:shadow-2xl transition-all duration-500">
-                <div className="relative h-48 overflow-hidden p-2">
-                  <img src={project.thumbnail} className="w-full h-full object-cover rounded-[24px] group-hover:scale-110 transition-transform duration-700" alt="" />
+              <div key={project.id} className="market-card group bg-white border border-[#e5e7eb] rounded-[24px] md:rounded-[32px] overflow-hidden hover:shadow-2xl transition-all duration-500">
+                <div className="relative h-40 md:h-48 overflow-hidden p-2">
+                  <img src={project.thumbnail} className="w-full h-full object-cover rounded-[18px] md:rounded-[24px] group-hover:scale-110 transition-transform duration-700" alt="" />
                   <div className="absolute top-3 left-3">
-                    <span className="px-3 py-1 bg-white text-[#111827] text-[10px] font-bold uppercase tracking-wider rounded-full shadow-md border border-zinc-100">
+                    <span className="px-2.5 py-1 bg-white/90 backdrop-blur-sm text-[#111827] text-[8px] md:text-[9px] font-black uppercase tracking-wider rounded-full shadow-md border border-zinc-100">
                       {project.faculty}
                     </span>
                   </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-[#111827] mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">{project.title}</h3>
+                <div className="p-5 md:p-6">
+                  <h3 className="font-bold text-sm md:text-base text-[#111827] mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{project.title}</h3>
                   <div className="flex items-center gap-1.5 mb-4">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    <span className="text-xs font-bold text-zinc-900">{project.rating}</span>
-                    <span className="text-xs text-zinc-400 font-medium">({project.reviews} reviews)</span>
+                    <Star className="w-3 h-3 md:w-3.5 md:h-3.5 fill-amber-400 text-amber-400" />
+                    <span className="text-[10px] md:text-xs font-black text-zinc-900">{project.rating}</span>
+                    <span className="text-[10px] md:text-xs text-zinc-400 font-bold uppercase tracking-tighter">({project.reviews})</span>
                   </div>
                   <div className="flex items-center justify-between pt-4 border-t border-zinc-50">
-                    <span className="font-black text-zinc-900">{formatCurrency(project.price)}</span>
+                    <span className="font-black text-zinc-900 text-sm md:text-base">{formatCurrency(project.price)}</span>
                     <Link href={`/marketplace/project/${project.id}`}>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 hover:bg-zinc-100">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 hover:bg-zinc-100 border border-zinc-100">
                         <ArrowRight className="w-4 h-4" />
                       </Button>
                     </Link>
@@ -288,54 +288,54 @@ export default function MarketplaceHomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-zinc-900 relative overflow-hidden text-white">
+      <section className="py-16 md:py-24 bg-zinc-900 relative overflow-hidden text-white">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-white/5 to-transparent" />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6 tracking-tight">
-            Ready to Monetize your Academic Work?
+          <h2 className="text-2xl md:text-4xl font-black text-white mb-6 tracking-tight uppercase">
+            Monetize your Academic Work
           </h2>
-          <p className="text-zinc-400 text-lg mb-10 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-zinc-400 text-sm md:text-lg mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
             Join thousands of verified student sellers earning from their hard-earned projects. 
-            Sign up today and start listing your work.
+            Sign up today and start listing your work to a global audience.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {user?.isSeller ? (
-              <Link href="/marketplace/dashboard">
+              <Link href="/marketplace/dashboard" className="w-full sm:w-auto">
                 <Button 
                   size="lg" 
-                  className="bg-white text-zinc-900 hover:bg-zinc-100 px-10 py-7 text-base font-black rounded-full shadow-2xl"
+                  className="w-full sm:w-auto bg-white text-zinc-900 hover:bg-zinc-100 px-10 py-7 text-xs md:text-base font-black uppercase tracking-widest rounded-full shadow-2xl"
                 >
-                  <LayoutDashboard className="w-5 h-5 mr-2" />
-                  Seller Dashboard
+                  <LayoutDashboard className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                  Dashboard
                 </Button>
               </Link>
             ) : sellerStatus === 'pending' ? (
               <Button 
                 onClick={() => setShowPendingModal(true)}
                 size="lg" 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-7 text-base font-black rounded-full shadow-2xl"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-10 py-7 text-xs md:text-base font-black uppercase tracking-widest rounded-full shadow-2xl"
               >
-                <Clock className="w-5 h-5 mr-2" />
+                <Clock className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                 Review Pending
               </Button>
             ) : (
-              <Link href="/marketplace/seller-setup">
+              <Link href="/marketplace/seller-setup" className="w-full sm:w-auto">
                 <Button 
                   size="lg" 
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-7 text-base font-black rounded-full shadow-2xl"
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-10 py-7 text-xs md:text-base font-black uppercase tracking-widest rounded-full shadow-2xl"
                 >
-                  <Sparkles className="w-5 h-5 mr-2" />
+                  <Sparkles className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                   Become a Seller
                 </Button>
               </Link>
             )}
-            <Link href="/marketplace/projects">
+            <Link href="/marketplace/projects" className="w-full sm:w-auto">
               <Button 
                 size="lg" 
                 variant="outline"
-                className="border-zinc-700 bg-transparent text-white hover:bg-zinc-800 px-10 py-7 text-base font-bold rounded-full"
+                className="w-full sm:w-auto border-zinc-700 bg-transparent text-white hover:bg-zinc-800 px-10 py-7 text-xs md:text-base font-black uppercase tracking-widest rounded-full"
               >
-                <ShoppingBag className="w-5 h-5 mr-2" />
+                <ShoppingBag className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                 Browse Catalog
               </Button>
             </Link>
@@ -366,37 +366,39 @@ export default function MarketplaceHomePage() {
       )}
 
       {/* Footer */}
-      <footer className="py-16 bg-white border-t border-[#e5e7eb]">
+      <footer className="py-12 md:py-16 bg-white border-t border-[#e5e7eb]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-12 mb-12">
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-6">
-                <img src="/favicon.ico" alt="W3 WriteLab" className="w-10 h-10" />
-                <span className="text-2xl font-black text-indigo-600 tracking-tight">W3 Marketplace</span>
+                <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
+                    <span className="text-white font-black text-xs">W3</span>
+                </div>
+                <span className="text-xl md:text-2xl font-black text-zinc-900 tracking-tight uppercase">W3 Marketplace</span>
               </div>
-              <p className="text-zinc-500 text-base max-w-md leading-relaxed font-medium">
+              <p className="text-zinc-500 text-sm md:text-base max-w-md leading-relaxed font-medium">
                 The leading platform for verified academic work. Connecting student researchers with premium blueprints and technical documentation.
               </p>
             </div>
             <div>
-              <h4 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-6">Platform</h4>
+              <h4 className="text-xs font-black text-zinc-900 uppercase tracking-[0.2em] mb-6">Platform</h4>
               <ul className="space-y-4">
-                <li><Link href="/marketplace/projects" className="text-zinc-500 hover:text-black font-medium transition-colors">Project Catalog</Link></li>
-                <li><Link href="/marketplace/tools" className="text-zinc-500 hover:text-black font-medium transition-colors">Research Tools</Link></li>
-                <li><Link href="/marketplace/dashboard" className="text-zinc-500 hover:text-black font-medium transition-colors">User Dashboard</Link></li>
+                <li><Link href="/marketplace/projects" className="text-xs md:text-sm text-zinc-500 hover:text-black font-bold uppercase tracking-tight transition-colors">Project Catalog</Link></li>
+                <li><Link href="/marketplace/tools" className="text-xs md:text-sm text-zinc-500 hover:text-black font-bold uppercase tracking-tight transition-colors">Research Tools</Link></li>
+                <li><Link href="/marketplace/dashboard" className="text-xs md:text-sm text-zinc-500 hover:text-black font-bold uppercase tracking-tight transition-colors">User Dashboard</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-sm font-black text-zinc-900 uppercase tracking-widest mb-6">Seller Hub</h4>
+              <h4 className="text-xs font-black text-zinc-900 uppercase tracking-[0.2em] mb-6">Seller Hub</h4>
               <ul className="space-y-4">
-                <li><Link href="/marketplace/seller-setup" className="text-zinc-500 hover:text-black font-medium transition-colors">Become a Seller</Link></li>
-                <li><Link href="/marketplace/dashboard?tab=purchases" className="text-zinc-500 hover:text-black font-medium transition-colors">Seller Guidelines</Link></li>
+                <li><Link href="/marketplace/seller-setup" className="text-xs md:text-sm text-zinc-500 hover:text-black font-bold uppercase tracking-tight transition-colors">Become a Seller</Link></li>
+                <li><Link href="/marketplace/dashboard?tab=purchases" className="text-xs md:text-sm text-zinc-500 hover:text-black font-bold uppercase tracking-tight transition-colors">Seller Guidelines</Link></li>
                 <li><Link href="/marketplace/dashboard?tab=wallet" className="text-zinc-500 hover:text-black font-medium transition-colors">Payout System</Link></li>
               </ul>
             </div>
           </div>
-          <div className="pt-12 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-zinc-400 text-[13px] font-medium">
+          <div className="pt-8 md:pt-12 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
+            <p className="text-zinc-400 text-[11px] md:text-[13px] font-bold uppercase tracking-widest">
               © 2026 W3write Lab Marketplace. Independent Platform.
             </p>
           </div>
