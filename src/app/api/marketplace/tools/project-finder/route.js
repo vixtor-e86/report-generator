@@ -65,8 +65,10 @@ export async function POST(request) {
 
     let data;
     try {
-      const jsonString = aiResponse.content.replace(/```json/g, '').replace(/```/g, '').trim();
-      data = JSON.parse(jsonString);
+      const content = aiResponse.content;
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No JSON found in response");
+      data = JSON.parse(jsonMatch[0]);
     } catch (parseError) {
       console.error('Project Finder Parse Error:', aiResponse.content);
       throw new Error('AI failed to structure the project topics. Please try again.');

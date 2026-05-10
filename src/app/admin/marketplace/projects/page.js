@@ -107,13 +107,13 @@ export default function ProjectApprovalAdmin() {
             <Icons.Plus className="w-4 h-4" />
             Upload New Project
           </Link>
-          <div className="flex gap-2 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex gap-1 bg-zinc-100 p-1 rounded-xl border border-zinc-200 shadow-sm">
           {['pending', 'active', 'rejected'].map((s) => (
             <button
               key={s}
               onClick={() => setFilter(s)}
-              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                filter === s ? 'bg-zinc-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
+              className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                filter === s ? 'bg-white text-black shadow-sm' : 'text-zinc-400 hover:text-zinc-600'
               }`}
             >
               {s}

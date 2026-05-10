@@ -62,9 +62,9 @@ export const academicTools = [
   {
     id: 'reference-finder',
     name: 'Reference Finder',
-    description: 'Find relevant academic papers and generate properly formatted citations in APA, MLA, Chicago, or Harvard style.',
+    description: 'Find relevant academic papers and generate properly formatted citations. Basic search is FREE; only Deep Search requires credits.',
     icon: 'BookOpen',
-    pricePerUse: 200,
+    pricePerUse: 0,
     category: 'research',
     isAvailable: true,
     usageCount: 2100,

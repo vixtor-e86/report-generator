@@ -134,7 +134,7 @@ export default function ProjectFinder({
             </div>
             
             <Button 
-              onClick={handleSearch}
+              onClick={() => handleSearch(false)}
               disabled={isProcessing || !query.trim()}
               className="w-full sm:w-auto bg-black hover:bg-zinc-800 text-white rounded-[20px] md:rounded-[24px] py-6 md:py-8 px-8 md:px-12 font-black uppercase text-[10px] md:text-xs tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 md:gap-4 transition-all"
             >
