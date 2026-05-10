@@ -55,14 +55,38 @@ export default function MarketplaceOverview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Link href="/admin/marketplace/wallets" className="block p-8 bg-white border border-slate-200 rounded-[40px] hover:border-blue-600 transition-all group">
+        <Link href="/admin/marketplace/projects" className="block p-8 bg-white border border-slate-200 rounded-[40px] hover:border-blue-600 transition-all group">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-xl font-black text-slate-900">Manage Wallets</h3>
-              <p className="text-sm text-slate-500 mt-1 font-medium">View balances, spending, and user activity</p>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Approve Blueprints</h3>
+              <p className="text-sm text-slate-500 mt-1 font-medium">Verify and authorize technical project listings</p>
             </div>
             <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center group-hover:bg-blue-50 transition-colors">
               <svg className="w-6 h-6 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/admin/marketplace/ebooks" className="block p-8 bg-white border border-slate-200 rounded-[40px] hover:border-indigo-600 transition-all group">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Approve Ebooks</h3>
+              <p className="text-sm text-slate-500 mt-1 font-medium">Review digital book previews and metadata</p>
+            </div>
+            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
+              <svg className="w-6 h-6 text-slate-400 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/admin/marketplace/wallets" className="block p-8 bg-white border border-slate-200 rounded-[40px] hover:border-zinc-900 transition-all group">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Manage Wallets</h3>
+              <p className="text-sm text-slate-500 mt-1 font-medium">View balances, spending, and user activity</p>
+            </div>
+            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center group-hover:bg-zinc-50 transition-colors">
+              <svg className="w-6 h-6 text-slate-400 group-hover:text-black transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
             </div>
           </div>
         </Link>
