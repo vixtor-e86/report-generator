@@ -20,11 +20,18 @@ export default function ProjectFinder({
   const [researchType, setResearchType] = useState('any');
   const [industry, setIndustry] = useState('');
   const [results, setResults] = useState([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const handleSearch = async () => {
+  const handleSearch = async (loadMore = false) => {
     if (!query.trim()) return toast.error("Please enter a topic or area of interest");
 
-    setIsProcessing(true);
+    if (loadMore) {
+      setIsLoadingMore(true);
+    } else {
+      setIsProcessing(true);
+      setResults([]);
+    }
+
     try {
       const response = await fetch('/api/marketplace/tools/project-finder', {
         method: 'POST',
@@ -34,17 +41,25 @@ export default function ProjectFinder({
           department,
           level,
           researchType,
-          industry
+          industry,
+          existingTopics: loadMore ? results.map(r => r.title) : []
         })
       });
       const data = await response.json();
       if (data.error) throw new Error(data.error);
-      setResults(data.data);
-      toast.success('Found some great project topics for you!');
+      
+      if (loadMore) {
+        setResults(prev => [...prev, ...data.data]);
+        toast.success('Found more topics for you!');
+      } else {
+        setResults(data.data);
+        toast.success('Found some great project topics for you!');
+      }
     } catch (err) {
       toast.error(err.message);
     } finally {
       setIsProcessing(false);
+      setIsLoadingMore(false);
     }
   };
 
@@ -212,6 +227,29 @@ export default function ProjectFinder({
         )}
       </div>
 
+      {results.length > 0 && !isProcessing && (
+        <div className="flex justify-center pt-8">
+          <Button 
+            onClick={() => handleSearch(true)}
+            disabled={isLoadingMore}
+            variant="outline"
+            className="border-zinc-200 hover:border-black hover:bg-black hover:text-white rounded-full px-10 py-6 font-black uppercase text-[10px] tracking-widest transition-all h-auto shadow-sm flex items-center gap-3"
+          >
+            {isLoadingMore ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Finding More...
+              </>
+            ) : (
+              <>
+                <ArrowRight className="w-4 h-4" />
+                Load More Topics
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
       {/* Info Card */}
       <div className="bg-zinc-900 rounded-[32px] md:rounded-[48px] p-6 md:p-10 text-white relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-blue-600/10 blur-[60px] md:blur-[100px] rounded-full group-hover:bg-blue-600/20 transition-all duration-700" />
@@ -225,9 +263,6 @@ export default function ProjectFinder({
               When you find a topic you like, use the <span className="text-white font-bold">Reference Finder</span> to get preliminary sources and the <span className="text-white font-bold">Slide Generator</span> to prepare your project proposal presentation.
             </p>
           </div>
-          <Button variant="outline" className="w-full md:w-auto border-blue-500/50 hover:bg-blue-600 hover:text-white text-blue-400 rounded-full px-8 py-5 md:py-6 font-black uppercase text-[9px] md:text-[10px] tracking-widest backdrop-blur-md transition-all h-auto">
-            Learn More
-          </Button>
         </div>
       </div>
     </div>

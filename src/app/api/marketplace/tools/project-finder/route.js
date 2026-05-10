@@ -3,7 +3,7 @@ import { callAI } from '@/lib/aiProvider';
 
 export async function POST(request) {
   try {
-    const { query, department, level, researchType, industry } = await request.json();
+    const { query, department, level, researchType, industry, existingTopics = [] } = await request.json();
 
     if (!query) {
       return NextResponse.json({ error: 'Search query or topic interest is required' }, { status: 400 });
@@ -18,6 +18,10 @@ export async function POST(request) {
     ${researchType && researchType !== 'any' ? `Research Methodology: ${researchType}` : ''}
     ${industry ? `Industry/Sector Focus: ${industry}` : ''}
     
+    ${existingTopics.length > 0 ? `IMPORTANT: The student has already seen these topics:
+    ${existingTopics.join('\n')}
+    Please generate 10 NEW and COMPLETELY DIFFERENT topics that provide fresh perspectives and avoid repeating the ones listed above.` : ''}
+
     Instructions:
     1. Search your knowledge base for the latest trends and "low-hanging fruit" research gaps in this field.
     2. Provide 10 distinct, well-defined project topics.
