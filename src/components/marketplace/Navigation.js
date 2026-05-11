@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   Menu, X, Home, ShoppingBag, Wrench, User, 
-  Wallet, Bell, ChevronDown, LayoutDashboard, CheckCircle2
+  Wallet, Bell, ChevronDown, LayoutDashboard, CheckCircle2,
+  Book
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/marketplace/ui/sheet';
@@ -178,15 +179,26 @@ export default function Navigation() {
                       </Link>
                     </DropdownMenuItem>
                     {user?.isSeller && (
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/marketplace/upload-project"
-                          className="text-[#6b7280] hover:text-black hover:bg-[#f3f4f6] cursor-pointer rounded-lg m-1"
-                        >
-                          <Wrench className="w-4 h-4 mr-2" />
-                          Upload Project
-                        </Link>
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/marketplace/upload-project"
+                            className="text-[#6b7280] hover:text-black hover:bg-[#f3f4f6] cursor-pointer rounded-lg m-1"
+                          >
+                            <Wrench className="w-4 h-4 mr-2" />
+                            Upload Project
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/marketplace/upload-ebook"
+                            className="text-[#6b7280] hover:text-black hover:bg-[#f3f4f6] cursor-pointer rounded-lg m-1"
+                          >
+                            <Book className="w-4 h-4 mr-2" />
+                            Upload Ebook
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
                     )}
                     <DropdownMenuSeparator className="bg-[#e5e7eb]" />
                     <DropdownMenuItem asChild>
