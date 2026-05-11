@@ -608,7 +608,7 @@ export default function Dashboard() {
                 <div className="w-14 h-14 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                 </div>
-              </div>
+              </div>  
             </a>
             
             <button 

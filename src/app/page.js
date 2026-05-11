@@ -387,9 +387,21 @@ export default function Home() {
                 <img src="/favicon.ico" alt="W3 WriteLab" className="w-8 h-8" />
                 <span className="text-xl font-bold">WriteLab</span>
               </Link>
-              <p className="text-sm leading-relaxed">
+              <p className="text-sm leading-relaxed mb-6">
                 Empowering students with AI tools to document their innovations efficiently and professionally.
               </p>
+              <div className="space-y-4 text-xs">
+                <div className="flex items-start gap-3">
+                  <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  <p className="leading-relaxed">
+                    NO.1, ALHASSAN EGBA STREET, ANGWAN CHAIRMAN, ADO, NASARAWA STATE, NIGERIA
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg className="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                  <a href="mailto:w3writelab@gmail.com" className="hover:text-white transition-colors">w3writelab@gmail.com</a>
+                </div>
+              </div>
             </div>
             
             <div>
