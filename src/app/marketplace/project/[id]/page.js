@@ -231,10 +231,10 @@ export default function ProjectDetailPage({ params }) {
             {/* Content Discovery */}
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="bg-zinc-100 border border-zinc-200 p-1 mb-8 rounded-xl shadow-sm inline-flex">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-400 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Abstract</TabsTrigger>
-                <TabsTrigger value="chapter1" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-400 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Chapter 1</TabsTrigger>
+                <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-500 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Abstract</TabsTrigger>
+                <TabsTrigger value="chapter1" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-500 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Chapter 1</TabsTrigger>
                 {project.code_snippet && (
-                    <TabsTrigger value="code" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-400 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Code Sample</TabsTrigger>
+                    <TabsTrigger value="code" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-500 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Code Sample</TabsTrigger>
                 )}
               </TabsList>
 

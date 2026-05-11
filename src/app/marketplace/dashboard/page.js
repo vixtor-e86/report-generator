@@ -24,6 +24,7 @@ export default function MarketplaceDashboardPage() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   
   // Seller Hub States
+  const [sellerWallet, setSellerWallet] = useState(null);
   const [myItems, setMyItems] = useState([]);
   const [loadingSeller, setLoadingSeller] = useState(false);
 
@@ -88,8 +89,8 @@ export default function MarketplaceDashboardPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="sticky top-[70px] z-30 bg-[#f8f9fc]/95 backdrop-blur-md pt-2 pb-6 mb-4">
             <TabsList className="bg-zinc-100 border border-zinc-200 p-1 rounded-xl shadow-sm inline-flex">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-400 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Overview</TabsTrigger>
-              <TabsTrigger value="billing" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-400 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Billing</TabsTrigger>
+              <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-500 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Overview</TabsTrigger>
+              <TabsTrigger value="billing" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-500 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Billing</TabsTrigger>
               {user?.isSeller && (
                 <TabsTrigger value="seller" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg text-blue-600 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all ml-1">Seller Hub</TabsTrigger>
               )}
