@@ -108,7 +108,7 @@ export default function AdminDashboard() {
         {/* Projects Today */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-slate-500 text-sm font-medium uppercase tracking-wider">Projects Today</h3>
+            <h3 className="text-slate-500 text-sm font-medium uppercase tracking-wider">Submissions Today</h3>
             <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -116,10 +116,11 @@ export default function AdminDashboard() {
             </div>
           </div>
           <p className="text-3xl font-bold text-slate-900">{stats.projectsToday.toLocaleString()}</p>
-          <div className="mt-2 text-xs flex gap-2">
-            <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">Free: {stats.projectsBreakdown?.free || 0}</span>
-            <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded">Std: {stats.projectsBreakdown?.standard || 0}</span>
-            <span className="px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded">Prem: {stats.projectsBreakdown?.premium || 0}</span>
+          <div className="mt-2 text-[9px] flex flex-wrap gap-1.5 font-bold uppercase tracking-tighter">
+            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full border border-slate-200">Free: {stats.projectsBreakdown?.free || 0}</span>
+            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">Std: {stats.projectsBreakdown?.standard || 0}</span>
+            <span className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-full border border-purple-100">Prem: {stats.projectsBreakdown?.premium || 0}</span>
+            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100">Ebook: {stats.projectsBreakdown?.ebooks || 0}</span>
           </div>
         </div>
 

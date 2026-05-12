@@ -56,7 +56,7 @@ export async function GET(request) {
     } catch (e) { console.error('[AdminStats] Rev Exception:', e); }
 
     // 3. Projects Today & Breakdown
-    let breakdown = { free: 0, standard: 0, premium: 0 };
+    let breakdown = { free: 0, standard: 0, premium: 0, ebooks: 0 };
     let projectsToday = 0;
     try {
       const today = new Date();
@@ -81,12 +81,19 @@ export async function GET(request) {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', todayISO);
 
+      // Ebooks Today
+      const { count: ebookTodayCount } = await supabaseAdmin
+        .from('marketplace_ebooks')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', todayISO);
+
       breakdown = { 
         free: freeTodayCount || 0, 
         standard: stdTodayCount || 0, 
-        premium: premTodayCount || 0 
+        premium: premTodayCount || 0,
+        ebooks: ebookTodayCount || 0
       };
-      projectsToday = (freeTodayCount || 0) + (stdTodayCount || 0) + (premTodayCount || 0);
+      projectsToday = (freeTodayCount || 0) + (stdTodayCount || 0) + (premTodayCount || 0) + (ebookTodayCount || 0);
 
     } catch (e) { console.error('[AdminStats] Project Exception:', e); }
 
