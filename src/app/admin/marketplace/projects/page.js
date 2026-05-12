@@ -113,7 +113,7 @@ export default function ProjectApprovalAdmin() {
               key={s}
               onClick={() => setFilter(s)}
               className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                filter === s ? 'bg-white text-black shadow-sm' : 'text-zinc-400 hover:text-zinc-600'
+                filter === s ? 'bg-white text-black shadow-sm' : 'text-zinc-500 hover:text-zinc-700'
               }`}
             >
               {s}

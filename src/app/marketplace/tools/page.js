@@ -11,7 +11,6 @@ import {
 import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
 import { Badge } from '@/components/marketplace/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/marketplace/ui/tabs';
 import { academicTools, toolCategories } from '@/data/marketplace/tools';
 import { formatCurrency } from '@/lib/utils';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
@@ -109,15 +108,21 @@ export default function AcademicToolsPage() {
               />
             </div>
 
-            <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full lg:w-auto overflow-x-auto custom-scrollbar">
-              <TabsList className="bg-zinc-100 border border-zinc-200 p-1 h-auto flex flex-nowrap md:flex-wrap rounded-xl min-w-max md:min-w-0">
+            <div className="w-full lg:w-auto overflow-x-auto custom-scrollbar">
+              <div className="bg-zinc-100 border border-zinc-200 p-1 rounded-xl shadow-sm inline-flex min-w-max md:min-w-0">
                 {toolCategories.map((cat) => (
-                  <TabsTrigger key={cat.id} value={cat.id} className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-400 px-4 md:px-6 py-2 md:py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`px-4 md:px-6 py-2 md:py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                      selectedCategory === cat.id ? 'bg-white shadow-sm text-black' : 'text-zinc-500 hover:text-zinc-700'
+                    }`}
+                  >
                     {cat.name}
-                  </TabsTrigger>
+                  </button>
                 ))}
-              </TabsList>
-            </Tabs>
+              </div>
+            </div>
           </div>
         </div>
       </div>

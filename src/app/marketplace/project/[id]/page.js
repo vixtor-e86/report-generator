@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Badge } from '@/components/marketplace/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/marketplace/ui/tabs';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
 import { formatCurrency } from '@/lib/utils';
@@ -31,7 +30,8 @@ export default function ProjectDetailPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [isPurchased, setIsPurchased] = useState(false);
   const [purchasing, setProcessing] = useState(false);
-  const [activeImage, setActiveTab] = useState(0);
+  const [activeImage, setActiveImage] = useState(0);
+  const [activeDetailTab, setActiveDetailTab] = useState('overview'); // overview, chapter1, code
   const [sellerUsername, setSellerUsername] = useState('');
   const [showContactModal, setShowContactModal] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
@@ -228,31 +228,49 @@ export default function ProjectDetailPage({ params }) {
               </div>
             </div>
 
-            {/* Content Discovery */}
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="bg-zinc-100 border border-zinc-200 p-1 mb-8 rounded-xl shadow-sm inline-flex">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-500 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Abstract</TabsTrigger>
-                <TabsTrigger value="chapter1" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-500 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Chapter 1</TabsTrigger>
-                {project.code_snippet && (
-                    <TabsTrigger value="code" className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm rounded-lg text-zinc-500 px-8 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Code Sample</TabsTrigger>
-                )}
-              </TabsList>
+            <div className="bg-zinc-100 border border-zinc-200 p-1 mb-8 rounded-xl shadow-sm inline-flex">
+              <button 
+                onClick={() => setActiveDetailTab('overview')}
+                className={`px-8 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeDetailTab === 'overview' ? 'bg-white shadow-sm text-black' : 'text-zinc-500'}`}
+              >
+                Abstract
+              </button>
+              <button 
+                onClick={() => setActiveDetailTab('chapter1')}
+                className={`px-8 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeDetailTab === 'chapter1' ? 'bg-white shadow-sm text-black' : 'text-zinc-500'}`}
+              >
+                Chapter 1
+              </button>
+              {project.code_snippet && (
+                <button 
+                  onClick={() => setActiveDetailTab('code')}
+                  className={`px-8 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeDetailTab === 'code' ? 'bg-white shadow-sm text-black' : 'text-zinc-500'}`}
+                >
+                  Code Sample
+                </button>
+              )}
+            </div>
 
-              <TabsContent value="overview" className="bg-white border border-zinc-200 rounded-[40px] p-10 shadow-sm animate-in fade-in duration-500">
+            {activeDetailTab === 'overview' && (
+              <div className="bg-white border border-zinc-200 rounded-[40px] p-10 shadow-sm animate-in fade-in duration-500">
                 <h3 className="text-xl font-black text-zinc-900 mb-6 uppercase tracking-tight">Abstract</h3>
                 <div className="prose prose-zinc max-w-none text-zinc-600 font-medium leading-relaxed h-[400px] overflow-y-auto custom-scrollbar pr-4">
                   <ReactMarkdown>{project.abstract}</ReactMarkdown>
                 </div>
-              </TabsContent>
+              </div>
+            )}
 
-              <TabsContent value="chapter1" className="bg-white border border-zinc-200 rounded-[40px] p-10 shadow-sm animate-in fade-in duration-500">
+            {activeDetailTab === 'chapter1' && (
+              <div className="bg-white border border-zinc-200 rounded-[40px] p-10 shadow-sm animate-in fade-in duration-500">
                 <h3 className="text-xl font-black text-zinc-900 mb-6 uppercase tracking-tight">Chapter 1</h3>
                 <div className="prose prose-zinc max-w-none text-zinc-600 font-medium leading-relaxed h-[500px] overflow-y-auto custom-scrollbar pr-4">
                   <ReactMarkdown>{project.chapter_1_preview}</ReactMarkdown>
                 </div>
-              </TabsContent>
+              </div>
+            )}
 
-              <TabsContent value="code" className="bg-zinc-900 border border-zinc-800 rounded-[40px] p-10 shadow-2xl animate-in fade-in duration-500">
+            {activeDetailTab === 'code' && project.code_snippet && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-[40px] p-10 shadow-2xl animate-in fade-in duration-500">
                 <div className="flex justify-between items-center mb-6 text-white">
                   <h3 className="text-xl font-black uppercase tracking-tight">Code Sample</h3>
                   <Badge className="bg-emerald-500 text-black border-none px-3 py-1 rounded-full text-[10px] font-black uppercase">Live Snippet</Badge>
@@ -262,8 +280,8 @@ export default function ProjectDetailPage({ params }) {
                         <code>{project.code_snippet}</code>
                     </pre>
                 </div>
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
           </div>
 
           {/* Right: Pricing and Action */}
