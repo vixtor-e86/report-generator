@@ -82,10 +82,11 @@ export default function UploadEbookPage() {
         }
     } else if (s === 2) {
         const wordCount = formData.previewContent.trim().split(/\s+/).length;
-        if (wordCount < 300) {
-            toast.error(`Preview content must be at least 300 words. Current: ${wordCount}`);
-            return false;
+        if (wordCount < 100) {
+            toast.error(`Preview content must be at least 100 words. Current: ${wordCount}`);
+            return;
         }
+
     } else if (s === 3) {
         if (!formData.mainFile) {
             toast.error("The Ebook file is required");
@@ -280,7 +281,7 @@ export default function UploadEbookPage() {
                     </div>
 
                     <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Exerpt / Preview Content (Min 300 words) <span className="text-red-500">*</span></Label>
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Exerpt / Preview Content (Min 100 words) <span className="text-red-500">*</span></Label>
                         <Textarea 
                             value={formData.previewContent} 
                             onChange={e => setFormData({...formData, previewContent: e.target.value})}
@@ -288,7 +289,7 @@ export default function UploadEbookPage() {
                             className="bg-zinc-50 border-[#e5e7eb] rounded-[32px] p-8 font-medium text-zinc-700 min-h-[400px] focus:border-black leading-relaxed"
                         />
                         <div className="flex justify-end text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                            Words: {formData.previewContent.trim() ? formData.previewContent.trim().split(/\s+/).length : 0} / 300
+                            Words: {formData.previewContent.trim() ? formData.previewContent.trim().split(/\s+/).length : 0} / 100
                         </div>
                     </div>
 

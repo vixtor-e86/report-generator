@@ -837,10 +837,12 @@
   }
 
   .toolbar-left h1 {
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.2;
-    word-break: break-word;
-    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px; /* Limit width to prevent overlap */
   }
 
   .toolbar-left p {

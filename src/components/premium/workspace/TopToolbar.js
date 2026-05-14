@@ -95,22 +95,23 @@ export default function TopToolbar({
         {hasContent && (
           <button 
             onClick={onModify}
+            className="btn-modify"
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
               gap: '8px', 
-              padding: '10px 20px', 
+              padding: '8px 12px', 
               borderRadius: '10px', 
               border: '1px solid #e5e7eb', 
               background: 'white', 
               color: '#111827', 
-              fontSize: '14px', 
+              fontSize: '13px', 
               fontWeight: '600', 
               cursor: 'pointer' 
             }}
           >
             <Icons.Zap style={{ color: '#6366f1' }} />
-            <span>Modify</span>
+            <span className="hidden sm:inline">Modify</span>
           </button>
         )}
 
@@ -118,10 +119,10 @@ export default function TopToolbar({
           id="step-generate"
           className="btn-black"
           onClick={onGenerate}
-          style={{ height: '40px', padding: '0 20px' }}
+          style={{ height: '36px', padding: '0 12px' }}
         >
           <Icons.Zap style={{ color: 'white' }} />
-          <span>{hasContent ? 'Regenerate' : 'Generate'}</span>
+          <span className="hidden xs:inline">{hasContent ? 'Regenerate' : 'Generate'}</span>
         </button>
         
         <button 

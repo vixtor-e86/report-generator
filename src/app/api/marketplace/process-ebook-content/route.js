@@ -5,8 +5,8 @@ export async function POST(request) {
   try {
     const { content } = await request.json();
 
-    if (!content || content.length < 300) {
-      return NextResponse.json({ error: "Preview content must be at least 300 words (or approx 1200 characters)" }, { status: 400 });
+    if (!content || content.length < 100) {
+      return NextResponse.json({ error: "Preview content must be at least 100 words (or approx 400 characters)" }, { status: 400 });
     }
 
     const prompt = `

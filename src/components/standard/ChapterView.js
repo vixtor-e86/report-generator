@@ -119,10 +119,10 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
       <div className="px-4 sm:px-10 py-4 sm:py-8 border-b border-slate-50 flex items-center justify-between shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10 print:hidden gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 mb-1">
-            <span className="px-2.5 py-1 bg-slate-900 text-white text-[9px] sm:text-[10px] font-black rounded-full uppercase tracking-widest w-fit shrink-0">
+            <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-slate-900 text-white text-[8px] sm:text-[10px] font-black rounded-full uppercase tracking-widest w-fit shrink-0">
               Chapter {chapter.chapter_number}
             </span>
-            <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight truncate">
+            <h1 className="text-base sm:text-xl font-black text-slate-900 tracking-tight truncate">
               {chapter.title}
             </h1>
           </div>
