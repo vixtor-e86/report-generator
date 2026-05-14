@@ -3,6 +3,14 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(request) {
+  return NextResponse.json(
+    { error: 'The payment server is currently under maintenance. Please try again later.' },
+    { status: 503 }
+  );
+}
+
+/*
+export async function POST_DISABLED(request) {
   try {
     const { userId, email, tier, amount, projectId } = await request.json();
 
