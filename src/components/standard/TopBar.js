@@ -84,25 +84,25 @@ export default function TopBar({
   };
 
   return (
-    <div className="bg-white border-b border-slate-200 px-4 sm:px-8 py-4 print:hidden">
-      <div className="flex justify-between items-center gap-4">
+    <div className="bg-white border-b border-slate-200 px-3 sm:px-8 py-3 sm:py-4 print:hidden">
+      <div className="flex justify-between items-center gap-2 sm:gap-4">
         {/* Left: Info */}
-        <div className="flex items-center gap-4 min-w-0 flex-1">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
           <button onClick={onToggleSidebar} className="text-slate-400 hover:text-slate-900 transition-colors flex-shrink-0">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
           </button>
           
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-black text-slate-900 truncate tracking-tight">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h1 className="text-base sm:text-xl font-black text-slate-900 truncate tracking-tight">
                 {chapter ? chapter.title : 'Technical Workspace'}
               </h1>
-              <span className="text-[10px] font-black bg-indigo-600 text-white px-2 py-0.5 rounded uppercase tracking-widest">
+              <span className="text-[8px] sm:text-[10px] font-black bg-indigo-600 text-white px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">
                 STANDARD
               </span>
             </div>
             {chapter && isGenerated && (
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 hidden sm:block">
+              <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 hidden sm:block">
                 Project Architect • Chapter {chapter.chapter_number} • Draft
               </p>
             )}
@@ -110,30 +110,32 @@ export default function TopBar({
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {!chapter ? (
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full border border-slate-100 italic">Initialization Required</div>
+            <div className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 sm:px-3 py-1 rounded-full border border-slate-100 italic">Init Required</div>
           ) : isEditing ? (
             <>
-              <button onClick={onSave} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95">Save Changes</button>
+              <button onClick={onSave} className="bg-slate-900 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-black text-[10px] sm:text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95">Save</button>
             </>
           ) : !isGenerated ? (
             <>
               <button
                 onClick={() => setShowEditDetailsModal(true)}
                 disabled={generating}
-                className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all flex items-center gap-2"
+                className="bg-white border border-slate-200 text-slate-600 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all flex items-center gap-2"
+                title="Edit Details"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                Edit Details
+                <span className="hidden sm:inline">Edit Details</span>
               </button>
               <button
                 onClick={onGenerate}
                 disabled={generating}
-                className="bg-slate-900 text-white px-6 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-xl flex items-center gap-2"
+                className="bg-slate-900 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-black text-[10px] sm:text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-xl flex items-center gap-2"
+                title="Generate"
               >
                 {generating ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white" /> : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>}
-                Generate
+                <span className="hidden xs:inline">Generate</span>
               </button>
             </>
           ) : (

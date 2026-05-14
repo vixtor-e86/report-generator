@@ -59,7 +59,7 @@ export default function LanguageConverter({
   const [wordBalance, setWordBalance] = useState(0);
 
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
-  const MAX_WORDS = 3000;
+  const MAX_WORDS = 2000;
   const isOverLimit = wordCount > MAX_WORDS;
 
   // Fetch word balance on mount
@@ -78,6 +78,20 @@ export default function LanguageConverter({
     if (data) setWordBalance(data.balance);
   };
 
+  const handleInputChange = (e) => {
+    const text = e.target.value;
+    const words = text.trim() ? text.trim().split(/\s+/) : [];
+    
+    if (words.length > MAX_WORDS) {
+      // If pasting more than 2000 words, truncate it
+      const truncatedText = text.split(/\s+/).slice(0, MAX_WORDS).join(' ');
+      setInputText(truncatedText);
+      toast.error(`Word limit reached! Only the first ${MAX_WORDS} words were kept.`);
+    } else {
+      setInputText(text);
+    }
+  };
+
   // Auto-execute after payment
   useEffect(() => {
     if (hasPaid && inputText.trim()) {
@@ -88,7 +102,7 @@ export default function LanguageConverter({
   const handleConvert = async (skipPaymentCheck = false) => {
     if (!inputText.trim()) return toast.error("Please enter text to convert.");
     
-    if (isOverLimit) {
+    if (wordCount > MAX_WORDS) {
       toast.error(`Exceeded maximum limit of ${MAX_WORDS} words.`);
       return;
     }
@@ -103,6 +117,8 @@ export default function LanguageConverter({
 
     setIsProcessing(true);
     try {
+      let finalBalanceToUse = wordBalance;
+
       // 1. Refill balance if user just paid
       if (skipPaymentCheck) {
         const { data: current } = await supabase
@@ -112,18 +128,18 @@ export default function LanguageConverter({
           .eq('tool_id', 'language-converter')
           .maybeSingle();
         
-        const newBalance = (current?.balance || 0) + 2000;
+        finalBalanceToUse = (current?.balance || 0) + 2000;
         
         await supabase
           .from('tool_word_balances')
           .upsert({ 
             user_id: user.id, 
             tool_id: 'language-converter', 
-            balance: newBalance,
+            balance: finalBalanceToUse,
             updated_at: new Date().toISOString()
           });
         
-        setWordBalance(newBalance);
+        setWordBalance(finalBalanceToUse);
       }
 
       const response = await fetch('/api/marketplace/tools/language-converter', {
@@ -139,14 +155,7 @@ export default function LanguageConverter({
       if (data.error) throw new Error(data.error);
 
       // 2. Deduct words from balance
-      const { data: finalBalData } = await supabase
-        .from('tool_word_balances')
-        .select('balance')
-        .eq('user_id', user.id)
-        .eq('tool_id', 'language-converter')
-        .single();
-      
-      const updatedBalance = Math.max(0, finalBalData.balance - wordCount);
+      const updatedBalance = Math.max(0, finalBalanceToUse - wordCount);
       
       await supabase
         .from('tool_word_balances')
@@ -243,7 +252,7 @@ export default function LanguageConverter({
           
           <textarea 
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Paste or type your text here..."
             className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 border-[#e5e7eb] rounded-[24px] md:rounded-[32px] p-6 md:p-8 focus:border-black focus:ring-0 text-zinc-900 leading-relaxed font-bold resize-none text-sm md:text-base"
           />

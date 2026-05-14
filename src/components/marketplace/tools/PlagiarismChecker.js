@@ -35,6 +35,7 @@ export default function PlagiarismChecker({
 
   // Price Calculation
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
+  const MAX_WORDS = 2000;
   const currentPrice = 2000; // Fixed refill price
 
   useEffect(() => {
@@ -50,6 +51,19 @@ export default function PlagiarismChecker({
       .maybeSingle();
     
     if (data) setWordBalance(data.balance);
+  };
+
+  const handleInputChange = (e) => {
+    const text = e.target.value;
+    const words = text.trim() ? text.trim().split(/\s+/) : [];
+    
+    if (words.length > MAX_WORDS) {
+      const truncatedText = text.split(/\s+/).slice(0, MAX_WORDS).join(' ');
+      setInputText(truncatedText);
+      toast.error(`Word limit reached! Only the first ${MAX_WORDS} words were kept.`);
+    } else {
+      setInputText(text);
+    }
   };
 
   useEffect(() => {
@@ -112,6 +126,12 @@ export default function PlagiarismChecker({
           throw new Error("No readable text found in document.");
         }
 
+        const words = extractedText.trim() ? extractedText.trim().split(/\s+/) : [];
+        if (words.length > MAX_WORDS) {
+          extractedText = extractedText.split(/\s+/).slice(0, MAX_WORDS).join(' ');
+          toast.error(`Document truncated to ${MAX_WORDS} words.`);
+        }
+
         setInputText(extractedText);
         setIsExtracting(false);
         toast.success(`${file.name} uploaded and text extracted.`);
@@ -134,6 +154,10 @@ export default function PlagiarismChecker({
         return toast.error("Content too short. Please provide at least 100 characters for an accurate scan.");
     }
 
+    if (wordCount > MAX_WORDS) {
+        return toast.error(`Exceeded maximum limit of ${MAX_WORDS} words.`);
+    }
+
     // Word Balance Logic
     if (!skipPaymentCheck) {
       if (wordBalance < wordCount) {
@@ -146,6 +170,8 @@ export default function PlagiarismChecker({
     setIsProcessing(true);
     
     try {
+      let finalBalanceToUse = wordBalance;
+
       // 1. Refill balance if user just paid
       if (skipPaymentCheck) {
         const { data: current } = await supabase
@@ -155,18 +181,18 @@ export default function PlagiarismChecker({
           .eq('tool_id', 'plagiarism-checker')
           .maybeSingle();
         
-        const newBalance = (current?.balance || 0) + 10000;
+        finalBalanceToUse = (current?.balance || 0) + 10000;
         
         await supabase
           .from('tool_word_balances')
           .upsert({ 
             user_id: user.id, 
             tool_id: 'plagiarism-checker', 
-            balance: newBalance,
+            balance: finalBalanceToUse,
             updated_at: new Date().toISOString()
           });
         
-        setWordBalance(newBalance);
+        setWordBalance(finalBalanceToUse);
       }
 
       const response = await fetch('/api/marketplace/tools/plagiarism-checker', {
@@ -182,14 +208,7 @@ export default function PlagiarismChecker({
       }
       
       // 2. Deduct words from balance
-      const { data: finalBalData } = await supabase
-        .from('tool_word_balances')
-        .select('balance')
-        .eq('user_id', user.id)
-        .eq('tool_id', 'plagiarism-checker')
-        .single();
-      
-      const updatedBalance = Math.max(0, finalBalData.balance - wordCount);
+      const updatedBalance = Math.max(0, finalBalanceToUse - wordCount);
       
       await supabase
         .from('tool_word_balances')
@@ -271,7 +290,7 @@ export default function PlagiarismChecker({
           
           <textarea 
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={handleInputChange}
             disabled={scanStatus === 'processing'}
             placeholder="Paste text here or upload a document..."
             className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-50 border-none rounded-[24px] md:rounded-[32px] p-6 md:p-10 focus:ring-2 focus:ring-zinc-900/5 text-zinc-900 leading-relaxed font-bold resize-none text-base md:text-lg min-h-[300px]"

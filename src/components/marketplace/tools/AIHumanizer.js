@@ -42,6 +42,19 @@ export default function AIHumanizer({
     if (data) setWordBalance(data.balance);
   };
 
+  const handleInputChange = (e) => {
+    const text = e.target.value;
+    const words = text.trim() ? text.trim().split(/\s+/) : [];
+    
+    if (words.length > MAX_WORDS) {
+      const truncatedText = text.split(/\s+/).slice(0, MAX_WORDS).join(' ');
+      setInput(truncatedText);
+      toast.error(`Word limit reached! Only the first ${MAX_WORDS} words were kept.`);
+    } else {
+      setInput(text);
+    }
+  };
+
   // Auto-execute after payment
   useEffect(() => {
     if (hasPaid && input.trim()) {
@@ -55,7 +68,7 @@ export default function AIHumanizer({
       return;
     }
 
-    if (isOverLimit) {
+    if (wordCount > MAX_WORDS) {
         toast.error(`Exceeded maximum limit of ${MAX_WORDS} words.`);
         return;
     }
@@ -71,6 +84,8 @@ export default function AIHumanizer({
     setIsProcessing(true);
 
     try {
+      let finalBalanceToUse = wordBalance;
+
       // 1. If we skipped payment check (meaning user just paid), refill balance first
       if (skipPaymentCheck) {
         const { data: current } = await supabase
@@ -80,18 +95,18 @@ export default function AIHumanizer({
           .eq('tool_id', 'ai-humanizer')
           .maybeSingle();
         
-        const newBalance = (current?.balance || 0) + 1000;
+        finalBalanceToUse = (current?.balance || 0) + 1000;
         
         await supabase
           .from('tool_word_balances')
           .upsert({ 
             user_id: user.id, 
             tool_id: 'ai-humanizer', 
-            balance: newBalance,
+            balance: finalBalanceToUse,
             updated_at: new Date().toISOString()
           });
         
-        setWordBalance(newBalance);
+        setWordBalance(finalBalanceToUse);
       }
 
       const response = await fetch('/api/marketplace/tools/humanize', {
@@ -111,14 +126,7 @@ export default function AIHumanizer({
       if (data.error) throw new Error(data.error);
       
       // 2. Deduct words from balance
-      const { data: finalBalData } = await supabase
-        .from('tool_word_balances')
-        .select('balance')
-        .eq('user_id', user.id)
-        .eq('tool_id', 'ai-humanizer')
-        .single();
-      
-      const updatedBalance = Math.max(0, finalBalData.balance - wordCount);
+      const updatedBalance = Math.max(0, finalBalanceToUse - wordCount);
       
       await supabase
         .from('tool_word_balances')
@@ -170,7 +178,7 @@ export default function AIHumanizer({
         </div>
         <Textarea 
           value={input} 
-          onChange={(e) => setInput(e.target.value)} 
+          onChange={handleInputChange} 
           className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 border-[#e5e7eb] rounded-[24px] md:rounded-[32px] p-6 md:p-8 focus:border-black focus:ring-0 text-zinc-900 leading-relaxed font-bold resize-none text-sm md:text-base" 
           placeholder="Enter project content here..." 
         />
