@@ -122,7 +122,8 @@ export default function TopToolbar({
           style={{ height: '36px', padding: '0 12px' }}
         >
           <Icons.Zap style={{ color: 'white' }} />
-          <span className="hidden xs:inline">{hasContent ? 'Regenerate' : 'Generate'}</span>
+          <span className="hidden md:inline">{hasContent ? 'Regenerate' : 'Generate'}</span>
+          <span className="inline md:hidden xs:inline">{hasContent ? 'Regen' : 'Gen'}</span>
         </button>
         
         <button 
@@ -130,13 +131,13 @@ export default function TopToolbar({
           title="Print Chapter"
           onClick={onPrint}
           disabled={!canPrint}
-          style={{ opacity: canPrint ? 1 : 0.4, cursor: canPrint ? 'pointer' : 'not-allowed' }}
+          style={{ opacity: canPrint ? 1 : 0.4, cursor: canPrint ? 'pointer' : 'not-allowed', zIndex: 5 }}
         >
           <Icons.Printer />
         </button>
         
         {/* Export Dropdown */}
-        <div className="relative" ref={dropdownRef} id="step-export">
+        <div className="relative" ref={dropdownRef} id="step-export" style={{ zIndex: 5 }}>
           <button 
             className="btn-icon-only" 
             title="Export Project"
@@ -146,7 +147,7 @@ export default function TopToolbar({
           </button>
 
           {showExportDropdown && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-slate-100 py-2 z-[100] animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-slate-100 py-2 z-[110] animate-in fade-in zoom-in-95 duration-100">
               <button 
                 onClick={() => { setShowExportDropdown(false); onExportClick('pdf'); }}
                 className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
@@ -181,7 +182,8 @@ export default function TopToolbar({
           title="Toggle Tools Panel"
           style={{ 
             backgroundColor: isRightSidebarOpen ? '#f3f4f6' : 'white',
-            borderColor: isRightSidebarOpen ? '#d1d5db' : '#e5e7eb'
+            borderColor: isRightSidebarOpen ? '#d1d5db' : '#e5e7eb',
+            zIndex: 1001 // Higher than sidebar z-index
           }}
         >
           <Icons.Sidebar />
