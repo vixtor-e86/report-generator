@@ -28,19 +28,41 @@ export async function POST(request) {
       );
     }
 
-    // 1. Fetch project
-    const { data: project, error: projectError } = await supabase
+    // 1. Fetch project (Try standard_projects first, then projects for Free tier)
+    let { data: project, error: projectError } = await supabase
       .from('standard_projects')
       .select('*')
       .eq('id', projectId)
       .single();
 
+    let projectTable = 'standard_projects';
+    let chapterTable = 'standard_chapters';
+
     if (projectError || !project) {
-      console.error('Project fetch error:', projectError);
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      );
+      const { data: freeProject, error: freeProjectError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .single();
+      
+      if (freeProjectError || !freeProject) {
+        console.error('Project fetch error:', projectError || freeProjectError);
+        return NextResponse.json(
+          { error: 'Project not found' },
+          { status: 404 }
+        );
+      }
+      project = freeProject;
+      projectTable = 'projects';
+      chapterTable = 'chapters';
+    }
+
+    // 1.5 ✅ NEW: Check if Free project is unlocked
+    if (projectTable === 'projects' && !project.is_unlocked && project.tier !== 'premium') {
+        return NextResponse.json(
+          { error: 'This project is locked. Please unlock it to export.' },
+          { status: 402 }
+        );
     }
 
     // 2. Verify ownership
@@ -53,7 +75,7 @@ export async function POST(request) {
 
     // 3. Fetch all chapters
     const { data: chapters, error: chaptersError } = await supabase
-      .from('standard_chapters')
+      .from(chapterTable)
       .select('*')
       .eq('project_id', projectId)
       .order('chapter_number', { ascending: true });
@@ -80,7 +102,7 @@ export async function POST(request) {
 
     // 5. ✅ IMPROVED: Fetch images with better logging
     const { data: images, error: imagesError } = await supabase
-      .from('standard_images')
+      .from(projectTable === 'projects' ? 'project_images' : 'standard_images')
       .select('*')
       .eq('project_id', projectId)
       .order('order_number', { ascending: true });
@@ -91,13 +113,7 @@ export async function POST(request) {
 
     // Log image data for debugging
     console.log(`Found ${images?.length || 0} images for project ${projectId}`);
-    if (images && images.length > 0) {
-      images.forEach(img => {
-        console.log(`Image: ${img.placeholder_id} - ${img.cloudinary_url}`);
-      });
-    }
-
-  
+    
     // 6. Fetch user profile
     const { data: userProfile } = await supabase
       .from('user_profiles')
@@ -113,12 +129,12 @@ export async function POST(request) {
       .single();
 
     // 6.6 ✅ NEW: Generate Abstract using AI
+    const { callAI } = await import('@/lib/aiProvider');
     console.log('Generating abstract...');
     let abstractText = '';
     
     try {
       const { getAbstractPrompt } = await import('@/lib/abstractGenerator');
-      const { callAI } = await import('@/lib/aiProvider');
       
       const abstractPrompt = getAbstractPrompt(
         project, 
@@ -136,8 +152,68 @@ export async function POST(request) {
       console.log('Abstract generated successfully');
     } catch (error) {
       console.error('Abstract generation failed:', error);
-      // Fallback abstract if AI fails
       abstractText = `This report presents the design and implementation of ${project.title}. The project was developed in the ${project.department} department and focuses on ${project.components?.join(', ')}. The report documents the complete development process, testing procedures, and results achieved.`;
+    }
+
+    // 6.7 ✅ NEW: Process References using AI (DeepSeek)
+    console.log('Processing references with AI...');
+    let finalReferences = [];
+    try {
+      // Collect raw references
+      const rawRefsList = [];
+      chapters.forEach(ch => {
+        const parts = (ch.content || "").split(/## References|### References/i);
+        if (parts.length > 1) {
+          parts[parts.length - 1].split('\n').forEach(line => {
+            const cleaned = line.trim().replace(/^(\[?\d+\]?\.?|\-|\*)\s+/, '').trim();
+            if (cleaned.length > 20) rawRefsList.push(cleaned);
+          });
+        }
+      });
+
+      if (rawRefsList.length > 0) {
+        const refPrompt = `
+          You are an expert academic editor. I will provide you with a list of raw references collected from various chapters of a technical report.
+          Your task:
+          1. Remove any exact or near-duplicate references.
+          2. Structure them into a professional, consistent academic format (APA/IEEE style).
+          3. Number them sequentially (1, 2, 3...).
+          4. Sort them alphabetically by the first author's last name or by title if no author is present.
+          5. Ensure each reference is complete and properly formatted.
+          6. Return ONLY the final numbered list of references, with no other text, commentary, or headers.
+
+          Raw References:
+          ${rawRefsList.join('\n')}
+        `;
+
+        const refResult = await callAI(refPrompt, {
+          provider: 'deepseek',
+          maxTokens: 1500,
+          temperature: 0.3
+        });
+
+        // Split by lines and clean
+        finalReferences = refResult.content
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 5);
+        
+        console.log(`Refined ${finalReferences.length} references using AI`);
+      }
+    } catch (refError) {
+      console.error('Reference refinement failed:', refError);
+      // Fallback: use simple deduplication if AI fails
+      const uniqueRefs = new Set();
+      chapters.forEach(ch => {
+        const parts = (ch.content || "").split(/## References|### References/i);
+        if (parts.length > 1) {
+          parts[parts.length - 1].split('\n').forEach(line => {
+            const cleaned = line.trim().replace(/^(\[?\d+\]?\.?|\-|\*)\s+/, '').trim();
+            if (cleaned.length > 30) uniqueRefs.add(cleaned);
+          });
+        }
+      });
+      finalReferences = Array.from(uniqueRefs).sort().map((ref, i) => `${i + 1}. ${ref}`);
     }
 
     // 7. Generate DOCX
@@ -147,7 +223,8 @@ export async function POST(request) {
       chapters,
       images: images || [],
       userProfile,
-      abstract: abstractText // ✅ Pass abstract to DOCX generator
+      abstract: abstractText,
+      references: finalReferences // ✅ Pass refined references
     });
 
     // 8. Pack DOCX to blob

@@ -298,12 +298,12 @@ export default function PlagiarismChecker({
 
           {scanStatus === 'idle' && (
             <Button 
-                onClick={() => setShowPaymentDialog(true)}
+                onClick={() => startScanProcess()}
                 disabled={!inputText.trim()}
                 className="w-full bg-black hover:bg-zinc-800 text-white rounded-[20px] md:rounded-[24px] py-6 md:py-10 font-black uppercase text-xs md:text-sm tracking-[0.2em] shadow-2xl mt-6 md:mt-8 flex items-center justify-center gap-3 md:gap-4 shrink-0 transition-all active:scale-[0.98]"
             >
-                <Zap className="w-5 h-5 md:w-6 md:h-6 text-yellow-400 fill-yellow-400" />
-                Start Plagiarism Audit
+                {isProcessing ? <RefreshCw className="w-5 h-5 md:w-6 md:h-6 animate-spin" /> : <Zap className="w-5 h-5 md:w-6 md:h-6 text-yellow-400 fill-yellow-400" />}
+                {isProcessing ? 'Analyzing...' : wordBalance >= wordCount ? 'Execute (Using Credits)' : `Refill & Execute (₦${currentPrice.toLocaleString()})`}
             </Button>
           )}
 

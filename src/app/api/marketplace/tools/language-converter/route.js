@@ -13,10 +13,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Target language is required' }, { status: 400 });
     }
 
-    // Limit check (roughly 1000 words)
+    // Limit check (roughly 2000 words)
     const wordCount = text.trim().split(/\s+/).length;
-    if (wordCount > 1200) { // Slight buffer
-      return NextResponse.json({ error: 'Text exceeds the 1000-word limit.' }, { status: 400 });
+    if (wordCount > 2200) { // Slight buffer
+      return NextResponse.json({ error: 'Text exceeds the 2000-word limit.' }, { status: 400 });
     }
 
     const systemPrompt = `You are a professional polyglot translator and cultural communication expert. 

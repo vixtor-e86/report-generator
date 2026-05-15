@@ -18,7 +18,7 @@ import {
 } from 'docx';
 
 export async function generateDocx(data) {
-  const { project, chapters, images, abstract } = data;
+  const { project, chapters, images, abstract, references } = data;
 
   const imagesData = await Promise.all(
     images.map(async (img) => {
@@ -31,18 +31,9 @@ export async function generateDocx(data) {
   );
   const validImages = imagesData.filter(img => img !== null);
 
-  // --- REFERENCE EXTRACTION ---
-  const masterRefs = new Set();
-  chapters.forEach(ch => {
-    const parts = (ch.content || "").split(/## References|### References/i);
-    if (parts.length > 1) {
-      parts[parts.length - 1].split('\n').forEach(line => {
-        const cleaned = line.trim().replace(/^(\[?\d+\]?\.?|\-|\*)\s+/, '').trim();
-        if (cleaned.length > 30) masterRefs.add(cleaned);
-      });
-    }
-  });
-  const finalRefs = Array.from(masterRefs).sort();
+  // --- REFERENCE HANDLING ---
+  // Use pre-processed references if available, otherwise fallback to empty
+  const finalRefs = references || [];
 
   const children = [];
 
@@ -79,9 +70,9 @@ export async function generateDocx(data) {
   // 4. Master References
   if (finalRefs.length > 0) {
     children.push(new Paragraph({ text: 'REFERENCES', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } }));
-    finalRefs.forEach((ref, i) => {
+    finalRefs.forEach((ref) => {
       children.push(new Paragraph({ 
-        children: [new TextRun({ text: `${i + 1}. ${ref}`, font: 'Times New Roman', size: 24 })], 
+        children: [new TextRun({ text: ref, font: 'Times New Roman', size: 24 })], 
         alignment: AlignmentType.JUSTIFIED, 
         spacing: { after: 150 } 
       }));

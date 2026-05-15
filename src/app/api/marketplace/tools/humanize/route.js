@@ -27,8 +27,8 @@ export async function POST(request) {
 
     // Word count check
     const words = content.trim().split(/\s+/).filter(w => w.length > 0);
-    if (words.length > 1500) {
-      return NextResponse.json({ error: 'Maximum 1500 words per request allowed.' }, { status: 400 });
+    if (words.length > 2200) {
+      return NextResponse.json({ error: 'Maximum 2000 words per request allowed.' }, { status: 400 });
     }
 
     // Call StealthGPT
