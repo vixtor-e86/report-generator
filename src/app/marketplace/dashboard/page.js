@@ -5,7 +5,7 @@ import {
   LayoutDashboard, ShoppingBag, Wrench, Wallet, 
   TrendingUp, Download, Eye, Star, ArrowUpRight,
   ChevronRight, Zap, FileText, CheckCircle2, Clock,
-  Plus, Users, BarChart3, Landmark, Layers, ArrowRight
+  Plus, Users, BarChart3, Landmark, Layers, ArrowRight, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Badge } from '@/components/marketplace/ui/badge'; 
@@ -16,6 +16,7 @@ import { formatCurrency } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { PaymentMethodModal, PayoutRequestModal } from '@/components/marketplace/PayoutModals';
 
 export default function MarketplaceDashboardPage() {
   const { user } = useUser();
@@ -27,6 +28,9 @@ export default function MarketplaceDashboardPage() {
   const [sellerWallet, setSellerWallet] = useState(null);
   const [myItems, setMyItems] = useState([]);
   const [loadingSeller, setLoadingSeller] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
+  const [sellerAccount, setSellerAccount] = useState(null);
 
   const fetchSellerData = useCallback(async () => {
     if (!user?.isSeller) return;
@@ -41,7 +45,16 @@ export default function MarketplaceDashboardPage() {
       
       setSellerWallet(sWallet);
 
-      // 2. Fetch My Projects & Ebooks
+      // 2. Fetch Bank Details
+      const { data: sAccount } = await supabase
+        .from('marketplace_sellers')
+        .select('bank_name, account_number, account_name')
+        .eq('user_id', user.id)
+        .single();
+      
+      setSellerAccount(sAccount);
+
+      // 3. Fetch My Projects & Ebooks
       const [projectsRes, ebooksRes] = await Promise.all([
         supabase.from('marketplace_projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('marketplace_ebooks').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
@@ -59,6 +72,24 @@ export default function MarketplaceDashboardPage() {
       setLoadingSeller(false);
     }
   }, [user]);
+
+  const handleDeleteItem = async (id, type) => {
+    if (!confirm('Are you sure you want to delete this listing? This action cannot be undone.')) return;
+    
+    try {
+      const res = await fetch(`/api/marketplace/delete?id=${id}&type=${type}&userId=${user.id}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error);
+      
+      toast.success('Listing deleted successfully');
+      setMyItems(prev => prev.filter(item => item.id !== id));
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete listing');
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'seller' || user?.isSeller) {
@@ -213,7 +244,31 @@ export default function MarketplaceDashboardPage() {
                       <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
                       <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">Withdrawable Balance (70%)</p>
                       <p className="text-4xl font-black">{formatCurrency(sellerWallet?.balance || 0)}</p>
-                      <Button variant="outline" className="mt-8 w-full border-zinc-700 hover:bg-zinc-800 text-white rounded-xl py-6 font-black uppercase text-[10px] tracking-widest">Request Payout</Button>
+                      <Button 
+                        onClick={() => setShowPayoutModal(true)}
+                        className="mt-8 w-full bg-white text-black hover:bg-zinc-100 rounded-xl py-6 font-black uppercase text-[10px] tracking-widest"
+                      >
+                        Request Payout
+                      </Button>
+                  </div>
+                  <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
+                      <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Settlement Account</p>
+                      {sellerAccount?.bank_name ? (
+                        <div className="space-y-1 mt-2">
+                           <p className="text-lg font-black text-slate-900 uppercase tracking-tight">{sellerAccount.bank_name}</p>
+                           <p className="text-xs font-bold text-slate-500">{sellerAccount.account_number}</p>
+                           <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest pt-2">{sellerAccount.account_name}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm font-bold text-slate-400 mt-4 italic">No account added yet</p>
+                      )}
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowAccountModal(true)}
+                        className="mt-6 w-full border-zinc-200 hover:border-black text-zinc-900 rounded-xl py-2 font-black uppercase text-[9px] tracking-widest"
+                      >
+                        {sellerAccount?.bank_name ? 'Update Account' : 'Add Account Details'}
+                      </Button>
                   </div>
                   <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
                       <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Lifetime Earnings</p>
@@ -223,19 +278,26 @@ export default function MarketplaceDashboardPage() {
                           <span className="text-xs font-bold uppercase tracking-tight">Active Growth</span>
                       </div>
                   </div>
-                  <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
-                      <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Digital Assets</p>
-                      <p className="text-4xl font-black text-slate-900">{myItems.length}</p>
-                      <div className="mt-6 flex gap-3">
-                          <Link href="/marketplace/upload-project" className="text-[9px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5 hover:opacity-70 transition-opacity">
-                              <Plus className="w-3 h-3" /> Blueprint
-                          </Link>
-                          <Link href="/marketplace/upload-ebook" className="text-[9px] font-black text-zinc-900 uppercase tracking-widest flex items-center gap-1.5 hover:opacity-70 transition-opacity">
-                              <Plus className="w-3 h-3" /> Ebook
-                          </Link>
-                      </div>
-                  </div>
               </div>
+
+              {/* Modals */}
+              <PaymentMethodModal 
+                open={showAccountModal} 
+                onOpenChange={setShowAccountModal} 
+                userId={user?.id}
+                currentAccount={sellerAccount}
+                onSaved={(data) => setSellerAccount(data)}
+              />
+              <PayoutRequestModal 
+                open={showPayoutModal} 
+                onOpenChange={setShowPayoutModal} 
+                userId={user?.id}
+                balance={sellerWallet?.balance || 0}
+                onRequested={() => {
+                  fetchSellerData();
+                  refreshWallet();
+                }}
+              />
 
               {/* Upload Action Center */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -305,8 +367,15 @@ export default function MarketplaceDashboardPage() {
                                   </div>
                                   <div className="flex gap-2">
                                       <Link href={url}>
-                                          <button className="p-3 bg-white rounded-xl hover:bg-zinc-900 hover:text-white transition-all shadow-sm border border-zinc-200"><Eye className="w-4 h-4" /></button>
+                                          <button className="p-3 bg-white rounded-xl hover:bg-zinc-900 hover:text-white transition-all shadow-sm border border-zinc-200" title="View Listing"><Eye className="w-4 h-4" /></button>
                                       </Link>
+                                      <button 
+                                        onClick={(e) => { e.preventDefault(); handleDeleteItem(item.id, item.itemType); }}
+                                        className="p-3 bg-white text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-zinc-200"
+                                        title="Delete Listing"
+                                      >
+                                          <Trash2 className="w-4 h-4" />
+                                      </button>
                                   </div>
                               </div>
                           );

@@ -24,8 +24,7 @@ export default function UploadProjectPage() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
-  const [hasPendingProject, setHasPendingProject] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiStep, setAiStep] = useState('');
   
@@ -53,28 +52,8 @@ export default function UploadProjectPage() {
       toast.error("Access Denied: You must be a verified seller.");
       router.push('/marketplace/dashboard');
     }
+    setPageLoading(false);
   }, [user, router]);
-
-  // 2. ✅ NEW: Pending Project Guard
-  useEffect(() => {
-    async function checkPending() {
-      if (!user) return;
-      try {
-        const { count, error } = await supabase
-          .from('marketplace_projects')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('status', 'pending');
-        
-        if (count > 0) setHasPendingProject(true);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setPageLoading(false);
-      }
-    }
-    checkPending();
-  }, [user]);
 
   const handleFileUpload = (e, type) => {
     const files = e.target.files;
@@ -163,28 +142,6 @@ export default function UploadProjectPage() {
 
   // Loading Screen
   if (pageLoading) return <div className="py-40 text-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto" /></div>;
-
-  // ✅ QUEUE GUARD UI
-  if (hasPendingProject) {
-    return (
-        <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center p-4">
-            <div className="text-center p-12 bg-white border border-[#e5e7eb] rounded-[48px] shadow-sm max-w-lg animate-in fade-in zoom-in-95 duration-500">
-                <div className="w-20 h-20 bg-amber-50 text-amber-600 rounded-[30px] flex items-center justify-center mb-8 mx-auto">
-                    <Clock className="w-10 h-10" />
-                </div>
-                <h2 className="text-2xl font-black text-[#111827] mb-2 tracking-tight uppercase">Queue Restricted</h2>
-                <p className="text-[#6b7280] font-medium mb-10 leading-relaxed">
-                    You already have a technical blueprint awaiting approval. To maintain marketplace quality, you can only list one project at a time in the review queue.
-                </p>
-                <Link href="/marketplace/dashboard">
-                    <Button className="bg-black text-white rounded-full px-10 py-7 font-black shadow-xl uppercase text-xs tracking-widest">
-                        Return to Dashboard
-                    </Button>
-                </Link>
-            </div>
-        </div>
-    );
-  }
 
   const handleSubmit = async () => {
     if (!validateStep(3)) return;

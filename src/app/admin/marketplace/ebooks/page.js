@@ -58,6 +58,28 @@ export default function EbookApprovalAdmin() {
     }
   };
 
+  const handleDeleteEbook = async (id) => {
+    if (!confirm('PERMANENT DELETION: Are you absolutely sure? This cannot be undone.')) return;
+    
+    setProcessing(true);
+    try {
+      const response = await fetch(`/api/admin/marketplace/ebooks?id=${id}`, {
+        method: 'DELETE'
+      });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      toast.success('Ebook deleted permanently');
+      setEbooks(prev => prev.filter(e => e.id !== id));
+      setSelectedEbook(null);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-20">
       <div className="flex justify-between items-end">
@@ -128,9 +150,18 @@ export default function EbookApprovalAdmin() {
                   <td className="px-6 py-5">
                     <Badge className="bg-slate-100 text-slate-500 border-none px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">{ebook.category}</Badge>
                   </td>
-                  <td className="px-6 py-5 text-right">
-                    <button className="p-2 bg-slate-100 text-slate-400 rounded-xl hover:bg-zinc-900 hover:text-white transition shadow-sm">
+                  <td className="px-6 py-5 text-right flex justify-end gap-2">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setSelectedEbook(ebook); }}
+                      className="p-2 bg-slate-100 text-slate-400 rounded-xl hover:bg-zinc-900 hover:text-white transition shadow-sm"
+                    >
                       <Eye className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleDeleteEbook(ebook.id); }}
+                      className="p-2 bg-red-50 text-red-400 rounded-xl hover:bg-red-600 hover:text-white transition shadow-sm"
+                    >
+                      <X className="w-5 h-5" />
                     </button>
                   </td>
                 </tr>

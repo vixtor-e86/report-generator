@@ -92,6 +92,28 @@ export default function ProjectApprovalAdmin() {
     }
   };
 
+  const handleDeleteProject = async (id) => {
+    if (!confirm('PERMANENT DELETION: Are you absolutely sure? This cannot be undone.')) return;
+    
+    setProcessing(true);
+    try {
+      const response = await fetch(`/api/admin/marketplace/projects?id=${id}`, {
+        method: 'DELETE'
+      });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      toast.success('Project deleted permanently');
+      setProjects(prev => prev.filter(p => p.id !== id));
+      setSelectedProject(null);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-20">
       <div className="flex justify-between items-end">
@@ -163,9 +185,18 @@ export default function ProjectApprovalAdmin() {
                     <div className="text-xs font-bold text-slate-700">{project.department}</div>
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{project.faculty}</div>
                   </td>
-                  <td className="px-6 py-5 text-right">
-                    <button className="p-2 bg-slate-100 text-slate-400 rounded-xl hover:bg-zinc-900 hover:text-white transition shadow-sm">
+                  <td className="px-6 py-5 text-right flex justify-end gap-2">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setSelectedProject(project); }}
+                      className="p-2 bg-slate-100 text-slate-400 rounded-xl hover:bg-zinc-900 hover:text-white transition shadow-sm"
+                    >
                       <Icons.Eye className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.id); }}
+                      className="p-2 bg-red-50 text-red-400 rounded-xl hover:bg-red-600 hover:text-white transition shadow-sm"
+                    >
+                      <Icons.X className="w-5 h-5" />
                     </button>
                   </td>
                 </tr>
