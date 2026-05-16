@@ -6,6 +6,7 @@ const UserContext = createContext(undefined);
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null); // Add profile state
   const [sellerStatus, setSellerStatus] = useState(null); // 'none', 'pending', 'approved', 'rejected'
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -17,6 +18,7 @@ export function UserProvider({ children }) {
   const fetchUserProfile = useCallback(async (authUser) => {
     if (!authUser) {
       setUser(null);
+      setProfile(null);
       setSellerStatus(null);
       setNotifications([]);
       setUnreadCount(0);
@@ -28,11 +30,13 @@ export function UserProvider({ children }) {
 
     try {
       // 1. Fetch fresh user profile
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', authUser.id)
         .single();
+      
+      setProfile(profileData); // Store profile
 
       // 2. Fetch seller status
       const { data: sellerApp } = await supabase
@@ -49,14 +53,14 @@ export function UserProvider({ children }) {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      const isApproved = sellerApp?.status === 'approved' || profile?.is_seller;
+      const isApproved = sellerApp?.status === 'approved' || profileData?.is_seller;
       const currentStatus = sellerApp?.status || 'none';
 
       // Avoid redundant state updates
-      if (!userRef.current || userRef.current.id !== authUser.id || userRef.current.isSeller !== !!isApproved || userRef.current.name !== (profile?.username || profile?.full_name)) {
+      if (!userRef.current || userRef.current.id !== authUser.id || userRef.current.isSeller !== !!isApproved || userRef.current.name !== (profileData?.username || profileData?.full_name)) {
         const newUser = {
             id: authUser.id,
-            name: profile?.username || profile?.full_name || authUser.email?.split('@')[0],
+            name: profileData?.username || profileData?.full_name || authUser.email?.split('@')[0],
             email: authUser.email,
             isSeller: !!isApproved,
         };
@@ -173,6 +177,7 @@ export function UserProvider({ children }) {
   return (
     <UserContext.Provider value={{
       user,
+      profile, // Export profile
       sellerStatus,
       notifications,
       unreadCount,
