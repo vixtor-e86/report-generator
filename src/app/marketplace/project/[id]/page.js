@@ -508,27 +508,49 @@ export default function ProjectDetailPage({ params }) {
                   </div>
                 </div>
 
-                {!isAdminProject && (
-                    <a href={`https://wa.me/${project.marketplace_sellers?.phone_number?.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 bg-emerald-50 rounded-3xl border border-emerald-100 hover:bg-emerald-100 transition-colors group">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-emerald-600 group-hover:scale-110 transition-transform">
-                        <Phone className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">WhatsApp</p>
-                        <p className="text-zinc-900 font-black">{project.marketplace_sellers?.phone_number}</p>
-                    </div>
-                    </a>
-                )}
+                {isPurchased ? (
+                  <>
+                    {!isAdminProject && (
+                        <a href={`https://wa.me/${project.marketplace_sellers?.phone_number?.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 bg-emerald-50 rounded-3xl border border-emerald-100 hover:bg-emerald-100 transition-colors group">
+                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-emerald-600 group-hover:scale-110 transition-transform">
+                            <Phone className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">WhatsApp</p>
+                            <p className="text-zinc-900 font-black">{project.marketplace_sellers?.phone_number}</p>
+                        </div>
+                        </a>
+                    )}
 
-                <a href={`mailto:${isAdminProject ? 'w3writelab@gmail.com' : project.marketplace_sellers?.email_updates}`} className="flex items-center gap-4 p-4 bg-blue-50 rounded-3xl border border-blue-100 hover:bg-blue-100 transition-colors group">
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 group-hover:scale-110 transition-transform">
-                    <Mail className="w-6 h-6" />
+                    <a href={`mailto:${isAdminProject ? 'w3writelab@gmail.com' : project.marketplace_sellers?.email_updates}`} className="flex items-center gap-4 p-4 bg-blue-50 rounded-3xl border border-blue-100 hover:bg-blue-100 transition-colors group">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 group-hover:scale-110 transition-transform">
+                        <Mail className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Email Address</p>
+                        <p className="text-zinc-900 font-black">{isAdminProject ? 'w3writelab@gmail.com' : project.marketplace_sellers?.email_updates}</p>
+                      </div>
+                    </a>
+                  </>
+                ) : (
+                  <div className="p-8 bg-zinc-900 rounded-[32px] text-center space-y-4">
+                     <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mx-auto text-zinc-400">
+                        <ShieldCheck className="w-6 h-6" />
+                     </div>
+                     <div>
+                        <p className="text-white font-black text-xs uppercase tracking-widest">Contact Locked</p>
+                        <p className="text-zinc-500 text-[10px] font-medium leading-relaxed mt-1 px-4">
+                          Seller contact details are only available to verified purchasers for security reasons.
+                        </p>
+                     </div>
+                     <Button 
+                       onClick={() => { setShowContactModal(false); setShowPurchaseModal(true); }}
+                       className="w-full bg-white text-black hover:bg-zinc-100 rounded-2xl py-5 font-black text-[10px] uppercase tracking-widest shadow-xl"
+                     >
+                       Unlock Access
+                     </Button>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Email Address</p>
-                    <p className="text-zinc-900 font-black">{isAdminProject ? 'w3writelab@gmail.com' : project.marketplace_sellers?.email_updates}</p>
-                  </div>
-                </a>
+                )}
               </div>
             </div>
             <div className="bg-zinc-50 p-6 text-center border-t border-zinc-100">
