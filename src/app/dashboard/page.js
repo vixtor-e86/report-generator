@@ -23,6 +23,9 @@ import { formatCurrency } from '@/lib/utils';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
 import { PaymentMethodModal, PayoutRequestModal } from '@/components/marketplace/PayoutModals';
+import SellerAccreditationForm from '@/components/marketplace/SellerAccreditationForm';
+import ProjectUploadForm from '@/components/marketplace/ProjectUploadForm';
+import EbookUploadForm from '@/components/marketplace/EbookUploadForm';
 import ReactMarkdown from 'react-markdown';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -139,6 +142,11 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('projects'); // projects, market, tools, seller
   const { wallet, refreshWallet, setShowFundingModal } = useWallet();
   const router = useRouter();
+
+  // Accreditation flow state
+  const [showAccreditation, setShowAccreditation] = useState(false);
+  const [showUploadProject, setShowUploadProject] = useState(false);
+  const [showUploadEbook, setShowUploadEbook] = useState(false);
 
   // DERIVED ADMIN STATUS
   const isAdmin = globalProfile?.role === 'admin';
@@ -477,7 +485,8 @@ export default function Dashboard() {
             </Link>
             
             <div className="flex-1 flex items-center justify-center min-w-0">
-               <div className="flex items-center gap-1 sm:gap-4 md:gap-8 overflow-x-auto no-scrollbar scroll-smooth px-2 max-w-full">
+               <div className="flex items-center gap-1 sm:gap-4 md:gap-8 overflow-x-auto no-scrollbar scroll-smooth px-6 max-w-full">
+
                 <button 
                   onClick={() => setActiveTab('projects')}
                   className={`whitespace-nowrap text-[10px] sm:text-sm font-black uppercase tracking-widest transition-colors py-4 ${activeTab === 'projects' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
@@ -497,12 +506,14 @@ export default function Dashboard() {
                   Tools
                 </button>
 
-                <button 
-                  onClick={() => setActiveTab('seller')}
-                  className={`whitespace-nowrap text-[10px] sm:text-sm font-black uppercase tracking-widest transition-colors py-4 ${activeTab === 'seller' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
-                >
-                  {authUser?.isSeller ? 'Seller Hub' : 'Utility'}
-                </button>
+                {authUser?.isSeller && (
+                  <button 
+                    onClick={() => setActiveTab('seller')}
+                    className={`whitespace-nowrap text-[10px] sm:text-sm font-black uppercase tracking-widest transition-colors py-4 ${activeTab === 'seller' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
+                  >
+                    Seller Hub
+                  </button>
+                )}
                </div>
             </div>
 
@@ -551,7 +562,9 @@ export default function Dashboard() {
                 <button onClick={() => { setActiveTab('projects'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'projects' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Academic Blueprints</button>
                 <button onClick={() => { setActiveTab('market'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'market' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Live Market</button>
                 <button onClick={() => { setActiveTab('tools'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'tools' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Academic Tools</button>
-                <button onClick={() => { setActiveTab('seller'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'seller' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>{authUser?.isSeller ? 'Seller Hub' : 'Utility'}</button>
+                {authUser?.isSeller && (
+                  <button onClick={() => { setActiveTab('seller'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'seller' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Seller Hub</button>
+                )}
             </div>
             
             <div className="flex items-center gap-3 pb-4 border-b border-slate-100 px-2">
@@ -587,8 +600,37 @@ export default function Dashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Header */}
-        <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        {showAccreditation ? (
+            <SellerAccreditationForm 
+                user={authUser} 
+                onComplete={() => {
+                    setShowAccreditation(false);
+                    refreshUser();
+                }}
+                onCancel={() => setShowAccreditation(false)}
+            />
+        ) : showUploadProject ? (
+            <ProjectUploadForm 
+                user={authUser}
+                onComplete={() => {
+                    setShowUploadProject(false);
+                    fetchSellerData();
+                }}
+                onCancel={() => setShowUploadProject(false)}
+            />
+        ) : showUploadEbook ? (
+            <EbookUploadForm 
+                user={authUser}
+                onComplete={() => {
+                    setShowUploadEbook(false);
+                    fetchSellerData();
+                }}
+                onCancel={() => setShowUploadEbook(false)}
+            />
+        ) : (
+            <>
+                {/* Header */}
+                <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase">
                 {activeTab === 'projects' ? 'Academic Blueprint Hub' : activeTab === 'market' ? 'Live Market' : activeTab === 'seller' ? 'Seller Management' : 'Academic Tools'}
@@ -878,11 +920,12 @@ export default function Dashboard() {
                                 <h3 className="text-3xl font-black uppercase tracking-tighter mb-2">Monetize your Academic Expertise</h3>
                                 <p className="text-zinc-400 font-medium leading-relaxed">Join our vetted marketplace as a seller and earn up to 80% from every sale of your academic blueprints and digital ebooks.</p>
                             </div>
-                            <Link href="/marketplace/seller-setup" className="shrink-0 w-full md:w-auto">
-                                <Button className="w-full bg-white text-black hover:bg-zinc-100 px-10 py-7 font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all active:scale-95">
-                                    Apply for Accreditation
-                                </Button>
-                            </Link>
+                            <button 
+                                onClick={() => setShowAccreditation(true)}
+                                className="shrink-0 w-full md:w-auto bg-white text-black hover:bg-zinc-100 px-10 py-7 font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all active:scale-95"
+                            >
+                                Apply for Accreditation
+                            </button>
                         </div>
                     </div>
                 )}
@@ -971,169 +1014,136 @@ export default function Dashboard() {
             </div>
         )}
 
-        {/* --- SELLER HUB / UTILITY VIEW --- */}
-        {activeTab === 'seller' && (
+        {/* --- SELLER HUB VIEW --- */}
+        {activeTab === 'seller' && authUser?.isSeller && (
             <div className="animate-in fade-in duration-500 space-y-12 pb-20">
-                {authUser?.isSeller ? (
-                    <>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-zinc-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
-                                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">Withdrawable Earnings</p>
-                                <p className="text-4xl font-black">{formatCurrency(sellerWallet?.balance || 0)}</p>
-                                <Button 
-                                    onClick={() => setShowPayoutModal(true)}
-                                    className="mt-8 w-full bg-white text-black hover:bg-zinc-100 rounded-xl py-6 font-black uppercase text-[10px] tracking-widest"
-                                >
-                                    Request Payout
-                                </Button>
-                            </div>
-                            <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
-                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Settlement Account</p>
-                                {sellerAccount?.bank_name ? (
-                                    <div className="space-y-1 mt-2">
-                                        <p className="text-lg font-black text-slate-900 uppercase tracking-tight">{sellerAccount.bank_name}</p>
-                                        <p className="text-xs font-bold text-slate-500">{sellerAccount.account_number}</p>
-                                        <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest pt-2">{sellerAccount.account_name}</p>
-                                    </div>
-                                ) : (
-                                    <p className="text-sm font-bold text-slate-400 mt-4 italic">No account added yet</p>
-                                )}
-                                <Button 
-                                    variant="outline" 
-                                    onClick={() => setShowAccountModal(true)}
-                                    className="mt-6 w-full border-zinc-200 hover:border-black text-zinc-900 rounded-xl py-2 font-black uppercase text-[9px] tracking-widest"
-                                >
-                                    {sellerAccount?.bank_name ? 'Update Account' : 'Add Account Details'}
-                                </Button>
-                            </div>
-                            <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
-                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Lifetime Earnings</p>
-                                <p className="text-4xl font-black text-slate-900">{formatCurrency(sellerWallet?.total_earned || 0)}</p>
-                                <div className="mt-6 flex items-center gap-2 text-emerald-600">
-                                    <TrendingUp className="w-4 h-4" />
-                                    <span className="text-xs font-bold uppercase tracking-tight">Active Growth</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-8">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">My Academic Library</h2>
-                                <div className="flex gap-3">
-                                    <Link href="/marketplace/upload-project" className="bg-zinc-900 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-black transition-all">
-                                        <Plus className="w-3 h-3" /> Blueprint
-                                    </Link>
-                                    <Link href="/marketplace/upload-ebook" className="bg-zinc-100 text-zinc-900 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-zinc-200 transition-all border border-zinc-200">
-                                        <Plus className="w-3 h-3" /> Ebook
-                                    </Link>
-                                </div>
-                            </div>
-
-                            {loadingSeller ? (
-                                <div className="py-20 text-center"><div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent mx-auto"></div></div>
-                            ) : myItems.length === 0 ? (
-                                <div className="bg-white rounded-[40px] border border-slate-200 p-20 text-center">
-                                    <Layers className="w-12 h-12 text-slate-100 mx-auto mb-4" />
-                                    <p className="font-black text-slate-400 uppercase text-xs tracking-widest italic">You haven't listed any academic blueprints or ebooks yet</p>
-                                </div>
-                            ) : (
-
-                                <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead className="bg-slate-50 border-b border-slate-100">
-                                            <tr>
-                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset Details</th>
-                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Sales</th>
-                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50">
-                                            {myItems.map((item) => {
-                                                const url = item.itemType === 'blueprint' ? `/marketplace/project/${item.id}` : `/marketplace/ebook/${item.id}`;
-                                                return (
-                                                    <tr key={item.id} className="hover:bg-slate-50/50 transition group">
-                                                        <td className="px-6 py-5">
-                                                            <div className="font-black text-slate-900 text-sm uppercase tracking-tight truncate max-w-md">{item.title}</div>
-                                                            <div className="flex gap-2 mt-1">
-                                                                <Badge className="bg-zinc-100 text-zinc-500 border-none px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest">{item.itemType}</Badge>
-                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{formatCurrency(item.price)}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-5 text-center">
-                                                            <div className="font-black text-slate-900 text-lg">{item.sales_count || 0}</div>
-                                                            <div className="text-[8px] font-black text-slate-400 uppercase">Downloads</div>
-                                                        </td>
-                                                        <td className="px-6 py-5">
-                                                            <Badge className={`border-none px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                                                item.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 
-                                                                item.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
-                                                            }`}>
-                                                                {item.status}
-                                                            </Badge>
-                                                        </td>
-                                                        <td className="px-6 py-5 text-right">
-                                                            <div className="flex gap-2 justify-end">
-                                                                <Link href={url}>
-                                                                    <button className="p-3 bg-white text-zinc-900 rounded-xl hover:bg-zinc-900 hover:text-white transition-all shadow-sm border border-zinc-200" title="View Listing">
-                                                                        <Eye className="w-4 h-4 text-inherit" />
-                                                                    </button>
-                                                                </Link>
-                                                                <button 
-                                                                    onClick={(e) => { e.preventDefault(); handleDeleteItem(item.id, item.itemType); }}
-                                                                    className="p-3 bg-white text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-zinc-200"
-                                                                    title="Delete Listing"
-                                                                >
-                                                                    <Trash2 className="w-4 h-4 text-inherit" />
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    </>
-                ) : (
-                    <div className="max-w-4xl mx-auto text-center space-y-8 py-12">
-                        <div className="w-24 h-24 bg-indigo-50 rounded-[40px] flex items-center justify-center mx-auto text-indigo-600 shadow-sm border border-indigo-100 animate-bounce-slow">
-                            <Sparkles className="w-12 h-12" />
-                        </div>
-                        <div>
-                            <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase mb-4 leading-tight">Unlock Your Seller Potential</h2>
-                            <p className="text-slate-500 font-medium text-lg max-w-2xl mx-auto leading-relaxed">
-                                Join the elite circle of W3 academic contributors. Monetize your technical blueprints and ebooks while helping thousands of scholars globally.
-                            </p>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                            {[
-                                { title: '80% Commission', desc: 'Industry-leading payouts for your intellectual digital assets.', icon: 'Landmark' },
-                                { title: 'Fast Settlements', desc: 'Secure payouts to your local bank within 3 working days.', icon: 'Clock' },
-                                { title: 'Expert Support', desc: 'Full accreditation support and asset optimization guidance.', icon: 'ShieldCheck' }
-                            ].map((feat, i) => (
-                                <div key={i} className="bg-white border border-slate-200 p-8 rounded-[32px] shadow-sm hover:shadow-md transition-all">
-                                    <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
-                                        {feat.icon === 'Landmark' ? <Landmark className="w-5 h-5" /> : feat.icon === 'Clock' ? <Clock className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
-                                    </div>
-                                    <h4 className="font-black text-slate-900 uppercase text-xs tracking-widest mb-2">{feat.title}</h4>
-                                    <p className="text-slate-500 text-xs font-medium leading-relaxed">{feat.desc}</p>
-                                </div>
-                            ))}
-                        </div>
-
-                        <Link href="/marketplace/seller-setup" className="inline-block pt-6">
-                            <Button className="bg-indigo-600 hover:bg-black text-white px-12 py-8 rounded-[24px] font-black uppercase text-sm tracking-[0.2em] shadow-2xl transition-all active:scale-95 group">
-                                Apply for Seller Accreditation
-                                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                            </Button>
-                        </Link>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-zinc-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
+                        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">Withdrawable Earnings</p>
+                        <p className="text-4xl font-black">{formatCurrency(sellerWallet?.balance || 0)}</p>
+                        <Button 
+                            onClick={() => setShowPayoutModal(true)}
+                            className="mt-8 w-full bg-white text-black hover:bg-zinc-100 rounded-xl py-6 font-black uppercase text-[10px] tracking-widest"
+                        >
+                            Request Payout
+                        </Button>
                     </div>
-                )}
+                    <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Settlement Account</p>
+                        {sellerAccount?.bank_name ? (
+                            <div className="space-y-1 mt-2">
+                                <p className="text-lg font-black text-slate-900 uppercase tracking-tight">{sellerAccount.bank_name}</p>
+                                <p className="text-xs font-bold text-slate-500">{sellerAccount.account_number}</p>
+                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest pt-2">{sellerAccount.account_name}</p>
+                            </div>
+                        ) : (
+                            <p className="text-sm font-bold text-slate-400 mt-4 italic">No account added yet</p>
+                        )}
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowAccountModal(true)}
+                            className="mt-6 w-full border-zinc-200 hover:border-black text-zinc-900 rounded-xl py-2 font-black uppercase text-[9px] tracking-widest"
+                        >
+                            {sellerAccount?.bank_name ? 'Update Account' : 'Add Account Details'}
+                        </Button>
+                    </div>
+                    <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Lifetime Earnings</p>
+                        <p className="text-4xl font-black text-slate-900">{formatCurrency(sellerWallet?.total_earned || 0)}</p>
+                        <div className="mt-6 flex items-center gap-2 text-emerald-600">
+                            <TrendingUp className="w-4 h-4" />
+                            <span className="text-xs font-bold uppercase tracking-tight">Active Growth</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-8">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">My Academic Library</h2>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => setShowUploadProject(true)}
+                                className="bg-zinc-900 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-black transition-all"
+                            >
+                                <Plus className="w-3 h-3" /> Blueprint
+                            </button>
+                            <button 
+                                onClick={() => setShowUploadEbook(true)}
+                                className="bg-zinc-100 text-zinc-900 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-zinc-200 transition-all border border-zinc-200"
+                            >
+                                <Plus className="w-3 h-3" /> Ebook
+                            </button>
+                        </div>
+                    </div>
+
+                    {loadingSeller ? (
+                        <div className="py-20 text-center"><div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent mx-auto"></div></div>
+                    ) : myItems.length === 0 ? (
+                        <div className="bg-white rounded-[40px] border border-slate-200 p-20 text-center">
+                            <Layers className="w-12 h-12 text-slate-100 mx-auto mb-4" />
+                            <p className="font-black text-slate-400 uppercase text-xs tracking-widest italic">You haven't listed any academic blueprints or ebooks yet</p>
+                        </div>
+                    ) : (
+
+                        <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-slate-50 border-b border-slate-100">
+                                    <tr>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset Details</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Sales</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {myItems.map((item) => {
+                                        const url = item.itemType === 'blueprint' ? `/marketplace/project/${item.id}` : `/marketplace/ebook/${item.id}`;
+                                        return (
+                                            <tr key={item.id} className="hover:bg-slate-50/50 transition group">
+                                                <td className="px-6 py-5">
+                                                    <div className="font-black text-slate-900 text-sm uppercase tracking-tight truncate max-w-md">{item.title}</div>
+                                                    <div className="flex gap-2 mt-1">
+                                                        <Badge className="bg-zinc-100 text-zinc-500 border-none px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest">{item.itemType}</Badge>
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{formatCurrency(item.price)}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-5 text-center">
+                                                    <div className="font-black text-slate-900 text-lg">{item.sales_count || 0}</div>
+                                                    <div className="text-[8px] font-black text-slate-400 uppercase">Downloads</div>
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    <Badge className={`border-none px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                                        item.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 
+                                                        item.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
+                                                    }`}>
+                                                        {item.status}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-6 py-5 text-right">
+                                                    <div className="flex gap-2 justify-end">
+                                                        <Link href={url}>
+                                                            <button className="p-3 bg-white text-zinc-900 rounded-xl hover:bg-zinc-900 hover:text-white transition-all shadow-sm border border-zinc-200" title="View Listing">
+                                                                <Eye className="w-4 h-4 text-inherit" />
+                                                            </button>
+                                                        </Link>
+                                                        <button 
+                                                            onClick={(e) => { e.preventDefault(); handleDeleteItem(item.id, item.itemType); }}
+                                                            className="p-3 bg-white text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-zinc-200"
+                                                            title="Delete Listing"
+                                                        >
+                                                            <Trash2 className="w-4 h-4 text-inherit" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
 
                 {/* Modals (Common) */}
                 <PaymentMethodModal 
@@ -1154,6 +1164,8 @@ export default function Dashboard() {
                     }}
                 />
             </div>
+        )}
+            </>
         )}
       </div>
 
