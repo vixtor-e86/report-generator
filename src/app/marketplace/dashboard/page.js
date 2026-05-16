@@ -367,14 +367,16 @@ export default function MarketplaceDashboardPage() {
                                   </div>
                                   <div className="flex gap-2">
                                       <Link href={url}>
-                                          <button className="p-3 bg-white rounded-xl hover:bg-zinc-900 hover:text-white transition-all shadow-sm border border-zinc-200" title="View Listing"><Eye className="w-4 h-4" /></button>
+                                          <button className="p-3 bg-white text-zinc-900 rounded-xl hover:bg-zinc-900 hover:text-white transition-all shadow-sm border border-zinc-200" title="View Listing">
+                                            <Eye className="w-4 h-4 text-inherit" />
+                                          </button>
                                       </Link>
                                       <button 
                                         onClick={(e) => { e.preventDefault(); handleDeleteItem(item.id, item.itemType); }}
                                         className="p-3 bg-white text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-zinc-200"
                                         title="Delete Listing"
                                       >
-                                          <Trash2 className="w-4 h-4" />
+                                          <Trash2 className="w-4 h-4 text-inherit" />
                                       </button>
                                   </div>
                               </div>

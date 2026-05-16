@@ -192,12 +192,14 @@ export default function ProjectApprovalAdmin() {
                     >
                       <Icons.Eye className="w-5 h-5" />
                     </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.id); }}
-                      className="p-2 bg-red-50 text-red-400 rounded-xl hover:bg-red-600 hover:text-white transition shadow-sm"
-                    >
-                      <Icons.X className="w-5 h-5" />
-                    </button>
+                    {project.status !== 'pending' && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.id); }}
+                        className="p-2 bg-red-50 text-red-400 rounded-xl hover:bg-red-600 hover:text-white transition shadow-sm"
+                      >
+                        <Icons.X className="w-5 h-5" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

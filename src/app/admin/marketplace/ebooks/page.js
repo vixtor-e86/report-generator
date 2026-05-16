@@ -155,14 +155,17 @@ export default function EbookApprovalAdmin() {
                       onClick={(e) => { e.stopPropagation(); setSelectedEbook(ebook); }}
                       className="p-2 bg-slate-100 text-slate-400 rounded-xl hover:bg-zinc-900 hover:text-white transition shadow-sm"
                     >
-                      <Eye className="w-5 h-5" />
+                      <Icons.Eye className="w-5 h-5" />
                     </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleDeleteEbook(ebook.id); }}
-                      className="p-2 bg-red-50 text-red-400 rounded-xl hover:bg-red-600 hover:text-white transition shadow-sm"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
+                    {ebook.status !== 'pending' && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDeleteEbook(ebook.id); }}
+                        className="p-2 bg-red-50 text-red-400 rounded-xl hover:bg-red-600 hover:text-white transition shadow-sm"
+                      >
+                        <Icons.X className="w-5 h-5" />
+                      </button>
+                    )}
+
                   </td>
                 </tr>
               ))}
