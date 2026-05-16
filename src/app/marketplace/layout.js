@@ -1,8 +1,6 @@
 "use client";
-import { UserProvider, useUser } from '@/contexts/marketplace/UserContext';
-import { WalletProvider } from '@/contexts/marketplace/WalletContext';
+import { useUser } from '@/contexts/marketplace/UserContext';
 import Navigation from '@/components/marketplace/Navigation';
-import { Toaster } from 'sonner';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -128,18 +126,13 @@ function MarketplaceProtection({ children }) {
 
 export default function MarketplaceLayout({ children }) {
   return (
-    <UserProvider>
-      <WalletProvider>
-        <MarketplaceProtection>
-          <div className="min-h-screen bg-[#f8f9fc]">
-            <Navigation />
-            <main className="pt-[70px]">
-              {children}
-            </main>
-            <Toaster richColors closeButton position="top-right" />
-          </div>
-        </MarketplaceProtection>
-      </WalletProvider>
-    </UserProvider>
+    <MarketplaceProtection>
+      <div className="min-h-screen bg-[#f8f9fc]">
+        <Navigation />
+        <main className="pt-[70px]">
+          {children}
+        </main>
+      </div>
+    </MarketplaceProtection>
   );
 }

@@ -20,6 +20,7 @@ import { Input } from '@/components/marketplace/ui/input';
 import { Badge } from '@/components/marketplace/ui/badge';
 import { Button } from '@/components/marketplace/ui/button';
 import { formatCurrency } from '@/lib/utils';
+import { useUser } from '@/contexts/marketplace/UserContext';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
 import ReactMarkdown from 'react-markdown';
 import { gsap } from 'gsap';
@@ -121,8 +122,7 @@ function MarketCard({ item, viewMode }) {
 }
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const { user: authUser, profile: globalProfile, loading: contextLoading } = useUser();
   const [projects, setProjects] = useState([]);
   const [standardProjects, setStandardProjects] = useState([]);
   const [premiumProjects, setPremiumProjects] = useState([]);
@@ -135,7 +135,7 @@ export default function Dashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [activeTab, setActiveTab] = useState('projects'); // projects, market, tools
-  const { wallet, setShowFundingModal } = useWallet();
+  const { wallet, refreshWallet, setShowFundingModal } = useWallet();
   const router = useRouter();
 
   // Market State
@@ -205,100 +205,99 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    async function loadData() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error || !user) {
-        router.push('/'); 
+    async function loadProjects() {
+      if (contextLoading) return;
+      if (!authUser) {
+        router.push('/');
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile) {
-        router.push('/onboarding');
-        return;
+      if (!globalProfile) {
+        // Only redirect if we are SURE there's no profile
+        const { data: checkProf } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('id', authUser.id)
+            .single();
+        if (!checkProf) {
+            router.push('/onboarding');
+            return;
+        }
       }
 
-      const adminStatus = profile.role === 'admin';
+      const adminStatus = globalProfile?.role === 'admin';
       setIsAdmin(adminStatus);
 
-      const { data: userProjects } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      try {
+        const { data: userProjects } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .order('created_at', { ascending: false });
 
-      const { data: userStandardProjects } = await supabase
-        .from('standard_projects')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        const { data: userStandardProjects } = await supabase
+          .from('standard_projects')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .order('created_at', { ascending: false });
 
-      const { data: userPremiumProjects } = await supabase
-        .from('premium_projects')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        const { data: userPremiumProjects } = await supabase
+          .from('premium_projects')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .order('created_at', { ascending: false });
 
-      // Check for unused payments (Standard)
-      const { data: unusedStandard } = await supabase
-        .from('payment_transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'paid')
-        .eq('tier', 'standard')
-        .eq('amount', PRICING.STANDARD) // Use constant instead of hardcoded
-        .is('project_id', null)
-        .not('paystack_reference', 'ilike', '%UNLOCK%')
-        .not('paystack_reference', 'ilike', '%FUND%')
-        .order('paid_at', { ascending: false })
-        .limit(1);
+        // Check for unused payments (Standard)
+        const { data: unusedStandard } = await supabase
+          .from('payment_transactions')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .eq('status', 'paid')
+          .eq('tier', 'standard')
+          .eq('amount', PRICING.STANDARD)
+          .is('project_id', null)
+          .not('paystack_reference', 'ilike', '%UNLOCK%')
+          .not('paystack_reference', 'ilike', '%FUND%')
+          .order('paid_at', { ascending: false })
+          .limit(1);
 
-      if (unusedStandard && unusedStandard.length > 0) {
-        setPendingStandardPayment(unusedStandard[0]);
+        if (unusedStandard && unusedStandard.length > 0) {
+          setPendingStandardPayment(unusedStandard[0]);
+        }
+
+        // Check for unused payments (Premium)
+        const { data: unusedPremium } = await supabase
+          .from('payment_transactions')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .eq('status', 'paid')
+          .eq('tier', 'premium')
+          .eq('amount', PRICING.PREMIUM)
+          .is('project_id', null)
+          .not('paystack_reference', 'ilike', '%UNLOCK%')
+          .not('paystack_reference', 'ilike', '%FUND%')
+          .order('paid_at', { ascending: false })
+          .limit(1);
+
+        if (unusedPremium && unusedPremium.length > 0) {
+          setPendingPremiumPayment(unusedPremium[0]);
+        }
+
+        setProjects((userProjects || []).map(p => ({ ...p, tier: p.tier || 'free' })));
+        setStandardProjects(userStandardProjects || []);
+        setPremiumProjects(userPremiumProjects || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-
-      // Check for unused payments (Premium)
-      const { data: unusedPremium } = await supabase
-        .from('payment_transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'paid')
-        .eq('tier', 'premium')
-        .eq('amount', PRICING.PREMIUM) // Use constant instead of hardcoded
-        .is('project_id', null)
-        .not('paystack_reference', 'ilike', '%UNLOCK%')
-        .not('paystack_reference', 'ilike', '%FUND%')
-        .order('paid_at', { ascending: false })
-        .limit(1);
-
-      if (unusedPremium && unusedPremium.length > 0) {
-        setPendingPremiumPayment(unusedPremium[0]);
-      }
-
-      setUser(user);
-      setProfile(profile);
-      setProjects((userProjects || []).map(p => ({ ...p, tier: p.tier || 'free' })));
-      setStandardProjects(userStandardProjects || []);
-      setPremiumProjects(userPremiumProjects || []);
-      setLoading(false);
     }
-    loadData();
-  }, [router]);
+    loadProjects();
+  }, [authUser, globalProfile, contextLoading, router]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
-  };
-
-  const handleMarketplaceAccess = (e) => {
-    if (e) e.preventDefault();
-    router.push('/marketplace');
   };
 
   const handleCreateFree = () => {
@@ -334,8 +333,8 @@ export default function Dashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.id,
-          email: user.email,
+          userId: authUser.id,
+          email: authUser.email,
           tier: 'standard',
           amount: PRICING.STANDARD
         })
@@ -379,8 +378,8 @@ export default function Dashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.id,
-          email: user.email,
+          userId: authUser.id,
+          email: authUser.email,
           tier: 'premium',
           amount: PRICING.PREMIUM
         })
@@ -408,7 +407,7 @@ export default function Dashboard() {
   const inProgressReports = allProjects.filter(p => p.status === 'in_progress').length;
   const hasFreeProject = projects.some(p => p.tier === 'free');
 
-  if (loading) {
+  if (loading || contextLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -475,7 +474,7 @@ export default function Dashboard() {
 
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
-                  <p className="text-sm font-semibold text-slate-900">{profile.username || 'Student'}</p>
+                  <p className="text-sm font-semibold text-slate-900">{globalProfile?.username || 'Student'}</p>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                     isAdmin ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600'
                   }`}>
@@ -483,7 +482,7 @@ export default function Dashboard() {
                   </span>
                 </div>
                 <div className="h-9 w-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">
-                  {(profile.username || user.email || 'U')[0].toUpperCase()}
+                  {(globalProfile?.username || authUser?.email || 'U')[0].toUpperCase()}
                 </div>
               </div>
 
@@ -511,11 +510,11 @@ export default function Dashboard() {
             
             <div className="flex items-center gap-3 pb-4 border-b border-slate-100 px-2">
               <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
-                {(profile.username || user.email || 'U')[0].toUpperCase()}
+                {(globalProfile?.username || authUser?.email || 'U')[0].toUpperCase()}
               </div>
               <div>
-                <p className="font-semibold text-slate-900">{profile.username}</p>
-                <p className="text-sm text-slate-500">{user.email}</p>
+                <p className="font-semibold text-slate-900">{globalProfile?.username}</p>
+                <p className="text-sm text-slate-500">{authUser?.email}</p>
               </div>
             </div>
             {isAdmin && (
@@ -814,7 +813,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Become a Seller CTA */}
-                {!profile?.is_seller && (
+                {!globalProfile?.is_seller && (
                     <div className="mb-12 relative overflow-hidden bg-zinc-900 rounded-[40px] p-10 text-white border border-white/5 shadow-2xl">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
@@ -912,7 +911,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <FeedbackWidget userId={user?.id} />
+      <FeedbackWidget userId={authUser?.id} />
 
       {/* Floating Tutorial Trigger */}
       <button 
