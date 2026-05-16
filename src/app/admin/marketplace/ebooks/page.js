@@ -10,6 +10,20 @@ import {
   Download, Plus, Book, Image as ImageIcon
 } from 'lucide-react';
 
+const Icons = {
+  Eye: ({ className }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c3.55 0 6.733 1.835 8.542 4.646.458.705.458 1.584 0 2.29C18.733 16.165 15.55 18 12 18c-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  ),
+  X: ({ className }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  )
+};
+
 export default function EbookApprovalAdmin() {
   const [ebooks, setEbooks] = useState([]);
   const [loading, setLoading] = useState(true);
