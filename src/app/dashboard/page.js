@@ -8,6 +8,117 @@ import { ShoppingBag } from 'lucide-react';
 import ReferralFAB from '@/components/ReferralFAB';
 import FeedbackWidget from '@/components/FeedbackWidget';
 import CustomModal from '@/components/premium/modals/CustomModal';
+import { academicTools, toolCategories } from '@/data/marketplace/tools';
+import { 
+  Search, Grid3X3, List, Star, ChevronDown, SlidersHorizontal, 
+  ArrowRight, Sparkles, Layers, CheckCircle2, Wrench, ShieldCheck, 
+  BookOpen, Presentation, BarChart3, Code2, Lightbulb, RefreshCw, 
+  SpellCheck, Quote, Image as ImageIcon, Zap, Check, Wallet, 
+  UserCheck, Landmark, Clock, Phone, Mail, Book
+} from 'lucide-react';
+import { Input } from '@/components/marketplace/ui/input';
+import { Badge } from '@/components/marketplace/ui/badge';
+import { Button } from '@/components/marketplace/ui/button';
+import { formatCurrency } from '@/lib/utils';
+import { useWallet } from '@/contexts/marketplace/WalletContext';
+import ReactMarkdown from 'react-markdown';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
+const iconMap = {
+  ShieldCheck,
+  UserCheck: ShieldCheck,
+  Presentation,
+  BookOpen,
+  Search,
+  Lightbulb,
+  BarChart3,
+  SpellCheck,
+  Quote,
+  Image: ImageIcon,
+  Code2,
+  RefreshCw,
+};
+
+function MarketCard({ item, viewMode }) {
+  const sellerName = item.marketplace_sellers 
+    ? `${item.marketplace_sellers.first_name} ${item.marketplace_sellers.last_name}` 
+    : 'Verified Seller';
+
+  const detailUrl = item.itemType === 'blueprint' 
+    ? `/marketplace/project/${item.id}` 
+    : `/marketplace/ebook/${item.id}`;
+
+  const image = item.itemType === 'blueprint' ? item.preview_images?.[0] : item.cover_image;
+  const tag = item.itemType === 'blueprint' ? item.faculty : item.category;
+
+  if (viewMode === 'list') {
+    return (
+      <Link href={detailUrl} className="group bg-white border border-[#e5e7eb] p-4 rounded-3xl hover:border-indigo-600 hover:shadow-xl transition-all flex items-center gap-6">
+        <div className={`rounded-2xl overflow-hidden flex-shrink-0 ${item.itemType === 'blueprint' ? 'w-32 h-24' : 'w-20 h-28 border border-zinc-100'}`}>
+          <img src={image} className="w-full h-full object-cover" alt="" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`text-[10px] font-black uppercase tracking-widest ${item.itemType === 'blueprint' ? 'text-indigo-600' : 'text-slate-600'}`}>{tag}</span>
+          </div>
+          <h3 className="font-black text-slate-900 truncate text-lg group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{item.title}</h3>
+          <p className="text-xs text-slate-500 font-medium">By {sellerName}</p>
+        </div>
+        <div className="text-right pr-4">
+          <div className="text-xl font-black text-slate-900">{formatCurrency(item.price)}</div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Digital Asset</p>
+        </div>
+      </Link>
+    );
+  }
+
+  return (
+    <Link href={detailUrl} className="flex flex-col bg-white border border-[#e5e7eb] rounded-[32px] overflow-hidden hover:shadow-2xl transition-all duration-500 relative group">
+      <div className={`relative overflow-hidden p-2 ${item.itemType === 'blueprint' ? 'h-52' : 'h-64'}`}>
+        <img
+          src={image}
+          alt={item.title}
+          className="w-full h-full object-cover rounded-[24px] transition-transform duration-700 group-hover:scale-105"
+        />
+        <div className="absolute top-4 left-4">
+          <span className={`px-3 py-1 bg-white border border-zinc-100 text-zinc-900 text-[10px] font-black uppercase tracking-wider rounded-full shadow-lg`}>
+            {tag}
+          </span>
+        </div>
+        {item.itemType === 'ebook' && (
+             <div className="absolute top-4 right-4">
+                <Badge className="bg-zinc-900 text-white border-none text-[8px] px-2 font-black">EBOOK</Badge>
+             </div>
+        )}
+      </div>
+
+      <div className="p-6 flex-1 flex flex-col">
+        <div className="flex-1">
+          <h3 className="text-slate-900 font-black mb-2 line-clamp-2 leading-tight group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+            {item.title}
+          </h3>
+          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-4">
+            BY {sellerName}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between pt-5 border-t border-slate-50">
+          <span className="text-[#111827] font-black text-lg">
+            {formatCurrency(item.price)}
+          </span>
+          <div className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center group-hover:bg-indigo-600 transition-all shadow-lg active:scale-90">
+             <ArrowRight className="w-5 h-5" />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -23,7 +134,62 @@ export default function Dashboard() {
   const [pendingPremiumPayment, setPendingPremiumPayment] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [activeTab, setActiveTab] = useState('projects'); // projects, market, tools
+  const { wallet, setShowFundingModal } = useWallet();
   const router = useRouter();
+
+  // Market State
+  const [marketItems, setMarketItems] = useState([]);
+  const [marketLoading, setMarketLoading] = useState(false);
+  const [marketSearch, setMarketMarketSearch] = useState('');
+  const [marketType, setMarketType] = useState('all');
+  const [viewMode, setViewMode] = useState('grid');
+
+  // Tools State
+  const [toolSearch, setToolSearch] = useState('');
+  const [toolCategory, setToolCategory] = useState('all');
+
+  useEffect(() => {
+    if (activeTab === 'market') fetchMarketItems();
+  }, [activeTab, marketType]);
+
+  async function fetchMarketItems() {
+    setMarketLoading(true);
+    try {
+      const fetchBlueprints = async () => {
+        const { data } = await supabase
+          .from('marketplace_projects')
+          .select('*, marketplace_sellers(first_name, last_name)')
+          .eq('status', 'active');
+        return (data || []).map(item => ({ ...item, itemType: 'blueprint' }));
+      };
+
+      const fetchEbooks = async () => {
+        const { data } = await supabase
+          .from('marketplace_ebooks')
+          .select('*, marketplace_sellers(first_name, last_name)')
+          .eq('status', 'active');
+        return (data || []).map(item => ({ ...item, itemType: 'ebook' }));
+      };
+
+      let combined = [];
+      if (marketType === 'all') {
+        const [blueprints, ebooks] = await Promise.all([fetchBlueprints(), fetchEbooks()]);
+        combined = [...blueprints, ...ebooks];
+      } else if (marketType === 'blueprints') {
+        combined = await fetchBlueprints();
+      } else {
+        combined = await fetchEbooks();
+      }
+
+      combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setMarketItems(combined);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setMarketLoading(false);
+    }
+  }
 
   // Notification Modal State
   const [notification, setNotification] = useState({ 
@@ -265,24 +431,45 @@ export default function Dashboard() {
               <span className="text-xl font-bold text-slate-900 tracking-tight">W3 WriteLab</span>
             </Link>
             
-            <div className="hidden md:flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-8">
+              <button 
+                onClick={() => setActiveTab('projects')}
+                className={`text-sm font-black uppercase tracking-widest transition-colors ${activeTab === 'projects' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                Projects
+              </button>
+              <button 
+                onClick={() => setActiveTab('market')}
+                className={`text-sm font-black uppercase tracking-widest transition-colors ${activeTab === 'market' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                Live Market
+              </button>
+              <button 
+                onClick={() => setActiveTab('tools')}
+                className={`text-sm font-black uppercase tracking-widest transition-colors ${activeTab === 'tools' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                Academic Tools
+              </button>
+
+              <div className="h-6 w-px bg-slate-200"></div>
+
               {isAdmin && (
                 <Link
                   href="/admin"
                   className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  Admin Panel
+                  Admin
                 </Link>
               )}
 
-              <button
-                onClick={handleMarketplaceAccess}
+              <Link
+                href="/marketplace/dashboard"
                 className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors bg-transparent border-none cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4" />
-                Marketplace
-              </button>
+                Seller Hub
+              </Link>
               
               <div className="h-6 w-px bg-slate-200"></div>
 
@@ -316,7 +503,13 @@ export default function Dashboard() {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-4">
-            <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+            <div className="flex bg-zinc-50 p-2 rounded-2xl flex-col gap-2">
+                <button onClick={() => { setActiveTab('projects'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest ${activeTab === 'projects' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>Projects</button>
+                <button onClick={() => { setActiveTab('market'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest ${activeTab === 'market' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>Live Market</button>
+                <button onClick={() => { setActiveTab('tools'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest ${activeTab === 'tools' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>Academic Tools</button>
+            </div>
+            
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-100 px-2">
               <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
                 {(profile.username || user.email || 'U')[0].toUpperCase()}
               </div>
@@ -326,15 +519,15 @@ export default function Dashboard() {
               </div>
             </div>
             {isAdmin && (
-              <Link href="/admin" className="block text-slate-600 font-medium hover:text-indigo-600">Admin Panel</Link>
+              <Link href="/admin" className="block text-slate-600 font-medium hover:text-indigo-600 px-2">Admin Panel</Link>
             )}
-            <button 
-              onClick={handleMarketplaceAccess}
-              className="block w-full text-left text-slate-600 font-medium hover:text-indigo-600"
+            <Link 
+              href="/marketplace/dashboard"
+              className="block w-full text-left text-slate-600 font-medium hover:text-indigo-600 px-2"
             >
-              Marketplace
-            </button>
-            <button onClick={handleLogout} className="block w-full text-left text-red-600 font-medium">Sign Out</button>
+              Seller Hub
+            </Link>
+            <button onClick={handleLogout} className="block w-full text-left text-red-600 font-medium px-2">Sign Out</button>
           </div>
         )}
       </nav>
@@ -344,225 +537,379 @@ export default function Dashboard() {
         {/* Header */}
         <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
-            <p className="text-slate-600 mt-1">Manage your reports and create new projects.</p>
-          </div>
-          {isAdmin && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-sm font-medium">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-              </span>
-              Admin Mode Active
-            </span>
-          )}
-        </div>
-
-        {/* Payment Success Alert (Standard) */}
-        {pendingStandardPayment && !isAdmin && (
-          <div className="mb-8 rounded-xl border border-emerald-200 bg-emerald-50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-2">
-            <div className="p-3 bg-emerald-100 rounded-full text-emerald-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-emerald-900">Standard Payment Confirmed!</h3>
-              <p className="text-emerald-700 text-sm mt-1">Your Standard tier payment of <strong>₦{pendingStandardPayment.amount.toLocaleString()}</strong> is active.</p>
-            </div>
-            <button onClick={() => router.push('/template-select')} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">
-              Continue Setup →
-            </button>
-          </div>
-        )}
-
-        {/* Payment Success Alert (Premium) */}
-        {pendingPremiumPayment && !isAdmin && (
-          <div className="mb-8 rounded-xl border border-purple-200 bg-purple-50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-2">
-            <div className="p-3 bg-purple-100 rounded-full text-purple-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-purple-900">Premium Payment Confirmed!</h3>
-              <p className="text-purple-700 text-sm mt-1">Your Premium tier payment of <strong>₦{pendingPremiumPayment.amount.toLocaleString()}</strong> is active. Enjoy elite features.</p>
-            </div>
-            <button onClick={() => router.push('/premium/template-selection')} className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">
-              Setup Premium Workspace →
-            </button>
-          </div>
-        )}
-
-        {/* Project Creation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          
-          {/* FREE TIER */}
-          <div className="group relative bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg hover:border-slate-300 transition-all duration-200">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="font-bold text-slate-900 text-lg">Starter</h3>
-                <p className="text-slate-500 text-sm">Essential features</p>
-              </div>
-              <span className="text-2xl font-bold text-slate-900">₦0</span>
-            </div>
-            <ul className="space-y-3 mb-8">
-              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> 2 Images Max</li>
-              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Basic AI Model</li>
-              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> PDF Export Only</li>
-            </ul>
-            <div className="mt-auto">
-              <Link href="/features" className="block text-center text-sm text-gray-600 hover:text-indigo-600 font-medium mb-3 transition">
-                Learn more about features →
-              </Link>
-              <button 
-                onClick={handleCreateFree}
-                disabled={!isAdmin && hasFreeProject}
-                className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {!isAdmin && hasFreeProject ? 'Limit Reached' : 'Create Free Project'}
-              </button>
-            </div>
-          </div>
-
-          {/* STANDARD TIER */}
-          <div className="relative bg-slate-900 rounded-xl border border-indigo-500 p-6 shadow-xl hover:shadow-2xl transition-all duration-200 transform hover:-translate-y-1">
-            <div className="absolute top-0 right-0 -mt-3 mr-3 px-3 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">POPULAR</div>
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="font-bold text-white text-lg">Standard</h3>
-                <p className="text-indigo-200 text-sm">Professional grade</p>
-              </div>
-              <span className="text-2xl font-bold text-white">{isAdmin ? 'Free' : `₦${PRICING.STANDARD.toLocaleString()}`}</span>
-            </div>
-            <ul className="space-y-3 mb-8">
-              <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Smart Suggestions & Modifications</li>
-              <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> DOCX + PDF Export</li>
-              <li className="flex gap-2 text-sm text-indigo-100"><svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Advanced Editing</li>
-            </ul>
-            <div className="mt-auto">
-              <Link href="/features" className="block text-center text-sm text-indigo-200 hover:text-white font-medium mb-3 transition">
-                See what&apos;s included →
-              </Link>
-              <button 
-                onClick={handleCreateStandard}
-                disabled={creatingPayment}
-                className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-70"
-              >
-                {creatingPayment ? 'Processing...' : (isAdmin ? 'Create Standard' : 'Select Standard')}
-              </button>
-            </div>
-          </div>
-
-          {/* PREMIUM TIER */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg hover:border-slate-300 transition-all duration-200">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="font-bold text-slate-900 text-lg">Premium</h3>
-                <p className="text-slate-500 text-sm">Maximum power</p>
-              </div>
-              <span className="text-2xl font-bold text-slate-900">{isAdmin ? 'Free' : `₦${PRICING.PREMIUM.toLocaleString()}`}</span>
-            </div>
-            <ul className="space-y-3 mb-8">
-              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Superior AI Model</li>
-              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Custom Templates</li>
-              <li className="flex gap-2 text-sm text-slate-600"><svg className="w-5 h-5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Priority Support</li>
-            </ul>
-            <div className="mt-auto">
-              <Link href="/features" className="block text-center text-sm text-gray-600 hover:text-indigo-600 font-medium mb-3 transition">
-                See what&apos;s included →
-              </Link>
-              <button 
-                onClick={handleCreatePremium} 
-                disabled={creatingPayment}
-                className="w-full py-2.5 rounded-lg font-semibold text-sm transition-colors bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-70"
-              >
-                {creatingPayment ? 'Processing...' : (isAdmin ? 'Create Premium' : 'Select Premium')}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <p className="text-xs text-slate-500 font-medium uppercase mb-1">Total Reports</p>
-            <p className="text-2xl font-bold text-slate-900">{totalReports}</p>
-          </div>
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <p className="text-xs text-slate-500 font-medium uppercase mb-1">In Progress</p>
-            <p className="text-2xl font-bold text-slate-900">{inProgressReports}</p>
-          </div>
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <p className="text-xs text-slate-500 font-medium uppercase mb-1">Completed</p>
-            <p className="text-2xl font-bold text-slate-900">{completedReports}</p>
-          </div>
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <p className="text-xs text-slate-500 font-medium uppercase mb-1">Plan Status</p>
-            <p className={`text-lg font-bold ${isAdmin ? 'text-indigo-600' : 'text-slate-900'}`}>
-              {isAdmin ? 'Admin' : hasFreeProject ? 'Active' : 'New'}
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase">
+                {activeTab === 'projects' ? 'My Workspace' : activeTab === 'market' ? 'Live Market' : 'Academic Tools'}
+            </h1>
+            <p className="text-slate-500 font-medium mt-1">
+                {activeTab === 'projects' ? 'Manage your research reports and create new projects.' : 
+                 activeTab === 'market' ? 'Explore vetted academic blueprints and digital ebooks.' : 
+                 'Professional research and writing tools for elite academics.'}
             </p>
           </div>
+          <div className="flex items-center gap-4">
+            <button 
+                onClick={() => setShowFundingModal(true)}
+                className="flex items-center gap-3 px-4 py-2 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-black transition-all active:scale-95"
+            >
+                <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center">
+                    <Wallet className="w-4 h-4 text-white" />
+                </div>
+                <div className="text-left">
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Balance</p>
+                    <p className="text-sm font-black text-slate-900 leading-none">{formatCurrency(wallet.balance)}</p>
+                </div>
+            </button>
+            {isAdmin && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-widest">
+                <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                </span>
+                Admin
+                </span>
+            )}
+          </div>
         </div>
 
-        {/* Recent Projects List */}
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 mb-6">Your Projects</h2>
-          
-          {totalReports === 0 ? (
-            <div className="text-center py-20 bg-white rounded-xl border-2 border-dashed border-slate-200">
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-              </div>
-              <h3 className="text-slate-900 font-medium mb-1">No projects yet</h3>
-              <p className="text-slate-500 text-sm">Select a plan above to create your first report.</p>
+        {/* --- PROJECTS VIEW --- */}
+        {activeTab === 'projects' && (
+          <div className="animate-in fade-in duration-500">
+            {/* Payment Success Alert (Standard) */}
+            {pendingStandardPayment && !isAdmin && (
+            <div className="mb-8 rounded-xl border border-emerald-200 bg-emerald-50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-2">
+                <div className="p-3 bg-emerald-100 rounded-full text-emerald-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                </div>
+                <div className="flex-1">
+                <h3 className="font-bold text-emerald-900">Standard Payment Confirmed!</h3>
+                <p className="text-emerald-700 text-sm mt-1">Your Standard tier payment of <strong>₦{pendingStandardPayment.amount.toLocaleString()}</strong> is active.</p>
+                </div>
+                <button onClick={() => router.push('/template-select')} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">
+                Continue Setup →
+                </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allProjects.map((project) => (
-                <Link 
-                  key={project.id} 
-                  href={
-                    (project.tier === 'free' || project.tier === 'unlocked') ? `/project/${project.id}` : 
-                    project.tier === 'standard' ? `/standard/${project.id}` :
-                    `/premium/workspace?id=${project.id}`
-                  }
-                  className="group block bg-white rounded-xl border border-slate-200 p-5 hover:border-indigo-400 hover:shadow-md transition-all duration-200"
+            )}
+
+            {/* Payment Success Alert (Premium) */}
+            {pendingPremiumPayment && !isAdmin && (
+            <div className="mb-8 rounded-xl border border-purple-200 bg-purple-50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-2">
+                <div className="p-3 bg-purple-100 rounded-full text-purple-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                </div>
+                <div className="flex-1">
+                <h3 className="font-bold text-purple-900">Premium Payment Confirmed!</h3>
+                <p className="text-purple-700 text-sm mt-1">Your Premium tier payment of <strong>₦{pendingPremiumPayment.amount.toLocaleString()}</strong> is active. Enjoy elite features.</p>
+                </div>
+                <button onClick={() => router.push('/premium/template-selection')} className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">
+                Setup Premium Workspace →
+                </button>
+            </div>
+            )}
+
+            {/* Project Creation Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            
+            {/* FREE TIER */}
+            <div className="group relative bg-white rounded-[32px] border border-slate-200 p-8 hover:shadow-lg hover:border-slate-300 transition-all duration-200">
+                <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h3 className="font-black text-slate-900 text-lg uppercase tracking-tight">Starter</h3>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Essential Access</p>
+                </div>
+                <span className="text-2xl font-black text-slate-900 tracking-tighter">₦0</span>
+                </div>
+                <ul className="space-y-3 mb-10">
+                <li className="flex gap-2 text-xs font-bold text-slate-600 uppercase tracking-tight"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> 2 Images Max</li>
+                <li className="flex gap-2 text-xs font-bold text-slate-600 uppercase tracking-tight"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Basic AI Model</li>
+                <li className="flex gap-2 text-xs font-bold text-slate-600 uppercase tracking-tight"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> PDF Export Only</li>
+                </ul>
+                <div className="mt-auto">
+                <button 
+                    onClick={handleCreateFree}
+                    disabled={!isAdmin && hasFreeProject}
+                    className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border-2 border-slate-100 text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <div className="flex justify-between items-start mb-3">
-                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${
-                      project.tier === 'free' ? 'bg-slate-100 text-slate-600' : 
-                      project.tier === 'unlocked' ? 'bg-emerald-50 text-emerald-600' :
-                      project.tier === 'standard' ? 'bg-indigo-50 text-indigo-600' : 'bg-purple-50 text-purple-600'
-                    }`}>
-                      {project.tier}
-                    </span>
-                    <span className={`flex items-center gap-1.5 text-xs font-medium ${
-                      project.status === 'completed' ? 'text-emerald-600' : 'text-amber-600'
-                    }`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${
-                        project.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'
-                      }`}></span>
-                      {project.status === 'completed' ? 'Completed' : 'In Progress'}
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-bold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors line-clamp-1">{project.title}</h3>
-                  <p className="text-sm text-slate-500 mb-4 line-clamp-2 min-h-[40px]">{project.description}</p>
-                  
-                  <div className="flex items-center justify-between text-xs text-slate-400 pt-4 border-t border-slate-100">
-                    <span>{new Date(project.created_at).toLocaleDateString()}</span>
-                    
-                    {/* Expiration Warning for Free Projects */}
-                    {project.tier === 'free' && (
-                      <span className="text-orange-600 font-medium bg-orange-50 px-2 py-0.5 rounded">
-                        Expires in {Math.max(0, 30 - Math.floor((Date.now() - new Date(project.created_at).getTime()) / (1000 * 60 * 60 * 24)))} days
-                      </span>
-                    )}
-
-                    <span>Chapter {project.current_chapter || 1}/5</span>
-                  </div>
-                </Link>
-              ))}
+                    {!isAdmin && hasFreeProject ? 'Limit Reached' : 'Launch Free Build'}
+                </button>
+                </div>
             </div>
-          )}
-        </div>
+
+            {/* STANDARD TIER */}
+            <div className="relative bg-slate-900 rounded-[32px] border border-indigo-500 p-8 shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 transform hover:-translate-y-1">
+                <div className="absolute top-0 right-8 -translate-y-1/2 px-4 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl">RECOMMENDED</div>
+                <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h3 className="font-black text-white text-lg uppercase tracking-tight">Standard</h3>
+                    <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest">Professional Grade</p>
+                </div>
+                <span className="text-2xl font-black text-white tracking-tighter">{isAdmin ? 'Free' : `₦${PRICING.STANDARD.toLocaleString()}`}</span>
+                </div>
+                <ul className="space-y-3 mb-10">
+                <li className="flex gap-2 text-xs font-bold text-indigo-100 uppercase tracking-tight"><Check className="w-4 h-4 text-indigo-400 shrink-0" /> Smart Improvements</li>
+                <li className="flex gap-2 text-xs font-bold text-indigo-100 uppercase tracking-tight"><Check className="w-4 h-4 text-indigo-400 shrink-0" /> DOCX + PDF Export</li>
+                <li className="flex gap-2 text-xs font-bold text-indigo-100 uppercase tracking-tight"><Check className="w-4 h-4 text-indigo-400 shrink-0" /> Full Code Injection</li>
+                </ul>
+                <div className="mt-auto">
+                <button 
+                    onClick={handleCreateStandard}
+                    disabled={creatingPayment}
+                    className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-600/20 disabled:opacity-70"
+                >
+                    {creatingPayment ? 'Processing...' : (isAdmin ? 'Launch Standard' : 'Select Standard')}
+                </button>
+                </div>
+            </div>
+
+            {/* PREMIUM TIER */}
+            <div className="bg-white rounded-[32px] border border-slate-200 p-8 hover:shadow-lg hover:border-slate-300 transition-all duration-200">
+                <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h3 className="font-black text-slate-900 text-lg uppercase tracking-tight">Premium</h3>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Maximum Power</p>
+                </div>
+                <span className="text-2xl font-black text-slate-900 tracking-tighter">{isAdmin ? 'Free' : `₦${PRICING.PREMIUM.toLocaleString()}`}</span>
+                </div>
+                <ul className="space-y-3 mb-10">
+                <li className="flex gap-2 text-xs font-bold text-slate-600 uppercase tracking-tight"><Check className="w-4 h-4 text-purple-500 shrink-0" /> Superior AI Engine</li>
+                <li className="flex gap-2 text-xs font-bold text-slate-600 uppercase tracking-tight"><Check className="w-4 h-4 text-purple-500 shrink-0" /> Custom Logic Blocks</li>
+                <li className="flex gap-2 text-xs font-bold text-slate-600 uppercase tracking-tight"><Check className="w-4 h-4 text-purple-500 shrink-0" /> Priority Pipeline</li>
+                </ul>
+                <div className="mt-auto">
+                <button 
+                    onClick={handleCreatePremium} 
+                    disabled={creatingPayment}
+                    className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-black shadow-xl disabled:opacity-70"
+                >
+                    {creatingPayment ? 'Processing...' : (isAdmin ? 'Launch Premium' : 'Select Premium')}
+                </button>
+                </div>
+            </div>
+            </div>
+
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 leading-none">Total Reports</p>
+                <p className="text-3xl font-black text-slate-900 tracking-tighter">{totalReports}</p>
+            </div>
+            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 leading-none">Active Builds</p>
+                <p className="text-3xl font-black text-slate-900 tracking-tighter">{inProgressReports}</p>
+            </div>
+            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 leading-none">Finalized</p>
+                <p className="text-3xl font-black text-slate-900 tracking-tighter">{completedReports}</p>
+            </div>
+            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 leading-none">Acct Rank</p>
+                <p className={`text-sm font-black uppercase tracking-tight ${isAdmin ? 'text-indigo-600' : 'text-slate-900'}`}>
+                {isAdmin ? 'System Admin' : hasFreeProject ? 'Active Scholar' : 'New Recruit'}
+                </p>
+            </div>
+            </div>
+
+            {/* Recent Projects List */}
+            <div>
+            <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Active Repositories</h2>
+                <Link href="/features" className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">Compare Features →</Link>
+            </div>
+            
+            {totalReports === 0 ? (
+                <div className="text-center py-24 bg-white rounded-[48px] border border-[#e5e7eb] shadow-sm">
+                <div className="w-20 h-20 bg-slate-50 rounded-[30px] flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-10 h-10 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tighter">No Active Projects</h3>
+                <p className="text-slate-500 font-medium max-w-xs mx-auto">Select an architectural plan above to begin your first technical document.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {allProjects.map((project) => (
+                    <Link 
+                    key={project.id} 
+                    href={
+                        (project.tier === 'free' || project.tier === 'unlocked') ? `/project/${project.id}` : 
+                        project.tier === 'standard' ? `/standard/${project.id}` :
+                        `/premium/workspace?id=${project.id}`
+                    }
+                    className="group block bg-white rounded-[32px] border border-slate-200 p-8 hover:border-indigo-400 hover:shadow-2xl transition-all duration-300 relative overflow-hidden"
+                    >
+                    <div className="flex justify-between items-start mb-6">
+                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm ${
+                        project.tier === 'free' ? 'bg-slate-100 text-slate-600' : 
+                        project.tier === 'unlocked' ? 'bg-emerald-50 text-emerald-600' :
+                        project.tier === 'standard' ? 'bg-indigo-50 text-indigo-600' : 'bg-purple-50 text-purple-600'
+                        }`}>
+                        {project.tier} Build
+                        </span>
+                        <span className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${
+                        project.status === 'completed' ? 'text-emerald-600' : 'text-amber-600'
+                        }`}>
+                        <span className={`h-2 w-2 rounded-full shadow-sm animate-pulse ${
+                            project.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'
+                        }`}></span>
+                        {project.status === 'completed' ? 'Finalized' : 'Syncing'}
+                        </span>
+                    </div>
+                    
+                    <h3 className="font-black text-slate-900 mb-2 text-xl group-hover:text-indigo-600 transition-colors line-clamp-1 uppercase tracking-tighter">{project.title}</h3>
+                    <p className="text-sm text-slate-500 mb-8 line-clamp-2 min-h-[40px] leading-relaxed font-medium">{project.description}</p>
+                    
+                    <div className="flex items-center justify-between text-[10px] font-black text-slate-400 pt-6 border-t border-slate-100 uppercase tracking-widest">
+                        <span>{new Date(project.created_at).toLocaleDateString()}</span>
+                        
+                        {/* Expiration Warning for Free Projects */}
+                        {project.tier === 'free' && (
+                        <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-100">
+                            {Math.max(0, 30 - Math.floor((Date.now() - new Date(project.created_at).getTime()) / (1000 * 60 * 60 * 24)))}D Left
+                        </span>
+                        )}
+
+                        <span className="text-zinc-900">Ch. {project.current_chapter || 1}/5</span>
+                    </div>
+                    </Link>
+                ))}
+                </div>
+            )}
+            </div>
+          </div>
+        )}
+
+        {/* --- LIVE MARKET VIEW --- */}
+        {activeTab === 'market' && (
+            <div className="animate-in fade-in duration-500">
+                {/* Market Toolbar */}
+                <div className="sticky top-[70px] z-40 bg-[#f8f9fc]/95 backdrop-blur-md border border-slate-200 rounded-3xl p-4 mb-8 shadow-sm">
+                    <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+                        <div className="relative w-full md:w-96">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                            <Input 
+                                placeholder="Search blueprints or ebooks..." 
+                                value={marketSearch}
+                                onChange={(e) => setMarketMarketSearch(e.target.value)}
+                                className="pl-12 bg-white border-slate-200 rounded-2xl h-12 font-bold focus:border-black shadow-inner"
+                            />
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                                {['all', 'blueprints', 'ebooks'].map(t => (
+                                    <button 
+                                        key={t}
+                                        onClick={() => setMarketType(t)}
+                                        className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${marketType === t ? 'bg-zinc-900 shadow-lg text-white' : 'text-slate-400'}`}
+                                    >
+                                        {t === 'all' ? 'All Items' : t}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-zinc-100 text-black' : 'text-slate-300'}`}><Grid3X3 className="w-4 h-4" /></button>
+                                <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-zinc-100 text-black' : 'text-slate-300'}`}><List className="w-4 h-4" /></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Become a Seller CTA */}
+                {!profile?.is_seller && (
+                    <div className="mb-12 relative overflow-hidden bg-zinc-900 rounded-[40px] p-10 text-white border border-white/5 shadow-2xl">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
+                            <div className="max-w-2xl">
+                                <h3 className="text-3xl font-black uppercase tracking-tighter mb-2">Monetize your Technical Expertise</h3>
+                                <p className="text-zinc-400 font-medium leading-relaxed">Join our vetted marketplace as a seller and earn 70% from every sale of your academic projects and digital assets.</p>
+                            </div>
+                            <Link href="/marketplace/seller-setup" className="shrink-0 w-full md:w-auto">
+                                <Button className="w-full bg-white text-black hover:bg-zinc-100 px-10 py-7 font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all active:scale-95">
+                                    Apply for Accreditation
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+                )}
+
+                {marketLoading ? (
+                    <div className="py-24 text-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto" /></div>
+                ) : marketItems.filter(p => p.title.toLowerCase().includes(marketSearch.toLowerCase())).length === 0 ? (
+                    <div className="text-center py-24 bg-white rounded-[48px] border border-slate-200">
+                        <Layers className="w-16 h-16 text-slate-100 mx-auto mb-4" />
+                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Market Catalog Empty</h3>
+                        <p className="text-slate-500 font-medium">Try a different search term or category.</p>
+                    </div>
+                ) : (
+                    <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" : "flex flex-col gap-4"}>
+                        {marketItems.filter(p => p.title.toLowerCase().includes(marketSearch.toLowerCase())).map((item) => (
+                            <MarketCard key={item.id} item={item} viewMode={viewMode} />
+                        ))}
+                    </div>
+                )}
+            </div>
+        )}
+
+        {/* --- ACADEMIC TOOLS VIEW --- */}
+        {activeTab === 'tools' && (
+            <div className="animate-in fade-in duration-500">
+                {/* Tools Toolbar */}
+                <div className="sticky top-[70px] z-40 bg-[#f8f9fc]/95 backdrop-blur-md border border-slate-200 rounded-3xl p-4 mb-8 shadow-sm">
+                    <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
+                        <div className="relative w-full lg:w-96">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                            <Input 
+                                placeholder="Search research engines..." 
+                                value={toolSearch}
+                                onChange={(e) => setToolSearch(e.target.value)}
+                                className="pl-12 bg-white border-slate-200 rounded-2xl h-12 font-bold focus:border-black shadow-inner"
+                            />
+                        </div>
+
+                        <div className="w-full lg:w-auto overflow-x-auto custom-scrollbar">
+                            <div className="bg-white p-1 rounded-xl border border-slate-200 shadow-sm inline-flex min-w-max">
+                                {toolCategories.map((cat) => (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => setToolCategory(cat.id)}
+                                        className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${toolCategory === cat.id ? 'bg-indigo-600 shadow-lg text-white' : 'text-slate-400 hover:text-slate-600'}`}
+                                    >
+                                        {cat.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    {academicTools
+                        .filter(t => (toolCategory === 'all' || t.category === toolCategory) && (t.name.toLowerCase().includes(toolSearch.toLowerCase()) || t.description.toLowerCase().includes(toolSearch.toLowerCase())))
+                        .map((tool) => {
+                            const Icon = iconMap[tool.icon] || Wrench;
+                            return (
+                            <div key={tool.id} className="group bg-white border border-slate-200 rounded-[32px] p-8 hover:border-indigo-500 transition-all duration-300 flex flex-col shadow-sm hover:shadow-2xl">
+                                <div className="flex items-start justify-between mb-8">
+                                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 transition-colors duration-300">
+                                    <Icon className="w-7 h-7 text-indigo-600 group-hover:text-white transition-colors duration-300" />
+                                </div>
+                                <Badge variant="secondary" className={`border-none px-4 py-1.5 rounded-full text-[9px] font-black ${tool.pricePerUse === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-900'}`}>
+                                    {tool.pricePerUse === 0 ? 'FREE ACCESS' : formatCurrency(tool.pricePerUse)}
+                                </Badge>
+                                </div>
+                                <h3 className="text-lg font-black text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors uppercase tracking-tight leading-tight">{tool.name}</h3>
+                                <p className="text-slate-500 text-xs leading-relaxed font-medium mb-8 flex-1 line-clamp-3">{tool.description}</p>
+                                <div className="flex items-center justify-between pt-6 border-t border-slate-50 mt-auto">
+                                    <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">{tool.usageCount.toLocaleString()} USES</span>
+                                    <Link href={`/marketplace/tools/${tool.id}`}>
+                                        <Button size="sm" className="bg-black hover:bg-zinc-800 text-white rounded-xl px-6 font-black text-[10px] uppercase tracking-widest h-10">Launch</Button>
+                                    </Link>
+                                </div>
+                            </div>
+                            );
+                        })}
+                </div>
+            </div>
+        )}
       </div>
 
       <FeedbackWidget userId={user?.id} />
