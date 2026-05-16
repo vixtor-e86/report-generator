@@ -11,7 +11,7 @@ import CustomModal from '@/components/premium/modals/CustomModal';
 import { academicTools, toolCategories } from '@/data/marketplace/tools';
 import { 
   Search, Grid3X3, List, Star, ChevronDown, SlidersHorizontal, 
-  ArrowRight, Sparkles, Layers, CheckCircle2, Wrench, ShieldCheck, 
+  ArrowRight, ArrowLeft, Sparkles, Layers, CheckCircle2, Wrench, ShieldCheck, 
   BookOpen, Presentation, BarChart3, Code2, Lightbulb, RefreshCw, 
   SpellCheck, Quote, Image as ImageIcon, Zap, Check, Wallet, 
   UserCheck, Landmark, Clock, Phone, Mail, Book, TrendingUp, Plus, Eye, Trash2, Activity, Palette, ClipboardList
