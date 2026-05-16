@@ -36,7 +36,7 @@ export const academicTools = [
     icon: 'ShieldCheck',
     pricePerUse: 2000,
     category: 'writing',
-    isAvailable: true,
+    isAvailable: false,
     usageCount: 1250,
   },
   {

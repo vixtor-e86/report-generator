@@ -116,7 +116,7 @@ export default function EbookDetailPage({ params }) {
             })
         });
 
-        const sellerEarnings = Math.floor(ebook.price * 0.7);
+        const sellerEarnings = Math.floor(ebook.price * 0.8);
         if (ebook.seller_id) {
             const { data: sellerWallet } = await supabase
                 .from('marketplace_seller_wallets')

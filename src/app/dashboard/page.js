@@ -22,6 +22,7 @@ import { Button } from '@/components/marketplace/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
+import { PaymentMethodModal, PayoutRequestModal } from '@/components/marketplace/PayoutModals';
 import ReactMarkdown from 'react-markdown';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -72,8 +73,9 @@ function MarketCard({ item, viewMode }) {
         </div>
         <div className="text-right pr-4">
           <div className="text-xl font-black text-slate-900">{formatCurrency(item.price)}</div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Digital Asset</p>
+          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Academic Blueprint</p>
         </div>
+
       </Link>
     );
   }
@@ -134,7 +136,8 @@ export default function Dashboard() {
   const [pendingPremiumPayment, setPendingPremiumPayment] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
-  const [activeTab, setActiveTab] = useState('projects'); // projects, market, tools
+  // Navigation State
+  const [activeTab, setActiveTab] = useState('projects'); // projects, market, tools, seller
   const { wallet, refreshWallet, setShowFundingModal } = useWallet();
   const router = useRouter();
 
@@ -149,9 +152,53 @@ export default function Dashboard() {
   const [toolSearch, setToolSearch] = useState('');
   const [toolCategory, setToolCategory] = useState('all');
 
+  // Seller Hub Internal State
+  const [sellerWallet, setSellerWallet] = useState(null);
+  const [myItems, setMyItems] = useState([]);
+  const [loadingSeller, setLoadingSeller] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
+  const [sellerAccount, setSellerAccount] = useState(null);
+
   useEffect(() => {
     if (activeTab === 'market') fetchMarketItems();
+    if (activeTab === 'seller') fetchSellerData();
   }, [activeTab, marketType]);
+
+  const fetchSellerData = useCallback(async () => {
+    if (!globalProfile?.is_seller) return;
+    setLoadingSeller(true);
+    try {
+      // 1. Wallet
+      const { data: sWallet } = await supabase.from('marketplace_seller_wallets').select('*').eq('user_id', authUser.id).single();
+      setSellerWallet(sWallet);
+
+      // 2. Bank
+      const { data: sAccount } = await supabase.from('marketplace_sellers').select('bank_name, account_number, account_name').eq('user_id', authUser.id).single();
+      setSellerAccount(sAccount);
+
+      // 3. Library
+      const [projectsRes, ebooksRes] = await Promise.all([
+        supabase.from('marketplace_projects').select('*').eq('user_id', authUser.id).order('created_at', { ascending: false }),
+        supabase.from('marketplace_ebooks').select('*').eq('user_id', authUser.id).order('created_at', { ascending: false })
+      ]);
+      const combined = [
+        ...(projectsRes.data || []).map(i => ({ ...i, itemType: 'blueprint' })),
+        ...(ebooksRes.data || []).map(i => ({ ...i, itemType: 'ebook' }))
+      ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setMyItems(combined);
+    } catch (err) { console.error(err); } finally { setLoadingSeller(false); }
+  }, [authUser, globalProfile]);
+
+  const handleDeleteItem = async (id, type) => {
+    if (!confirm('Are you sure you want to delete this listing? This action cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/marketplace/delete?id=${id}&type=${type}&userId=${authUser.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error("Failed to delete");
+      toast.success('Listing deleted successfully');
+      setMyItems(prev => prev.filter(item => item.id !== id));
+    } catch (err) { toast.error(err.message); }
+  };
 
   async function fetchMarketItems() {
     setMarketLoading(true);
@@ -435,7 +482,7 @@ export default function Dashboard() {
                 onClick={() => setActiveTab('projects')}
                 className={`text-sm font-black uppercase tracking-widest transition-colors ${activeTab === 'projects' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
               >
-                Projects
+                Academic Blueprints
               </button>
               <button 
                 onClick={() => setActiveTab('market')}
@@ -450,25 +497,26 @@ export default function Dashboard() {
                 Academic Tools
               </button>
 
+              {globalProfile?.is_seller && (
+                <button 
+                    onClick={() => setActiveTab('seller')}
+                    className={`text-sm font-black uppercase tracking-widest transition-colors ${activeTab === 'seller' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                    Seller Hub
+                </button>
+              )}
+
               <div className="h-6 w-px bg-slate-200"></div>
 
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  Admin
+                  <ShieldCheck className="w-4 h-4" />
+                  Admin Console
                 </Link>
               )}
-
-              <Link
-                href="/marketplace/dashboard"
-                className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors bg-transparent border-none cursor-pointer"
-              >
-                <ShoppingBag className="w-4 h-4" />
-                Seller Hub
-              </Link>
               
               <div className="h-6 w-px bg-slate-200"></div>
 
@@ -503,9 +551,12 @@ export default function Dashboard() {
         {isMenuOpen && (
           <div className="md:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-4">
             <div className="flex bg-zinc-50 p-2 rounded-2xl flex-col gap-2">
-                <button onClick={() => { setActiveTab('projects'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest ${activeTab === 'projects' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>Projects</button>
+                <button onClick={() => { setActiveTab('projects'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest ${activeTab === 'projects' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>Academic Blueprints</button>
                 <button onClick={() => { setActiveTab('market'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest ${activeTab === 'market' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>Live Market</button>
                 <button onClick={() => { setActiveTab('tools'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest ${activeTab === 'tools' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>Academic Tools</button>
+                {globalProfile?.is_seller && (
+                   <button onClick={() => { setActiveTab('seller'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest ${activeTab === 'seller' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>Seller Hub</button>
+                )}
             </div>
             
             <div className="flex items-center gap-3 pb-4 border-b border-slate-100 px-2">
@@ -518,15 +569,9 @@ export default function Dashboard() {
               </div>
             </div>
             {isAdmin && (
-              <Link href="/admin" className="block text-slate-600 font-medium hover:text-indigo-600 px-2">Admin Panel</Link>
+              <Link href="/admin" className="block text-indigo-600 font-black uppercase text-[10px] tracking-widest bg-indigo-50 px-4 py-3 rounded-xl border border-indigo-100">Admin Console</Link>
             )}
-            <Link 
-              href="/marketplace/dashboard"
-              className="block w-full text-left text-slate-600 font-medium hover:text-indigo-600 px-2"
-            >
-              Seller Hub
-            </Link>
-            <button onClick={handleLogout} className="block w-full text-left text-red-600 font-medium px-2">Sign Out</button>
+            <button onClick={handleLogout} className="block w-full text-left text-red-600 font-black uppercase text-[10px] tracking-widest px-4 py-3">Sign Out</button>
           </div>
         )}
       </nav>
@@ -537,27 +582,30 @@ export default function Dashboard() {
         <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase">
-                {activeTab === 'projects' ? 'My Workspace' : activeTab === 'market' ? 'Live Market' : 'Academic Tools'}
+                {activeTab === 'projects' ? 'Academic Blueprint Hub' : activeTab === 'market' ? 'Live Market' : activeTab === 'seller' ? 'Seller Management' : 'Academic Tools'}
             </h1>
             <p className="text-slate-500 font-medium mt-1">
-                {activeTab === 'projects' ? 'Manage your research reports and create new projects.' : 
+                {activeTab === 'projects' ? 'Manage your architectural research and generate new blueprints.' : 
                  activeTab === 'market' ? 'Explore vetted academic blueprints and digital ebooks.' : 
+                 activeTab === 'seller' ? 'Control your marketplace library and settlement requests.' :
                  'Professional research and writing tools for elite academics.'}
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <button 
-                onClick={() => setShowFundingModal(true)}
-                className="flex items-center gap-3 px-4 py-2 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-black transition-all active:scale-95"
-            >
-                <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center">
-                    <Wallet className="w-4 h-4 text-white" />
-                </div>
-                <div className="text-left">
-                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Balance</p>
-                    <p className="text-sm font-black text-slate-900 leading-none">{formatCurrency(wallet.balance)}</p>
-                </div>
-            </button>
+            {(activeTab === 'market' || activeTab === 'tools') && (
+                <button 
+                    onClick={() => setShowFundingModal(true)}
+                    className="flex items-center gap-3 px-4 py-2 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-black transition-all active:scale-95 animate-in fade-in zoom-in-95"
+                >
+                    <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center">
+                        <Wallet className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-left">
+                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Balance</p>
+                        <p className="text-sm font-black text-slate-900 leading-none">{formatCurrency(wallet.balance)}</p>
+                    </div>
+                </button>
+            )}
             {isAdmin && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-widest">
                 <span className="relative flex h-2 w-2">
@@ -628,7 +676,7 @@ export default function Dashboard() {
                     disabled={!isAdmin && hasFreeProject}
                     className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border-2 border-slate-100 text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {!isAdmin && hasFreeProject ? 'Limit Reached' : 'Launch Free Build'}
+                    {!isAdmin && hasFreeProject ? 'Limit Reached' : 'Launch Free Blueprint'}
                 </button>
                 </div>
             </div>
@@ -654,7 +702,7 @@ export default function Dashboard() {
                     disabled={creatingPayment}
                     className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-600/20 disabled:opacity-70"
                 >
-                    {creatingPayment ? 'Processing...' : (isAdmin ? 'Launch Standard' : 'Select Standard')}
+                    {creatingPayment ? 'Processing...' : (isAdmin ? 'Launch Standard Blueprint' : 'Select Standard Blueprint')}
                 </button>
                 </div>
             </div>
@@ -679,7 +727,7 @@ export default function Dashboard() {
                     disabled={creatingPayment}
                     className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-black shadow-xl disabled:opacity-70"
                 >
-                    {creatingPayment ? 'Processing...' : (isAdmin ? 'Launch Premium' : 'Select Premium')}
+                    {creatingPayment ? 'Processing...' : (isAdmin ? 'Launch Premium Blueprint' : 'Select Premium Blueprint')}
                 </button>
                 </div>
             </div>
@@ -688,11 +736,11 @@ export default function Dashboard() {
             {/* Stats Overview */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
             <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 leading-none">Total Reports</p>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 leading-none">Total Blueprints</p>
                 <p className="text-3xl font-black text-slate-900 tracking-tighter">{totalReports}</p>
             </div>
             <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 leading-none">Active Builds</p>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 leading-none">In Development</p>
                 <p className="text-3xl font-black text-slate-900 tracking-tighter">{inProgressReports}</p>
             </div>
             <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
@@ -702,7 +750,7 @@ export default function Dashboard() {
             <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1 leading-none">Acct Rank</p>
                 <p className={`text-sm font-black uppercase tracking-tight ${isAdmin ? 'text-indigo-600' : 'text-slate-900'}`}>
-                {isAdmin ? 'System Admin' : hasFreeProject ? 'Active Scholar' : 'New Recruit'}
+                {isAdmin ? 'System Admin' : hasFreeProject ? 'Scholar' : 'New Recruit'}
                 </p>
             </div>
             </div>
@@ -710,7 +758,7 @@ export default function Dashboard() {
             {/* Recent Projects List */}
             <div>
             <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Active Repositories</h2>
+                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Vetted Repositories</h2>
                 <Link href="/features" className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">Compare Features →</Link>
             </div>
             
@@ -719,7 +767,7 @@ export default function Dashboard() {
                 <div className="w-20 h-20 bg-slate-50 rounded-[30px] flex items-center justify-center mx-auto mb-6">
                     <svg className="w-10 h-10 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tighter">No Active Projects</h3>
+                <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tighter">No Active Blueprints</h3>
                 <p className="text-slate-500 font-medium max-w-xs mx-auto">Select an architectural plan above to begin your first technical document.</p>
                 </div>
             ) : (
@@ -740,7 +788,7 @@ export default function Dashboard() {
                         project.tier === 'unlocked' ? 'bg-emerald-50 text-emerald-600' :
                         project.tier === 'standard' ? 'bg-indigo-50 text-indigo-600' : 'bg-purple-50 text-purple-600'
                         }`}>
-                        {project.tier} Build
+                        {project.tier} Blueprint
                         </span>
                         <span className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${
                         project.status === 'completed' ? 'text-emerald-600' : 'text-amber-600'
@@ -799,7 +847,7 @@ export default function Dashboard() {
                                         onClick={() => setMarketType(t)}
                                         className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${marketType === t ? 'bg-zinc-900 shadow-lg text-white' : 'text-slate-400'}`}
                                     >
-                                        {t === 'all' ? 'All Items' : t}
+                                        {t === 'all' ? 'All Items' : t === 'blueprints' ? 'Blueprints' : 'Ebooks'}
                                     </button>
                                 ))}
                             </div>
@@ -813,13 +861,13 @@ export default function Dashboard() {
                 </div>
 
                 {/* Become a Seller CTA */}
-                {!globalProfile?.is_seller && (
+                {!authUser?.isSeller && (
                     <div className="mb-12 relative overflow-hidden bg-zinc-900 rounded-[40px] p-10 text-white border border-white/5 shadow-2xl">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
                             <div className="max-w-2xl">
-                                <h3 className="text-3xl font-black uppercase tracking-tighter mb-2">Monetize your Technical Expertise</h3>
-                                <p className="text-zinc-400 font-medium leading-relaxed">Join our vetted marketplace as a seller and earn 70% from every sale of your academic projects and digital assets.</p>
+                                <h3 className="text-3xl font-black uppercase tracking-tighter mb-2">Monetize your Academic Expertise</h3>
+                                <p className="text-zinc-400 font-medium leading-relaxed">Join our vetted marketplace as a seller and earn up to 80% from every sale of your academic blueprints and digital ebooks.</p>
                             </div>
                             <Link href="/marketplace/seller-setup" className="shrink-0 w-full md:w-auto">
                                 <Button className="w-full bg-white text-black hover:bg-zinc-100 px-10 py-7 font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all active:scale-95">
@@ -891,22 +939,171 @@ export default function Dashboard() {
                                 <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 transition-colors duration-300">
                                     <Icon className="w-7 h-7 text-indigo-600 group-hover:text-white transition-colors duration-300" />
                                 </div>
-                                <Badge variant="secondary" className={`border-none px-4 py-1.5 rounded-full text-[9px] font-black ${tool.pricePerUse === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-900'}`}>
-                                    {tool.pricePerUse === 0 ? 'FREE ACCESS' : formatCurrency(tool.pricePerUse)}
+                                <Badge variant="secondary" className={`border-none px-4 py-1.5 rounded-full text-[9px] font-black ${!tool.isAvailable ? 'bg-red-50 text-red-600' : tool.pricePerUse === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-900'}`}>
+                                    {!tool.isAvailable ? 'UNAVAILABLE' : tool.pricePerUse === 0 ? 'FREE ACCESS' : formatCurrency(tool.pricePerUse)}
                                 </Badge>
                                 </div>
                                 <h3 className="text-lg font-black text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors uppercase tracking-tight leading-tight">{tool.name}</h3>
                                 <p className="text-slate-500 text-xs leading-relaxed font-medium mb-8 flex-1 line-clamp-3">{tool.description}</p>
                                 <div className="flex items-center justify-between pt-6 border-t border-slate-50 mt-auto">
                                     <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">{tool.usageCount.toLocaleString()} USES</span>
-                                    <Link href={`/marketplace/tools/${tool.id}`}>
-                                        <Button size="sm" className="bg-black hover:bg-zinc-800 text-white rounded-xl px-6 font-black text-[10px] uppercase tracking-widest h-10">Launch</Button>
-                                    </Link>
+                                    {tool.isAvailable ? (
+                                        <Link href={`/marketplace/tools/${tool.id}`}>
+                                            <Button size="sm" className="bg-black hover:bg-zinc-800 text-white rounded-xl px-6 font-black text-[10px] uppercase tracking-widest h-10">Launch</Button>
+                                        </Link>
+                                    ) : (
+                                        <Button size="sm" disabled className="bg-slate-100 text-slate-400 rounded-xl px-6 font-black text-[10px] uppercase tracking-widest h-10 cursor-not-allowed">Offline</Button>
+                                    )}
                                 </div>
                             </div>
                             );
                         })}
                 </div>
+            </div>
+        )}
+
+        {/* --- SELLER HUB VIEW --- */}
+        {activeTab === 'seller' && globalProfile?.is_seller && (
+            <div className="animate-in fade-in duration-500 space-y-12 pb-20">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-zinc-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
+                        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">Withdrawable Earnings</p>
+                        <p className="text-4xl font-black">{formatCurrency(sellerWallet?.balance || 0)}</p>
+                        <Button 
+                            onClick={() => setShowPayoutModal(true)}
+                            className="mt-8 w-full bg-white text-black hover:bg-zinc-100 rounded-xl py-6 font-black uppercase text-[10px] tracking-widest"
+                        >
+                            Request Payout
+                        </Button>
+                    </div>
+                    <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Settlement Account</p>
+                        {sellerAccount?.bank_name ? (
+                            <div className="space-y-1 mt-2">
+                                <p className="text-lg font-black text-slate-900 uppercase tracking-tight">{sellerAccount.bank_name}</p>
+                                <p className="text-xs font-bold text-slate-500">{sellerAccount.account_number}</p>
+                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest pt-2">{sellerAccount.account_name}</p>
+                            </div>
+                        ) : (
+                            <p className="text-sm font-bold text-slate-400 mt-4 italic">No account added yet</p>
+                        )}
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowAccountModal(true)}
+                            className="mt-6 w-full border-zinc-200 hover:border-black text-zinc-900 rounded-xl py-2 font-black uppercase text-[9px] tracking-widest"
+                        >
+                            {sellerAccount?.bank_name ? 'Update Account' : 'Add Account Details'}
+                        </Button>
+                    </div>
+                    <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Lifetime Earnings</p>
+                        <p className="text-4xl font-black text-slate-900">{formatCurrency(sellerWallet?.total_earned || 0)}</p>
+                        <div className="mt-6 flex items-center gap-2 text-emerald-600">
+                            <TrendingUp className="w-4 h-4" />
+                            <span className="text-xs font-bold uppercase tracking-tight">Active Growth</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-8">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">My Academic Library</h2>
+                        <div className="flex gap-3">
+                            <Link href="/marketplace/upload-project" className="bg-zinc-900 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-black transition-all">
+                                <Plus className="w-3 h-3" /> Blueprint
+                            </Link>
+                            <Link href="/marketplace/upload-ebook" className="bg-zinc-100 text-zinc-900 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-zinc-200 transition-all border border-zinc-200">
+                                <Plus className="w-3 h-3" /> Ebook
+                            </Link>
+                        </div>
+                    </div>
+
+                    {loadingSeller ? (
+                        <div className="py-20 text-center"><div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent mx-auto"></div></div>
+                    ) : myItems.length === 0 ? (
+                        <div className="bg-white rounded-[40px] border border-slate-200 p-20 text-center">
+                            <Layers className="w-12 h-12 text-slate-100 mx-auto mb-4" />
+                            <p className="font-black text-slate-400 uppercase text-xs tracking-widest italic">You haven't listed any digital assets yet</p>
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-slate-50 border-b border-slate-100">
+                                    <tr>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset Details</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Sales</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {myItems.map((item) => {
+                                        const url = item.itemType === 'blueprint' ? `/marketplace/project/${item.id}` : `/marketplace/ebook/${item.id}`;
+                                        return (
+                                            <tr key={item.id} className="hover:bg-slate-50/50 transition group">
+                                                <td className="px-6 py-5">
+                                                    <div className="font-black text-slate-900 text-sm uppercase tracking-tight truncate max-w-md">{item.title}</div>
+                                                    <div className="flex gap-2 mt-1">
+                                                        <Badge className="bg-zinc-100 text-zinc-500 border-none px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest">{item.itemType}</Badge>
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{formatCurrency(item.price)}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-5 text-center">
+                                                    <div className="font-black text-slate-900 text-lg">{item.sales_count || 0}</div>
+                                                    <div className="text-[8px] font-black text-slate-400 uppercase">Downloads</div>
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    <Badge className={`border-none px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                                        item.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 
+                                                        item.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
+                                                    }`}>
+                                                        {item.status}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-6 py-5 text-right">
+                                                    <div className="flex gap-2 justify-end">
+                                                        <Link href={url}>
+                                                            <button className="p-3 bg-white text-zinc-900 rounded-xl hover:bg-zinc-900 hover:text-white transition-all shadow-sm border border-zinc-200" title="View Listing">
+                                                                <Eye className="w-4 h-4 text-inherit" />
+                                                            </button>
+                                                        </Link>
+                                                        <button 
+                                                            onClick={(e) => { e.preventDefault(); handleDeleteItem(item.id, item.itemType); }}
+                                                            className="p-3 bg-white text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-zinc-200"
+                                                            title="Delete Listing"
+                                                        >
+                                                            <Trash2 className="w-4 h-4 text-inherit" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+
+                {/* Modals */}
+                <PaymentMethodModal 
+                    open={showAccountModal} 
+                    onOpenChange={setShowAccountModal} 
+                    userId={authUser?.id}
+                    currentAccount={sellerAccount}
+                    onSaved={(data) => setSellerAccount(data)}
+                />
+                <PayoutRequestModal 
+                    open={showPayoutModal} 
+                    onOpenChange={setShowPayoutModal} 
+                    userId={authUser?.id}
+                    balance={sellerWallet?.balance || 0}
+                    onRequested={() => {
+                        fetchSellerData();
+                        refreshWallet();
+                    }}
+                />
             </div>
         )}
       </div>
