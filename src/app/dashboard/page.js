@@ -14,7 +14,7 @@ import {
   ArrowRight, Sparkles, Layers, CheckCircle2, Wrench, ShieldCheck, 
   BookOpen, Presentation, BarChart3, Code2, Lightbulb, RefreshCw, 
   SpellCheck, Quote, Image as ImageIcon, Zap, Check, Wallet, 
-  UserCheck, Landmark, Clock, Phone, Mail, Book, TrendingUp, Plus, Eye, Trash2
+  UserCheck, Landmark, Clock, Phone, Mail, Book, TrendingUp, Plus, Eye, Trash2, Activity, Palette, ClipboardList
 } from 'lucide-react';
 import { Input } from '@/components/marketplace/ui/input';
 import { Badge } from '@/components/marketplace/ui/badge';
@@ -27,6 +27,20 @@ import SellerAccreditationForm from '@/components/marketplace/SellerAccreditatio
 import ProjectUploadForm from '@/components/marketplace/ProjectUploadForm';
 import EbookUploadForm from '@/components/marketplace/EbookUploadForm';
 import ReactMarkdown from 'react-markdown';
+import { getToolById } from '@/data/marketplace/tools';
+
+// Modular Tool Components
+import ReferenceFinder from '@/components/marketplace/tools/ReferenceFinder';
+import SlideGenerator from '@/components/marketplace/tools/SlideGenerator';
+import AIHumanizer from '@/components/marketplace/tools/AIHumanizer';
+import VisualStudio from '@/components/marketplace/tools/VisualStudio';
+import ProjectFinder from '@/components/marketplace/tools/ProjectFinder';
+import CodeExplainer from '@/components/marketplace/tools/CodeExplainer';
+import LanguageConverter from '@/components/marketplace/tools/LanguageConverter';
+import DataAnalysis from '@/components/marketplace/tools/DataAnalysis';
+import PlagiarismChecker from '@/components/marketplace/tools/PlagiarismChecker';
+import QuestionnaireGenerator from '@/components/marketplace/tools/QuestionnaireGenerator';
+
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -140,8 +154,60 @@ export default function Dashboard() {
   const [showTutorial, setShowTutorial] = useState(false);
   // Navigation State
   const [activeTab, setActiveTab] = useState('projects'); // projects, market, tools, seller
-  const { wallet, refreshWallet, setShowFundingModal } = useWallet();
+  const { wallet, deductFunds, refreshWallet, setShowFundingModal } = useWallet();
   const router = useRouter();
+
+  // Tool Launch State
+  const [selectedToolId, setSelectedToolId] = useState(null);
+  const [selectedTool, setSelectedTool] = useState(null);
+  const [isToolProcessing, setIsToolProcessing] = useState(false);
+  const [toolHasPaid, setToolHasPaid] = useState(false);
+  const [showToolPaymentDialog, setShowToolPaymentDialog] = useState(false);
+  const [pendingToolIterative, setPendingToolIterative] = useState(false);
+  const [toolCustomPrice, setToolCustomPrice] = useState(null);
+
+  const handleLaunchTool = (id) => {
+    const found = getToolById(id);
+    if (found) {
+      setSelectedTool(found);
+      setSelectedToolId(id);
+      setToolHasPaid(false);
+      setToolCustomPrice(null);
+      setIsToolProcessing(false);
+    }
+  };
+
+  const activeToolPrice = toolCustomPrice !== null ? toolCustomPrice : 
+                        (selectedToolId === 'reference-finder' ? 200 : (selectedTool?.pricePerUse || 0));
+
+  const handleToolPayment = async () => {
+    if (!selectedTool) return;
+    if (wallet.balance < activeToolPrice) return toast.error('Insufficient balance.');
+
+    const label = selectedToolId === 'reference-finder' ? `DeepSearch: ${selectedTool.name}` : 
+                  selectedToolId === 'diagram-studio' ? `Visual Studio Generation` :
+                  selectedToolId === 'plagiarism-checker' ? `Integrity Scan` :
+                  `Tool: ${selectedTool.name}`;
+    
+    const success = await deductFunds(activeToolPrice, label);
+    if (success) {
+      setToolHasPaid(true);
+      setShowToolPaymentDialog(false);
+      toast.success('Payment successful!');
+    }
+  };
+
+  // Shared props for tool components
+  const toolProps = {
+    isProcessing: isToolProcessing,
+    setIsProcessing: setIsToolProcessing,
+    hasPaid: toolHasPaid,
+    setHasPaid: setToolHasPaid,
+    setShowPaymentDialog: setShowToolPaymentDialog,
+    setPendingIterative: setPendingToolIterative, 
+    pendingIterative: pendingToolIterative,
+    setCustomPrice: setToolCustomPrice
+  };
 
   // Accreditation flow state
   const [showAccreditation, setShowAccreditation] = useState(false);
@@ -150,6 +216,30 @@ export default function Dashboard() {
 
   // DERIVED ADMIN STATUS
   const isAdmin = globalProfile?.role === 'admin';
+
+  // --- BROWSER HISTORY MANAGEMENT ---
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (showAccreditation || showUploadProject || showUploadEbook || selectedToolId) {
+        // Intercept back button to close sub-views
+        setShowAccreditation(false);
+        setShowUploadProject(false);
+        setShowUploadEbook(false);
+        setSelectedToolId(null);
+        // We don't need to go back in history because we already "consumed" the state
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    // Push a dummy state when any internal view is opened
+    const isAnyViewOpen = showAccreditation || showUploadProject || showUploadEbook || !!selectedToolId;
+    if (isAnyViewOpen) {
+        window.history.pushState({ internalView: true }, '');
+    }
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [showAccreditation, showUploadProject, showUploadEbook, selectedToolId]);
 
   // Market State
   const [marketItems, setMarketItems] = useState([]);
@@ -951,66 +1041,114 @@ export default function Dashboard() {
         {/* --- ACADEMIC TOOLS VIEW --- */}
         {activeTab === 'tools' && (
             <div className="animate-in fade-in duration-500">
-                {/* Tools Toolbar */}
-                <div className="sticky top-[70px] z-40 bg-[#f8f9fc]/95 backdrop-blur-md border border-slate-200 rounded-3xl p-4 mb-8 shadow-sm">
-                    <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
-                        <div className="relative w-full lg:w-96">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                            <Input 
-                                placeholder="Search research engines..." 
-                                value={toolSearch}
-                                onChange={(e) => setToolSearch(e.target.value)}
-                                className="pl-12 bg-white border-slate-200 rounded-2xl h-12 font-bold focus:border-black shadow-inner"
-                            />
+                {selectedToolId ? (
+                    <div className="space-y-8 pb-20">
+                        {/* Tool Header */}
+                        <div className="bg-white border border-slate-200 rounded-[32px] p-6 sm:p-10 shadow-sm">
+                            <button onClick={() => setSelectedToolId(null)} className="flex items-center gap-2 text-[#6b7280] hover:text-black transition-colors mb-6 text-[10px] font-black uppercase tracking-widest">
+                                <ArrowLeft className="w-4 h-4" />Back to Catalog
+                            </button>
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div className="flex items-center gap-4 md:gap-6">
+                                    <div className="w-16 h-16 md:w-20 md:h-20 bg-indigo-50 border border-indigo-100 rounded-[24px] flex items-center justify-center shrink-0">
+                                        {(() => {
+                                            const ToolIcon = iconMap[selectedTool?.icon] || Wrench;
+                                            return <ToolIcon className="w-8 h-8 md:w-10 md:h-10 text-indigo-600" />;
+                                        })()}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h1 className="text-xl md:text-3xl font-black text-[#111827] tracking-tight uppercase truncate">{selectedTool?.name}</h1>
+                                        <p className="text-[#6b7280] text-xs md:text-sm font-medium mt-1 line-clamp-2 md:line-clamp-none">{selectedTool?.description}</p>
+                                    </div>
+                                </div>
+                                <div className={`rounded-2xl px-6 md:px-8 py-3 md:py-4 text-center font-black text-lg md:text-xl shadow-xl shrink-0 w-fit ${activeToolPrice === 0 ? 'bg-emerald-600 text-white' : 'bg-zinc-900 text-white'}`}>
+                                    {activeToolPrice === 0 ? 'FREE ACCESS' : formatCurrency(activeToolPrice)}
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="w-full lg:w-auto overflow-x-auto custom-scrollbar">
-                            <div className="bg-white p-1 rounded-xl border border-slate-200 shadow-sm inline-flex min-w-max">
-                                {toolCategories.map((cat) => (
-                                    <button
-                                        key={cat.id}
-                                        onClick={() => setToolCategory(cat.id)}
-                                        className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${toolCategory === cat.id ? 'bg-indigo-600 shadow-lg text-white' : 'text-slate-400 hover:text-slate-600'}`}
-                                    >
-                                        {cat.name}
-                                    </button>
-                                ))}
-                            </div>
+                        {/* Tool Interface */}
+                        <div className="bg-white border border-slate-200 rounded-[40px] p-2 sm:p-4 shadow-sm min-h-[500px]">
+                            {selectedToolId === 'project-finder' && <ProjectFinder {...toolProps} />}
+                            {selectedToolId === 'code-explainer' && <CodeExplainer {...toolProps} />}
+                            {selectedToolId === 'language-converter' && <LanguageConverter {...toolProps} />}
+                            {selectedToolId === 'data-analysis' && <DataAnalysis {...toolProps} />}
+                            {selectedToolId === 'plagiarism-checker' && <PlagiarismChecker {...toolProps} />}
+                            {selectedToolId === 'reference-finder' && <ReferenceFinder {...toolProps} />}
+                            {selectedToolId === 'slide-generator' && <SlideGenerator {...toolProps} />}
+                            {selectedToolId === 'ai-humanizer' && <AIHumanizer {...toolProps} />}
+                            {selectedToolId === 'diagram-studio' && <VisualStudio {...toolProps} />}
+                            {selectedToolId === 'questionnaire-generator' && <QuestionnaireGenerator {...toolProps} />}
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <>
+                        {/* Tools Toolbar */}
+                        <div className="sticky top-[70px] z-40 bg-[#f8f9fc]/95 backdrop-blur-md border border-slate-200 rounded-3xl p-4 mb-8 shadow-sm">
+                            <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
+                                <div className="relative w-full lg:w-96">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                                    <Input 
+                                        placeholder="Search research engines..." 
+                                        value={toolSearch}
+                                        onChange={(e) => setToolSearch(e.target.value)}
+                                        className="pl-12 bg-white border-slate-200 rounded-2xl h-12 font-bold focus:border-black shadow-inner"
+                                    />
+                                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                    {academicTools
-                        .filter(t => (toolCategory === 'all' || t.category === toolCategory) && (t.name.toLowerCase().includes(toolSearch.toLowerCase()) || t.description.toLowerCase().includes(toolSearch.toLowerCase())))
-                        .map((tool) => {
-                            const Icon = iconMap[tool.icon] || Wrench;
-                            return (
-                            <div key={tool.id} className="group bg-white border border-slate-200 rounded-[32px] p-8 hover:border-indigo-500 transition-all duration-300 flex flex-col shadow-sm hover:shadow-2xl">
-                                <div className="flex items-start justify-between mb-8">
-                                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 transition-colors duration-300">
-                                    <Icon className="w-7 h-7 text-indigo-600 group-hover:text-white transition-colors duration-300" />
-                                </div>
-                                <Badge variant="secondary" className={`border-none px-4 py-1.5 rounded-full text-[9px] font-black ${!tool.isAvailable ? 'bg-red-50 text-red-600' : tool.pricePerUse === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-900'}`}>
-                                    {!tool.isAvailable ? 'UNAVAILABLE' : tool.pricePerUse === 0 ? 'FREE ACCESS' : formatCurrency(tool.pricePerUse)}
-                                </Badge>
-                                </div>
-                                <h3 className="text-lg font-black text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors uppercase tracking-tight leading-tight">{tool.name}</h3>
-                                <p className="text-slate-500 text-xs leading-relaxed font-medium mb-8 flex-1 line-clamp-3">{tool.description}</p>
-                                <div className="flex items-center justify-between pt-6 border-t border-slate-50 mt-auto">
-                                    <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">{tool.usageCount.toLocaleString()} USES</span>
-                                    {tool.isAvailable ? (
-                                        <Link href={`/marketplace/tools/${tool.id}`}>
-                                            <Button size="sm" className="bg-black hover:bg-zinc-800 text-white rounded-xl px-6 font-black text-[10px] uppercase tracking-widest h-10">Launch</Button>
-                                        </Link>
-                                    ) : (
-                                        <Button size="sm" disabled className="bg-slate-100 text-slate-400 rounded-xl px-6 font-black text-[10px] uppercase tracking-widest h-10 cursor-not-allowed">Offline</Button>
-                                    )}
+                                <div className="w-full lg:w-auto overflow-x-auto no-scrollbar">
+                                    <div className="bg-white p-1 rounded-xl border border-slate-200 shadow-sm inline-flex min-w-max">
+                                        {toolCategories.map((cat) => (
+                                            <button
+                                                key={cat.id}
+                                                onClick={() => setToolCategory(cat.id)}
+                                                className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${toolCategory === cat.id ? 'bg-indigo-600 shadow-lg text-white' : 'text-slate-400 hover:text-slate-600'}`}
+                                            >
+                                                {cat.name}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                            );
-                        })}
-                </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            {academicTools
+                                .filter(t => (toolCategory === 'all' || t.category === toolCategory) && (t.name.toLowerCase().includes(toolSearch.toLowerCase()) || t.description.toLowerCase().includes(toolSearch.toLowerCase())))
+                                .map((tool) => {
+                                    const Icon = iconMap[tool.icon] || Wrench;
+                                    return (
+                                    <div key={tool.id} className="group bg-white border border-slate-200 rounded-[32px] p-8 hover:border-indigo-500 transition-all duration-300 flex flex-col shadow-sm hover:shadow-2xl">
+                                        <div className="flex items-start justify-between mb-8">
+                                        <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 transition-colors duration-300">
+                                            <Icon className="w-7 h-7 text-indigo-600 group-hover:text-white transition-colors duration-300" />
+                                        </div>
+                                        <Badge variant="secondary" className={`border-none px-4 py-1.5 rounded-full text-[9px] font-black ${!tool.isAvailable ? 'bg-red-50 text-red-600' : tool.pricePerUse === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-900'}`}>
+                                            {!tool.isAvailable ? 'UNAVAILABLE' : tool.pricePerUse === 0 ? 'FREE ACCESS' : formatCurrency(tool.pricePerUse)}
+                                        </Badge>
+                                        </div>
+                                        <h3 className="text-lg font-black text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors uppercase tracking-tight leading-tight">{tool.name}</h3>
+                                        <p className="text-slate-500 text-xs leading-relaxed font-medium mb-8 flex-1 line-clamp-3">{tool.description}</p>
+                                        <div className="flex items-center justify-between pt-6 border-t border-slate-50 mt-auto">
+                                            <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">{tool.usageCount.toLocaleString()} USES</span>
+                                            {tool.isAvailable ? (
+                                                <Button 
+                                                    onClick={() => handleLaunchTool(tool.id)}
+                                                    size="sm" 
+                                                    className="bg-black hover:bg-zinc-800 text-white rounded-xl px-6 font-black text-[10px] uppercase tracking-widest h-10 transition-all active:scale-95"
+                                                >
+                                                    Launch
+                                                </Button>
+                                            ) : (
+                                                <Button size="sm" disabled className="bg-slate-100 text-slate-400 rounded-xl px-6 font-black text-[10px] uppercase tracking-widest h-10 cursor-not-allowed">Offline</Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    );
+                                })}
+                        </div>
+                    </>
+                )}
             </div>
         )}
 
@@ -1170,6 +1308,39 @@ export default function Dashboard() {
       </div>
 
       <FeedbackWidget userId={authUser?.id} />
+
+      {/* Tool Payment Dialog */}
+      {showToolPaymentDialog && (
+        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-md flex items-center justify-center z-[150] p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+            <h2 className="text-2xl font-black text-center mb-8 tracking-tight uppercase text-zinc-900">Authorize Usage</h2>
+            <div className="flex items-center justify-between p-6 bg-zinc-50 rounded-3xl border border-zinc-100 mb-8">
+                <button onClick={() => { setShowFundingModal(true); setShowToolPaymentDialog(false); }} className="flex items-center gap-3 hover:opacity-70 transition-opacity">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-zinc-400 border border-zinc-100 shadow-sm"><Wallet className="w-5 h-5" /></div>
+                    <div className="text-left"><p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Balance</p><p className="text-zinc-900 font-black text-base">{formatCurrency(wallet.balance)}</p></div>
+                </button>
+                <div className="text-right">
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Fee</p>
+                    <p className="text-blue-600 font-black text-base">
+                        {formatCurrency(activeToolPrice)}
+                    </p>
+                </div>
+            </div>
+            {wallet.balance < activeToolPrice ? (
+                <div className="space-y-4">
+                    <div className="p-4 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3"><AlertCircle className="w-5 h-5 text-red-500 shrink-0" /><p className="text-[10px] text-red-600 font-black uppercase tracking-widest leading-tight">Insufficient funds to launch tool.</p></div>
+                    <Button onClick={() => { setShowFundingModal(true); setShowToolPaymentDialog(false); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-7 font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"><Zap className="w-4 h-4" /> Fund Wallet Now</Button>
+                    <button className="w-full text-slate-400 font-black uppercase text-[10px] tracking-widest py-2" onClick={() => setShowToolPaymentDialog(false)}>Cancel</button>
+                </div>
+            ) : (
+                <div className="flex gap-4">
+                    <Button variant="ghost" className="flex-1 font-black uppercase text-[10px] tracking-widest rounded-full py-8" onClick={() => setShowToolPaymentDialog(false)}>Cancel</Button>
+                    <Button className="flex-[2] bg-black text-white rounded-full py-8 font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all" onClick={handleToolPayment}>Authorize & Pay</Button>
+                </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Floating Tutorial Trigger */}
       <button 
