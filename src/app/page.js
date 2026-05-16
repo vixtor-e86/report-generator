@@ -142,16 +142,16 @@ export default function Home() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <span className="flex h-2 w-2 rounded-full bg-indigo-500"></span>
-            <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">AI-Powered Report Generator</span>
+            <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">AI-Powered Research Assistant</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 max-w-5xl mx-auto leading-tight animate-in fade-in slide-in-from-bottom-5 duration-700 delay-100" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-            Write Complex Projects <br className="hidden md:block" />
+            Structure Academic Blueprints <br className="hidden md:block" />
             <span className="text-indigo-600">In Minutes, Not Weeks</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-white mb-10 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
-            Eliminate the stress of documentation. Generate complete 5 chapter reports with accurate citations for Engineering, Sciences, Arts, and more.
+            Elevate your project research. Generate comprehensive academic blueprints with accurate citations for Engineering, Sciences, Arts, and more.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-300">
@@ -170,7 +170,7 @@ export default function Home() {
           </div>
 
           <p className="mt-8 text-sm text-white font-medium animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
-            No credit card required · Free initial report · Export to Word & PDF
+            No credit card required · Free initial blueprint · Export to Word & PDF
           </p>
         </div>
       </section>
@@ -203,18 +203,18 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-base font-semibold text-indigo-600 uppercase tracking-wide mb-2">Powerful Features</h2>
-            <p className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Everything You Need for a Perfect Report</p>
-            <p className="text-lg text-slate-600">We handle the technical writing structure so you can focus on the project.</p>
+            <p className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Everything You Need for a Perfect Blueprint</p>
+            <p className="text-lg text-slate-600">We handle the technical research structure so you can focus on the core project development.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { title: "Smart Chapter Generation", desc: "Our AI understands your specific field to write Introduction, Literature Review, Methodology, and more.", icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+              { title: "Smart Blueprint Generation", desc: "Our AI understands your specific field to structure Introduction, Literature Review, Methodology, and more.", icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
               { title: "Automatic Citations", desc: "Forget manual formatting. We generate APA, IEEE, or Harvard standard citations automatically within the text and reference list.", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" },
-              { title: "Export Ready", desc: "Download your report in editable Microsoft Word format or PDF, perfectly formatted and ready to print.", icon: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" },
-              { title: "Faculty Templates", desc: "From Engineering to Law, Medicine, and Arts. Choose the template that matches your department's standards.", icon: "M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" },
-              { title: "Context Aware", desc: "Input your specific project details, components, and objectives. The AI tailors the content to YOUR specific topic.", icon: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M17.636 17.636l-.707-.707M12 21v-1M6.364 17.636l.707-.707M3 12h1M6.364 6.364l.707.707M12 6a6 6 0 100 12 6 6 0 000-12z" },
-              { title: "Image Support", desc: "Upload your diagrams, charts, and results. We place them professionally within the document structure.", icon: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" }
+              { title: "Export Ready", desc: "Download your blueprint in editable Microsoft Word format or PDF, perfectly formatted and ready for your review.", icon: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" },
+              { title: "Academic Templates", desc: "From Engineering to Law, Medicine, and Arts. Choose the template that matches your department's specific standards.", icon: "M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" },
+              { title: "Context Aware", desc: "Input your specific project details, components, and objectives. The AI tailors the research to YOUR specific topic.", icon: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M17.636 17.636l-.707-.707M12 21v-1M6.364 17.636l.707-.707M3 12h1M6.364 6.364l.707.707M12 6a6 6 0 100 12 6 6 0 000-12z" },
+              { title: "Asset Integration", desc: "Upload your diagrams, charts, and data sets. We integrate them professionally within the blueprint structure.", icon: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" }
             ].map((feature, i) => (
               <div key={i} className="group p-8 rounded-2xl bg-slate-50 hover:bg-white hover:shadow-xl hover:shadow-indigo-100/50 border border-slate-100 transition-all duration-300">
                 <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-indigo-200 transition-transform">
@@ -233,7 +233,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Three Steps to Done</h2>
-            <p className="text-lg text-slate-600">Complex reports simplified into a linear workflow.</p>
+            <p className="text-lg text-slate-600">Complex research simplified into a linear workflow.</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
@@ -241,9 +241,9 @@ export default function Home() {
             <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-slate-200 z-0"></div>
             
             {[
-              { step: "01", title: "Input Details", desc: "Select your faculty (Engineering, Sciences, Arts, etc.) and enter your project topic. The more detail you provide, the better the output." },
-              { step: "02", title: "AI Generation", desc: "Our engine processes your input, structuring arguments, generating citations (APA/IEEE/Harvard), and writing 5 complete chapters." },
-              { step: "03", title: "Review & Export", desc: "Preview your report, regenerate sections if needed, and export to DOCX or PDF for final submission." }
+              { step: "01", title: "Input Details", desc: "Select your faculty and enter your project topic. The more technical detail you provide, the deeper the research output." },
+              { step: "02", title: "AI Generation", desc: "Our engine structures the arguments, generates citations, and drafts 5 complete chapters based on your methodology." },
+              { step: "03", title: "Review & Export", desc: "Preview your blueprint, regenerate sections for depth, and export to DOCX or PDF for your academic review." }
             ].map((item, i) => (
               <div key={i} className="relative z-10 text-center group">
                 <div className="w-24 h-24 mx-auto bg-white rounded-full shadow-lg border-4 border-slate-50 flex items-center justify-center mb-6 group-hover:border-indigo-100 transition-colors">
@@ -364,14 +364,14 @@ export default function Home() {
       {/* Final CTA */}
       <section className="py-24 bg-white relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">Stop Writing, Start Creating</h2>
-          <p className="text-xl text-slate-600 mb-10">Join thousands of students who have already generated their project reports.</p>
+          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">Stop Searching, Start Structuring</h2>
+          <p className="text-xl text-slate-600 mb-10">Join thousands of students who have already elevated their project research.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button 
               onClick={openAuth}
               className="w-full sm:w-auto px-8 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30"
             >
-              Get Started Now
+              Start Your Blueprint
             </button>
           </div>
         </div>
@@ -388,7 +388,7 @@ export default function Home() {
                 <span className="text-xl font-bold">WriteLab</span>
               </Link>
               <p className="text-sm leading-relaxed mb-6">
-                Empowering students with AI tools to document their innovations efficiently and professionally.
+                Empowering students with AI tools to structure their research efficiently and professionally.
               </p>
               <div className="space-y-4 text-xs">
                 <div className="flex items-start gap-3">
@@ -409,7 +409,7 @@ export default function Home() {
               <ul className="space-y-3 text-sm">
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
                 <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Templates</a></li>
+                <li><Link href="/dashboard" className="hover:text-white transition-colors">Templates</Link></li>
               </ul>
             </div>
             
@@ -421,16 +421,16 @@ export default function Home() {
                     customTrigger={<span className="hover:text-white transition-colors cursor-pointer">Contact Us</span>} 
                   />
                 </li>
-                <li><a href="#" className="hover:text-white transition-colors">Citation Guide</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
+                <li><Link href="/dashboard" className="hover:text-white transition-colors">Citation Guide</Link></li>
+                <li><Link href="/dashboard" className="hover:text-white transition-colors">Help Center</Link></li>
               </ul>
             </div>
             
             <div>
               <h4 className="text-white font-semibold mb-4">Legal</h4>
               <ul className="space-y-3 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms</a></li>
+                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
+                <li><Link href="/terms" className="hover:text-white transition-colors">Terms</Link></li>
               </ul>
             </div>
           </div>
