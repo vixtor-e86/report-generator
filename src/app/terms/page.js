@@ -59,23 +59,13 @@ export default function TermsPage() {
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
               <p>Sellers on our marketplace must go through an accreditation process involving legal identity and institutional verification. By becoming a seller, you warrant that all blueprints, ebooks, and digital assets you list are your own original creation or that you possess the necessary rights to sell them.</p>
-              <p>W3 Hub takes a platform commission on every sale (typically 20-30% depending on the asset type). Payouts are processed to verified bank accounts within 3 working days of a successful withdrawal request.</p>
+              <p>W3 Hub takes a platform commission on every sale (typically 30% for Academic Blueprints and 10% for Digital Ebooks). Payouts are processed to verified bank accounts within 3 working days of a successful withdrawal request.</p>
             </div>
           </section>
 
           <section className="space-y-6">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
               <span className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs">04</span>
-              Payments & Refunds
-            </h2>
-            <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
-              <p>Payments for workspace packages (Standard/Premium) or marketplace assets are processed via secure third-party gateways (Paystack/Flutterwave). Due to the digital and instant nature of our services, refunds are generally not provided unless a technical failure on our platform prevented service delivery.</p>
-            </div>
-          </section>
-
-          <section className="space-y-6">
-            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs">05</span>
               Limitation of Liability
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">

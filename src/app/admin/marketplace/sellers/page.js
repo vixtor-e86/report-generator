@@ -23,6 +23,11 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c3.55 0 6.733 1.835 8.542 4.646.458.705.458 1.584 0 2.29C18.733 16.165 15.55 18 12 18c-4.477 0-8.268-2.943-9.542-7z" />
     </svg>
+  ),
+  Trash: ({ className }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
   )
 };
 
@@ -33,6 +38,7 @@ export default function SellerAccreditationAdmin() {
   const [searchTerm, setSearchTerm] = useState('');
   const [processing, setProcessing] = useState(false);
   const [previewPassport, setPreviewPassport] = useState(null);
+  const [closingAccount, setClosingAccount] = useState(null); // Seller to close
 
   const fetchApplicants = useCallback(async () => {
     setLoading(true);
@@ -178,6 +184,15 @@ export default function SellerAccreditationAdmin() {
                        >
                          <Icons.Eye className="w-5 h-5" />
                        </button>
+                       {applicant.status === 'approved' && (
+                         <button 
+                           onClick={() => setClosingAccount(applicant)}
+                           className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                           title="Close Seller Account"
+                         >
+                           <Icons.Trash className="w-5 h-5" />
+                         </button>
+                       )}
                        {applicant.status === 'pending' && (
                          <>
                            <button 
@@ -223,6 +238,35 @@ export default function SellerAccreditationAdmin() {
                 alt="Enlarged Identity" 
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Close Account Confirmation Modal */}
+      {closingAccount && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] max-w-md w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+             <div className="p-10 text-center">
+                <div className="w-16 h-16 bg-red-50 text-red-600 rounded-[24px] flex items-center justify-center mx-auto mb-6">
+                    <Icons.Trash className="w-8 h-8" />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Close Account?</h2>
+                <p className="text-slate-500 font-medium leading-relaxed mb-8 text-sm">
+                    Are you sure you want to close the seller account for <b>{closingAccount.first_name} {closingAccount.last_name}</b>? This will revoke their selling privileges immediately.
+                </p>
+                <div className="flex gap-4">
+                    <button onClick={() => setClosingAccount(null)} className="flex-1 py-4 font-black uppercase text-[10px] tracking-widest text-slate-400 hover:text-black">Cancel</button>
+                    <button 
+                        onClick={() => {
+                            handleUpdateStatus(closingAccount.id, 'rejected', 'Account closed by administrator');
+                            setClosingAccount(null);
+                        }}
+                        className="flex-[2] bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-red-200"
+                    >
+                        Confirm Closure
+                    </button>
+                </div>
+             </div>
           </div>
         </div>
       )}

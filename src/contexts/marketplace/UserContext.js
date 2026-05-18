@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 const UserContext = createContext(undefined);
 
@@ -143,7 +144,16 @@ export function UserProvider({ children }) {
         event: 'INSERT', 
         schema: 'public', 
         table: 'marketplace_notifications' 
-      }, () => {
+      }, (payload) => {
+        if (payload.new) {
+            toast(payload.new.title, {
+                description: payload.new.message,
+                action: {
+                    label: 'View',
+                    onClick: () => console.log('Notification clicked')
+                },
+            });
+        }
         refreshUser();
       })
       .subscribe();

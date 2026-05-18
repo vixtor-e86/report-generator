@@ -10,16 +10,24 @@ import FeedbackWidget from '@/components/FeedbackWidget';
 import CustomModal from '@/components/premium/modals/CustomModal';
 import { academicTools, toolCategories } from '@/data/marketplace/tools';
 import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/marketplace/ui/dropdown-menu';
+import { 
   Search, Grid3X3, List, Star, ChevronDown, SlidersHorizontal, 
   ArrowRight, ArrowLeft, Sparkles, Layers, CheckCircle2, Wrench, ShieldCheck, 
   BookOpen, Presentation, BarChart3, Code2, Lightbulb, RefreshCw, 
-  SpellCheck, Quote, Image as ImageIcon, Zap, Check, Wallet, 
+  SpellCheck, Quote, Image as ImageIcon, Zap, Check, Wallet, Bell,
   UserCheck, Landmark, Clock, Phone, Mail, Book, TrendingUp, Plus, Eye, Trash2, Activity, Palette, ClipboardList
 } from 'lucide-react';
 import { Input } from '@/components/marketplace/ui/input';
 import { Badge } from '@/components/marketplace/ui/badge';
 import { Button } from '@/components/marketplace/ui/button';
 import { formatCurrency } from '@/lib/utils';
+import { toast } from 'sonner';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
 import { PaymentMethodModal, PayoutRequestModal } from '@/components/marketplace/PayoutModals';
@@ -141,8 +149,17 @@ function MarketCard({ item, viewMode }) {
 }
 
 export default function Dashboard() {
-  const { user: authUser, profile: globalProfile, loading: contextLoading } = useUser();
+  const { 
+    user: authUser, 
+    profile: globalProfile, 
+    loading: contextLoading, 
+    notifications, 
+    unreadCount, 
+    markNotificationsAsRead,
+    refreshUser 
+  } = useUser();
   const [projects, setProjects] = useState([]);
+
   const [standardProjects, setStandardProjects] = useState([]);
   const [premiumProjects, setPremiumProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -290,14 +307,25 @@ export default function Dashboard() {
     } catch (err) { console.error(err); } finally { setLoadingSeller(false); }
   }, [authUser, globalProfile]);
 
+  const [itemToDelete, setItemToDelete] = useState(null);
+
   const handleDeleteItem = async (id, type) => {
-    if (!confirm('Are you sure you want to delete this listing? This action cannot be undone.')) return;
+    setItemToDelete({ id, type });
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    const { id, type } = itemToDelete;
     try {
       const res = await fetch(`/api/marketplace/delete?id=${id}&type=${type}&userId=${authUser.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error("Failed to delete");
       toast.success('Listing deleted successfully');
       setMyItems(prev => prev.filter(item => item.id !== id));
-    } catch (err) { toast.error(err.message); }
+      setItemToDelete(null);
+    } catch (err) { 
+      toast.error(err.message);
+      setItemToDelete(null);
+    }
   };
 
   async function fetchMarketItems() {
@@ -350,6 +378,9 @@ export default function Dashboard() {
   const showNotification = (title, message, type = 'info', onConfirm = null) => {
     setNotification({ isOpen: true, title, message, type, onConfirm });
   };
+
+  // Seller Intro Modal State
+  const [showSellerIntro, setShowSellerIntro] = useState(false);
 
   useEffect(() => {
     async function loadProjects() {
@@ -608,6 +639,57 @@ export default function Dashboard() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+              {/* Notifications */}
+              <DropdownMenu onOpenChange={(open) => open && markNotificationsAsRead()}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative text-[#6b7280] hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all shrink-0"
+                  >
+                    <Bell className="w-5 h-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-600 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 bg-white border-slate-200 rounded-2xl shadow-2xl p-0 overflow-hidden z-[100]">
+                  <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 className="font-black text-xs uppercase tracking-widest text-slate-900">Notifications</h3>
+                    {unreadCount > 0 && <span className="text-[10px] font-bold text-indigo-600">New Alerts</span>}
+                  </div>
+                  <div className="max-h-[400px] overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-10 text-center">
+                        <Bell className="w-8 h-8 text-slate-200 mx-auto mb-3" />
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">No notifications yet</p>
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div 
+                          key={notif.id} 
+                          className={`p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors ${!notif.is_read ? 'bg-indigo-50/30' : ''}`}
+                        >
+                          <div className="flex gap-3">
+                            <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                              notif.type === 'success' ? 'bg-emerald-500' :
+                              notif.type === 'error' ? 'bg-red-500' : 'bg-indigo-500'
+                            }`} />
+                            <div>
+                              <p className="text-sm font-black text-slate-900 leading-tight mb-1">{notif.title}</p>
+                              <p className="text-xs font-medium text-slate-500 leading-relaxed">{notif.message}</p>
+                              <p className="text-[9px] font-black text-slate-300 uppercase mt-2">{new Date(notif.created_at).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <div className="hidden md:flex items-center gap-4">
                 {isAdmin && (
                   <Link
@@ -1001,23 +1083,17 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Become a Seller CTA */}
-                {!authUser?.isSeller && (
-                    <div className="mb-12 relative overflow-hidden bg-zinc-900 rounded-[40px] p-10 text-white border border-white/5 shadow-2xl">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
-                            <div className="max-w-2xl">
-                                <h3 className="text-3xl font-black uppercase tracking-tighter mb-2">Monetize your Academic Expertise</h3>
-                                <p className="text-zinc-400 font-medium leading-relaxed">Join our vetted marketplace as a seller and earn up to 80% from every sale of your academic blueprints and digital ebooks.</p>
-                            </div>
-                            <button 
-                                onClick={() => setShowAccreditation(true)}
-                                className="shrink-0 w-full md:w-auto bg-white text-black hover:bg-zinc-100 px-10 py-7 font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all active:scale-95"
-                            >
-                                Apply for Accreditation
-                            </button>
+                {/* Floating Become a Seller FAB (Market Tab Only) */}
+                {activeTab === 'market' && !authUser?.isSeller && !showAccreditation && (
+                    <button 
+                        onClick={() => setShowSellerIntro(true)}
+                        className="fixed bottom-24 left-6 z-[40] group flex items-center gap-3 bg-zinc-900 text-white pl-4 pr-6 py-4 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all animate-in slide-in-from-left-8 duration-500 border border-white/10"
+                    >
+                        <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform">
+                            <Zap className="w-4 h-4" />
                         </div>
-                    </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Earn as a Seller</span>
+                    </button>
                 )}
 
                 {marketLoading ? (
@@ -1404,6 +1480,77 @@ export default function Dashboard() {
         type={notification.type}
         onConfirm={notification.onConfirm}
       />
+
+      {/* Seller Introduction Modal */}
+      {showSellerIntro && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] max-w-lg w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 relative">
+             <button onClick={() => setShowSellerIntro(false)} className="absolute top-6 right-6 p-2 text-zinc-400 hover:text-black transition-colors"><X className="w-6 h-6" /></button>
+             
+             <div className="p-10 text-center">
+                <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-[30px] flex items-center justify-center mx-auto mb-8">
+                    <TrendingUp className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-black text-zinc-900 uppercase tracking-tighter mb-4 leading-tight">Monetize Your<br/>Research Expertise</h2>
+                <p className="text-zinc-500 font-medium leading-relaxed mb-10 px-4">
+                    Join our elite network of academic contributors and earn industry-leading commissions on your original research assets.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4 mb-10">
+                    <div className="bg-zinc-50 p-6 rounded-3xl border border-zinc-100 text-center">
+                        <p className="text-2xl font-black text-indigo-600">70%</p>
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">Blueprints</p>
+                    </div>
+                    <div className="bg-zinc-50 p-6 rounded-3xl border border-zinc-100 text-center">
+                        <p className="text-2xl font-black text-emerald-600">90%</p>
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">Digital Ebooks</p>
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                    <button 
+                        onClick={() => { setShowSellerIntro(false); setShowAccreditation(true); }}
+                        className="w-full bg-zinc-900 hover:bg-black text-white py-6 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95"
+                    >
+                        Apply for Accreditation
+                    </button>
+                    <button 
+                        onClick={() => setShowSellerIntro(false)}
+                        className="w-full text-zinc-400 font-black uppercase text-[10px] tracking-widest py-3"
+                    >
+                        Maybe Later
+                    </button>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {itemToDelete && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] max-w-md w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+             <div className="p-10 text-center">
+                <div className="w-16 h-16 bg-red-50 text-red-600 rounded-[24px] flex items-center justify-center mx-auto mb-6">
+                    <Trash2 className="w-8 h-8" />
+                </div>
+                <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">Confirm Removal</h2>
+                <p className="text-zinc-500 font-medium leading-relaxed mb-8">
+                    Are you sure you want to delete this {itemToDelete.type}? This action is irreversible and will remove all associated data.
+                </p>
+                <div className="flex gap-4">
+                    <button onClick={() => setItemToDelete(null)} className="flex-1 py-4 font-black uppercase text-[10px] tracking-widest text-zinc-400 hover:text-black">Cancel</button>
+                    <button 
+                        onClick={confirmDelete}
+                        className="flex-[2] bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-red-200"
+                    >
+                        Delete Permanently
+                    </button>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

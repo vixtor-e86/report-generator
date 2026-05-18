@@ -42,8 +42,13 @@ export default function SellerAccreditationForm({ user, onComplete, onCancel }) 
 
   useEffect(() => {
     async function fetchSchools() {
-      const { data } = await supabase.from('universities').select('*').order('name');
-      setUniversities(data || []);
+      try {
+        const res = await fetch('/api/universities');
+        const data = await res.json();
+        setUniversities(data || []);
+      } catch (err) {
+        console.error("Failed to fetch schools:", err);
+      }
     }
     fetchSchools();
   }, []);
