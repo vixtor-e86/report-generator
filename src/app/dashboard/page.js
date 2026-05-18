@@ -20,7 +20,7 @@ import {
   Search, Grid3X3, List, Star, ChevronDown, SlidersHorizontal, 
   ArrowRight, ArrowLeft, Sparkles, Layers, CheckCircle2, Wrench, ShieldCheck, 
   BookOpen, Presentation, BarChart3, Code2, Lightbulb, RefreshCw, 
-  SpellCheck, Quote, Image as ImageIcon, Zap, Check, Wallet, Bell,
+  SpellCheck, Quote, Image as ImageIcon, Zap, Check, Wallet, Bell, AlertCircle,
   UserCheck, Landmark, Clock, Phone, Mail, Book, TrendingUp, Plus, Eye, Trash2, Activity, Palette, ClipboardList, X
 } from 'lucide-react';
 import { Input } from '@/components/marketplace/ui/input';
@@ -263,7 +263,7 @@ export default function Dashboard() {
   // Market State
   const [marketItems, setMarketItems] = useState([]);
   const [marketLoading, setMarketLoading] = useState(false);
-  const [marketSearch, setMarketMarketSearch] = useState('');
+  const [marketSearch, setMarketSearch] = useState('');
   const [marketType, setMarketType] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [selectedMarketItem, setSelectedMarketItem] = useState(null);
@@ -1071,7 +1071,7 @@ export default function Dashboard() {
                                     <Input 
                                         placeholder="Search blueprints or ebooks..." 
                                         value={marketSearch}
-                                        onChange={(e) => setMarketMarketSearch(e.target.value)}
+                                        onChange={(e) => setMarketSearch(e.target.value)}
                                         className="pl-12 bg-white border-slate-200 rounded-2xl h-12 font-bold focus:border-black shadow-inner"
                                     />
                                 </div>
@@ -1322,7 +1322,7 @@ export default function Dashboard() {
                             ) : myItems.length === 0 ? (
                                 <div className="bg-white rounded-[40px] border border-slate-200 p-20 text-center">
                                     <Layers className="w-12 h-12 text-slate-100 mx-auto mb-4" />
-                                    <p className="font-black text-slate-400 uppercase text-xs tracking-widest italic">You haven't listed any academic blueprints or ebooks yet</p>
+                                    <p className="font-black text-slate-400 uppercase text-xs tracking-widest italic">You haven&apos;t listed any academic blueprints or ebooks yet</p>
                                 </div>
                             ) : (
 
@@ -1389,29 +1389,27 @@ export default function Dashboard() {
                 )}
             </div>
         )}
+      </>
+    )}
 
-                {/* Modals (Common) */}
-                <PaymentMethodModal 
-                    open={showAccountModal} 
-                    onOpenChange={setShowAccountModal} 
-                    userId={authUser?.id}
-                    currentAccount={sellerAccount}
-                    onSaved={(data) => setSellerAccount(data)}
-                />
-                <PayoutRequestModal 
-                    open={showPayoutModal} 
-                    onOpenChange={setShowPayoutModal} 
-                    userId={authUser?.id}
-                    balance={sellerWallet?.balance || 0}
-                    onRequested={() => {
-                        fetchSellerData();
-                        refreshWallet();
-                    }}
-                />
-            </div>
-        )}
-            </>
-        )}
+        {/* Modals (Common) */}
+        <PaymentMethodModal 
+            open={showAccountModal} 
+            onOpenChange={setShowAccountModal} 
+            userId={authUser?.id}
+            currentAccount={sellerAccount}
+            onSaved={(data) => setSellerAccount(data)}
+        />
+        <PayoutRequestModal 
+            open={showPayoutModal} 
+            onOpenChange={setShowPayoutModal} 
+            userId={authUser?.id}
+            balance={sellerWallet?.balance || 0}
+            onRequested={() => {
+                fetchSellerData();
+                refreshWallet();
+            }}
+        />
       </div>
 
       <FeedbackWidget userId={authUser?.id} />
@@ -1472,7 +1470,7 @@ export default function Dashboard() {
             
             <h3 className="text-2xl font-black text-slate-900 mb-2">Mastering W3 WriteLab</h3>
             <p className="text-slate-600 mb-8 leading-relaxed font-medium">
-              This quick walkthrough guide shows you exactly how to generate a "Standard & Good" project using our 3 different packages.
+              This quick walkthrough guide shows you exactly how to generate a &quot;Standard &amp; Good&quot; project using our 3 different packages.
             </p>
 
             <a 

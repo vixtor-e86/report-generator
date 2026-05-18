@@ -102,7 +102,7 @@ export default function VisualStudio({
               disabled={isProcessing || !prompt.trim()}
               className="w-full mt-6 md:mt-8 py-6 md:py-8 bg-slate-900 hover:bg-black text-white rounded-[20px] md:rounded-[24px] font-black text-[10px] md:text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3"
             >
-              {isProcessing ? <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <><Zap className="w-3.5 h-3.5 md:w-4 md:h-4" /> GENERATE (₦100)</>}
+              {isProcessing ? <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <><Zap className="w-3.5 h-3.5 md:w-4 md:h-4" /> GENERATE (₦200)</>}
             </Button>
           </div>
 

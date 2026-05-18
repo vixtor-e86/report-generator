@@ -132,7 +132,7 @@ export default function CodeExplainer({
             className="w-full bg-black hover:bg-zinc-800 text-white rounded-[20px] md:rounded-[24px] py-6 md:py-8 font-black uppercase text-[10px] md:text-xs tracking-[0.2em] shadow-xl mt-6 md:mt-8 flex items-center justify-center gap-3 md:gap-4 shrink-0"
           >
             {isProcessing ? <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin text-emerald-400" /> : <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-emerald-400" />}
-            {isProcessing ? 'Analyzing Logic...' : `Execute Explainer (₦300)`}
+            {isProcessing ? 'Analyzing Logic...' : `Execute Explainer (₦500)`}
           </Button>
         </div>
 

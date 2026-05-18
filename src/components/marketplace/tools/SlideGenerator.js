@@ -273,7 +273,7 @@ export default function SlideGenerator({
                           <Textarea value={refinementPrompt} onChange={(e) => setRefinementPrompt(e.target.value)} placeholder="E.g. Add more detail..." className="bg-white/5 border-white/10 rounded-xl md:rounded-2xl min-h-[100px] md:min-h-[120px] text-sm focus:border-white/20 focus:ring-0 placeholder:text-zinc-600 text-white font-medium" />
                           <Button onClick={() => handleProcess(true)} disabled={isProcessing || !refinementPrompt.trim()} className="w-full bg-white text-zinc-900 hover:bg-zinc-100 rounded-xl md:rounded-2xl py-5 md:py-6 font-black uppercase text-[9px] md:text-[10px] tracking-widest flex items-center justify-center gap-2">
                               {isProcessing ? <RefreshCw className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4" />}
-                              Refine Structure (₦500)
+                              Refine Structure (₦1,000)
                           </Button>
                       </div>
                   </div>
@@ -437,7 +437,7 @@ export default function SlideGenerator({
 
             <Button onClick={() => handleProcess()} disabled={isProcessing || !input.trim() || isOverLimit} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-[24px] md:rounded-[32px] py-8 md:py-10 font-black uppercase text-[10px] md:text-xs tracking-[0.2em] shadow-2xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 md:gap-4 h-16 md:h-20">
                 {isProcessing ? <RefreshCw className="w-5 h-5 md:w-6 md:h-6 animate-spin" /> : <Monitor className="w-5 h-5 md:w-6 md:h-6" />}
-                {isProcessing ? 'Architecting...' : `Build Presentation (₦500)`}
+                {isProcessing ? 'Architecting...' : `Build Presentation (₦2,000)`}
             </Button>
         </div>
     </div>

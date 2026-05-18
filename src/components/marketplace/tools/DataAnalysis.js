@@ -331,7 +331,7 @@ export default function DataAnalysis({
             className="w-full bg-black hover:bg-zinc-800 text-white rounded-[20px] md:rounded-[24px] py-6 md:py-10 font-black uppercase text-[10px] md:text-sm tracking-[0.2em] shadow-xl mt-6 md:mt-8 flex items-center justify-center gap-3 md:gap-4 shrink-0"
           >
             {isProcessing ? <RefreshCw className="w-5 h-5 md:w-6 md:h-6 animate-spin" /> : <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />}
-            {isProcessing ? 'Analyzing...' : `Execute Analyst (₦1,200)`}
+            {isProcessing ? 'Analyzing...' : `Execute Analyst (₦1,500)`}
           </Button>
         </div>
       </div>

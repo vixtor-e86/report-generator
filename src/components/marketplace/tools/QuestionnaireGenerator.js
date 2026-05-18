@@ -191,7 +191,7 @@ export default function QuestionnaireGenerator({
 
         <div className="ml-auto w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0">
           <Badge className="w-full md:w-auto bg-zinc-900 text-white border-none px-6 py-2 rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest flex justify-center h-9 md:h-10 items-center">
-            ₦1,000 / Use
+            ₦2,000 / Use
           </Badge>
         </div>
       </div>
@@ -256,7 +256,7 @@ export default function QuestionnaireGenerator({
             className="w-full bg-black hover:bg-zinc-800 text-white rounded-[20px] md:rounded-[24px] py-6 md:py-10 font-black uppercase text-[10px] md:text-sm tracking-[0.2em] shadow-xl mt-6 md:mt-8 flex items-center justify-center gap-3 md:gap-4 shrink-0 transition-all active:scale-95"
           >
             {isProcessing ? <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-indigo-400" />}
-            {isProcessing ? 'Drafting Instrument...' : `Generate Instrument (₦1,000)`}
+            {isProcessing ? 'Drafting Instrument...' : `Generate Instrument (₦2,000)`}
           </Button>
         </div>
 

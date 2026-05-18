@@ -263,7 +263,7 @@ export default function LanguageConverter({
             className="w-full bg-black hover:bg-zinc-800 text-white rounded-[20px] md:rounded-[24px] py-6 md:py-10 font-black uppercase text-[10px] md:text-xs tracking-[0.2em] shadow-xl mt-6 md:mt-8 flex items-center justify-center gap-3 md:gap-4 shrink-0 transition-all active:scale-95"
           >
             {isProcessing ? <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />}
-            {isProcessing ? 'Converting...' : wordBalance >= wordCount ? 'Execute (Using Credits)' : `Refill & Execute (₦1,000)`}
+            {isProcessing ? 'Converting...' : wordBalance >= wordCount ? 'Execute (Using Credits)' : `Refill & Execute (₦200)`}
           </Button>
         </div>
 
@@ -317,7 +317,7 @@ export default function LanguageConverter({
             </p>
           </div>
           <Badge className="bg-white text-indigo-600 px-4 md:px-6 py-2 md:py-3 rounded-full font-black uppercase text-[9px] md:text-[10px] tracking-widest shadow-xl">
-            ₦1,000 / 2,000 Words
+            ₦200 / 2,000 Words
           </Badge>
         </div>
       </div>
