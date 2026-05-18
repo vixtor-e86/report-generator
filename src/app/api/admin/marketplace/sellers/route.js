@@ -7,11 +7,16 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'pending';
 
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('marketplace_sellers')
       .select('*, universities(name)')
-      .eq('status', status)
       .order('created_at', { ascending: false });
+
+    if (status !== 'all') {
+      query = query.eq('status', status);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return NextResponse.json(data);

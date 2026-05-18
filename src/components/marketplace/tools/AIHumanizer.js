@@ -23,7 +23,7 @@ export default function AIHumanizer({
   const [wordBalance, setWordBalance] = useState(0);
 
   const wordCount = input.trim() ? input.trim().split(/\s+/).length : 0;
-  const MAX_WORDS = 2000;
+  const MAX_WORDS = 1000;
   const isOverLimit = wordCount > MAX_WORDS;
 
   // Fetch word balance on mount

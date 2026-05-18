@@ -37,8 +37,51 @@ export async function POST(request) {
           
           <div style="text-align: center; margin: 40px 0;">
             <a href="${downloadUrl}" style="background-color: #111827; color: white; padding: 16px 32px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; display: inline-block;">
-              Download Project Repository
+              Download Files
             </a>
+          </div>
+
+          <!-- Certificate of Ownership -->
+          <div style="margin-top: 50px; padding: 40px; border: 4px double #e5e7eb; border-radius: 8px; position: relative; background-color: #fff;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <p style="margin: 0; color: #9ca3af; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3em;">Official Document</p>
+              <h3 style="margin: 10px 0; color: #111827; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em;">Certificate of Ownership</h3>
+              <div style="width: 40px; hieght: 2px; background: #111827; margin: 0 auto;"></div>
+            </div>
+
+            <p style="color: #4b5563; font-size: 13px; line-height: 1.8; text-align: center; font-style: italic;">
+              This document serves as formal confirmation that the individual associated with this email address is the verified owner of the intellectual asset titled:
+            </p>
+
+            <div style="text-align: center; margin: 25px 0;">
+              <h4 style="margin: 0; color: #111827; font-size: 18px; font-weight: 800; text-transform: uppercase;">${projectTitle}</h4>
+            </div>
+
+            <div style="border-top: 1px solid #f3f4f6; padding-top: 20px; margin-top: 20px;">
+              <table style="width: 100%; font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">
+                <tr>
+                  <td style="padding: 5px 0;">Asset Type:</td>
+                  <td style="text-align: right; color: #111827;">${projectTitle.toLowerCase().includes('ebook') ? 'Digital Manuscript' : 'Academic Blueprint'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 5px 0;">Issue Date:</td>
+                  <td style="text-align: right; color: #111827;">${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 5px 0;">Reference ID:</td>
+                  <td style="text-align: right; color: #111827;">W3-${Math.random().toString(36).substr(2, 9).toUpperCase()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 5px 0;">Status:</td>
+                  <td style="text-align: right; color: #10b981;">Verified & Secured</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="margin-top: 30px; text-align: center;">
+              <img src="https://writelab.w3hub.com.ng/favicon.ico" alt="Seal" style="width: 30px; height: 30px; opacity: 0.5;">
+              <p style="margin: 10px 0 0 0; color: #9ca3af; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">W3 HUB LEGAL DIVISION</p>
+            </div>
           </div>
           
           <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 50px;">
