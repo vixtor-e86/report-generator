@@ -34,6 +34,7 @@ import { PaymentMethodModal, PayoutRequestModal } from '@/components/marketplace
 import SellerAccreditationForm from '@/components/marketplace/SellerAccreditationForm';
 import ProjectUploadForm from '@/components/marketplace/ProjectUploadForm';
 import EbookUploadForm from '@/components/marketplace/EbookUploadForm';
+import MarketItemDetail from '@/components/marketplace/MarketItemDetail';
 import ReactMarkdown from 'react-markdown';
 import { getToolById } from '@/data/marketplace/tools';
 
@@ -71,21 +72,20 @@ const iconMap = {
   RefreshCw,
 };
 
-function MarketCard({ item, viewMode }) {
+function MarketCard({ item, viewMode, onView }) {
   const sellerName = item.marketplace_sellers 
     ? `${item.marketplace_sellers.first_name} ${item.marketplace_sellers.last_name}` 
     : 'Verified Seller';
-
-  const detailUrl = item.itemType === 'blueprint' 
-    ? `/marketplace/project/${item.id}` 
-    : `/marketplace/ebook/${item.id}`;
 
   const image = item.itemType === 'blueprint' ? item.preview_images?.[0] : item.cover_image;
   const tag = item.itemType === 'blueprint' ? item.faculty : item.category;
 
   if (viewMode === 'list') {
     return (
-      <Link href={detailUrl} className="group bg-white border border-[#e5e7eb] p-4 rounded-3xl hover:border-indigo-600 hover:shadow-xl transition-all flex items-center gap-6">
+      <div 
+        onClick={() => onView(item)} 
+        className="group bg-white border border-[#e5e7eb] p-4 rounded-3xl hover:border-indigo-600 hover:shadow-xl transition-all flex items-center gap-6 cursor-pointer"
+      >
         <div className={`rounded-2xl overflow-hidden flex-shrink-0 ${item.itemType === 'blueprint' ? 'w-32 h-24' : 'w-20 h-28 border border-zinc-100'}`}>
           <img src={image} className="w-full h-full object-cover" alt="" />
         </div>
@@ -100,13 +100,15 @@ function MarketCard({ item, viewMode }) {
           <div className="text-xl font-black text-slate-900">{formatCurrency(item.price)}</div>
           <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Academic Blueprint</p>
         </div>
-
-      </Link>
+      </div>
     );
   }
 
   return (
-    <Link href={detailUrl} className="flex flex-col bg-white border border-[#e5e7eb] rounded-[32px] overflow-hidden hover:shadow-2xl transition-all duration-500 relative group">
+    <div 
+      onClick={() => onView(item)} 
+      className="flex flex-col bg-white border border-[#e5e7eb] rounded-[32px] overflow-hidden hover:shadow-2xl transition-all duration-500 relative group cursor-pointer"
+    >
       <div className={`relative overflow-hidden p-2 ${item.itemType === 'blueprint' ? 'h-52' : 'h-64'}`}>
         <img
           src={image}
@@ -144,7 +146,7 @@ function MarketCard({ item, viewMode }) {
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -264,6 +266,7 @@ export default function Dashboard() {
   const [marketSearch, setMarketMarketSearch] = useState('');
   const [marketType, setMarketType] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
+  const [selectedMarketItem, setSelectedMarketItem] = useState(null);
 
   // Tools State
   const [toolSearch, setToolSearch] = useState('');
@@ -1049,67 +1052,80 @@ export default function Dashboard() {
         {/* --- LIVE MARKET VIEW --- */}
         {activeTab === 'market' && (
             <div className="animate-in fade-in duration-500">
-                {/* Market Toolbar */}
-                <div className="sticky top-[70px] z-40 bg-[#f8f9fc]/95 backdrop-blur-md border border-slate-200 rounded-3xl p-4 mb-8 shadow-sm">
-                    <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-                        <div className="relative w-full md:w-96">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                            <Input 
-                                placeholder="Search blueprints or ebooks..." 
-                                value={marketSearch}
-                                onChange={(e) => setMarketMarketSearch(e.target.value)}
-                                className="pl-12 bg-white border-slate-200 rounded-2xl h-12 font-bold focus:border-black shadow-inner"
-                            />
+                {selectedMarketItem ? (
+                    <MarketItemDetail 
+                        itemId={selectedMarketItem.id} 
+                        itemType={selectedMarketItem.itemType} 
+                        onBack={() => {
+                            setSelectedMarketItem(null);
+                            refreshWallet();
+                        }} 
+                    />
+                ) : (
+                    <>
+                        {/* Market Toolbar */}
+                        <div className="sticky top-[70px] z-40 bg-[#f8f9fc]/95 backdrop-blur-md border border-slate-200 rounded-3xl p-4 mb-8 shadow-sm">
+                            <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+                                <div className="relative w-full md:w-96">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                                    <Input 
+                                        placeholder="Search blueprints or ebooks..." 
+                                        value={marketSearch}
+                                        onChange={(e) => setMarketMarketSearch(e.target.value)}
+                                        className="pl-12 bg-white border-slate-200 rounded-2xl h-12 font-bold focus:border-black shadow-inner"
+                                    />
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-4">
+                                    <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                                        {['all', 'blueprints', 'ebooks'].map(t => (
+                                            <button 
+                                                key={t}
+                                                onClick={() => setMarketType(t)}
+                                                className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${marketType === t ? 'bg-zinc-900 shadow-lg text-white' : 'text-slate-400'}`}
+                                            >
+                                                {t === 'all' ? 'All Items' : t === 'blueprints' ? 'Blueprints' : 'Ebooks'}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                                        <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-zinc-100 text-black' : 'text-slate-300'}`}><Grid3X3 className="w-4 h-4" /></button>
+                                        <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-zinc-100 text-black' : 'text-slate-300'}`}><List className="w-4 h-4" /></button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-4">
-                            <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                                {['all', 'blueprints', 'ebooks'].map(t => (
-                                    <button 
-                                        key={t}
-                                        onClick={() => setMarketType(t)}
-                                        className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${marketType === t ? 'bg-zinc-900 shadow-lg text-white' : 'text-slate-400'}`}
-                                    >
-                                        {t === 'all' ? 'All Items' : t === 'blueprints' ? 'Blueprints' : 'Ebooks'}
-                                    </button>
+                        {/* Floating Become a Seller FAB (Market Tab Only) */}
+                        {!authUser?.isSeller && !showAccreditation && (
+                            <button 
+                                onClick={() => setShowSellerIntro(true)}
+                                className="fixed bottom-24 left-6 z-[40] group flex items-center gap-3 bg-zinc-900 text-white pl-4 pr-6 py-4 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all animate-in slide-in-from-left-8 duration-500 border border-white/10"
+                            >
+                                <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform">
+                                    <Zap className="w-4 h-4" />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest">Earn as a Seller</span>
+                            </button>
+                        )}
+
+                        {marketLoading ? (
+                            <div className="py-24 text-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto" /></div>
+                        ) : marketItems.filter(p => p.title.toLowerCase().includes(marketSearch.toLowerCase())).length === 0 ? (
+                            <div className="text-center py-24 bg-white rounded-[48px] border border-slate-200">
+                                <Layers className="w-16 h-16 text-slate-100 mx-auto mb-4" />
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Market Catalog Empty</h3>
+                                <p className="text-slate-500 font-medium">Try a different search term or category.</p>
+                            </div>
+                        ) : (
+                            <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" : "flex flex-col gap-4"}>
+                                {marketItems.filter(p => p.title.toLowerCase().includes(marketSearch.toLowerCase())).map((item) => (
+                                    <MarketCard key={item.id} item={item} viewMode={viewMode} onView={setSelectedMarketItem} />
                                 ))}
                             </div>
-
-                            <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-zinc-100 text-black' : 'text-slate-300'}`}><Grid3X3 className="w-4 h-4" /></button>
-                                <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-zinc-100 text-black' : 'text-slate-300'}`}><List className="w-4 h-4" /></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Floating Become a Seller FAB (Market Tab Only) */}
-                {activeTab === 'market' && !authUser?.isSeller && !showAccreditation && (
-                    <button 
-                        onClick={() => setShowSellerIntro(true)}
-                        className="fixed bottom-24 left-6 z-[40] group flex items-center gap-3 bg-zinc-900 text-white pl-4 pr-6 py-4 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all animate-in slide-in-from-left-8 duration-500 border border-white/10"
-                    >
-                        <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform">
-                            <Zap className="w-4 h-4" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest">Earn as a Seller</span>
-                    </button>
-                )}
-
-                {marketLoading ? (
-                    <div className="py-24 text-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto" /></div>
-                ) : marketItems.filter(p => p.title.toLowerCase().includes(marketSearch.toLowerCase())).length === 0 ? (
-                    <div className="text-center py-24 bg-white rounded-[48px] border border-slate-200">
-                        <Layers className="w-16 h-16 text-slate-100 mx-auto mb-4" />
-                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Market Catalog Empty</h3>
-                        <p className="text-slate-500 font-medium">Try a different search term or category.</p>
-                    </div>
-                ) : (
-                    <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" : "flex flex-col gap-4"}>
-                        {marketItems.filter(p => p.title.toLowerCase().includes(marketSearch.toLowerCase())).map((item) => (
-                            <MarketCard key={item.id} item={item} viewMode={viewMode} />
-                        ))}
-                    </div>
+                        )}
+                    </>
                 )}
             </div>
         )}
@@ -1231,133 +1247,148 @@ export default function Dashboard() {
         {/* --- SELLER HUB VIEW --- */}
         {activeTab === 'seller' && authUser?.isSeller && (
             <div className="animate-in fade-in duration-500 space-y-12 pb-20">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-zinc-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
-                        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">Withdrawable Earnings</p>
-                        <p className="text-4xl font-black">{formatCurrency(sellerWallet?.balance || 0)}</p>
-                        <Button 
-                            onClick={() => setShowPayoutModal(true)}
-                            className="mt-8 w-full bg-white text-black hover:bg-zinc-100 rounded-xl py-6 font-black uppercase text-[10px] tracking-widest"
-                        >
-                            Request Payout
-                        </Button>
-                    </div>
-                    <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
-                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Settlement Account</p>
-                        {sellerAccount?.bank_name ? (
-                            <div className="space-y-1 mt-2">
-                                <p className="text-lg font-black text-slate-900 uppercase tracking-tight">{sellerAccount.bank_name}</p>
-                                <p className="text-xs font-bold text-slate-500">{sellerAccount.account_number}</p>
-                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest pt-2">{sellerAccount.account_name}</p>
+                {selectedMarketItem ? (
+                    <MarketItemDetail 
+                        itemId={selectedMarketItem.id} 
+                        itemType={selectedMarketItem.itemType} 
+                        onBack={() => {
+                            setSelectedMarketItem(null);
+                        }} 
+                    />
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-zinc-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
+                                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">Withdrawable Earnings</p>
+                                <p className="text-4xl font-black">{formatCurrency(sellerWallet?.balance || 0)}</p>
+                                <Button 
+                                    onClick={() => setShowPayoutModal(true)}
+                                    className="mt-8 w-full bg-white text-black hover:bg-zinc-100 rounded-xl py-6 font-black uppercase text-[10px] tracking-widest"
+                                >
+                                    Request Payout
+                                </Button>
                             </div>
-                        ) : (
-                            <p className="text-sm font-bold text-slate-400 mt-4 italic">No account added yet</p>
-                        )}
-                        <Button 
-                            variant="outline" 
-                            onClick={() => setShowAccountModal(true)}
-                            className="mt-6 w-full border-zinc-200 hover:border-black text-zinc-900 rounded-xl py-2 font-black uppercase text-[9px] tracking-widest"
-                        >
-                            {sellerAccount?.bank_name ? 'Update Account' : 'Add Account Details'}
-                        </Button>
-                    </div>
-                    <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
-                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Lifetime Earnings</p>
-                        <p className="text-4xl font-black text-slate-900">{formatCurrency(sellerWallet?.total_earned || 0)}</p>
-                        <div className="mt-6 flex items-center gap-2 text-emerald-600">
-                            <TrendingUp className="w-4 h-4" />
-                            <span className="text-xs font-bold uppercase tracking-tight">Active Growth</span>
+                            <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
+                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Settlement Account</p>
+                                {sellerAccount?.bank_name ? (
+                                    <div className="space-y-1 mt-2">
+                                        <p className="text-lg font-black text-slate-900 uppercase tracking-tight">{sellerAccount.bank_name}</p>
+                                        <p className="text-xs font-bold text-slate-500">{sellerAccount.account_number}</p>
+                                        <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest pt-2">{sellerAccount.account_name}</p>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm font-bold text-slate-400 mt-4 italic">No account added yet</p>
+                                )}
+                                <Button 
+                                    variant="outline" 
+                                    onClick={() => setShowAccountModal(true)}
+                                    className="mt-6 w-full border-zinc-200 hover:border-black text-zinc-900 rounded-xl py-2 font-black uppercase text-[9px] tracking-widest"
+                                >
+                                    {sellerAccount?.bank_name ? 'Update Account' : 'Add Account Details'}
+                                </Button>
+                            </div>
+                            <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-8 shadow-sm">
+                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Lifetime Earnings</p>
+                                <p className="text-4xl font-black text-slate-900">{formatCurrency(sellerWallet?.total_earned || 0)}</p>
+                                <div className="mt-6 flex items-center gap-2 text-emerald-600">
+                                    <TrendingUp className="w-4 h-4" />
+                                    <span className="text-xs font-bold uppercase tracking-tight">Active Growth</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <div className="space-y-8">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">My Academic Library</h2>
-                        <div className="flex gap-3">
-                            <button 
-                                onClick={() => setShowUploadProject(true)}
-                                className="bg-zinc-900 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-black transition-all"
-                            >
-                                <Plus className="w-3 h-3" /> Blueprint
-                            </button>
-                            <button 
-                                onClick={() => setShowUploadEbook(true)}
-                                className="bg-zinc-100 text-zinc-900 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-zinc-200 transition-all border border-zinc-200"
-                            >
-                                <Plus className="w-3 h-3" /> Ebook
-                            </button>
-                        </div>
-                    </div>
+                        <div className="space-y-8">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">My Academic Library</h2>
+                                <div className="flex gap-3">
+                                    <button 
+                                        onClick={() => setShowUploadProject(true)}
+                                        className="bg-zinc-900 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-black transition-all"
+                                    >
+                                        <Plus className="w-3 h-3" /> Blueprint
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowUploadEbook(true)}
+                                        className="bg-zinc-100 text-zinc-900 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-zinc-200 transition-all border border-zinc-200"
+                                    >
+                                        <Plus className="w-3 h-3" /> Ebook
+                                    </button>
+                                </div>
+                            </div>
 
-                    {loadingSeller ? (
-                        <div className="py-20 text-center"><div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent mx-auto"></div></div>
-                    ) : myItems.length === 0 ? (
-                        <div className="bg-white rounded-[40px] border border-slate-200 p-20 text-center">
-                            <Layers className="w-12 h-12 text-slate-100 mx-auto mb-4" />
-                            <p className="font-black text-slate-400 uppercase text-xs tracking-widest italic">You haven't listed any academic blueprints or ebooks yet</p>
-                        </div>
-                    ) : (
+                            {loadingSeller ? (
+                                <div className="py-20 text-center"><div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent mx-auto"></div></div>
+                            ) : myItems.length === 0 ? (
+                                <div className="bg-white rounded-[40px] border border-slate-200 p-20 text-center">
+                                    <Layers className="w-12 h-12 text-slate-100 mx-auto mb-4" />
+                                    <p className="font-black text-slate-400 uppercase text-xs tracking-widest italic">You haven't listed any academic blueprints or ebooks yet</p>
+                                </div>
+                            ) : (
 
-                        <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-50 border-b border-slate-100">
-                                    <tr>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset Details</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Sales</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {myItems.map((item) => {
-                                        const url = item.itemType === 'blueprint' ? `/marketplace/project/${item.id}` : `/marketplace/ebook/${item.id}`;
-                                        return (
-                                            <tr key={item.id} className="hover:bg-slate-50/50 transition group">
-                                                <td className="px-6 py-5">
-                                                    <div className="font-black text-slate-900 text-sm uppercase tracking-tight truncate max-w-md">{item.title}</div>
-                                                    <div className="flex gap-2 mt-1">
-                                                        <Badge className="bg-zinc-100 text-zinc-500 border-none px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest">{item.itemType}</Badge>
-                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{formatCurrency(item.price)}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-5 text-center">
-                                                    <div className="font-black text-slate-900 text-lg">{item.sales_count || 0}</div>
-                                                    <div className="text-[8px] font-black text-slate-400 uppercase">Downloads</div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <Badge className={`border-none px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                                        item.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 
-                                                        item.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
-                                                    }`}>
-                                                        {item.status}
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-6 py-5 text-right">
-                                                    <div className="flex gap-2 justify-end">
-                                                        <Link href={url}>
-                                                            <button className="p-3 bg-white text-zinc-900 rounded-xl hover:bg-zinc-900 hover:text-white transition-all shadow-sm border border-zinc-200" title="View Listing">
-                                                                <Eye className="w-4 h-4 text-inherit" />
-                                                            </button>
-                                                        </Link>
-                                                        <button 
-                                                            onClick={(e) => { e.preventDefault(); handleDeleteItem(item.id, item.itemType); }}
-                                                            className="p-3 bg-white text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-zinc-200"
-                                                            title="Delete Listing"
-                                                        >
-                                                            <Trash2 className="w-4 h-4 text-inherit" />
-                                                        </button>
-                                                    </div>
-                                                </td>
+                                <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-slate-50 border-b border-slate-100">
+                                            <tr>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset Details</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Sales</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                                             </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {myItems.map((item) => {
+                                                return (
+                                                    <tr key={item.id} className="hover:bg-slate-50/50 transition group">
+                                                        <td className="px-6 py-5">
+                                                            <div className="font-black text-slate-900 text-sm uppercase tracking-tight truncate max-w-md">{item.title}</div>
+                                                            <div className="flex gap-2 mt-1">
+                                                                <Badge className="bg-zinc-100 text-zinc-500 border-none px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest">{item.itemType}</Badge>
+                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{formatCurrency(item.price)}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-5 text-center">
+                                                            <div className="font-black text-slate-900 text-lg">{item.sales_count || 0}</div>
+                                                            <div className="text-[8px] font-black text-slate-400 uppercase">Downloads</div>
+                                                        </td>
+                                                        <td className="px-6 py-5">
+                                                            <Badge className={`border-none px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                                                item.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 
+                                                                item.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
+                                                            }`}>
+                                                                {item.status}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="px-6 py-5 text-right">
+                                                            <div className="flex gap-2 justify-end">
+                                                                <button 
+                                                                    onClick={() => setSelectedMarketItem(item)}
+                                                                    className="p-3 bg-white text-zinc-900 rounded-xl hover:bg-zinc-900 hover:text-white transition-all shadow-sm border border-zinc-200" 
+                                                                    title="View Listing"
+                                                                >
+                                                                    <Eye className="w-4 h-4 text-inherit" />
+                                                                </button>
+                                                                <button 
+                                                                    onClick={(e) => { e.preventDefault(); handleDeleteItem(item.id, item.itemType); }}
+                                                                    className="p-3 bg-white text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-zinc-200"
+                                                                    title="Delete Listing"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4 text-inherit" />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
+                    </>
+                )}
+            </div>
+        )}
 
                 {/* Modals (Common) */}
                 <PaymentMethodModal 
