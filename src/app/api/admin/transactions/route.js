@@ -96,11 +96,19 @@ export async function PATCH(request) {
     if (error) throw error;
 
     // ✅ NEW: Handle Project Unlock for Manual Verification
-    if (updated.paystack_reference && updated.paystack_reference.startsWith('W3WL_UNLOCK_')) {
+    if (updated.paystack_reference && (updated.paystack_reference.startsWith('W3WL_UNLOCK_') || updated.paystack_reference.startsWith('W3WL_MANUAL_UNLOCK_'))) {
       const parts = updated.paystack_reference.split('_');
-      // Format: W3WL_UNLOCK_<PROJECT_ID>_<TIMESTAMP>
-      if (parts.length >= 3) {
-        const projectIdToUnlock = parts[2];
+      
+      let projectIdToUnlock = null;
+      if (updated.paystack_reference.startsWith('W3WL_MANUAL_UNLOCK_')) {
+        // W3WL_MANUAL_UNLOCK_<PROJECT_ID>_<TIMESTAMP> -> [W3WL, MANUAL, UNLOCK, PROJECT_ID, TIMESTAMP]
+        projectIdToUnlock = parts[3];
+      } else {
+        // W3WL_UNLOCK_<PROJECT_ID>_<TIMESTAMP> -> [W3WL, UNLOCK, PROJECT_ID, TIMESTAMP]
+        projectIdToUnlock = parts[2];
+      }
+
+      if (projectIdToUnlock) {
         await supabaseAdmin
           .from('projects')
           .update({ is_unlocked: true, tier: 'standard' })

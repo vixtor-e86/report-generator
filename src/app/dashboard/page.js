@@ -35,6 +35,7 @@ import SellerAccreditationForm from '@/components/marketplace/SellerAccreditatio
 import ProjectUploadForm from '@/components/marketplace/ProjectUploadForm';
 import EbookUploadForm from '@/components/marketplace/EbookUploadForm';
 import MarketItemDetail from '@/components/marketplace/MarketItemDetail';
+import ManualPaymentModal from '@/components/ManualPaymentModal';
 import ReactMarkdown from 'react-markdown';
 import { getToolById } from '@/data/marketplace/tools';
 
@@ -171,6 +172,7 @@ export default function Dashboard() {
   const [pendingStandardPayment, setPendingStandardPayment] = useState(null);
   const [pendingPremiumPayment, setPendingPremiumPayment] = useState(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showManualPayment, setShowManualPayment] = useState(false);
   // Navigation State
   const [activeTab, setActiveTab] = useState('projects'); // projects, market, tools, seller
   const { wallet, deductFunds, refreshWallet, setShowFundingModal } = useWallet();
@@ -505,33 +507,7 @@ export default function Dashboard() {
       return;
     }
 
-    setCreatingPayment(true);
-    try {
-      const response = await fetch('/api/flutterwave/initialize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: authUser.id,
-          email: authUser.email,
-          tier: 'standard',
-          amount: PRICING.STANDARD
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Payment initialization failed');
-      }
-
-      window.location.href = data.authorization_url;
-
-    } catch (error) {
-      console.error('Payment error:', error);
-      showNotification('Payment Error', error.message || 'Failed to initialize payment. Please try again.', 'error');
-    } finally {
-      setCreatingPayment(false);
-    }
+    setShowManualPayment(true);
   };
 
   const handleCreatePremium = async () => {
@@ -550,33 +526,7 @@ export default function Dashboard() {
       return;
     }
 
-    setCreatingPayment(true);
-    try {
-      const response = await fetch('/api/flutterwave/initialize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: authUser.id,
-          email: authUser.email,
-          tier: 'premium',
-          amount: PRICING.PREMIUM
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Payment initialization failed');
-      }
-
-      window.location.href = data.authorization_url;
-
-    } catch (error) {
-      console.error('Premium payment error:', error);
-      showNotification('Premium Error', error.message || 'Failed to initialize premium payment.', 'error');
-    } finally {
-      setCreatingPayment(false);
-    }
+    setShowManualPayment(true);
   };
 
   const allProjects = [...projects, ...standardProjects, ...premiumProjects];
@@ -1409,6 +1359,12 @@ export default function Dashboard() {
                 fetchSellerData();
                 refreshWallet();
             }}
+        />
+        <ManualPaymentModal 
+            isOpen={showManualPayment} 
+            onClose={() => setShowManualPayment(false)} 
+            userId={authUser?.id}
+            userEmail={authUser?.email}
         />
       </div>
 

@@ -12,6 +12,7 @@ import remarkGfm from 'remark-gfm';
 import { useReactToPrint } from 'react-to-print';
 import ReferralFAB from '@/components/ReferralFAB';
 import CustomModal from '@/components/premium/modals/CustomModal';
+import ManualPaymentModal from '@/components/ManualPaymentModal';
 
 export default function Workspace({ params }) {
   const resolvedParams = use(params);
@@ -30,6 +31,7 @@ export default function Workspace({ params }) {
   const [imageCaption, setImageCaption] = useState('');
   const [generating, setGenerating] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showManualPayment, setShowManualPayment] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -324,33 +326,8 @@ export default function Workspace({ params }) {
 
   // Payment Handler
   const handleUnlockPayment = async () => {
-    setPaymentProcessing(true);
-    try {
-      const response = await fetch('/api/flutterwave/initialize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          email: user.email,
-          tier: 'standard', // Changed to 'standard' to satisfy DB constraint
-          amount: 2000,
-          projectId: project.id
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Payment initialization failed');
-      }
-
-      window.location.href = data.authorization_url;
-
-    } catch (error) {
-      console.error('Payment error:', error);
-      showNotification('Payment Error', error.message || 'Failed to start payment', 'error');
-      setPaymentProcessing(false);
-    }
+    setShowManualPayment(true);
+    setShowPaymentModal(false);
   };
 
   // Check Access Wrapper
@@ -881,6 +858,16 @@ export default function Workspace({ params }) {
         message={notification.message}
         type={notification.type}
         onConfirm={notification.onConfirm}
+      />
+
+      <ManualPaymentModal 
+        isOpen={showManualPayment} 
+        onClose={() => setShowManualPayment(false)} 
+        userId={user?.id}
+        userEmail={user?.email}
+        projectId={project?.id}
+        initialTier="unlock"
+        initialAmount={2000}
       />
     </div>
   );
