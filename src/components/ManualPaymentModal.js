@@ -137,6 +137,37 @@ export default function ManualPaymentModal({ isOpen, onClose, userId, userEmail,
               >
                 {projectId ? "I have made payment" : "I have made payment"}
               </button>
+
+              <div className="pt-4 border-t border-slate-100">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center mb-4 text-indigo-600">Need Help or have questions? Contact us</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-emerald-600 shadow-sm"><Smartphone className="w-4 h-4" /></div>
+                      <div>
+                        <p className="text-[8px] font-bold text-emerald-600 uppercase">WhatsApp</p>
+                        <p className="text-xs font-black text-slate-900">+234 808 147 1730</p>
+                      </div>
+                    </div>
+                    <button onClick={() => handleCopy("+2348081471730", "WhatsApp number")} className="p-2 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-lg transition-all">
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-600 shadow-sm"><Mail className="w-4 h-4" /></div>
+                      <div>
+                        <p className="text-[8px] font-bold text-slate-600 uppercase">Email Support</p>
+                        <p className="text-xs font-black text-slate-900">w3writelab@gmail.com</p>
+                      </div>
+                    </div>
+                    <button onClick={() => handleCopy("w3writelab@gmail.com", "Email address")} className="p-2 text-slate-600 hover:bg-slate-900 hover:text-white rounded-lg transition-all">
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
