@@ -11,7 +11,7 @@ export default function ManualPaymentModal({ isOpen, onClose, userId, userEmail,
   if (!isOpen) return null;
 
   const adminBankDetails = {
-    accountNumber: "1030287928",
+    accountNumber: "1030287968",
     bank: "UBA",
     name: "Adewale Shedrack Komolafe"
   };
