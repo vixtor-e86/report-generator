@@ -82,6 +82,7 @@ export default function CustomModal({
   message, 
   type = 'info', 
   onConfirm, 
+  onCancel,
   confirmText = 'Continue', 
   cancelText = 'Cancel' 
 }) {
@@ -173,7 +174,10 @@ export default function CustomModal({
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
             {type === 'confirm' && (
               <button
-                onClick={onClose}
+                onClick={() => {
+                  if (onCancel) onCancel();
+                  onClose();
+                }}
                 style={{
                   flex: 1,
                   padding: '14px',

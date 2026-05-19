@@ -25,17 +25,14 @@ export async function POST(request) {
       .from('payment_transactions')
       .insert({
         user_id: userId,
+        project_id: null, // We keep this null as per existing project patterns to avoid FK constraints
         amount,
         currency: 'NGN',
         tier: projectId ? 'unlock' : tier,
         status: 'pending',
         paystack_reference: reference, // We use this column as the general reference
         ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        user_agent: request.headers.get('user-agent'),
-        metadata: {
-          method: 'manual_transfer',
-          projectId: projectId || null
-        }
+        user_agent: request.headers.get('user-agent')
       })
       .select()
       .single();

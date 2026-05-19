@@ -377,11 +377,14 @@ export default function Dashboard() {
     title: '', 
     message: '', 
     type: 'info',
-    onConfirm: null 
+    onConfirm: null,
+    onCancel: null,
+    confirmText: 'Continue',
+    cancelText: 'Cancel'
   });
 
-  const showNotification = (title, message, type = 'info', onConfirm = null) => {
-    setNotification({ isOpen: true, title, message, type, onConfirm });
+  const showNotification = (title, message, type = 'info', onConfirm = null, onCancel = null, confirmText = 'Continue', cancelText = 'Cancel') => {
+    setNotification({ isOpen: true, title, message, type, onConfirm, onCancel, confirmText, cancelText });
   };
 
   // Seller Intro Modal State
@@ -500,9 +503,12 @@ export default function Dashboard() {
     if (pendingStandardPayment) {
       showNotification(
         'Existing Payment Found',
-        'You have an unused Standard payment. Would you like to continue with it?',
+        'You have an unused Standard payment. Would you like to use it or pay for a new one?',
         'confirm',
-        () => router.push('/template-select')
+        () => router.push('/template-select'),
+        () => setShowManualPayment(true),
+        'Use Existing',
+        'Pay for New'
       );
       return;
     }
@@ -519,9 +525,12 @@ export default function Dashboard() {
     if (pendingPremiumPayment) {
       showNotification(
         'Existing Premium Payment',
-        'You have an unused Premium payment. Would you like to continue to setup?',
+        'You have an unused Premium payment. Would you like to use it or pay for a new one?',
         'confirm',
-        () => router.push('/premium/template-selection')
+        () => router.push('/premium/template-selection'),
+        () => setShowManualPayment(true),
+        'Use Existing',
+        'Pay for New'
       );
       return;
     }
@@ -1464,6 +1473,9 @@ export default function Dashboard() {
         message={notification.message}
         type={notification.type}
         onConfirm={notification.onConfirm}
+        onCancel={notification.onCancel}
+        confirmText={notification.confirmText}
+        cancelText={notification.cancelText}
       />
 
       {/* Seller Introduction Modal */}

@@ -45,11 +45,14 @@ export default function Workspace({ params }) {
     title: '', 
     message: '', 
     type: 'info',
-    onConfirm: null 
+    onConfirm: null,
+    onCancel: null,
+    confirmText: 'Continue',
+    cancelText: 'Cancel'
   });
 
-  const showNotification = (title, message, type = 'info', onConfirm = null) => {
-    setNotification({ isOpen: true, title, message, type, onConfirm });
+  const showNotification = (title, message, type = 'info', onConfirm = null, onCancel = null, confirmText = 'Continue', cancelText = 'Cancel') => {
+    setNotification({ isOpen: true, title, message, type, onConfirm, onCancel, confirmText, cancelText });
   };
 
   const currentChapterRef = useRef();
@@ -858,6 +861,9 @@ export default function Workspace({ params }) {
         message={notification.message}
         type={notification.type}
         onConfirm={notification.onConfirm}
+        onCancel={notification.onCancel}
+        confirmText={notification.confirmText}
+        cancelText={notification.cancelText}
       />
 
       <ManualPaymentModal 
