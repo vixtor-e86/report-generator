@@ -25,6 +25,7 @@ ${imagesContext ? `\n- Visual Context from User Images: ${imagesContext}` : ""}
 3.  **NO HTML:** Use strictly Markdown (## for Main Sections, ### for Sub-sections).
 4.  **CITATIONS:** Use IEEE citations [1], [2] continuously.
 5.  **LENGTH:** Detailed and substantial (aim for 2000+ words/chapter).
+6.  **NO EM-DASHES:** Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.
 `;
 
   const prompts = {

@@ -56,7 +56,8 @@ export async function POST(request) {
       1. ONLY return the rewritten text. No conversational filler.
       2. Keep the exact same Markdown formatting.
       3. MANDATORY: You MUST include the same Section Headers (## or ###) that were in the original content. Do not omit them.
-      4. Maintain technical accuracy and respect the ${referenceStyle.toUpperCase()} citation style.`;
+      4. Maintain technical accuracy and respect the ${referenceStyle.toUpperCase()} citation style.
+      5. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.`;
 
       const aiResponse = await callAI(surgicalPrompt, { provider, model, maxTokens: 4000, temperature: 0.4 });
       
@@ -220,6 +221,7 @@ export async function POST(request) {
     - FORMAT: Markdown.
     - TARGET: ${targetWordCount} words.
     - NO REPETITION: Do NOT include the project title at the start of your response.
+    - NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.
     - USER INSTRUCTIONS: ${userPrompt || 'Deliver elite technical content.'}
 
     ${skipReferences ? '--- STRICT: NO REFERENCES OR CITATIONS. ---' : '--- MANDATORY: Include "## References" at the end. ---'}`;

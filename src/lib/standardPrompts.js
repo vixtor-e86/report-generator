@@ -106,7 +106,8 @@ function getFacultySpecificPrompt(chapterNumber, data) {
   3. Format: Markdown (## H1, ### H2).
   4. Currency: ₦ (NGN).
   5. RECENTCY: Citations must be 2020-2026.
-  6. NO conversational filler. Start directly with ## heading.`;
+  6. NO conversational filler. Start directly with ## heading.
+  7. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.`;
 
   return prompt;
 }

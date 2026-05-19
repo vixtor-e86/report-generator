@@ -112,10 +112,12 @@ function generateTableOfContents(chapters) {
 function parseInlineFormatting(text, fontSize = 24, isBold = false) {
   if (!text) return [new TextRun({ text: "", font: 'Times New Roman', size: fontSize })];
 
-  // Clean technical symbols
+  // Clean technical symbols and unwanted artifacts
   let clean = text.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
                   .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
-                  .replace(/\$/g, '');
+                  .replace(/\$/g, '')
+                  .replace(/—/g, ' - ')
+                  .replace(/–/g, '-');
 
   const runs = [];
   
