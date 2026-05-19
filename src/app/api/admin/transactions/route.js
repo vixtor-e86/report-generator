@@ -17,7 +17,10 @@ export async function GET(request) {
     let targetUserId = null;
 
     if (email) {
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+      // Increase perPage to find users beyond the first 50
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+        perPage: 1000
+      });
       if (authError) throw authError;
 
       const user = authData.users.find(u => u.email?.toLowerCase() === email.trim().toLowerCase());
@@ -53,19 +56,41 @@ export async function GET(request) {
       .select('id, username, email')
       .in('id', uniqueUserIds);
 
-    const { data: allAuthUsers } = await supabaseAdmin.auth.admin.listUsers();
+    // Fetch more users to ensure we find everyone
+    const { data: authUsersData } = await supabaseAdmin.auth.admin.listUsers({
+      perPage: 1000
+    });
+    const allAuthUsers = authUsersData?.users || [];
 
-    const enriched = transactions.map(tx => {
+    const enriched = await Promise.all(transactions.map(async tx => {
       const profile = profiles?.find(p => p.id === tx.user_id);
-      const authUser = allAuthUsers?.users.find(u => u.id === tx.user_id);
+      let email = profile?.email;
+      let username = profile?.username || 'Student';
+
+      // If profile email is missing, find in pre-fetched auth list
+      if (!email) {
+        const authUser = allAuthUsers.find(u => u.id === tx.user_id);
+        if (authUser?.email) {
+          email = authUser.email;
+        } else {
+          // Final fallback: fetch specific user directly from Auth if not in the pre-fetched list
+          try {
+            const { data: { user: directUser } } = await supabaseAdmin.auth.admin.getUserById(tx.user_id);
+            if (directUser?.email) email = directUser.email;
+          } catch (e) {
+            console.error(`Error fetching auth user ${tx.user_id}:`, e);
+          }
+        }
+      }
+      
       return {
         ...tx,
         user_profiles: {
-          username: profile?.username || 'Student',
-          email: authUser?.email || profile?.email || 'Unknown Email'
+          username,
+          email: email || 'Unknown Email'
         }
       };
-    });
+    }));
 
     return NextResponse.json(enriched);
 
