@@ -136,7 +136,7 @@ export async function PATCH(request) {
       if (projectIdToUnlock) {
         await supabaseAdmin
           .from('projects')
-          .update({ is_unlocked: true, tier: 'standard' })
+          .update({ is_unlocked: true, tier: 'unlocked' })
           .eq('id', projectIdToUnlock);
         
         console.log(`Admin manually unlocked project: ${projectIdToUnlock}`);
