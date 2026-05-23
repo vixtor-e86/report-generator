@@ -1,7 +1,7 @@
 // /src/lib/standardPrompts.js
 // Faculty-Aware Dynamic Standard Tier AI Prompts
 
-function getReferenceInstructions(referenceStyle, faculty, isLastChapter, existingReferences = []) {
+function getReferenceInstructions(referenceStyle, faculty, chapterNumber, isLastChapter, existingReferences = []) {
   if (referenceStyle === 'none') return `DO NOT include any references or citations.`;
 
   const styleInstructions = {
@@ -12,26 +12,35 @@ function getReferenceInstructions(referenceStyle, faculty, isLastChapter, existi
 
   const style = styleInstructions[referenceStyle] || styleInstructions['apa'];
   
+  // Dynamic Citation Count based on user request (Chapter 2 needs more)
+  let countRange = "8-12";
+  if (chapterNumber === 2) {
+    countRange = "15-20";
+  } else if (chapterNumber === 1 || chapterNumber === 3) {
+    countRange = "10-14";
+  }
+
   let existingRefsText = '';
   if (existingReferences && existingReferences.length > 0) {
-    existingRefsText = `\n\n=== PROJECT-WIDE REFERENCES (REUSE THESE) ===\n`;
+    existingRefsText = `\n\n=== PROJECT-WIDE REFERENCES (REUSE THESE TO AVOID DUPLICATES) ===\n`;
     existingReferences.forEach((ref, i) => {
       const text = ref.reference_text || `${ref.authors?.map(a => typeof a === 'object' ? a.name : a).join(', ')} (${ref.year}). "${ref.title}". ${ref.venue}.`;
       existingRefsText += `SOURCE [${i + 1}]: ${text}\n`;
     });
-    existingRefsText += `\nSTRICT RULE: Prioritize citing the sources above before finding others. Max 40 unique references per project.\n`;
+    existingRefsText += `\nSTRICT RULE: You MUST prioritize citing the sources listed above. ONLY generate new sources if you have exhausted the provided list or need specific technical validation not covered above.\n`;
   }
 
   return `
 CITATION RULES (${referenceStyle.toUpperCase()}):
-1. In-Text: Use ${style.inText}. Distribute 8-12 citations naturally.
-2. Sourcing: Combine the provided project references with other technical sources:
+1. In-Text: Use ${style.inText}. Distribute exactly ${countRange} citations naturally throughout the technical analysis.
+2. Sourcing: Combine the provided project references with other elite technical sources:
    - Real Academic/Technical Papers (2020-2026).
    - High-authority Online Articles (e.g., IEEE Spectrum, NASA, MIT Tech Review).
    - Official Documentation and Datasheets (e.g., Arduino, STMicroelectronics, Academic Sites).
-3. Fulfillment: You MUST include exactly 8-12 references in your technical analysis.
+3. Fulfillment: You MUST include exactly ${countRange} references in your technical analysis.
+4. **STRICT NO DUPLICATES**: Do not list the same reference twice. Cross-check your final list against the "PROJECT-WIDE REFERENCES" provided above.
 ${existingRefsText}
-4. **MANDATORY**: At the end of THIS chapter, you MUST include a "## References" section. 
+5. **MANDATORY**: At the end of THIS chapter, you MUST include a "## References" section. 
    - **STRICT FORMAT**: Use a Markdown numbered list (1. [Reference]).
    - **CLEANLINESS**: Each reference must be its own list item. Ensure there is exactly one blank line between each numbered item to prevent text bunching.
    - **CONTENT**: List only the sources actually cited in this chapter.

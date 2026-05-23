@@ -121,7 +121,12 @@ export async function POST(request) {
     // --- 4. Enhanced Reference Sourcing ---
     const { data: existingPapers } = await supabaseAdmin.from('premium_research_papers').select('*').eq('project_id', projectId);
     let finalReferencesList = [...selectedPapers];
-    const totalNeeded = maxReferences || 10;
+    
+    // Dynamic reference count: Chapter 2 needs more for deep literature review
+    let totalNeeded = maxReferences || 10;
+    if (chapterNumber === 2) {
+      totalNeeded = Math.max(totalNeeded, 20); // Literature review usually needs at least 20
+    }
     
     if (existingPapers && !skipReferences) {
       for (const ep of existingPapers) {
@@ -174,7 +179,7 @@ export async function POST(request) {
     }
 
     // --- 6. Construct Structured System Prompt ---
-    const currentChapterData = project.custom_templates?.structure?.chapters?.find(ch => (ch.number || ch.chapter) === chapterNumber);
+    const currentChapterData = project.custom_templates?.structure?.chapters?.find(ch => (ch.number || ch.chapter || ch.id) === chapterNumber);
     const chapterTitle = currentChapterData?.title || `Chapter ${chapterNumber}`;
     const mandatorySections = currentChapterData?.sections?.length > 0 ? `## MANDATORY SECTIONS\n` + currentChapterData.sections.map(s => `- ${s}`).join('\n') : '';
 

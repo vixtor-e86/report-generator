@@ -91,53 +91,69 @@ export default function AdminProjectsPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider w-1/4">Project Title</th>
-                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider w-1/3">User</th>
+                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Project Title</th>
+                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">User</th>
                 <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Tier</th>
+                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Stats</th>
                 <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Action</th>
+                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {filteredProjects.map((project) => (
                 <tr key={project.id} className="hover:bg-slate-50 transition">
                   <td className="px-6 py-4">
-                    <div className="font-medium text-slate-900 line-clamp-1 max-w-[200px]" title={project.title}>
+                    <div className="font-bold text-slate-900 line-clamp-1 max-w-[220px]" title={project.title}>
                       {project.title}
                     </div>
-                    <div className="text-xs text-slate-500">{project.department}</div>
+                    <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">{project.department}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-slate-900 font-bold">{project.user_profiles?.username || 'No Username'}</div>
-                    <div className="text-xs text-slate-500 font-medium">{project.user_profiles?.email || 'No Email'}</div>
+                    <div className="text-xs text-slate-500 font-medium truncate max-w-[150px]">{project.user_profiles?.email || 'No Email'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full capitalize ${
-                      (project.tier || 'free') === 'standard' ? 'bg-indigo-100 text-indigo-700' : 
-                      (project.tier || 'free') === 'premium' ? 'bg-purple-100 text-purple-700' :
-                      (project.tier || 'free') === 'unlocked' ? 'bg-emerald-100 text-emerald-700' :
-                      'bg-slate-100 text-slate-700'
+                    <span className={`px-2.5 py-0.5 text-[10px] font-black rounded-full uppercase tracking-widest shadow-sm ${
+                      (project.tier || 'free') === 'standard' ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 
+                      (project.tier || 'free') === 'premium' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
+                      (project.tier || 'free') === 'unlocked' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                      'bg-slate-50 text-slate-600 border border-slate-100'
                     }`}>
                       {project.tier || 'free'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      project.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      project.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {project.status === 'completed' ? 'Done' : 'In Progress'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-slate-500">
-                    {new Date(project.created_at).toLocaleDateString()}
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Tokens:</span>
+                            <span className="text-xs font-black text-slate-900">{project.tokens_used?.toLocaleString() || 0}</span>
+                        </div>
+                        {project.tier === 'premium' && (
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">Humanized:</span>
+                                <span className="text-xs font-black text-emerald-600">{project.humanizer_words_used?.toLocaleString() || 0} w</span>
+                            </div>
+                        )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                      project.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                      project.status === 'in_progress' ? 'bg-amber-100 text-amber-700 animate-pulse' :
+                      'bg-slate-100 text-slate-700'
+                    }`}>
+                      {project.status === 'completed' ? 'Finalized' : 'Syncing'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-xs font-bold text-slate-700">{new Date(project.created_at).toLocaleDateString()}</div>
+                    <div className="text-[9px] text-slate-400 uppercase font-black">{new Date(project.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
                     <Link
                       href={`/admin/projects/${project.id}`}
-                      className="text-indigo-600 hover:text-indigo-900 font-medium hover:underline"
+                      className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all shadow-md active:scale-95"
                     >
                       View
                     </Link>

@@ -88,9 +88,18 @@ export default function Sidebar({
               ))}
               <label htmlFor="doc-upload" className={`sub-nav-item upload-item ${uploading ? 'opacity-50 pointer-events-none' : ''}`} style={{ marginBottom: '12px' }}><input id="doc-upload" type="file" accept=".pdf,.docx" onChange={handleDocUpload} style={{ display: 'none' }} disabled={uploading} /><Icons.Plus /> Add Component</label>
               <div className="sub-nav-header">Current Project</div>
-              {(projectData.template?.structure?.chapters || chapters).map((chapter) => (
-                <button key={chapter.id || chapter.number} className={`sub-nav-item ${activeView === `chapter-${chapter.id || chapter.number}` ? 'active' : ''}`} onClick={() => onViewChange(`chapter-${chapter.id || chapter.number}`)}>Chapter {chapter.id || chapter.number}</button>
-              ))}
+              {(projectData.template?.structure?.chapters || chapters).map((chapter) => {
+                const chNum = chapter.number || chapter.chapter || chapter.id;
+                return (
+                  <button 
+                    key={chNum} 
+                    className={`sub-nav-item ${activeView === `chapter-${chNum}` ? 'active' : ''}`} 
+                    onClick={() => onViewChange(`chapter-${chNum}`)}
+                  >
+                    Chapter {chNum}
+                  </button>
+                );
+              })}
               <div className="sub-nav-header">Assets</div>
               {images.map((img) => (
                 <div key={img.id} className={`sub-nav-item ${activeView === `image-${img.id}` ? 'active' : ''}`} style={{ paddingRight: '8px' }}>

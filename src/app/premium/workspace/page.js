@@ -175,7 +175,7 @@ function WorkspaceContent() {
 
       if (project.custom_templates?.structure?.chapters) {
         setChapters(project.custom_templates.structure.chapters.map(ch => {
-          const chNum = ch.number || ch.chapter;
+          const chNum = ch.number || ch.chapter || ch.id;
           const existing = chapterContent?.find(cc => cc.chapter_number === chNum);
           return { id: existing?.id || chNum, number: chNum, title: ch.title, content: existing?.content || '' };
         }));

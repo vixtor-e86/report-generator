@@ -86,7 +86,12 @@ export function extractFullReferences(content, referenceStyle, chapterNumber) {
       if (authorMatch && yearMatch) {
         const author = authorMatch[1];
         const year = yearMatch[1] || yearMatch[2];
-        const key = `${author}${year}`;
+        
+        // Improve key to avoid collisions: Author + Year + first 15 chars of title
+        // Extract title (text after the year/parenthesis)
+        const titlePart = line.split(yearMatch[0])[1] || "";
+        const titleSlug = titlePart.replace(/[^a-zA-Z0-9]/g, '').substring(0, 15).toLowerCase();
+        const key = `${author}${year}${titleSlug}`;
         
         references.push({
           reference_key: key,

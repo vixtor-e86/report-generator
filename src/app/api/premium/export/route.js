@@ -176,8 +176,9 @@ export async function POST(request) {
       if (options.includeTOC && project.custom_templates) {
         const tocItems = [new Paragraph({ text: 'TABLE OF CONTENTS', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 400 } })];
         project.custom_templates.structure.chapters.forEach(ch => {
-          tocItems.push(new Paragraph({ children: [new TextRun({ text: `Chapter ${ch.chapter || ch.number}: ${ch.title}`, bold: true, size: 24 })], spacing: { before: 200 } }));
-          ch.sections?.forEach(s => tocItems.push(new Paragraph({ text: s, indent: { left: 720 }, spacing: { before: 100 } })));
+          const chNum = ch.chapter || ch.number || ch.id;
+          tocItems.push(new Paragraph({ children: [new TextRun({ text: `Chapter ${chNum}: ${ch.title}`, bold: true, size: 24 })], spacing: { before: 200 } }));
+          ch.sections?.filter(s => s && s.trim()).forEach(s => tocItems.push(new Paragraph({ text: s, indent: { left: 720 }, spacing: { before: 100 } })));
         });
         sections.push({ children: tocItems });
       }
@@ -285,8 +286,9 @@ export async function POST(request) {
         pdf.setFontSize(11); let ty = 60;
         project.custom_templates.structure.chapters.forEach(ch => {
           if (ty > 270) { footer(); pdf.addPage(); currPage++; ty = 30; }
-          pdf.setFont("helvetica", "bold"); pdf.text(`Chapter ${ch.chapter || ch.number}: ${ch.title}`, 20, ty); ty += 8;
-          pdf.setFont("helvetica", "normal"); ch.sections?.slice(0,3).forEach(s => { pdf.text("- " + s, 30, ty); ty += 6; }); ty += 4;
+          const chNum = ch.chapter || ch.number || ch.id;
+          pdf.setFont("helvetica", "bold"); pdf.text(`Chapter ${chNum}: ${ch.title}`, 20, ty); ty += 8;
+          pdf.setFont("helvetica", "normal"); ch.sections?.filter(s => s && s.trim()).slice(0,3).forEach(s => { pdf.text("- " + s, 30, ty); ty += 6; }); ty += 4;
         });
         footer(); pdf.addPage(); currPage++;
       }

@@ -93,10 +93,17 @@ function generateTableOfContents(chapters) {
     toc.push(new Paragraph({ children: [new TextRun({ text: `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`, bold: true, size: 24, font: 'Times New Roman' })], indent: { left: 360 }, spacing: { before: 200 } }));
     const lines = (ch.content || "").split('\n');
     lines.forEach(l => {
-      if (l.trim().startsWith('### ')) {
+      const trimmed = l.trim();
+      if (trimmed.startsWith('## ') && !trimmed.toUpperCase().includes(`CHAPTER ${ch.chapter_number}`)) {
         toc.push(new Paragraph({ 
-          children: [new TextRun({ text: l.replace('### ', '').trim(), font: 'Times New Roman', size: 22 })],
-          indent: { left: 720 }, 
+          children: [new TextRun({ text: trimmed.replace('## ', '').trim(), font: 'Times New Roman', size: 22, bold: true })],
+          indent: { left: 540 }, 
+          spacing: { before: 100 } 
+        }));
+      } else if (trimmed.startsWith('### ')) {
+        toc.push(new Paragraph({ 
+          children: [new TextRun({ text: trimmed.replace('### ', '').trim(), font: 'Times New Roman', size: 20 })],
+          indent: { left: 900 }, 
           spacing: { after: 80 } 
         }));
       }
@@ -259,11 +266,15 @@ async function convertMarkdownToDocx(markdown, images, chapterNumber) {
     }
 
     // --- HEADING & IMAGE HANDLERS ---
-    if (trimmedLine.startsWith('## ')) continue;
-    if (trimmedLine.startsWith('### ')) {
-      paragraphs.push(new Paragraph({ children: [new TextRun({ text: trimmedLine.replace('### ', '').trim(), font: 'Times New Roman', size: 28, bold: true })], heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 300 } }));
+    if (trimmedLine.startsWith('## ')) {
+      const cleanText = trimmedLine.replace('## ', '').trim();
+      // Skip if it's just the chapter title again
+      if (cleanText.toUpperCase().includes(`CHAPTER ${chapterNumber}`)) continue;
+      paragraphs.push(new Paragraph({ children: [new TextRun({ text: cleanText, font: 'Times New Roman', size: 30, bold: true })], heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 300 } }));
+    } else if (trimmedLine.startsWith('### ')) {
+      paragraphs.push(new Paragraph({ children: [new TextRun({ text: trimmedLine.replace('### ', '').trim(), font: 'Times New Roman', size: 28, bold: true })], heading: HeadingLevel.HEADING_3, spacing: { before: 250, after: 250 } }));
     } else if (trimmedLine.startsWith('#### ')) {
-      paragraphs.push(new Paragraph({ children: [new TextRun({ text: trimmedLine.replace('#### ', '').trim(), font: 'Times New Roman', size: 26, bold: true })], heading: HeadingLevel.HEADING_3, spacing: { before: 200, after: 200 } }));
+      paragraphs.push(new Paragraph({ children: [new TextRun({ text: trimmedLine.replace('#### ', '').trim(), font: 'Times New Roman', size: 26, bold: true })], heading: HeadingLevel.HEADING_4, spacing: { before: 200, after: 200 } }));
     } else if (trimmedLine.includes('{{figure')) {
       const m = trimmedLine.match(/\{\{figure(\d+)\.(\d+)\}\}/);
       if (m) {

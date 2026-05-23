@@ -67,10 +67,10 @@ export default function UsersPage() {
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">User</th>
+                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Email Address</th>
                 <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Institution</th>
-                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Joined</th>
-                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Last Login</th>
-                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider text-center">Date Joined</th>
+                <th className="px-6 py-3 font-medium text-slate-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -78,45 +78,49 @@ export default function UsersPage() {
                 <tr key={user.id} className="hover:bg-slate-50 transition">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 flex-shrink-0 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold">
+                      <div className="h-10 w-10 flex-shrink-0 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl flex items-center justify-center font-black">
                         {(user.username || user.email || '?')[0].toUpperCase()}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-slate-900">{user.full_name || user.username || 'No Name'}</div>
-                        <div className="text-sm text-slate-500">{user.email}</div>
-                        {user.role === 'admin' && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
-                            Admin
-                          </span>
-                        )}
+                        <div className="text-sm font-black text-slate-900 uppercase tracking-tight">{user.full_name || user.username || 'No Name'}</div>
+                        <div className="flex gap-2 mt-0.5">
+                            {user.role === 'admin' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[8px] font-black uppercase bg-red-100 text-red-700 border border-red-200 tracking-widest">
+                                Admin
+                            </span>
+                            )}
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">ID: {user.id.slice(0, 8)}</span>
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-slate-900">{user.institution_name}</div>
-                    <div className="text-xs text-slate-500">{user.department}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                    <div className="text-sm font-bold text-indigo-600">{user.email}</div>
                     {user.last_sign_in_at ? (
-                      <span className="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">
-                        {new Date(user.last_sign_in_at).toLocaleDateString()}
-                      </span>
+                      <div className="text-[9px] text-slate-400 font-black uppercase mt-1 tracking-widest">
+                        Last seen: {new Date(user.last_sign_in_at).toLocaleDateString()}
+                      </div>
                     ) : (
-                      <span className="text-slate-400 italic">Never</span>
+                      <div className="text-[9px] text-amber-500 font-black uppercase mt-1 tracking-widest">Never logged in</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-xs font-black text-slate-700 uppercase tracking-tight line-clamp-1 max-w-[200px]">{user.institution_name}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{user.department}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className="text-xs font-bold text-slate-900">{new Date(user.created_at).toLocaleDateString()}</div>
+                    <div className="text-[9px] text-slate-400 font-black uppercase tracking-tighter">{new Date(user.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
                     <a
                       href={`/admin/email?recipient=${user.email}`}
-                      className="text-indigo-600 hover:text-indigo-900 font-medium flex items-center gap-1"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all rounded-lg text-[10px] font-black uppercase tracking-widest border border-indigo-100"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
-                      Email
+                      Contact
                     </a>
                   </td>
                 </tr>

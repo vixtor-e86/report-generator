@@ -52,17 +52,32 @@ export async function GET(request) {
       const userIds = [...new Set(enrichedProjects.map(p => p.user_id).filter(Boolean))];
       
       if (userIds.length > 0) {
+        // Fetch Profiles
         const { data: usersData } = await supabaseAdmin
           .from('user_profiles')
           .select('id, username, email')
           .in('id', userIds);
           
-        if (usersData) {
-          enrichedProjects = enrichedProjects.map(project => ({
+        // Fetch Auth Users for emails (safety)
+        const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers({
+          perPage: 1000
+        });
+
+        enrichedProjects = enrichedProjects.map(project => {
+          const profile = usersData?.find(u => u.id === project.user_id);
+          const authUser = authUsers?.find(u => u.id === project.user_id);
+
+          return {
             ...project,
-            user_profiles: usersData.find(u => u.id === project.user_id) || { username: 'Unknown', email: 'N/A' }
-          }));
-        }
+            user_profiles: {
+              username: profile?.username || 'Student',
+              email: authUser?.email || profile?.email || 'N/A'
+            },
+            // Ensure numeric values
+            tokens_used: project.tokens_used || 0,
+            humanizer_words_used: project.humanizer_words_used || 0
+          };
+        });
       }
     }
 
