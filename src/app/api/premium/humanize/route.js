@@ -21,6 +21,8 @@ export async function POST(request) {
 
     lines.forEach((line) => {
       const trimmedLine = line.trim();
+      
+      // Header Detection
       if (trimmedLine.startsWith('#')) {
         if (currentBody.length > 0) {
           blocks.push({ 
@@ -46,7 +48,19 @@ export async function POST(request) {
         }
         
         blocks.push({ type: 'header', content: line });
-      } else {
+      } 
+      // List Item Detection (Skip humanizing bullets themselves)
+      else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ') || /^\d+\.\s/.test(trimmedLine)) {
+        if (currentBody.length > 0) {
+          blocks.push({ 
+            type: isReferenceSection ? 'reference' : 'body', 
+            content: currentBody.join('\n') 
+          });
+          currentBody = [];
+        }
+        blocks.push({ type: 'list_item', content: line });
+      }
+      else {
         currentBody.push(line);
       }
     });
@@ -61,7 +75,7 @@ export async function POST(request) {
     // Calculate word count
     let wordCount = 0;
     blocks.forEach(block => {
-      if (block.type === 'body') {
+      if (block.type === 'body' || block.type === 'list_item') {
         const count = block.content.trim().split(/\s+/).filter(w => w.length > 0).length;
         wordCount += count;
       }
@@ -96,15 +110,12 @@ export async function POST(request) {
             prompt: text,
             rephrase: true,
             tone: "College",
-            mode: "Medium",        // ✅ FIXED: was "quality" which is wrong
-            qualityMode: "quality" // ✅ ADDED: this is the actual quality setting
+            mode: "Medium",
+            qualityMode: "quality"
           }),
         });
 
         const data = await response.json();
-
-        // ✅ Log the FULL response for debugging
-        console.log("StealthGPT response:", JSON.stringify(data));
 
         if (!response.ok) {
           console.error("StealthGPT Error:", data);
@@ -112,6 +123,10 @@ export async function POST(request) {
         }
 
         let result = data.result || text;
+        // Clean up any double quotes the AI might wrap the response in
+        if (result.startsWith('"') && result.endsWith('"')) {
+            result = result.substring(1, result.length - 1);
+        }
         return result.replace(/\$/g, '₦');
 
       } catch (e) {
@@ -123,14 +138,43 @@ export async function POST(request) {
     const processedBlocks = await Promise.all(
       blocks.map(async (block) => {
         if (block.type === 'body') {
-          return await humanizeBlock(block.content);
+          // Split by paragraphs to preserve newlines
+          const paragraphs = block.content.split('\n');
+          const humanizedParagraphs = await Promise.all(
+            paragraphs.map(async (p) => {
+                if (!p.trim()) return ""; // Keep empty lines
+                return await humanizeBlock(p);
+            })
+          );
+          return humanizedParagraphs.join('\n');
         }
+        
+        if (block.type === 'list_item') {
+          const bulletMatch = block.content.match(/^(\s*[\-\*\d\.]+\s+)(.*)/);
+          if (bulletMatch) {
+            const bullet = bulletMatch[1];
+            const textPart = bulletMatch[2];
+            const humanizedText = await humanizeBlock(textPart);
+            return bullet + humanizedText;
+          }
+        }
+        
         return block.content;
       })
     );
 
     // --- 4. REASSEMBLE ---
-    const finalOutput = processedBlocks.join('\n').trim();
+    // Use double newline for headers to ensure they are well spaced
+    let finalOutput = "";
+    processedBlocks.forEach((block, i) => {
+        const isHeader = blocks[i].type === 'header';
+        if (isHeader && i > 0) finalOutput += "\n\n";
+        finalOutput += block;
+        if (isHeader) finalOutput += "\n\n";
+        else finalOutput += "\n";
+    });
+
+    finalOutput = finalOutput.replace(/\n{3,}/g, '\n\n').trim();
 
     // --- 5. PERSIST ---
     const newUsed = currentUsed + wordCount;

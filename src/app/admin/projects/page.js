@@ -8,23 +8,42 @@ export default function AdminProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, free, standard, premium
   const [searchTerm, setSearchTerm] = useState('');
+  const [displayLimit, setDisplayLimit] = useState(50);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    fetchProjects(displayLimit);
+  }, [displayLimit]);
 
-  const fetchProjects = async () => {
+  const fetchProjects = async (limit) => {
     try {
-      const response = await fetch('/api/admin/projects');
+      if (limit > 50) setLoadingMore(true);
+      else setLoading(true);
+
+      const response = await fetch(`/api/admin/projects?limit=${limit}`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
+      
       setProjects(data.projects || []);
       setCounts(data.counts || { all: 0, free: 0, standard: 0, premium: 0 });
+      
+      // If we got fewer projects than we asked for, there are no more to load
+      if (data.projects?.length < limit) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
     } catch (error) {
       console.error('Error fetching projects:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const handleLoadMore = () => {
+    setDisplayLimit(prev => prev + 50);
   };
 
   const filteredProjects = projects.filter(project => {
@@ -166,6 +185,31 @@ export default function AdminProjectsPage() {
         {filteredProjects.length === 0 && (
           <div className="p-12 text-center text-slate-500">
             No projects found.
+          </div>
+        )}
+
+        {/* Load More Button */}
+        {hasMore && filteredProjects.length > 0 && (
+          <div className="p-8 border-t border-slate-100 flex justify-center bg-slate-50/30">
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="inline-flex items-center gap-2 px-8 py-3 bg-white border border-slate-200 text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm disabled:opacity-50 active:scale-95"
+            >
+              {loadingMore ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-slate-900/20 border-t-slate-900 rounded-full animate-spin" />
+                  Initialising More...
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" />
+                  </svg>
+                  Load More Projects
+                </>
+              )}
+            </button>
           </div>
         )}
       </div>
