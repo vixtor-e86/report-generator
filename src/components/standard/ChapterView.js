@@ -88,21 +88,21 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
       </li>
     ),
     table: ({ children }) => (
-      <div className="my-10 overflow-x-auto rounded-3xl border border-slate-200 shadow-xl bg-white">
+      <div className="my-10 overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
         <table className="w-full text-sm border-collapse">
           {children}
         </table>
       </div>
     ),
     th: ({ children }) => (
-      <th className="bg-slate-900 text-white px-6 py-4 text-left font-black uppercase tracking-widest text-[10px]">
+      <th className="bg-slate-50 text-slate-900 border-b border-slate-200 px-6 py-4 text-left font-black uppercase tracking-widest text-[10px]">
         {children}
       </th>
     ),
     td: ({ children }) => (
-      <th className="px-6 py-4 border-t border-slate-100 text-slate-700 font-bold text-left bg-white">
+      <td className="px-6 py-4 border-t border-slate-100 text-slate-700 font-medium text-left">
         {children}
-      </th>
+      </td>
     ),
     blockquote: ({ children }) => (
       <blockquote className="border-l-4 border-slate-900 bg-slate-50 p-8 rounded-r-3xl my-10 italic text-slate-600 font-medium shadow-inner">

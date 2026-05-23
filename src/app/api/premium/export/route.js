@@ -210,11 +210,19 @@ export async function POST(request) {
           if (line.startsWith('|')) {
             const tableRows = [];
             let j = i;
+            let rowCount = 0;
             while (j < filteredLines.length && filteredLines[j].trim().startsWith('|')) {
               const r = filteredLines[j].trim();
               if (!r.includes('---')) {
-                const cells = r.split('|').slice(1, -1).map(c => new TableCell({ children: [new Paragraph({ children: parseInlineFormatting(c.trim() || "\u00A0", 20), alignment: AlignmentType.CENTER })], borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } } }));
-                tableRows.push(new TableRow({ children: cells }));
+                const isHeader = rowCount === 0;
+                const cells = r.split('|').slice(1, -1).map(c => new TableCell({ 
+                  children: [new Paragraph({ children: parseInlineFormatting(c.trim() || "\u00A0", isHeader ? 22 : 20, isHeader), alignment: AlignmentType.CENTER })], 
+                  borders: { top: { style: BorderStyle.SINGLE, size: 1 }, bottom: { style: BorderStyle.SINGLE, size: 1 }, left: { style: BorderStyle.SINGLE, size: 1 }, right: { style: BorderStyle.SINGLE, size: 1 } },
+                  shading: isHeader ? { fill: "F3F4F6", type: ShadingType.CLEAR } : undefined,
+                  verticalAlign: VerticalAlign.CENTER
+                }));
+                tableRows.push(new TableRow({ children: cells, tableHeader: isHeader }));
+                rowCount++;
               }
               j++;
             }
