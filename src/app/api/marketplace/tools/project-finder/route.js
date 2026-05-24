@@ -12,7 +12,7 @@ export async function POST(request) {
         .from('topic_repository')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(50);
       
       return NextResponse.json({ 
         success: true, 
@@ -36,7 +36,7 @@ export async function POST(request) {
         .from('topic_repository')
         .select('*')
         .or(`title.ilike.%${query}%,department.ilike.%${query}%,description.ilike.%${query}%`)
-        .limit(10);
+        .limit(30);
       
       if (data && data.length > 0) {
         dbTopics = data.map(t => ({
@@ -130,7 +130,7 @@ export async function POST(request) {
 
     return NextResponse.json({ 
       success: true, 
-      data: finalResults.slice(0, 15) 
+      data: finalResults.slice(0, 50) 
     });
 
   } catch (error) {

@@ -86,88 +86,83 @@ export default function ProjectFinder({
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 md:space-y-12">
-      {/* Search Section */}
-      <div className="bg-white border border-[#e5e7eb] rounded-[32px] md:rounded-[48px] p-6 md:p-10 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-3xl rounded-full -mr-20 -mt-20" />
+    <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
+      {/* Compact Search Section */}
+      <div className="bg-white border border-[#e5e7eb] rounded-[32px] p-6 md:p-8 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-3xl rounded-full -mr-16 -mt-16" />
         
-        <div className="relative space-y-6 md:space-y-8">
-          <div className="flex flex-col gap-4 md:gap-6">
+        <div className="relative space-y-4">
+          <div className="flex flex-col gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-5 md:left-6 top-1/2 -translate-y-1/2 w-5 h-5 md:w-6 md:h-6 text-slate-300" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
               <Input 
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="What area are you interested in?"
-                className="h-16 md:h-20 pl-14 md:pl-16 bg-slate-50 border-slate-100 rounded-[24px] md:rounded-[32px] font-bold text-base md:text-lg text-zinc-900 focus:border-black transition-all shadow-inner"
+                className="h-12 md:h-14 pl-12 bg-slate-50 border-slate-100 rounded-2xl font-bold text-sm text-zinc-900 focus:border-black transition-all shadow-inner"
               />
             </div>
             
-            <div className="grid md:grid-cols-2 gap-3 md:gap-4">
-              <div className="relative">
-                <GraduationCap className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-slate-300" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="relative col-span-1">
+                <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
                 <Input 
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  placeholder="Department (Optional)"
-                  className="h-14 md:h-16 pl-12 md:pl-14 bg-slate-50 border-slate-100 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm text-zinc-900 focus:border-black transition-all"
+                  placeholder="Dept"
+                  className="h-10 pl-9 bg-slate-50 border-slate-100 rounded-xl font-bold text-[10px] text-zinc-900 focus:border-black transition-all"
                 />
               </div>
-              <div className="relative">
-                <Layers className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-slate-300" />
+              <div className="relative col-span-1">
+                <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
                 <Input 
                   value={level}
                   onChange={(e) => setLevel(e.target.value)}
-                  placeholder="Level/Year (Optional)"
-                  className="h-14 md:h-16 pl-12 md:pl-14 bg-slate-50 border-slate-100 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm text-zinc-900 focus:border-black transition-all"
+                  placeholder="Level"
+                  className="h-10 pl-9 bg-slate-50 border-slate-100 rounded-xl font-bold text-[10px] text-zinc-900 focus:border-black transition-all"
                 />
               </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-3 md:gap-4">
-              <div className="relative">
-                <BookOpen className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-slate-300" />
+              <div className="relative col-span-1">
+                <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
                 <select 
                   value={researchType}
                   onChange={(e) => setResearchType(e.target.value)}
-                  className="w-full h-14 md:h-16 pl-12 md:pl-14 pr-4 bg-slate-50 border-slate-100 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm text-zinc-900 focus:border-black transition-all appearance-none outline-none"
+                  className="w-full h-10 pl-9 pr-2 bg-slate-50 border-slate-100 rounded-xl font-bold text-[10px] text-zinc-900 focus:border-black transition-all appearance-none outline-none"
                 >
-                  <option value="any">Any Methodology</option>
+                  <option value="any">Methodology</option>
                   <option value="quantitative">Quantitative</option>
                   <option value="qualitative">Qualitative</option>
-                  <option value="mixed">Mixed Methods</option>
+                  <option value="mixed">Mixed</option>
                 </select>
               </div>
-              <div className="relative">
-                <Zap className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-slate-300" />
+              <div className="relative col-span-1">
+                <Zap className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
                 <Input 
                   value={industry}
                   onChange={(e) => setIndustry(e.target.value)}
-                  placeholder="Industry (e.g. Health)"
-                  className="h-14 md:h-16 pl-12 md:pl-14 bg-slate-50 border-slate-100 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm text-zinc-900 focus:border-black transition-all"
+                  placeholder="Industry"
+                  className="h-10 pl-9 bg-slate-50 border-slate-100 rounded-xl font-bold text-[10px] text-zinc-900 focus:border-black transition-all"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-4 gap-6">
-            <div className="flex items-center gap-2 text-blue-600">
-              <Badge className="bg-blue-100 text-blue-600 border-none px-3 py-1 rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest">Free Tool</Badge>
-            </div>
+          <div className="flex items-center justify-between pt-2">
+            <Badge className="bg-blue-50 text-blue-600 border-none px-2.5 py-0.5 rounded-full font-black text-[8px] uppercase tracking-widest">Free Tool</Badge>
             
             <Button 
               onClick={() => handleSearch(false)}
-              disabled={isProcessing || !query.trim()}
-              className="w-full sm:w-auto bg-black hover:bg-zinc-800 text-white rounded-[20px] md:rounded-[24px] py-6 md:py-8 px-8 md:px-12 font-black uppercase text-[10px] md:text-xs tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 md:gap-4 transition-all"
+              disabled={isProcessing || (!query.trim() && results.length === 0)}
+              className="bg-black hover:bg-zinc-800 text-white rounded-xl py-4 px-6 font-black uppercase text-[9px] tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all h-10"
             >
               {isProcessing ? (
                 <>
-                  <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin text-blue-400" />
+                  <RefreshCw className="w-3 h-3 animate-spin text-blue-400" />
                   Searching...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+                  <Sparkles className="w-3 h-3 text-blue-400" />
                   Find Topics
                 </>
               )}
@@ -176,125 +171,137 @@ export default function ProjectFinder({
         </div>
       </div>
 
-      {/* Results Section */}
-      <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-        {results.map((topic, idx) => (
-          <div key={idx} className="bg-white border border-[#e5e7eb] rounded-[32px] md:rounded-[40px] p-6 md:p-8 shadow-sm hover:border-blue-400 transition-all group relative overflow-hidden flex flex-col">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-3">
-                <div className="text-3xl md:text-4xl">{topic.emoji || '💡'}</div>
-                {topic.is_from_db && (
-                    <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
-                        <Verified className="w-3 h-3" />
-                        <span className="text-[8px] font-black uppercase tracking-widest">Verified</span>
+      {/* Results Section - List Layout */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-2">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Discovery Results ({results.length})</h4>
+            {results.length > 0 && <span className="text-[9px] font-bold text-blue-500 uppercase tracking-widest animate-pulse">Scroll to explore</span>}
+        </div>
+
+        <div className="bg-white border border-[#e5e7eb] rounded-[32px] overflow-hidden shadow-sm">
+            <div className="max-h-[500px] overflow-y-auto custom-scrollbar divide-y divide-slate-50">
+                {results.map((topic, idx) => (
+                <div 
+                    key={idx} 
+                    className="p-4 md:p-5 hover:bg-slate-50 transition-all group cursor-pointer flex items-center gap-4 md:gap-6"
+                >
+                    <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-slate-50 rounded-xl flex items-center justify-center text-xl md:text-2xl group-hover:scale-110 transition-transform">
+                        {topic.emoji || '📘'}
                     </div>
-                )}
-              </div>
-              <Badge className="bg-slate-100 text-slate-500 border-none px-3 md:px-4 py-1 rounded-full font-black text-[8px] md:text-[9px] uppercase tracking-widest">
-                {topic.category || 'General'}
-              </Badge>
-            </div>
-            
-            <h3 className="text-lg md:text-xl font-black text-zinc-900 mb-4 group-hover:text-blue-600 transition-colors uppercase tracking-tight leading-tight">
-              {topic.title}
-            </h3>
-            
-            <div className="bg-slate-50 rounded-[20px] md:rounded-3xl p-4 md:p-6 border border-slate-100 mb-6 flex-1">
-              <p className="text-xs md:text-sm text-slate-600 leading-relaxed font-medium">
-                {topic.problem_gap}
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest">Feasibility</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 md:w-32 h-1.5 md:h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-green-500 transition-all duration-1000" 
-                      style={{ width: `${(topic.feasibility || 7) * 10}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] md:text-xs font-black text-zinc-900">{topic.feasibility}/10</span>
+                    
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="text-sm md:text-base font-black text-zinc-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight truncate">
+                                {topic.title}
+                            </h3>
+                            {topic.is_from_db && (
+                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 flex-shrink-0">
+                                    <Verified className="w-2.5 h-2.5" />
+                                    <span className="text-[7px] font-black uppercase tracking-widest">Verified</span>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                {topic.category || 'General Research'}
+                            </span>
+                            <div className="w-1 h-1 bg-slate-200 rounded-full" />
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-12 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-full bg-emerald-500" style={{ width: `${(topic.feasibility || 7) * 10}%` }} />
+                                </div>
+                                <span className="text-[8px] font-black text-zinc-900">{topic.feasibility}/10</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
+                            <ArrowRight className="w-4 h-4" />
+                        </div>
+                    </div>
                 </div>
-              </div>
-              
-              <div className="flex flex-wrap gap-1.5 md:gap-2">
-                {topic.tools?.map((tool, tIdx) => (
-                  <span key={tIdx} className="px-2 md:px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[8px] md:text-[10px] font-bold border border-blue-100">
-                    #{tool}
-                  </span>
                 ))}
-              </div>
-            </div>
-          </div>
-        ))}
 
-        {!isProcessing && results.length === 0 && (
-          <div className="md:col-span-2 py-20 md:py-32 text-center bg-white border border-dashed border-slate-200 rounded-[48px] md:rounded-[64px] px-6">
-            <div className="w-16 h-16 md:w-24 md:h-24 bg-slate-50 rounded-[32px] md:rounded-[40px] flex items-center justify-center mx-auto mb-6 md:mb-8 text-slate-200">
-              <Lightbulb className="w-8 h-8 md:w-12 md:h-12" />
-            </div>
-            <h2 className="text-xl md:text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">Ready to Discover?</h2>
-            <p className="text-slate-600 font-bold uppercase text-[8px] md:text-[10px] tracking-[0.2em] max-w-xs mx-auto">
-              Enter a field of interest above to generate trending academic topics
-            </p>
-          </div>
-        )}
+                {results.length === 0 && !isProcessing && (
+                <div className="py-20 text-center px-6">
+                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-200">
+                        <Lightbulb className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-sm font-black text-zinc-900 uppercase tracking-tight mb-1">Ready to Discover?</h2>
+                    <p className="text-slate-500 font-bold uppercase text-[8px] tracking-widest max-w-xs mx-auto">
+                        Enter a field of interest to explore topics
+                    </p>
+                </div>
+                )}
 
-        {isProcessing && (
-          <div className="md:col-span-2 py-20 md:py-32 text-center bg-white border border-[#e5e7eb] rounded-[48px] md:rounded-[64px] animate-pulse px-6">
-            <div className="relative w-16 h-16 md:w-24 md:h-24 mx-auto mb-6 md:mb-8">
-              <div className="absolute inset-0 bg-blue-100 rounded-[32px] md:rounded-[40px] animate-ping opacity-25" />
-              <div className="relative w-16 h-16 md:w-24 md:h-24 bg-blue-50 rounded-[32px] md:rounded-[40px] flex items-center justify-center text-blue-600">
-                <RefreshCw className="w-8 h-8 md:w-12 md:h-12 animate-spin" />
-              </div>
+                {isProcessing && (
+                <div className="py-20 text-center px-6 animate-pulse">
+                    <RefreshCw className="w-6 h-6 animate-spin text-blue-600 mx-auto mb-3" />
+                    <p className="text-blue-600 font-black uppercase text-[8px] tracking-[0.3em]">
+                        Analyzing Trends...
+                    </p>
+                </div>
+                )}
             </div>
-            <p className="text-blue-600 font-black uppercase text-[8px] md:text-[10px] tracking-[0.3em] animate-bounce">
-              Analyzing academic trends...
-            </p>
+        </div>
+
+        {results.length > 0 && !isProcessing && (
+          <div className="flex justify-center">
+            <Button 
+              onClick={() => handleSearch(true)}
+              disabled={isLoadingMore}
+              variant="outline"
+              className="border-slate-200 hover:border-black hover:bg-black hover:text-white rounded-xl px-6 py-4 font-black uppercase text-[9px] tracking-widest transition-all h-10 shadow-sm flex items-center gap-2"
+            >
+              {isLoadingMore ? (
+                <>
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  Initialising More...
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="w-3 h-3" />
+                  Load More
+                </>
+              )}
+            </Button>
           </div>
         )}
       </div>
-
-      {results.length > 0 && !isProcessing && (
-        <div className="flex justify-center pt-8">
-          <Button 
-            onClick={() => handleSearch(true)}
-            disabled={isLoadingMore}
-            variant="outline"
-            className="border-zinc-200 hover:border-black hover:bg-black hover:text-white rounded-full px-10 py-6 font-black uppercase text-[10px] tracking-widest transition-all h-auto shadow-sm flex items-center gap-3"
-          >
-            {isLoadingMore ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Finding More...
-              </>
-            ) : (
-              <>
-                <ArrowRight className="w-4 h-4" />
-                Load More Topics
-              </>
-            )}
-          </Button>
-        </div>
-      )}
 
       {/* Info Card */}
-      <div className="bg-zinc-900 rounded-[32px] md:rounded-[48px] p-6 md:p-10 text-white relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-blue-600/10 blur-[60px] md:blur-[100px] rounded-full group-hover:bg-blue-600/20 transition-all duration-700" />
-        <div className="relative flex flex-col md:flex-row items-center gap-6 md:gap-10">
-          <div className="w-16 h-16 md:w-20 md:h-20 bg-white/10 rounded-2xl md:rounded-3xl flex items-center justify-center backdrop-blur-md">
-            <Info className="w-8 h-8 md:w-10 md:h-10 text-blue-400" />
+      <div className="bg-zinc-900 rounded-[32px] p-6 text-white relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 blur-[60px] rounded-full group-hover:bg-blue-600/20 transition-all duration-700" />
+        <div className="relative flex items-center gap-6">
+          <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md flex-shrink-0">
+            <Info className="w-6 h-6 text-blue-400" />
           </div>
-          <div className="flex-1 text-center md:text-left">
-            <h4 className="text-lg md:text-xl font-black uppercase tracking-tight mb-2">Pro Tip for Students</h4>
-            <p className="text-xs md:text-sm text-slate-600 font-medium leading-relaxed">
-              When you find a topic you like, use the <span className="text-white font-bold">Reference Finder</span> to get preliminary sources and the <span className="text-white font-bold">Slide Generator</span> to prepare your project proposal presentation.
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-tight mb-1">Pro Tip</h4>
+            <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+              Verified topics come from our elite research repository. Click any topic to see full technical details.
             </p>
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #e2e8f0;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #cbd5e1;
+        }
+      `}</style>
     </div>
   );
 }
