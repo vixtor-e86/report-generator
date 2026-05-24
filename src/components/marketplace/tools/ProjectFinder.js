@@ -1,9 +1,9 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Search, Sparkles, RefreshCw, GraduationCap, 
   Lightbulb, BookOpen, Layers, CheckCircle2, 
-  ArrowRight, Info, Zap
+  ArrowRight, Info, Zap, Verified
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
@@ -22,8 +22,30 @@ export default function ProjectFinder({
   const [results, setResults] = useState([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  // Fetch initial topics when the component mounts
+  useEffect(() => {
+    const fetchInitialTopics = async () => {
+      setIsProcessing(true);
+      try {
+        const response = await fetch('/api/marketplace/tools/project-finder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: '' }) // Empty query triggers DB recent fetch in the API
+        });
+        const data = await response.json();
+        if (data.data) setResults(data.data);
+      } catch (err) {
+        console.error('Failed to fetch initial topics:', err);
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    fetchInitialTopics();
+  }, [setIsProcessing]);
+
   const handleSearch = async (loadMore = false) => {
-    if (!query.trim()) return toast.error("Please enter a topic or area of interest");
+    if (!query.trim() && !loadMore) return toast.error("Please enter a topic or area of interest");
 
     if (loadMore) {
       setIsLoadingMore(true);
@@ -159,7 +181,15 @@ export default function ProjectFinder({
         {results.map((topic, idx) => (
           <div key={idx} className="bg-white border border-[#e5e7eb] rounded-[32px] md:rounded-[40px] p-6 md:p-8 shadow-sm hover:border-blue-400 transition-all group relative overflow-hidden flex flex-col">
             <div className="flex justify-between items-start mb-6">
-              <div className="text-3xl md:text-4xl">{topic.emoji || '💡'}</div>
+              <div className="flex items-center gap-3">
+                <div className="text-3xl md:text-4xl">{topic.emoji || '💡'}</div>
+                {topic.is_from_db && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+                        <Verified className="w-3 h-3" />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Verified</span>
+                    </div>
+                )}
+              </div>
               <Badge className="bg-slate-100 text-slate-500 border-none px-3 md:px-4 py-1 rounded-full font-black text-[8px] md:text-[9px] uppercase tracking-widest">
                 {topic.category || 'General'}
               </Badge>
