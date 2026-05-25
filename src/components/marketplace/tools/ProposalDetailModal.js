@@ -42,13 +42,21 @@ export default function ProposalDetailModal({
   }, [isOpen, topic, userId]);
 
   const checkExistingProposal = async () => {
+    if (!userId || !topic) return;
+
     try {
+      // Use maybeSingle to avoid 406 errors and be safer with titles containing special characters
       const { data, error } = await supabase
         .from('topic_proposals')
         .select('*')
         .eq('user_id', userId)
-        .eq('topic_title', topic.title)
-        .single();
+        .ilike('topic_title', topic.title.trim())
+        .maybeSingle();
+
+      if (error) {
+          console.error('Supabase query error:', error);
+          return;
+      }
 
       if (data) {
         setProposalId(data.id);
@@ -66,6 +74,10 @@ export default function ProposalDetailModal({
   };
 
   const handleStartProcess = () => {
+    if (authLoading) {
+        toast.info('Synchronizing session...');
+        return;
+    }
     if (!userId) {
         toast.error('Please login to generate a proposal');
         return;
@@ -78,7 +90,8 @@ export default function ProposalDetailModal({
   };
 
   const handlePayAndInitialize = async () => {
-    if (walletBalance < PROPOSAL_FEE) {
+    const currentBalance = Number(walletBalance) || 0;
+    if (currentBalance < PROPOSAL_FEE) {
       toast.error('Insufficient balance');
       setShowFundingModal(true);
       return;

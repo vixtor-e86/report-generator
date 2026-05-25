@@ -6,12 +6,13 @@ export function cn(...inputs) {
 }
 
 export function formatCurrency(amount, currency = 'NGN') {
+  const safeAmount = Number(amount) || 0;
   return new Intl.NumberFormat('en-NG', {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(safeAmount);
 }
 
 export function formatNumber(num) {
