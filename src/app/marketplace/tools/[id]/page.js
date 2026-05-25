@@ -97,7 +97,11 @@ export default function ToolInterfacePage() {
     setShowPaymentDialog,
     setPendingIterative, 
     pendingIterative,
-    setCustomPrice
+    setCustomPrice,
+    userId: wallet?.user_id,
+    walletBalance: wallet?.balance || 0,
+    onDeductFunds: deductFunds,
+    setShowFundingModal
   };
 
   return (

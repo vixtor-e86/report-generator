@@ -9,10 +9,15 @@ import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
 import { Badge } from '@/components/marketplace/ui/badge';
 import { toast } from 'sonner';
+import ProposalDetailModal from './ProposalDetailModal';
 
 export default function ProjectFinder({ 
   isProcessing, 
-  setIsProcessing 
+  setIsProcessing,
+  userId,
+  walletBalance,
+  onDeductFunds,
+  setShowFundingModal
 }) {
   const [query, setQuery] = useState('');
   const [department, setDepartment] = useState('');
@@ -21,6 +26,7 @@ export default function ProjectFinder({
   const [industry, setIndustry] = useState('');
   const [results, setResults] = useState([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState(null);
 
   // Fetch initial topics when the component mounts
   useEffect(() => {
@@ -183,6 +189,7 @@ export default function ProjectFinder({
                 {results.map((topic, idx) => (
                 <div 
                     key={idx} 
+                    onClick={() => setSelectedTopic(topic)}
                     className="p-4 md:p-5 hover:bg-slate-50 transition-all group cursor-pointer flex items-center gap-4 md:gap-6"
                 >
                     <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-slate-50 rounded-xl flex items-center justify-center text-xl md:text-2xl group-hover:scale-110 transition-transform">
@@ -270,6 +277,16 @@ export default function ProjectFinder({
           </div>
         )}
       </div>
+
+      <ProposalDetailModal 
+        isOpen={!!selectedTopic}
+        onClose={() => setSelectedTopic(null)}
+        topic={selectedTopic}
+        userId={userId}
+        walletBalance={walletBalance}
+        onDeductFunds={onDeductFunds}
+        setShowFundingModal={setShowFundingModal}
+      />
 
       {/* Info Card */}
       <div className="bg-zinc-900 rounded-[32px] p-6 text-white relative overflow-hidden group">
