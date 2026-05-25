@@ -14,7 +14,6 @@ import ProposalDetailModal from './ProposalDetailModal';
 export default function ProjectFinder({ 
   isProcessing, 
   setIsProcessing,
-  userId,
   walletBalance,
   onDeductFunds,
   setShowFundingModal
@@ -282,7 +281,6 @@ export default function ProjectFinder({
         isOpen={!!selectedTopic}
         onClose={() => setSelectedTopic(null)}
         topic={selectedTopic}
-        userId={userId}
         walletBalance={walletBalance}
         onDeductFunds={onDeductFunds}
         setShowFundingModal={setShowFundingModal}

@@ -9,6 +9,7 @@ import { Button } from '@/components/marketplace/ui/button';
 import { Badge } from '@/components/marketplace/ui/badge';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { useUser } from '@/contexts/marketplace/UserContext';
 import { formatCurrency } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 
@@ -16,12 +17,14 @@ export default function ProposalDetailModal({
   isOpen, 
   onClose, 
   topic, 
-  userId, 
   walletBalance,
   onDeductFunds,
   setShowFundingModal
 }) {
+  const { user: authUser } = useUser();
+  const userId = authUser?.id;
   const [step, setStep] = useState(1); // 1: Topic Info, 2: Payment, 3: Generation/Result
+  // ... rest of state stays same ...
   const [instructions, setInstructions] = useState('');
   const [isGenerating, setIsProcessing] = useState(false);
   const [proposal, setProposal] = useState(null);
