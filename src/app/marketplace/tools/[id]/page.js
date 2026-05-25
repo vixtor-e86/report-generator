@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/marketplace/ui/button';
 import { getToolById } from '@/data/marketplace/tools';
 import { useWallet } from '@/contexts/marketplace/WalletContext';
+import { useUser } from '@/contexts/marketplace/UserContext';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -98,7 +99,7 @@ export default function ToolInterfacePage() {
     setPendingIterative, 
     pendingIterative,
     setCustomPrice,
-    userId: wallet?.user_id,
+    userId: authUser?.id,
     walletBalance: wallet?.balance || 0,
     onDeductFunds: deductFunds,
     setShowFundingModal

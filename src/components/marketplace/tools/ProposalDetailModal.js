@@ -184,16 +184,16 @@ export default function ProposalDetailModal({
         
         {/* Header */}
         <div className="bg-white px-8 py-6 border-b border-slate-100 flex justify-between items-center shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="flex-shrink-0 w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl">
               {topic.emoji || '📘'}
             </div>
-            <div>
-              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight line-clamp-1">{topic.title}</h2>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{topic.category || 'Academic Research'}</p>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tight leading-tight">{topic.title}</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{topic.category || 'Academic Research'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-black transition-colors bg-slate-50 rounded-full">
+          <button onClick={onClose} className="p-2 ml-4 text-slate-400 hover:text-black transition-colors bg-slate-50 rounded-full shrink-0">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -293,8 +293,15 @@ export default function ProposalDetailModal({
           {step === 3 && (
             <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-500">
                {!proposal ? (
-                 <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-8 text-center">
-                    <div className="space-y-4">
+                 <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-8 text-center relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4">
+                        <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Payment Verified</span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 pt-4">
                         <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto">
                             <Sparkles className="w-8 h-8" />
                         </div>
