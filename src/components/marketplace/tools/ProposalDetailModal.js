@@ -21,7 +21,7 @@ export default function ProposalDetailModal({
   onDeductFunds,
   setShowFundingModal
 }) {
-  const { user: authUser } = useUser();
+  const { user: authUser, loading: authLoading } = useUser();
   const userId = authUser?.id;
   const [step, setStep] = useState(1); // 1: Topic Info, 2: Payment, 3: Generation/Result
   // ... rest of state stays same ...
