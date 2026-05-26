@@ -422,49 +422,6 @@ export default function StandardWorkspace({ params }) {
         </div>
       </div>
 
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: auto;
-            margin: 20mm;
-          }
-          body {
-            background: white !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          .min-h-screen {
-            min-height: auto !important;
-          }
-          .h-screen {
-            height: auto !important;
-          }
-          .overflow-hidden {
-            overflow: visible !important;
-          }
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #e2e8f0;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #cbd5e1;
-        }
-        @keyframes progress {
-          0% { transform: scaleX(0); }
-          100% { transform: scaleX(1); }
-        }
-        .animate-progress {
-          animation: progress 45s linear forwards;
-        }
-      `}</style>
-
       {/* Modify Modal */}
       {showModifyModal && (
         <ModifyModal

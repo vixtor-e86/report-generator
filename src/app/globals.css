@@ -55,6 +55,48 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* Markdown View Styles */
+.markdown-view h1, .markdown-view h2, .markdown-view h3 { 
+  margin-top: 1.5rem; 
+  margin-bottom: 1rem; 
+  color: #0f172a; 
+  font-weight: 800; 
+}
+.markdown-view p { 
+  margin-bottom: 1.2rem; 
+  line-height: 1.8; 
+  text-align: justify; 
+}
+.markdown-view ul, .markdown-view ol { 
+  margin-bottom: 1.2rem; 
+  padding-left: 2rem; 
+}
+.markdown-view li { 
+  margin-bottom: 0.5rem; 
+}
+
+@keyframes progress {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+.animate-progress {
+  animation: progress 45s linear forwards;
+}
+
 .glass {
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(10px);

@@ -320,16 +320,6 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
             </div>
           )}
         </div>
-
-        <style jsx global>{`
-          .markdown-view h1, .markdown-view h2, .markdown-view h3 { margin-top: 1.5rem; margin-bottom: 1rem; color: #0f172a; font-weight: 800; }
-          .markdown-view p { margin-bottom: 1.2rem; line-height: 1.8; text-align: justify; }
-          .markdown-view ul, .markdown-view ol { margin-bottom: 1.2rem; padding-left: 2rem; }
-          .markdown-view li { margin-bottom: 0.5rem; }
-          .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-          .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-          .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        `}</style>
       </motion.div>
     </div>
   );
