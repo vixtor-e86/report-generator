@@ -77,6 +77,7 @@ export default function ToolInterfacePage() {
     const label = toolId === 'reference-finder' ? `DeepSearch: ${tool.name}` : 
                   toolId === 'diagram-studio' ? `Visual Studio Generation` :
                   toolId === 'plagiarism-checker' ? `Integrity Scan` :
+                  customPrice === 1000 ? `Proposal: ${tool.name}` :
                   `Tool: ${tool.name}`;
     const success = await deductFunds(activePrice, label);
     if (success) {

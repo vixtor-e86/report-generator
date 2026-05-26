@@ -17,14 +17,16 @@ export default function ProposalDetailModal({
   isOpen, 
   onClose, 
   topic, 
+  hasPaid,
+  setHasPaid,
+  setShowPaymentDialog,
+  setCustomPrice,
   walletBalance,
-  onDeductFunds,
   setShowFundingModal
 }) {
   const { user: authUser, loading: authLoading } = useUser();
   const userId = authUser?.id;
-  const [step, setStep] = useState(1); // 1: Topic Info, 2: Payment, 3: Generation/Result
-  // ... rest of state stays same ...
+  const [step, setStep] = useState(1); // 1: Topic Info, 2: Generation/Result
   const [instructions, setInstructions] = useState('');
   const [isGenerating, setIsProcessing] = useState(false);
   const [proposal, setProposal] = useState(null);
@@ -41,11 +43,16 @@ export default function ProposalDetailModal({
     }
   }, [isOpen, topic, userId]);
 
+  // If user paid using the shared modal, initialize the proposal in the DB
+  useEffect(() => {
+    if (isOpen && hasPaid && !proposalId && step === 1) {
+        handleInitializePaidProposal();
+    }
+  }, [hasPaid, isOpen]);
+
   const checkExistingProposal = async () => {
     if (!userId || !topic) return;
-
     try {
-      // Use maybeSingle to avoid 406 errors and be safer with titles containing special characters
       const { data, error } = await supabase
         .from('topic_proposals')
         .select('*')
@@ -53,19 +60,14 @@ export default function ProposalDetailModal({
         .ilike('topic_title', topic.title.trim())
         .maybeSingle();
 
-      if (error) {
-          console.error('Supabase query error:', error);
-          return;
-      }
-
       if (data) {
         setProposalId(data.id);
         if (data.status === 'generated') {
           setProposal(data.proposal_content);
           setCanModify(data.modification_count === 0);
-          setStep(3);
+          setStep(2);
         } else if (data.status === 'paid') {
-          setStep(3); // Go to generation step but without content yet
+          setStep(2);
         }
       }
     } catch (err) {
@@ -73,36 +75,8 @@ export default function ProposalDetailModal({
     }
   };
 
-  const handleStartProcess = () => {
-    if (authLoading) {
-        toast.info('Synchronizing session...');
-        return;
-    }
-    if (!userId) {
-        toast.error('Please login to generate a proposal');
-        return;
-    }
-    if (proposal) {
-        setStep(3);
-    } else {
-        setStep(2);
-    }
-  };
-
-  const handlePayAndInitialize = async () => {
-    const currentBalance = Number(walletBalance) || 0;
-    if (currentBalance < PROPOSAL_FEE) {
-      toast.error('Insufficient balance');
-      setShowFundingModal(true);
-      return;
-    }
-
-    setIsProcessing(true);
+  const handleInitializePaidProposal = async () => {
     try {
-      const success = await onDeductFunds(PROPOSAL_FEE, `Proposal Generation: ${topic.title}`);
-      if (!success) throw new Error('Payment failed');
-
-      // Create record in DB
       const { data, error } = await supabase
         .from('topic_proposals')
         .insert({
@@ -115,14 +89,26 @@ export default function ProposalDetailModal({
         .single();
 
       if (error) throw error;
-
       setProposalId(data.id);
-      setStep(3);
-      toast.success('Payment authorized! Ready to generate.');
+      setStep(2);
+      // Consume the payment so it's not reused for another topic in the same session
+      setHasPaid(false); 
+      setCustomPrice(null);
     } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setIsProcessing(false);
+      toast.error('Failed to initialize session');
+    }
+  };
+
+  const handleStartProcess = () => {
+    if (authLoading) return;
+    if (!userId) return toast.error('Please login to generate a proposal');
+    
+    if (proposalId || proposal) {
+        setStep(2);
+    } else {
+        // Use shared payment modal
+        setCustomPrice(PROPOSAL_FEE);
+        setShowPaymentDialog(true);
     }
   };
 
@@ -162,19 +148,14 @@ export default function ProposalDetailModal({
         const response = await fetch('/api/marketplace/tools/generate-proposal/export', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                proposalId,
-                format
-            })
+            body: JSON.stringify({ proposalId, format })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
 
         const byteCharacters = atob(data.data);
         const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
+        for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: data.mimeType });
   
@@ -264,49 +245,6 @@ export default function ProposalDetailModal({
           )}
 
           {step === 2 && (
-            <div className="max-w-md mx-auto py-10 animate-in zoom-in-95 duration-300">
-               <div className="text-center mb-10">
-                  <div className="w-20 h-20 bg-zinc-900 text-white rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-2xl">
-                    <Zap className="w-10 h-10 text-yellow-400" />
-                  </div>
-                  <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-2">Authorize Payment</h2>
-                  <p className="text-slate-500 font-medium">To proceed with the generation of this project proposal.</p>
-               </div>
-
-               <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Service Fee</span>
-                    <span className="text-xl font-black text-slate-900">{formatCurrency(PROPOSAL_FEE)}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-slate-400 shadow-sm border border-slate-100"><Wallet className="w-5 h-5" /></div>
-                        <div>
-                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Your Balance</p>
-                            <p className="text-sm font-black text-slate-900">{formatCurrency(walletBalance)}</p>
-                        </div>
-                    </div>
-                  </div>
-
-                  <Button 
-                    onClick={handlePayAndInitialize}
-                    disabled={isGenerating}
-                    className="w-full bg-black hover:bg-zinc-800 text-white py-8 rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-2xl active:scale-95 transition-all"
-                  >
-                    {isGenerating ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Confirm & Generate'}
-                  </Button>
-                  
-                  <button 
-                    onClick={() => setStep(1)}
-                    className="w-full text-slate-400 font-black uppercase text-[10px] tracking-widest py-2 hover:text-black transition-colors"
-                  >
-                    Cancel
-                  </button>
-               </div>
-            </div>
-          )}
-
-          {step === 3 && (
             <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-500">
                {!proposal ? (
                  <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm space-y-8 text-center relative overflow-hidden">
