@@ -310,6 +310,7 @@ function WorkspaceContent() {
         isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} type={exportType} projectDocs={projectDocs}
         chapters={chapters} projectId={projectId} userId={currentUser?.id} setIsGlobalLoading={setIsGlobalLoading} 
         setGlobalLoadingText={setGlobalLoadingText} onSaved={loadWorkspaceData} showNotification={showNotification}
+        projectData={projectData}
       />
       <ModifyModal isOpen={isModifyModalOpen} onClose={() => setIsModifyModalOpen(false)} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} showNotification={showNotification} />
       <GenerationModal 

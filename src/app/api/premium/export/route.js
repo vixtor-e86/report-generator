@@ -20,7 +20,10 @@ import {
   TableCell, 
   WidthType, 
   BorderStyle,
-  LevelFormat
+  LevelFormat,
+  PageBreak,
+  VerticalAlign,
+  ShadingType
 } from 'docx';
 
 const ABSTRACT_PROMPT = "You are an academic engineering researcher. Generate a professional Abstract. Project Content: ";
@@ -76,6 +79,110 @@ function parseInlineFormatting(text, fontSize = 24, isBold = false) {
   return textRuns.length > 0 ? textRuns : [new TextRun({ text: processedText, font: 'Times New Roman', size: fontSize, bold: isBold })];
 }
 
+// --- DOCX PRELIMINARY PAGES HELPERS ---
+function createDocxCover(metadata) {
+    return [
+        new Paragraph({ children: [new TextRun({ text: metadata.university.toUpperCase(), bold: true, size: 32, font: 'Times New Roman' })], alignment: AlignmentType.CENTER, spacing: { before: 800, after: 800 } }),
+        new Paragraph({ children: [new TextRun({ text: (metadata.faculty || "").toUpperCase(), bold: true, size: 28, font: 'Times New Roman' })], alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
+        new Paragraph({ children: [new TextRun({ text: (metadata.department || "").toUpperCase(), bold: true, size: 28, font: 'Times New Roman' })], alignment: AlignmentType.CENTER, spacing: { after: 1200 } }),
+        new Paragraph({ children: [new TextRun({ text: (metadata.projectTitle || "").toUpperCase(), bold: true, size: 36, font: 'Times New Roman' })], alignment: AlignmentType.CENTER, spacing: { after: 1200 } }),
+        new Paragraph({ children: [new TextRun({ text: "BY", bold: true, size: 28, font: 'Times New Roman' })], alignment: AlignmentType.CENTER, spacing: { after: 400 } }),
+        new Paragraph({ children: [new TextRun({ text: (metadata.studentName || "").toUpperCase(), bold: true, size: 32, font: 'Times New Roman' })], alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
+        new Paragraph({ children: [new TextRun({ text: metadata.matricNo, bold: true, size: 28, font: 'Times New Roman' })], alignment: AlignmentType.CENTER, spacing: { after: 1200 } }),
+        new Paragraph({ children: [new TextRun({ text: `A PROJECT SUBMITTED TO THE DEPARTMENT OF ${metadata.department.toUpperCase()}, ${metadata.university.toUpperCase()}, IN PARTIAL FULFILLMENT OF THE REQUIREMENTS FOR THE AWARD OF BACHELOR OF SCIENCE (B.Sc.) DEGREE IN ${metadata.department.toUpperCase()}.`, size: 24, font: 'Times New Roman' })], alignment: AlignmentType.CENTER, spacing: { after: 800 } }),
+        new Paragraph({ children: [new TextRun({ text: `SUPERVISED BY: ${metadata.supervisor.toUpperCase()}`, bold: true, size: 24, font: 'Times New Roman' })], alignment: AlignmentType.CENTER, spacing: { after: 400 } }),
+        new Paragraph({ children: [new TextRun({ text: metadata.session, bold: true, size: 28, font: 'Times New Roman' })], alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
+        new Paragraph({ children: [new TextRun({ text: metadata.date.toUpperCase(), bold: true, size: 24, font: 'Times New Roman' })], alignment: AlignmentType.CENTER })
+    ];
+}
+
+function createDocxDeclaration(metadata) {
+    return [
+        new Paragraph({ text: 'DECLARATION', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { before: 400, after: 800 } }),
+        new Paragraph({ children: [new TextRun({ text: `I, ${metadata.studentName.toUpperCase()}, do hereby declare that this project is entirely my work and composition. The work embodied in this project has not been submitted in candidature for any degree and is not concurrently being submitted for any other degree. All references made to the works of other people have been duly acknowledged.`, font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED, spacing: { after: 1200 } }),
+        new Paragraph({ children: [new TextRun({ text: "NAME OF STUDENT: _________________________________", font: 'Times New Roman', size: 24 })], spacing: { after: 400 } }),
+        new Paragraph({ children: [new TextRun({ text: "SIGNATURE: _______________________________________", font: 'Times New Roman', size: 24 })], spacing: { after: 400 } }),
+        new Paragraph({ children: [new TextRun({ text: `DATE: ____________________________________________`, font: 'Times New Roman', size: 24 })] })
+    ];
+}
+
+function createDocxCertification(metadata) {
+    return [
+        new Paragraph({ text: 'CERTIFICATION', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { before: 400, after: 800 } }),
+        new Paragraph({ children: [new TextRun({ text: `This is to certify that the research work was carried out by ${metadata.studentName.toUpperCase()} in the Department of ${metadata.department.toUpperCase()}, ${metadata.faculty.toUpperCase()}, ${metadata.university.toUpperCase()}. The research work is considered adequate in partial fulfillment of the requirements for the award of B.Sc. in ${metadata.department.toUpperCase()}.`, font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED, spacing: { after: 1200 } }),
+        new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: BorderStyle.NONE,
+            rows: [
+                new TableRow({ children: [
+                    new TableCell({ children: [new Paragraph({ text: "__________________________", alignment: AlignmentType.CENTER }), new Paragraph({ children: [new TextRun({ text: metadata.supervisor, bold: true, font: 'Times New Roman' })], alignment: AlignmentType.CENTER }), new Paragraph({ text: "Project Supervisor", alignment: AlignmentType.CENTER })], borders: { top: BorderStyle.NONE, bottom: BorderStyle.NONE, left: BorderStyle.NONE, right: BorderStyle.NONE } }),
+                    new TableCell({ children: [new Paragraph({ text: "__________________________", alignment: AlignmentType.CENTER }), new Paragraph({ children: [new TextRun({ text: "Date", bold: true, font: 'Times New Roman' })], alignment: AlignmentType.CENTER })], borders: { top: BorderStyle.NONE, bottom: BorderStyle.NONE, left: BorderStyle.NONE, right: BorderStyle.NONE } })
+                ] }),
+                new TableRow({ children: [
+                    new TableCell({ children: [new Paragraph({ text: "", spacing: { before: 800 } }), new Paragraph({ text: "__________________________", alignment: AlignmentType.CENTER }), new Paragraph({ children: [new TextRun({ text: metadata.hod, bold: true, font: 'Times New Roman' })], alignment: AlignmentType.CENTER }), new Paragraph({ text: "Head of Department", alignment: AlignmentType.CENTER })], borders: { top: BorderStyle.NONE, bottom: BorderStyle.NONE, left: BorderStyle.NONE, right: BorderStyle.NONE } }),
+                    new TableCell({ children: [new Paragraph({ text: "", spacing: { before: 800 } }), new Paragraph({ text: "__________________________", alignment: AlignmentType.CENTER }), new Paragraph({ children: [new TextRun({ text: "Date", bold: true, font: 'Times New Roman' })], alignment: AlignmentType.CENTER })], borders: { top: BorderStyle.NONE, bottom: BorderStyle.NONE, left: BorderStyle.NONE, right: BorderStyle.NONE } })
+                ] }),
+                new TableRow({ children: [
+                    new TableCell({ children: [new Paragraph({ text: "", spacing: { before: 800 } }), new Paragraph({ text: "__________________________", alignment: AlignmentType.CENTER }), new Paragraph({ children: [new TextRun({ text: metadata.externalExaminer || "External Examiner", bold: true, font: 'Times New Roman' })], alignment: AlignmentType.CENTER }), new Paragraph({ text: "External Examiner", alignment: AlignmentType.CENTER })], borders: { top: BorderStyle.NONE, bottom: BorderStyle.NONE, left: BorderStyle.NONE, right: BorderStyle.NONE } }),
+                    new TableCell({ children: [new Paragraph({ text: "", spacing: { before: 800 } }), new Paragraph({ text: "__________________________", alignment: AlignmentType.CENTER }), new Paragraph({ children: [new TextRun({ text: "Date", bold: true, font: 'Times New Roman' })], alignment: AlignmentType.CENTER })], borders: { top: BorderStyle.NONE, bottom: BorderStyle.NONE, left: BorderStyle.NONE, right: BorderStyle.NONE } })
+                ] })
+            ]
+        })
+    ];
+}
+
+// --- PDF PRELIMINARY PAGES HELPERS ---
+function drawPdfCover(pdf, metadata) {
+    pdf.setFont("times", "bold"); pdf.setFontSize(22); pdf.text(metadata.university.toUpperCase(), 105, 40, { align: 'center' });
+    pdf.setFontSize(16); pdf.text((metadata.faculty || "").toUpperCase(), 105, 55, { align: 'center' });
+    pdf.text((metadata.department || "").toUpperCase(), 105, 65, { align: 'center' });
+    
+    pdf.setFontSize(24); const title = pdf.splitTextToSize((metadata.projectTitle || "").toUpperCase(), 160);
+    pdf.text(title, 105, 100, { align: 'center' });
+    
+    pdf.setFontSize(16); pdf.text("BY", 105, 140, { align: 'center' });
+    pdf.setFontSize(20); pdf.text((metadata.studentName || "").toUpperCase(), 105, 155, { align: 'center' });
+    pdf.setFontSize(16); pdf.text(metadata.matricNo, 105, 165, { align: 'center' });
+    
+    pdf.setFont("times", "normal"); pdf.setFontSize(12);
+    const subText = `A PROJECT SUBMITTED TO THE DEPARTMENT OF ${metadata.department.toUpperCase()}, ${metadata.university.toUpperCase()}, IN PARTIAL FULFILLMENT OF THE REQUIREMENTS FOR THE AWARD OF BACHELOR OF SCIENCE (B.Sc.) DEGREE IN ${metadata.department.toUpperCase()}.`;
+    pdf.text(pdf.splitTextToSize(subText, 160), 105, 190, { align: 'center' });
+    
+    pdf.setFont("times", "bold"); pdf.text(`SUPERVISED BY: ${metadata.supervisor.toUpperCase()}`, 105, 230, { align: 'center' });
+    pdf.setFontSize(16); pdf.text(metadata.session, 105, 250, { align: 'center' });
+    pdf.setFontSize(14); pdf.text(metadata.date.toUpperCase(), 105, 265, { align: 'center' });
+}
+
+function drawPdfDeclaration(pdf, metadata) {
+    pdf.setFont("times", "bold"); pdf.setFontSize(20); pdf.text("DECLARATION", 105, 40, { align: 'center' });
+    pdf.setFont("times", "normal"); pdf.setFontSize(12);
+    const decText = `I, ${metadata.studentName.toUpperCase()}, do hereby declare that this project is entirely my work and composition. The work embodied in this project has not been submitted in candidature for any degree and is not concurrently being submitted for any other degree. All references made to the works of other people have been duly acknowledged.`;
+    pdf.text(pdf.splitTextToSize(decText, 170), 20, 70, { align: 'justify' });
+    
+    pdf.text("NAME OF STUDENT: _________________________________", 20, 120);
+    pdf.text("SIGNATURE: _______________________________________", 20, 140);
+    pdf.text(`DATE: ____________________________________________`, 20, 160);
+}
+
+function drawPdfCertification(pdf, metadata) {
+    pdf.setFont("times", "bold"); pdf.setFontSize(20); pdf.text("CERTIFICATION", 105, 40, { align: 'center' });
+    pdf.setFont("times", "normal"); pdf.setFontSize(12);
+    const certText = `This is to certify that the research work was carried out by ${metadata.studentName.toUpperCase()} in the Department of ${metadata.department.toUpperCase()}, ${metadata.faculty.toUpperCase()}, ${metadata.university.toUpperCase()}. The research work is considered adequate in partial fulfillment of the requirements for the award of B.Sc. in ${metadata.department.toUpperCase()}.`;
+    pdf.text(pdf.splitTextToSize(certText, 170), 20, 70, { align: 'justify' });
+    
+    const sy = 120;
+    pdf.text("__________________________", 20, sy); pdf.setFont("times", "bold"); pdf.text(metadata.supervisor, 20, sy + 7); pdf.setFont("times", "normal"); pdf.text("Project Supervisor", 20, sy + 14);
+    pdf.text("__________________________", 130, sy); pdf.setFont("times", "bold"); pdf.text("Date", 130, sy + 7);
+    
+    const hy = 160;
+    pdf.setFont("times", "normal"); pdf.text("__________________________", 20, hy); pdf.setFont("times", "bold"); pdf.text(metadata.hod, 20, hy + 7); pdf.setFont("times", "normal"); pdf.text("Head of Department", 20, hy + 14);
+    pdf.text("__________________________", 130, hy); pdf.setFont("times", "bold"); pdf.text("Date", 130, hy + 7);
+    
+    const ey = 200;
+    pdf.setFont("times", "normal"); pdf.text("__________________________", 20, ey); pdf.setFont("times", "bold"); pdf.text(metadata.externalExaminer || "External Examiner", 20, ey + 7); pdf.setFont("times", "normal"); pdf.text("External Examiner", 20, ey + 14);
+    pdf.text("__________________________", 130, ey); pdf.setFont("times", "bold"); pdf.text("Date", 130, ey + 7);
+}
+
 // --- NEW: Reference Extractor Logic ---
 function extractMasterReferences(chapters, dbReferences) {
   const masterMap = new Map(); // Key: Normalized title, Value: Original formatted text
@@ -85,19 +192,15 @@ function extractMasterReferences(chapters, dbReferences) {
     return text.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
   };
 
-  // 1. Add all DB references first (formatted)
   if (dbReferences) {
     dbReferences.forEach(r => {
       const auths = Array.isArray(r.authors) ? r.authors.join(', ') : (r.authors || 'Unknown');
       const refText = `${auths} (${r.year}). "${r.title}". ${r.venue || 'Research Journal'}.`;
       const key = normalize(r.title);
-      if (key && !masterMap.has(key)) {
-        masterMap.set(key, refText.trim());
-      }
+      if (key && !masterMap.has(key)) masterMap.set(key, refText.trim());
     });
   }
 
-  // 2. Scan chapter content for AI-generated references
   chapters.forEach(ch => {
     const content = ch.content || "";
     const parts = content.split(/## References|### References/i);
@@ -107,16 +210,10 @@ function extractMasterReferences(chapters, dbReferences) {
       lines.forEach(line => {
         const trimmed = line.trim();
         const cleaned = trimmed.replace(/^(\[?\d+\]?\.?|\-|\*)\s+/, '').trim();
-        
         if (cleaned.length > 30) {
-          // Extract a potential title from the cleaned line to use as a key
-          // Most references have title in quotes or between year and venue
           const titleMatch = cleaned.match(/"(.*?)"/) || cleaned.match(/\)\.\s+(.*?)\./);
           const titleKey = titleMatch ? normalize(titleMatch[1]) : normalize(cleaned.substring(0, 100));
-          
-          if (titleKey && !masterMap.has(titleKey)) {
-            masterMap.set(titleKey, cleaned);
-          }
+          if (titleKey && !masterMap.has(titleKey)) masterMap.set(titleKey, cleaned);
         }
       });
     }
@@ -133,15 +230,9 @@ export async function POST(request) {
     const { data: project } = await supabaseAdmin.from('premium_projects').select('*, custom_templates(*)').eq('id', projectId).single();
     const { data: chapters } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).order('chapter_number', { ascending: true });
     
-    // Fetch manual DB references
-    const { data: dbReferences } = await supabaseAdmin.from('premium_research_papers')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: true });
+    const { data: dbReferences } = await supabaseAdmin.from('premium_research_papers').select('*').eq('project_id', projectId).order('created_at', { ascending: true });
 
-    // Combine DB + Content references for a master list
     const finalMasterReferences = extractMasterReferences(chapters, dbReferences);
-
     const { data: assets } = await supabaseAdmin.from('premium_assets').select('*').eq('project_id', projectId);
 
     const imageMap = {};
@@ -167,31 +258,58 @@ export async function POST(request) {
     const fileName = "exports/" + projectId + "/Project_Report_" + Date.now() + "." + type;
 
     if (type === 'docx') {
-      const sections = [];
+      const docSections = [];
       const numbering = { config: [{ reference: "numeric-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT }] }, { reference: "bullet-list", levels: [{ level: 0, format: LevelFormat.BULLET, text: "\u2022", alignment: AlignmentType.LEFT }] }] };
 
-      if (abstract) {
-        sections.push({ children: [new Paragraph({ text: 'ABSTRACT', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 400 } }), new Paragraph({ children: [new TextRun({ text: parseTechnicalText(abstract), font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED })] });
+      // 1. Cover
+      if (options.coverConfig.type === 'form') {
+        docSections.push({ children: createDocxCover(options.metadata) });
+      } else if ((options.coverConfig.type === 'asset' || options.coverConfig.type === 'upload')) {
+          const imgUrl = options.coverConfig.type === 'asset' ? options.coverConfig.assetUrl : options.coverConfig.uploadUrl;
+          if (imgUrl) {
+            try {
+                const imgData = options.coverConfig.type === 'asset' ? imageMap[options.coverConfig.assetId] : Buffer.from(imgUrl.split(',')[1], 'base64');
+                docSections.push({ children: [new Paragraph({ children: [new ImageRun({ data: imgData, transformation: { width: 600, height: 840 } })], alignment: AlignmentType.CENTER })] });
+            } catch (e) {}
+          }
       }
+
+      // 2. Technical Pages
+      if (options.coverConfig.type === 'form') {
+          if (options.coverConfig.includeDeclaration) docSections.push({ children: createDocxDeclaration(options.metadata) });
+          if (options.coverConfig.includeCertification) docSections.push({ children: createDocxCertification(options.metadata) });
+          if (options.coverConfig.includeDedication && options.metadata.dedication) {
+            docSections.push({ children: [new Paragraph({ text: 'DEDICATION', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { before: 400, after: 800 } }), new Paragraph({ children: [new TextRun({ text: options.metadata.dedication, font: 'Times New Roman', size: 24, italics: true })], alignment: AlignmentType.CENTER })] });
+          }
+          if (options.coverConfig.includeAcknowledgement && options.metadata.acknowledgement) {
+            docSections.push({ children: [new Paragraph({ text: 'ACKNOWLEDGEMENT', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { before: 400, after: 800 } }), new Paragraph({ children: [new TextRun({ text: options.metadata.acknowledgement, font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED })] });
+          }
+      }
+
+      // 3. Abstract
+      if (abstract) {
+        docSections.push({ children: [new Paragraph({ text: 'ABSTRACT', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 400 } }), new Paragraph({ children: [new TextRun({ text: parseTechnicalText(abstract), font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED })] });
+      }
+
+      // 4. TOC
       if (options.includeTOC && project.custom_templates) {
         const tocItems = [new Paragraph({ text: 'TABLE OF CONTENTS', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 400 } })];
         project.custom_templates.structure.chapters.forEach(ch => {
           const chNum = ch.chapter || ch.number || ch.id;
-          tocItems.push(new Paragraph({ children: [new TextRun({ text: `Chapter ${chNum}: ${ch.title}`, bold: true, size: 24 })], spacing: { before: 200 } }));
+          tocItems.push(new Paragraph({ children: [new TextRun({ text: `Chapter ${chNum}: ${ch.title}`, bold: true, size: 24, font: 'Times New Roman' })], spacing: { before: 200 } }));
           ch.sections?.filter(s => s && s.trim()).forEach(s => tocItems.push(new Paragraph({ text: s, indent: { left: 720 }, spacing: { before: 100 } })));
         });
-        sections.push({ children: tocItems });
+        docSections.push({ children: tocItems });
       }
 
+      // 5. Chapters
       for (const ch of chapters) {
         const chapterChildren = [
           new Paragraph({ children: [new TextRun({ text: `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`, font: 'Times New Roman', size: 32, bold: true })], alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } })
         ];
 
-        // Ensure individual chapter references are stripped from body to avoid duplication
         const contentBody = (ch.content || "").split(/### References|## References/i)[0];
         const rawLines = contentBody.split('\n');
-        
         const filteredLines = rawLines.filter((line, index) => {
           const t = line.trim().toUpperCase();
           if (!t) return true;
@@ -206,11 +324,8 @@ export async function POST(request) {
 
         for (let i = 0; i < filteredLines.length; i++) {
           const line = filteredLines[i].trim(); if (!line) continue;
-          
           if (line.startsWith('|')) {
-            const tableRows = [];
-            let j = i;
-            let rowCount = 0;
+            const tableRows = []; let j = i; let rowCount = 0;
             while (j < filteredLines.length && filteredLines[j].trim().startsWith('|')) {
               const r = filteredLines[j].trim();
               if (!r.includes('---')) {
@@ -227,8 +342,7 @@ export async function POST(request) {
               j++;
             }
             chapterChildren.push(new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } }));
-            chapterChildren.push(new Paragraph({ text: "" })); 
-            i = j - 1; continue;
+            chapterChildren.push(new Paragraph({ text: "" })); i = j - 1; continue;
           }
 
           const imgMatch = line.match(/!\[.*?\]\((.*?)\)/);
@@ -236,26 +350,16 @@ export async function POST(request) {
             const asset = assets.find(a => a.file_url === imgMatch[1]);
             if (asset && imageMap[asset.id]) {
               chapterChildren.push(new Paragraph({ children: [new ImageRun({ data: imageMap[asset.id], transformation: { width: 500, height: 350 } })], alignment: AlignmentType.CENTER }));
-              chapterChildren.push(new Paragraph({ children: [new TextRun({ text: `Figure: ${asset.caption || asset.original_name}`, italics: true, size: 20 })], alignment: AlignmentType.CENTER }));
+              chapterChildren.push(new Paragraph({ children: [new TextRun({ text: `Figure: ${asset.caption || asset.original_name}`, italics: true, size: 20, font: 'Times New Roman' })], alignment: AlignmentType.CENTER }));
               continue;
             }
           }
 
           if (line.startsWith('## ') || line.startsWith('### ')) {
             const cleanText = line.replace(/^#+\s+/, '');
-            chapterChildren.push(new Paragraph({ 
-              children: [new TextRun({ text: cleanText, font: 'Times New Roman', size: 28, bold: true })], 
-              heading: HeadingLevel.HEADING_2, 
-              alignment: AlignmentType.LEFT,
-              spacing: { before: 200, after: 200 } 
-            }));
-          } 
-          else if (line.startsWith('#### ')) {
-            chapterChildren.push(new Paragraph({ 
-              children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 24, bold: true })], 
-              heading: HeadingLevel.HEADING_3, 
-              spacing: { before: 150, after: 150 } 
-            }));
+            chapterChildren.push(new Paragraph({ children: [new TextRun({ text: cleanText, font: 'Times New Roman', size: 28, bold: true })], heading: HeadingLevel.HEADING_2, alignment: AlignmentType.LEFT, spacing: { before: 200, after: 200 } }));
+          } else if (line.startsWith('#### ')) {
+            chapterChildren.push(new Paragraph({ children: [new TextRun({ text: line.replace('#### ', ''), font: 'Times New Roman', size: 24, bold: true })], heading: HeadingLevel.HEADING_3, spacing: { before: 150, after: 150 } }));
           } else if (/^\d+\.\s/.test(line)) {
             chapterChildren.push(new Paragraph({ children: parseInlineFormatting(line.replace(/^\d+\.\s/, ''), 24), numbering: { reference: "numeric-list", level: 0 }, alignment: AlignmentType.JUSTIFIED, spacing: { after: 120, line: 360 } }));
           } else if (line.startsWith('- ') || line.startsWith('* ')) {
@@ -264,51 +368,72 @@ export async function POST(request) {
             chapterChildren.push(new Paragraph({ children: parseInlineFormatting(line), alignment: AlignmentType.JUSTIFIED, spacing: { after: 200, line: 360 } }));
           }
         }
-        sections.push({ children: chapterChildren });
+        docSections.push({ children: chapterChildren });
       }
       
-      // MASTER REFERENCES PAGE (Always at the end)
       if (finalMasterReferences.length > 0) {
-        sections.push({ children: [
+        docSections.push({ children: [
           new Paragraph({ text: 'REFERENCES', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } }), 
-          ...finalMasterReferences.map((ref, i) => {
-            return new Paragraph({ children: [new TextRun({ text: `${i + 1}. ${ref}`, font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED, spacing: { after: 150 } });
-          })
+          ...finalMasterReferences.map((ref, i) => new Paragraph({ children: [new TextRun({ text: `${i + 1}. ${ref}`, font: 'Times New Roman', size: 24 })], alignment: AlignmentType.JUSTIFIED, spacing: { after: 150 } }))
         ] });
       }
 
-      finalBuffer = await Packer.toBuffer(new Document({ sections, numbering }));
+      finalBuffer = await Packer.toBuffer(new Document({ sections: docSections, numbering }));
       contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     } else {
       const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
       let currPage = 1;
-      const footer = () => { if (options.includePageNumbers) { pdf.setFontSize(10); pdf.setTextColor(150, 150, 150); pdf.text("Page " + currPage, 105, 285, { align: 'center' }); pdf.setTextColor(0, 0, 0); } };
+      const footer = () => { if (options.includePageNumbers) { pdf.setFont("times", "normal"); pdf.setFontSize(10); pdf.setTextColor(150, 150, 150); pdf.text("Page " + currPage, 105, 285, { align: 'center' }); pdf.setTextColor(0, 0, 0); } };
       
+      // 1. Cover
+      if (options.coverConfig.type === 'form') {
+        drawPdfCover(pdf, options.metadata);
+        footer(); pdf.addPage(); currPage++;
+        if (options.coverConfig.includeDeclaration) { drawPdfDeclaration(pdf, options.metadata); footer(); pdf.addPage(); currPage++; }
+        if (options.coverConfig.includeCertification) { drawPdfCertification(pdf, options.metadata); footer(); pdf.addPage(); currPage++; }
+        if (options.coverConfig.includeDedication && options.metadata.dedication) {
+            pdf.setFont("times", "bold"); pdf.setFontSize(20); pdf.text("DEDICATION", 105, 40, { align: 'center' });
+            pdf.setFont("times", "italic"); pdf.setFontSize(12); pdf.text(pdf.splitTextToSize(options.metadata.dedication, 160), 105, 70, { align: 'center' });
+            footer(); pdf.addPage(); currPage++;
+        }
+        if (options.coverConfig.includeAcknowledgement && options.metadata.acknowledgement) {
+            pdf.setFont("times", "bold"); pdf.setFontSize(20); pdf.text("ACKNOWLEDGEMENT", 105, 40, { align: 'center' });
+            pdf.setFont("times", "normal"); pdf.setFontSize(12); pdf.text(pdf.splitTextToSize(options.metadata.acknowledgement, 170), 20, 70, { align: 'justify' });
+            footer(); pdf.addPage(); currPage++;
+        }
+      } else if (options.coverConfig.type === 'asset' || options.coverConfig.type === 'upload') {
+        const imgUrl = options.coverConfig.type === 'asset' ? options.coverConfig.assetUrl : options.coverConfig.uploadUrl;
+        if (imgUrl) { try { pdf.addImage(imgUrl, 'JPEG', 0, 0, 210, 297); footer(); pdf.addPage(); currPage++; } catch (e) {} }
+      }
+
+      // 2. Abstract
       if (abstract) {
-        pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.text("ABSTRACT", 105, 40, { align: 'center' });
-        pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); pdf.text(pdf.splitTextToSize(parseTechnicalText(abstract), 170), 20, 60);
+        pdf.setFont("times", "bold"); pdf.setFontSize(20); pdf.text("ABSTRACT", 105, 40, { align: 'center' });
+        pdf.setFont("times", "normal"); pdf.setFontSize(12); pdf.text(pdf.splitTextToSize(parseTechnicalText(abstract), 170), 20, 60, { align: 'justify' });
         footer(); pdf.addPage(); currPage++;
       }
+
+      // 3. TOC
       if (options.includeTOC && project.custom_templates) {
-        pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.text("TABLE OF CONTENTS", 20, 40);
-        pdf.setFontSize(11); let ty = 60;
+        pdf.setFont("times", "bold"); pdf.setFontSize(20); pdf.text("TABLE OF CONTENTS", 20, 40);
+        pdf.setFontSize(12); let ty = 60;
         project.custom_templates.structure.chapters.forEach(ch => {
           if (ty > 270) { footer(); pdf.addPage(); currPage++; ty = 30; }
           const chNum = ch.chapter || ch.number || ch.id;
-          pdf.setFont("helvetica", "bold"); pdf.text(`Chapter ${chNum}: ${ch.title}`, 20, ty); ty += 8;
-          pdf.setFont("helvetica", "normal"); ch.sections?.filter(s => s && s.trim()).slice(0,3).forEach(s => { pdf.text("- " + s, 30, ty); ty += 6; }); ty += 4;
+          pdf.setFont("times", "bold"); pdf.text(`Chapter ${chNum}: ${ch.title}`, 20, ty); ty += 8;
+          pdf.setFont("times", "normal"); ch.sections?.filter(s => s && s.trim()).slice(0,5).forEach(s => { pdf.text("- " + s, 30, ty); ty += 6; }); ty += 4;
         });
         footer(); pdf.addPage(); currPage++;
       }
 
+      // 4. Chapters
       for (const ch of chapters) {
-        pdf.setFont("helvetica", "bold"); pdf.setFontSize(20); pdf.text(`CHAPTER ${ch.chapter_number}: ${(ch.title || "").toUpperCase()}`, 20, 30);
-        pdf.setFont("helvetica", "normal"); pdf.setFontSize(11);
+        pdf.setFont("times", "bold"); pdf.setFontSize(22); pdf.text(`CHAPTER ${ch.chapter_number}: ${(ch.title || "").toUpperCase()}`, 105, 30, { align: 'center' });
+        pdf.setFont("times", "normal"); pdf.setFontSize(12);
         
         const rawLines = (ch.content || "").split(/### References|## References/i)[0].split('\n');
         const filteredLines = rawLines.filter((line, index) => {
-          const t = line.trim().toUpperCase();
-          if (!t) return true;
+          const t = line.trim().toUpperCase(); if (!t) return true;
           const isTitle = t === `CHAPTER ${ch.chapter_number}` || t === ch.title.toUpperCase() || t === `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`;
           if (index < 5 && isTitle) return false;
           if (line.startsWith('#')) {
@@ -321,55 +446,55 @@ export async function POST(request) {
         let y = 45;
         for (let i = 0; i < filteredLines.length; i++) {
           const line = filteredLines[i].trim(); if (!line) continue;
-          
           if (line.startsWith('## ') || line.startsWith('### ')) {
-            pdf.setFont("helvetica", "bold"); pdf.setFontSize(14);
+            pdf.setFont("times", "bold"); pdf.setFontSize(15);
             if (y > 270) { footer(); pdf.addPage(); currPage++; y = 30; }
             pdf.text(line.replace(/^#+\s+/, ''), 20, y); y += 10;
-            pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); continue;
+            pdf.setFont("times", "normal"); pdf.setFontSize(12); continue;
           }
           if (line.startsWith('#### ')) {
-            pdf.setFont("helvetica", "bold"); pdf.setFontSize(11);
+            pdf.setFont("times", "bold"); pdf.setFontSize(12);
             if (y > 270) { footer(); pdf.addPage(); currPage++; y = 30; }
             pdf.text(line.replace('#### ', ''), 20, y); y += 8;
-            pdf.setFont("helvetica", "normal"); pdf.setFontSize(11); continue;
+            pdf.setFont("times", "normal"); pdf.setFontSize(12); continue;
           }
           if (line.startsWith('|')) {
-            const rows = [];
-            let j = i;
+            const rows = []; let j = i;
             while (j < filteredLines.length && filteredLines[j].trim().startsWith('|')) {
               const r = filteredLines[j].trim();
               if (!r.includes('---')) rows.push(r.split('|').slice(1, -1).map(c => parseTechnicalText(c.trim() || "\u00A0")));
               j++;
             }
-            autoTable(pdf, { startY: y, head: [rows[0]], body: rows.slice(1), theme: 'grid', styles: { fontSize: 9, cellPadding: 2 }, headStyles: { fillColor: [15, 23, 42] }, margin: { left: 20, right: 20 } });
+            autoTable(pdf, { startY: y, head: [rows[0]], body: rows.slice(1), theme: 'grid', styles: { font: 'times', fontSize: 10, cellPadding: 3 }, headStyles: { fillColor: [243, 244, 246], textColor: [15, 23, 42], fontStyle: 'bold' }, margin: { left: 20, right: 20 } });
             y = pdf.lastAutoTable.finalY + 10; i = j - 1; continue;
           }
           const imgMatch = line.match(/!\[.*?\]\((.*?)\)/);
           if (imgMatch) {
             const asset = assets.find(a => a.file_url === imgMatch[1]);
             if (asset && imageMap[asset.id]) {
-              if (y > 200) { footer(); pdf.addPage(); currPage++; y = 30; }
-              pdf.addImage(imageMap[asset.id], 'PNG', 30, y, 150, 100); y += 110; continue;
+              if (y > 180) { footer(); pdf.addPage(); currPage++; y = 30; }
+              pdf.addImage(imageMap[asset.id], 'JPEG', 30, y, 150, 100); 
+              y += 105; pdf.setFontSize(10); pdf.setFont("times", "italic"); pdf.text(`Figure: ${asset.caption || asset.original_name}`, 105, y, { align: 'center' });
+              y += 10; pdf.setFontSize(12); pdf.setFont("times", "normal"); continue;
             }
           }
           const splitText = pdf.splitTextToSize(parseTechnicalText(line), 170);
           for (const s of splitText) {
             if (y > 275) { footer(); pdf.addPage(); currPage++; y = 30; }
-            pdf.text(s, 20, y); y += 6;
+            pdf.text(s, 20, y, { align: 'justify' }); y += 7;
           }
+          y += 3;
         }
         footer(); pdf.addPage(); currPage++;
       }
       
-      // MASTER REFERENCES PAGE (PDF)
       if (finalMasterReferences.length > 0) {
-        pdf.setFont("helvetica", "bold"); pdf.setFontSize(18); pdf.text("REFERENCES", 105, 40, { align: 'center' });
-        pdf.setFont("helvetica", "normal"); pdf.setFontSize(10); let ry = 60;
+        pdf.setFont("times", "bold"); pdf.setFontSize(20); pdf.text("REFERENCES", 105, 40, { align: 'center' });
+        pdf.setFont("times", "normal"); pdf.setFontSize(11); let ry = 60;
         finalMasterReferences.forEach((ref, idx) => {
           const split = pdf.splitTextToSize(`${idx + 1}. ${ref}`, 170);
-          if (ry + (split.length * 5) > 270) { footer(); pdf.addPage(); currPage++; ry = 30; }
-          pdf.text(split, 20, ry); ry += (split.length * 5) + 5;
+          if (ry + (split.length * 6) > 270) { footer(); pdf.addPage(); currPage++; ry = 30; }
+          pdf.text(split, 20, ry, { align: 'justify' }); ry += (split.length * 6) + 4;
         });
         footer();
       }
