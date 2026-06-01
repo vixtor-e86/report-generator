@@ -133,31 +133,55 @@ function createDocxCertification(metadata) {
 
 // --- PDF PRELIMINARY PAGES HELPERS ---
 function drawPdfCover(pdf, metadata) {
-    pdf.setFont("times", "bold"); pdf.setFontSize(22); pdf.text(metadata.university.toUpperCase(), 105, 40, { align: 'center' });
-    pdf.setFontSize(16); pdf.text((metadata.faculty || "").toUpperCase(), 105, 55, { align: 'center' });
-    pdf.text((metadata.department || "").toUpperCase(), 105, 65, { align: 'center' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const centerX = pageWidth / 2;
+
+    pdf.setFont("times", "bold"); pdf.setFontSize(22); 
+    const univ = pdf.splitTextToSize(metadata.university.toUpperCase(), 170);
+    pdf.text(univ, centerX, 40, { align: 'center' });
     
+    pdf.setFontSize(16); 
+    const fac = pdf.splitTextToSize((metadata.faculty || "").toUpperCase(), 170);
+    pdf.text(fac, centerX, 55 + (univ.length > 1 ? (univ.length - 1) * 8 : 0), { align: 'center' });
+    
+    const dept = pdf.splitTextToSize((metadata.department || "").toUpperCase(), 170);
+    pdf.text(dept, centerX, 65 + (univ.length > 1 ? (univ.length - 1) * 8 : 0) + (fac.length > 1 ? (fac.length - 1) * 6 : 0), { align: 'center' });
+    
+    let currentY = 100;
     pdf.setFontSize(24); const title = pdf.splitTextToSize((metadata.projectTitle || "").toUpperCase(), 160);
-    pdf.text(title, 105, 100, { align: 'center' });
+    pdf.text(title, centerX, currentY, { align: 'center' });
+    currentY += (title.length * 10) + 10;
     
-    pdf.setFontSize(16); pdf.text("BY", 105, 140, { align: 'center' });
-    pdf.setFontSize(20); pdf.text((metadata.studentName || "").toUpperCase(), 105, 155, { align: 'center' });
-    pdf.setFontSize(16); pdf.text(metadata.matricNo, 105, 165, { align: 'center' });
+    pdf.setFontSize(16); pdf.text("BY", centerX, currentY, { align: 'center' });
+    currentY += 15;
+    pdf.setFontSize(20); 
+    const name = pdf.splitTextToSize((metadata.studentName || "").toUpperCase(), 170);
+    pdf.text(name, centerX, currentY, { align: 'center' });
+    currentY += (name.length * 8);
+    pdf.setFontSize(16); pdf.text(metadata.matricNo, centerX, currentY, { align: 'center' });
+    currentY += 25;
     
     pdf.setFont("times", "normal"); pdf.setFontSize(12);
     const subText = `A PROJECT SUBMITTED TO THE DEPARTMENT OF ${metadata.department.toUpperCase()}, ${metadata.university.toUpperCase()}, IN PARTIAL FULFILLMENT OF THE REQUIREMENTS FOR THE AWARD OF BACHELOR OF SCIENCE (B.Sc.) DEGREE IN ${metadata.department.toUpperCase()}.`;
-    pdf.text(pdf.splitTextToSize(subText, 160), 105, 190, { align: 'center' });
+    const wrappedSubText = pdf.splitTextToSize(subText, 160);
+    pdf.text(wrappedSubText, centerX, currentY, { align: 'center' });
+    currentY += (wrappedSubText.length * 6) + 15;
     
-    pdf.setFont("times", "bold"); pdf.text(`SUPERVISED BY: ${metadata.supervisor.toUpperCase()}`, 105, 230, { align: 'center' });
-    pdf.setFontSize(16); pdf.text(metadata.session, 105, 250, { align: 'center' });
-    pdf.setFontSize(14); pdf.text(metadata.date.toUpperCase(), 105, 265, { align: 'center' });
+    pdf.setFont("times", "bold"); 
+    const supervisor = pdf.splitTextToSize(`SUPERVISED BY: ${metadata.supervisor.toUpperCase()}`, 170);
+    pdf.text(supervisor, centerX, currentY, { align: 'center' });
+    currentY += (supervisor.length * 8) + 10;
+    
+    pdf.setFontSize(16); pdf.text(metadata.session, centerX, currentY, { align: 'center' });
+    currentY += 15;
+    pdf.setFontSize(14); pdf.text(metadata.date.toUpperCase(), centerX, currentY, { align: 'center' });
 }
 
 function drawPdfDeclaration(pdf, metadata) {
     pdf.setFont("times", "bold"); pdf.setFontSize(20); pdf.text("DECLARATION", 105, 40, { align: 'center' });
     pdf.setFont("times", "normal"); pdf.setFontSize(12);
     const decText = `I, ${metadata.studentName.toUpperCase()}, do hereby declare that this project is entirely my work and composition. The work embodied in this project has not been submitted in candidature for any degree and is not concurrently being submitted for any other degree. All references made to the works of other people have been duly acknowledged.`;
-    pdf.text(pdf.splitTextToSize(decText, 170), 20, 70, { align: 'justify' });
+    pdf.text(pdf.splitTextToSize(decText, 170), 20, 70, { align: 'justify', maxWidth: 170 });
     
     pdf.text("NAME OF STUDENT: _________________________________", 20, 120);
     pdf.text("SIGNATURE: _______________________________________", 20, 140);
@@ -168,7 +192,7 @@ function drawPdfCertification(pdf, metadata) {
     pdf.setFont("times", "bold"); pdf.setFontSize(20); pdf.text("CERTIFICATION", 105, 40, { align: 'center' });
     pdf.setFont("times", "normal"); pdf.setFontSize(12);
     const certText = `This is to certify that the research work was carried out by ${metadata.studentName.toUpperCase()} in the Department of ${metadata.department.toUpperCase()}, ${metadata.faculty.toUpperCase()}, ${metadata.university.toUpperCase()}. The research work is considered adequate in partial fulfillment of the requirements for the award of B.Sc. in ${metadata.department.toUpperCase()}.`;
-    pdf.text(pdf.splitTextToSize(certText, 170), 20, 70, { align: 'justify' });
+    pdf.text(pdf.splitTextToSize(certText, 170), 20, 70, { align: 'justify', maxWidth: 170 });
     
     const sy = 120;
     pdf.text("__________________________", 20, sy); pdf.setFont("times", "bold"); pdf.text(metadata.supervisor, 20, sy + 7); pdf.setFont("times", "normal"); pdf.text("Project Supervisor", 20, sy + 14);
