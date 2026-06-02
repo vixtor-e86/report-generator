@@ -335,7 +335,19 @@ function NewProjectContent() {
       }
 
       if (!isAdmin && pendingPayment) {
-        await supabase.from('payment_transactions').update({ project_id: project.id, updated_at: new Date().toISOString() }).eq('id', pendingPayment.id);
+        try {
+          await fetch('/api/admin/consume-transaction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              transactionId: pendingPayment.id,
+              projectId: project.id,
+              userId: user.id
+            })
+          });
+        } catch (consumeErr) {
+          console.error('Failed to consume transaction:', consumeErr);
+        }
       }
 
       const structure = template.structure || { chapters: [] };

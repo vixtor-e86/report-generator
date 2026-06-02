@@ -219,12 +219,21 @@ function ProjectDescriptionContent() {
 
         if (projectError) throw new Error(projectError.message);
 
-        // ✅ Link payment to project
+        // ✅ Link payment to project securely via backend
         if (pendingPayment) {
-          await supabase
-            .from('payment_transactions')
-            .update({ project_id: newProject.id, updated_at: new Date().toISOString() })
-            .eq('id', pendingPayment.id);
+          try {
+            await fetch('/api/admin/consume-transaction', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                transactionId: pendingPayment.id,
+                projectId: newProject.id,
+                userId: user.id
+              })
+            });
+          } catch (consumeErr) {
+            console.error('Failed to consume transaction:', consumeErr);
+          }
         }
 
         router.replace(`/premium/workspace?id=${newProject.id}`);
