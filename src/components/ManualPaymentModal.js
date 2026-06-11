@@ -13,7 +13,7 @@ export default function ManualPaymentModal({ isOpen, onClose, userId, userEmail,
   const adminBankDetails = {
     accountNumber: "1030287968",
     bank: "UBA",
-    name: "Adewale Shedrack Komolafe"
+    name: "W3 Hub"
   };
 
   const prices = {
