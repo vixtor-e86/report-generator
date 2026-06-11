@@ -74,25 +74,40 @@ export async function PATCH(request) {
     if (updateTxError) throw updateTxError;
 
     // 3. Update wallet balance
-    const { data: wallet } = await supabaseAdmin
+    const { data: wallet, error: walletFetchError } = await supabaseAdmin
       .from('marketplace_wallets')
       .select('balance')
       .eq('user_id', tx.user_id)
       .single();
 
-    if (wallet) {
-      await supabaseAdmin
-        .from('marketplace_wallets')
-        .update({ 
-          balance: wallet.balance + tx.amount,
-          updated_at: now
-        })
-        .eq('user_id', tx.user_id);
+    // If wallet doesn't exist (PGRST116), we'll create it during upsert
+    if (walletFetchError && walletFetchError.code !== 'PGRST116') {
+      throw walletFetchError;
+    }
+
+    const currentBalance = wallet ? Number(wallet.balance) : 0;
+    const addAmount = Number(tx.amount);
+    const newBalance = currentBalance + addAmount;
+
+    console.log(`Updating wallet for ${tx.user_id}: ${currentBalance} + ${addAmount} = ${newBalance}`);
+
+    const { error: walletUpdateError } = await supabaseAdmin
+      .from('marketplace_wallets')
+      .upsert({ 
+        user_id: tx.user_id,
+        balance: newBalance,
+        updated_at: now
+      }, { onConflict: 'user_id' });
+
+    if (walletUpdateError) {
+      console.error('Wallet Update Error:', walletUpdateError);
+      throw new Error(`Failed to update wallet: ${walletUpdateError.message}`);
     }
 
     return NextResponse.json({ success: true });
 
   } catch (error) {
+    console.error('Admin Funding PATCH Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
