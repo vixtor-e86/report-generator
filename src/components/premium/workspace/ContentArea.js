@@ -56,6 +56,8 @@ export default function ContentArea({
   const [isSubmittingPayout, setIsSubmittingPayout] = useState(false);
   const [pendingPayout, setPendingPayout] = useState(false);
   const [bankDetails, setBankDetails] = useState({ accountNumber: '', bankName: '', accountName: '' });
+  const [showTablePrompt, setShowTablePrompt] = useState(false);
+  const [tableConfig, setTablePromptConfig] = useState({ rows: 3, cols: 3 });
   const textareaRef = useRef(null);
 
   const [commissions, setCommissions] = useState([]);
@@ -243,16 +245,25 @@ export default function ContentArea({
   };
 
   const insertTableTemplate = () => {
-    const tableTemplate = "\n| Column 1 | Column 2 |\n| :--- | :--- |\n| Row 1 | Data |\n| Row 2 | Data |\n";
+    const { rows, cols } = tableConfig;
+    let table = "\n";
+    table += "| " + Array(cols).fill("Header").join(" | ") + " |\n";
+    table += "| " + Array(cols).fill("---").join(" | ") + " |\n";
+    for (let i = 0; i < rows; i++) {
+      table += "| " + Array(cols).fill("Data").join(" | ") + " |\n";
+    }
+    table += "\n";
+
     const { start, end } = cursorPosition;
     const before = localContent.substring(0, start);
     const after = localContent.substring(end, localContent.length);
-    const newText = before + tableTemplate + after;
+    const newText = before + table + after;
     setLocalContent(newText);
+    setShowTablePrompt(false);
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
-        const newCursorPos = start + tableTemplate.length;
+        const newCursorPos = start + table.length;
         textareaRef.current.selectionStart = textareaRef.current.selectionEnd = newCursorPos;
         setCursorPosition({ start: newCursorPos, end: newCursorPos });
       }
@@ -558,24 +569,38 @@ export default function ContentArea({
   if (activeChapter) {
     return (
       <div className="content-area">
-        <div className="content-layout-wrapper" style={{ alignItems: 'flex-start' }}>
-          <div style={{ marginBottom: '24px', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
+        <div className="content-layout-wrapper" style={{ alignItems: 'flex-start', paddingTop: 0 }}>
+          {/* Sticky Toolbar for Premium */}
+          <div style={{ 
+            position: 'sticky', 
+            top: 0, 
+            zIndex: 40, 
+            background: 'white', 
+            width: '100%', 
+            padding: '24px 40px',
+            borderBottom: '1px solid #f3f4f6',
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            flexWrap: 'wrap', 
+            gap: '16px' 
+          }}>
             <div>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <div style={{ background: '#f3f4f6', padding: '4px', borderRadius: '8px', display: 'inline-flex' }}>
                   <button onClick={() => setWorkspaceMode('editor')} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: workspaceMode === 'editor' ? 'white' : 'transparent', color: workspaceMode === 'editor' ? '#111827' : '#6b7280', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}><Icons.Edit3 /> Editor</button>
                   <button onClick={() => setWorkspaceMode('preview')} style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: workspaceMode === 'preview' ? 'white' : 'transparent', color: workspaceMode === 'preview' ? '#111827' : '#6b7280', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}><Icons.Eye /> Preview</button>
                 </div>
-                
               </div>
             </div>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <button onClick={insertTableTemplate} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}><Icons.Table /> Insert Table</button>
+              <button onClick={() => setShowTablePrompt(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}><Icons.Table /> Insert Table</button>
               <button id="step-insert-image" onClick={() => setShowImageSelector(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}><Icons.Image /> Insert Image</button>
               <button onClick={handleSaveEdit} disabled={isSaving} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', border: 'none', background: '#111827', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: isSaving ? 0.7 : 1 }}>{isSaving ? 'Saving...' : <><Icons.Save /> Save Changes</>}</button>
             </div>
           </div>
-          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', minHeight: '700px', display: 'flex', flexDirection: 'column' }}>
+
+          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', width: '100%', minHeight: '700px', display: 'flex', flexDirection: 'column', margin: '24px 0' }}>
             <style>{`
               .markdown-preview { color: #1f2937; line-height: 1.8; font-family: 'Inter', system-ui, sans-serif; width: 100%; }
               .markdown-preview h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 1.5rem; color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 0.5rem; }
@@ -600,15 +625,23 @@ export default function ContentArea({
             `}</style>
             {workspaceMode === 'editor' ? (
               <>
-                <div style={{ padding: '12px 40px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+                <div style={{ 
+                  padding: '12px 40px', 
+                  background: '#f8fafc', 
+                  borderBottom: '1px solid #e5e7eb', 
+                  display: 'flex', 
+                  flexWrap: 'wrap', 
+                  gap: '16px', 
+                  alignItems: 'center',
+                  position: 'sticky',
+                  top: '84px',
+                  zIndex: 35
+                }}>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Markdown Guide:</span>
                   <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#4b5563' }}>
-                    <span><strong>#</strong> Header 1</span>
-                    <span><strong>##</strong> Header 2</span>
+                    <span><strong>#</strong> Header</span>
                     <span><strong>**text**</strong> Bold</span>
-                    <span><strong>*text*</strong> Italic</span>
                     <span><strong>-</strong> List</span>
-                    <span><strong>1.</strong> Numbered</span>
                   </div>
                   <button 
                     onClick={() => setShowMarkdownGuide(true)}
@@ -627,8 +660,6 @@ export default function ContentArea({
                       gap: '6px',
                       transition: 'all 0.2s'
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#4338ca'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#e5e7eb'; }}
                   >
                     <Icons.Eye /> View Full Guide
                   </button>
@@ -650,6 +681,29 @@ export default function ContentArea({
             )}
           </div>
         </div>
+
+        {/* Dynamic Table Prompt for Premium */}
+        {showTablePrompt && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'white', borderRadius: '24px', padding: '32px', width: '100%', maxWidth: '300px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#111827', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '-0.5px' }}>Table Dimensions</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px' }}>Rows</label>
+                  <input type="number" min="1" max="20" value={tableConfig.rows} onChange={e => setTablePromptConfig({...tableConfig, rows: parseInt(e.target.value) || 1})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '14px', fontWeight: '700', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px' }}>Columns</label>
+                  <input type="number" min="1" max="10" value={tableConfig.cols} onChange={e => setTablePromptConfig({...tableConfig, cols: parseInt(e.target.value) || 1})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '14px', fontWeight: '700', outline: 'none' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button onClick={() => setShowTablePrompt(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#f3f4f6', color: '#4b5563', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
+                <button onClick={insertTableTemplate} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#111827', color: 'white', fontWeight: '800', cursor: 'pointer' }}>Create</button>
+              </div>
+            </div>
+          </div>
+        )}
         {showMarkdownGuide && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div style={{ background: 'white', borderRadius: '32px', width: '100%', maxWidth: '900px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
