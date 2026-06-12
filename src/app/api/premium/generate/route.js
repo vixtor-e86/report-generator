@@ -229,6 +229,7 @@ export async function POST(request) {
     ${objectiveInstruction}
 
     ${mandatorySections}
+    ${technicalTableInstruction}
     ${contextualSourceData ? `## MANDATORY EXPERIMENTAL DATA ANALYSIS\n${contextualSourceData}` : ''}
     ${imageInstruction}
     ${referencesMapping}

@@ -76,12 +76,30 @@ export default function ChapterEdit({ chapter, onSave, onCancel }) {
       <div className="bg-white border-x border-slate-200">
         <div className="px-8 sm:px-12 py-3 bg-slate-50 border-b border-slate-100 flex flex-wrap gap-4 items-center">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Editor Guide:</span>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold"># Header 1</code>
             <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">## Header 2</code>
             <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">**Bold**</code>
             <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">- List</code>
-            <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">1. Numbered</code>
+            <button 
+              onClick={() => {
+                const tableTemplate = "\n| Column 1 | Column 2 |\n| :--- | :--- |\n| Row 1 | Data |\n| Row 2 | Data |\n";
+                const textarea = document.querySelector('textarea');
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const text = textarea.value;
+                const before = text.substring(0, start);
+                const after = text.substring(end, text.length);
+                setContent(before + tableTemplate + after);
+                setTimeout(() => {
+                  textarea.focus();
+                  textarea.selectionStart = textarea.selectionEnd = start + tableTemplate.length;
+                }, 10);
+              }}
+              className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded font-black uppercase tracking-widest hover:bg-blue-700 transition-colors"
+            >
+              + Insert Table
+            </button>
           </div>
         </div>
         <textarea

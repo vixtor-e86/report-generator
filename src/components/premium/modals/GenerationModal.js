@@ -255,6 +255,72 @@ export default function GenerationModal({
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Custom Instructions</label>
                     <textarea value={localData.userPrompt} onChange={(e) => setLocalData({...localData, userPrompt: e.target.value})} placeholder="e.g. Focus on technical calculations..." style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '120px' }} />
                   </div>
+
+                  {/* ✅ Technical Data Table Builder */}
+                  <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#111827' }}>Technical Data Table</h4>
+                        <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>Add structured data for the AI to analyze (Experimental results, params, etc.)</p>
+                      </div>
+                      <button 
+                        onClick={() => setShowTableBuilder(!showTableBuilder)}
+                        style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #d1d5db', background: 'white', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                      >
+                        {showTableBuilder ? 'Hide Table Builder' : 'Build Data Table'}
+                      </button>
+                    </div>
+
+                    {showTableBuilder && (
+                      <div style={{ overflowX: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                          <thead>
+                            <tr>
+                              {localData.tableData.headers.map((h, i) => (
+                                <th key={i} style={{ padding: '8px', border: '1px solid #e5e7eb', background: '#f9fafb', textAlign: 'left' }}>
+                                  <div style={{ display: 'flex', gap: '4px' }}>
+                                    <input 
+                                      value={h} 
+                                      onChange={(e) => updateHeader(i, e.target.value)}
+                                      style={{ width: '100%', border: 'none', background: 'transparent', fontWeight: '700', outline: 'none' }}
+                                    />
+                                    <button onClick={() => removeColumn(i)} style={{ color: '#ef4444', border: 'none', background: 'none', cursor: 'pointer' }}>×</button>
+                                  </div>
+                                </th>
+                              ))}
+                              <th style={{ width: '40px', padding: '8px' }}>
+                                <button onClick={addColumn} style={{ width: '100%', borderRadius: '4px', border: '1px dashed #d1d5db', background: 'white', cursor: 'pointer' }}>+</button>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {localData.tableData.rows.map((row, rIdx) => (
+                              <tr key={rIdx}>
+                                {row.map((cell, cIdx) => (
+                                  <td key={cIdx} style={{ padding: '8px', border: '1px solid #e5e7eb' }}>
+                                    <input 
+                                      value={cell} 
+                                      onChange={(e) => updateCell(rIdx, cIdx, e.target.value)}
+                                      style={{ width: '100%', border: 'none', outline: 'none' }}
+                                    />
+                                  </td>
+                                ))}
+                                <td style={{ textAlign: 'center' }}>
+                                  <button onClick={() => removeRow(rIdx)} style={{ color: '#ef4444', border: 'none', background: 'none', cursor: 'pointer' }}>×</button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <button 
+                          onClick={addRow}
+                          style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px dashed #d1d5db', background: 'white', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                        >
+                          + Add Row
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
