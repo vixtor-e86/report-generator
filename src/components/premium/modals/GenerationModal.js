@@ -23,10 +23,12 @@ export default function GenerationModal({
   const [localData, setLocalData] = useState({
     projectTitle: '', projectDescription: '', faculty: '', department: '',
     componentsUsed: '', researchBooks: '',
-    userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
+    userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000,
+    tableData: { headers: ['Parameter', 'Value'], rows: [['', '']] }
   });
 
   const [activeTab, setActiveTab] = useState('details');
+  const [showTableBuilder, setShowTableBuilder] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [extractedPreview, setExtractedPreview] = useState('');
@@ -46,11 +48,49 @@ export default function GenerationModal({
         department: projectData.department || '',
         componentsUsed: projectData.components_used || '',
         researchBooks: projectData.research_papers_context || '',
-        userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000
+        userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000,
+        tableData: { headers: ['Parameter', 'Value'], rows: [['', '']] }
       });
       setActiveTab(isSubsequentChapter ? 'materials' : 'details');
     }
   }, [isOpen, projectData, currentChapterNumber, isSubsequentChapter]);
+
+  // --- Table Logic ---
+  const updateHeader = (idx, val) => {
+    const newHeaders = [...localData.tableData.headers];
+    newHeaders[idx] = val;
+    setLocalData({...localData, tableData: { ...localData.tableData, headers: newHeaders }});
+  };
+
+  const updateCell = (rowIdx, colIdx, val) => {
+    const newRows = [...localData.tableData.rows];
+    newRows[rowIdx][colIdx] = val;
+    setLocalData({...localData, tableData: { ...localData.tableData, rows: newRows }});
+  };
+
+  const addRow = () => {
+    const newRows = [...localData.tableData.rows, Array(localData.tableData.headers.length).fill('')];
+    setLocalData({...localData, tableData: { ...localData.tableData, rows: newRows }});
+  };
+
+  const addColumn = () => {
+    const newHeaders = [...localData.tableData.headers, `Column ${localData.tableData.headers.length + 1}`];
+    const newRows = localData.tableData.rows.map(row => [...row, '']);
+    setLocalData({...localData, tableData: { headers: newHeaders, rows: newRows }});
+  };
+
+  const removeRow = (idx) => {
+    if (localData.tableData.rows.length <= 1) return;
+    const newRows = localData.tableData.rows.filter((_, i) => i !== idx);
+    setLocalData({...localData, tableData: { ...localData.tableData, rows: newRows }});
+  };
+
+  const removeColumn = (idx) => {
+    if (localData.tableData.headers.length <= 1) return;
+    const newHeaders = localData.tableData.headers.filter((_, i) => i !== idx);
+    const newRows = localData.tableData.rows.map(row => row.filter((_, i) => i !== idx));
+    setLocalData({...localData, tableData: { headers: newHeaders, rows: newRows }});
+  };
 
   const handlePreviewFile = async (file) => {
     setPreviewFile(file);

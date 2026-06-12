@@ -17,7 +17,8 @@ export async function POST(request) {
       projectTitle = "", projectDescription = "", componentsUsed = "", researchBooks = "",
       userPrompt = "", referenceStyle = "APA", maxReferences = 10, targetWordCount = 2000,
       selectedImages = [], selectedPapers = [], skipReferences = false,
-      isModification = false, modificationType = "whole_chapter", fullContent = "", targetContent = ""
+      isModification = false, modificationType = "whole_chapter", fullContent = "", targetContent = "",
+      tableData = null
     } = body;
 
     if (!projectId || chapterNumber === undefined || !userId) {
@@ -29,6 +30,17 @@ export async function POST(request) {
 
     const provider = process.env.PREMIUM_AI_PROVIDER || 'deepseek';
     const model = process.env.PREMIUM_AI_MODEL || 'deepseek-chat';
+
+    // --- 1.5 Table Processing ---
+    let technicalTableInstruction = "";
+    if (tableData && tableData.rows?.length > 0) {
+      const headerRow = `| ${tableData.headers.join(' | ')} |`;
+      const separatorRow = `| ${tableData.headers.map(() => '---').join(' | ')} |`;
+      const dataRows = tableData.rows.map(row => `| ${row.join(' | ')} |`).join('\n');
+      const markdownTable = `${headerRow}\n${separatorRow}\n${dataRows}`;
+      
+      technicalTableInstruction = `\n\n### MANDATORY TECHNICAL DATA TABLE:\nYou MUST analyze and include the following experimental/technical data in this chapter:\n\n${markdownTable}\n\nSTRICT: Use this specific data for any calculations or results analysis discussed in the text.`;
+    }
 
     // --- 1. Surgical Modification Logic (ROBUST) ---
     if (isModification && targetContent) {
