@@ -5,34 +5,34 @@ export default function ChapterEdit({ chapter, onSave, onCancel }) {
   const [content, setContent] = useState(chapter.content || '');
   const [saving, setSaving] = useState(false);
   const [showTablePrompt, setShowTablePrompt] = useState(false);
-  const [tableConfig, setTablePromptConfig] = useState({ rows: 3, cols: 3 });
+  const [tableConfig, setTablePromptConfig] = useState({ rows: 3, cols: 2 });
+  const [tableData, setTableData] = useState([]);
 
-  const handleSave = async () => {
-    if (!content.trim()) {
-      alert('Chapter content cannot be empty');
-      return;
+  // Initialize/Resize table data grid
+  useEffect(() => {
+    if (showTablePrompt) {
+      const newData = Array(tableConfig.rows).fill(0).map((_, r) => 
+        Array(tableConfig.cols).fill(0).map((_, c) => tableData[r]?.[c] || "")
+      );
+      setTableData(newData);
     }
+  }, [tableConfig.rows, tableConfig.cols, showTablePrompt]);
 
-    setSaving(true);
-    try {
-      await onSave(content);
-    } catch (error) {
-      console.error('Save error:', error);
-    } finally {
-      setSaving(false);
-    }
+  const handleCellChange = (r, c, val) => {
+    const newData = [...tableData];
+    newData[r][c] = val;
+    setTableData(newData);
   };
 
   const insertTable = () => {
-    const { rows, cols } = tableConfig;
     let table = "\n";
-    // Headers
-    table += "| " + Array(cols).fill("Header").join(" | ") + " |\n";
+    // Headers (using first row as header)
+    table += "| " + tableData[0].map(h => h || "Header").join(" | ") + " |\n";
     // Separator
-    table += "| " + Array(cols).fill("---").join(" | ") + " |\n";
-    // Rows
-    for (let i = 0; i < rows; i++) {
-      table += "| " + Array(cols).fill("Data").join(" | ") + " |\n";
+    table += "| " + Array(tableConfig.cols).fill("---").join(" | ") + " |\n";
+    // Data Rows
+    for (let i = 1; i < tableData.length; i++) {
+      table += "| " + tableData[i].map(d => d || "").join(" | ") + " |\n";
     }
     table += "\n";
 
@@ -138,40 +138,72 @@ export default function ChapterEdit({ chapter, onSave, onCancel }) {
       {/* Table Configuration Prompt Modal */}
       {showTablePrompt && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-[280px] border border-slate-100 animate-in zoom-in-95 duration-200">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-4">Table Dimensions</h3>
-            <div className="space-y-4 mb-6">
+          <div className="bg-white rounded-[32px] shadow-2xl p-8 w-full max-w-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-8">
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Rows</label>
-                <input 
-                  type="number" min="1" max="20"
-                  value={tableConfig.rows}
-                  onChange={(e) => setTablePromptConfig({...tableConfig, rows: parseInt(e.target.value) || 1})}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold outline-none focus:border-blue-500 transition-colors"
-                />
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Interactive Table Builder</h3>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Configure and enter data before inserting</p>
               </div>
-              <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Columns</label>
-                <input 
-                  type="number" min="1" max="10"
-                  value={tableConfig.cols}
-                  onChange={(e) => setTablePromptConfig({...tableConfig, cols: parseInt(e.target.value) || 1})}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold outline-none focus:border-blue-500 transition-colors"
-                />
+              <div className="flex gap-4">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-black text-slate-400 uppercase">Rows</span>
+                  <input type="number" min="2" max="15" value={tableConfig.rows} onChange={e => setTablePromptConfig({...tableConfig, rows: Math.max(2, parseInt(e.target.value) || 2)})} className="w-8 bg-transparent text-xs font-black text-slate-900 outline-none" />
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-black text-slate-400 uppercase">Cols</span>
+                  <input type="number" min="1" max="8" value={tableConfig.cols} onChange={e => setTablePromptConfig({...tableConfig, cols: Math.max(1, parseInt(e.target.value) || 1)})} className="w-8 bg-transparent text-xs font-black text-slate-900 outline-none" />
+                </div>
               </div>
             </div>
-            <div className="flex gap-2">
+
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden mb-8">
+              <div className="max-h-[400px] overflow-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      {Array(tableConfig.cols).fill(0).map((_, c) => (
+                        <th key={c} className="p-3 bg-white border-b border-r border-slate-200 last:border-r-0">
+                          <input 
+                            placeholder={`Header ${c+1}`}
+                            value={tableData[0]?.[c] || ""}
+                            onChange={(e) => handleCellChange(0, c, e.target.value)}
+                            className="w-full text-[11px] font-black uppercase text-blue-600 outline-none placeholder:text-slate-300"
+                          />
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array(tableConfig.rows - 1).fill(0).map((_, r) => (
+                      <tr key={r}>
+                        {Array(tableConfig.cols).fill(0).map((_, c) => (
+                          <td key={c} className="p-3 border-b border-r border-slate-100 last:border-r-0 bg-white/50">
+                            <input 
+                              value={tableData[r+1]?.[c] || ""}
+                              onChange={(e) => handleCellChange(r+1, c, e.target.value)}
+                              className="w-full text-xs font-medium text-slate-600 outline-none"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
               <button 
                 onClick={() => setShowTablePrompt(false)}
-                className="flex-1 py-2 text-xs font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-colors"
+                className="flex-1 py-4 text-xs font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-all"
               >
                 Cancel
               </button>
               <button 
                 onClick={insertTable}
-                className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
+                className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
               >
-                Create
+                Insert Completed Table
               </button>
             </div>
           </div>

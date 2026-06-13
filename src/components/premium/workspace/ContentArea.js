@@ -57,11 +57,28 @@ export default function ContentArea({
   const [pendingPayout, setPendingPayout] = useState(false);
   const [bankDetails, setBankDetails] = useState({ accountNumber: '', bankName: '', accountName: '' });
   const [showTablePrompt, setShowTablePrompt] = useState(false);
-  const [tableConfig, setTablePromptConfig] = useState({ rows: 3, cols: 3 });
+  const [tableConfig, setTablePromptConfig] = useState({ rows: 3, cols: 2 });
+  const [tableData, setTableData] = useState([]);
   const textareaRef = useRef(null);
 
   const [commissions, setCommissions] = useState([]);
   const [payoutHistory, setPayoutHistory] = useState([]);
+
+  // Initialize/Resize table data grid
+  useEffect(() => {
+    if (showTablePrompt) {
+      const newData = Array(tableConfig.rows).fill(0).map((_, r) => 
+        Array(tableConfig.cols).fill(0).map((_, c) => tableData[r]?.[c] || "")
+      );
+      setTableData(newData);
+    }
+  }, [tableConfig.rows, tableConfig.cols, showTablePrompt]);
+
+  const handleTableCellChange = (r, c, val) => {
+    const newData = [...tableData];
+    newData[r][c] = val;
+    setTableData(newData);
+  };
 
   useEffect(() => {
     if (activeView === 'referral' && projectData?.user_id) {
@@ -634,7 +651,7 @@ export default function ContentArea({
                   gap: '16px', 
                   alignItems: 'center',
                   position: 'sticky',
-                  top: '84px',
+                  top: '65px', // Adjusted to align perfectly with the Premium sticky toolbar
                   zIndex: 35
                 }}>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Markdown Guide:</span>
@@ -682,24 +699,66 @@ export default function ContentArea({
           </div>
         </div>
 
-        {/* Dynamic Table Prompt for Premium */}
+        {/* Interactive Table Builder Modal for Premium */}
         {showTablePrompt && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ background: 'white', borderRadius: '24px', padding: '32px', width: '100%', maxWidth: '300px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#111827', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '-0.5px' }}>Table Dimensions</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: 'white', borderRadius: '32px', padding: '32px', width: '100%', maxWidth: '650px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', border: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px' }}>Rows</label>
-                  <input type="number" min="1" max="20" value={tableConfig.rows} onChange={e => setTablePromptConfig({...tableConfig, rows: parseInt(e.target.value) || 1})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '14px', fontWeight: '700', outline: 'none' }} />
+                  <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#111827', margin: 0, textTransform: 'uppercase', letterSpacing: '-0.5px' }}>Interactive Table Builder</h3>
+                  <p style={{ fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', margin: '4px 0 0 0' }}>Enter your data before inserting into chapter</p>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', marginBottom: '8px' }}>Columns</label>
-                  <input type="number" min="1" max="10" value={tableConfig.cols} onChange={e => setTablePromptConfig({...tableConfig, cols: parseInt(e.target.value) || 1})} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e5e7eb', fontSize: '14px', fontWeight: '700', outline: 'none' }} />
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af' }}>ROWS</span>
+                    <input type="number" min="2" max="15" value={tableConfig.rows} onChange={e => setTablePromptConfig({...tableConfig, rows: Math.max(2, parseInt(e.target.value) || 2)})} style={{ width: '30px', border: 'none', background: 'transparent', fontSize: '13px', fontWeight: '900', outline: 'none' }} />
+                  </div>
+                  <div style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af' }}>COLS</span>
+                    <input type="number" min="1" max="8" value={tableConfig.cols} onChange={e => setTablePromptConfig({...tableConfig, cols: Math.max(1, parseInt(e.target.value) || 1)})} style={{ width: '30px', border: 'none', background: 'transparent', fontSize: '13px', fontWeight: '900', outline: 'none' }} />
+                  </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button onClick={() => setShowTablePrompt(false)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#f3f4f6', color: '#4b5563', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
-                <button onClick={insertTableTemplate} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#111827', color: 'white', fontWeight: '800', cursor: 'pointer' }}>Create</button>
+
+              <div style={{ background: '#f8fafc', borderRadius: '20px', border: '1px solid #e5e7eb', overflow: 'hidden', marginBottom: '24px' }}>
+                <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        {Array(tableConfig.cols).fill(0).map((_, c) => (
+                          <th key={c} style={{ padding: '12px', background: 'white', borderBottom: '2px solid #e5e7eb', borderRight: '1px solid #f1f5f9' }}>
+                            <input 
+                              placeholder={`Header ${c+1}`}
+                              value={tableData[0]?.[c] || ""}
+                              onChange={(e) => handleTableCellChange(0, c, e.target.value)}
+                              style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '11px', fontWeight: '900', color: '#4338ca', outline: 'none', textTransform: 'uppercase' }}
+                            />
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array(tableConfig.rows - 1).fill(0).map((_, r) => (
+                        <tr key={r}>
+                          {Array(tableConfig.cols).fill(0).map((_, c) => (
+                            <td key={c} style={{ padding: '10px', background: 'white', borderBottom: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9' }}>
+                              <input 
+                                value={tableData[r+1]?.[c] || ""}
+                                onChange={(e) => handleTableCellChange(r+1, c, e.target.value)}
+                                style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '12px', fontWeight: '600', color: '#475569', outline: 'none' }}
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <button onClick={() => setShowTablePrompt(false)} style={{ flex: 1, padding: '16px', borderRadius: '16px', border: 'none', background: '#f3f4f6', color: '#4b5563', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+                <button onClick={insertTableTemplate} style={{ flex: 2, padding: '16px', borderRadius: '16px', border: 'none', background: '#111827', color: 'white', fontWeight: '800', fontSize: '14px', cursor: 'pointer', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.2)' }}>Insert Completed Table</button>
               </div>
             </div>
           </div>
