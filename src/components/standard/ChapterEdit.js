@@ -26,6 +26,22 @@ export default function ChapterEdit({ chapter, onSave, onCancel }) {
     setTableData(newData);
   };
 
+  const handleSave = async () => {
+    if (!content.trim()) {
+      alert('Chapter content cannot be empty');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await onSave(content);
+    } catch (error) {
+      console.error('Save error:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const insertTable = () => {
     let table = "\n";
     // Headers (using first row as header)
