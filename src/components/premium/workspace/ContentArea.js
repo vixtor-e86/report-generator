@@ -64,13 +64,15 @@ export default function ContentArea({
   const [commissions, setCommissions] = useState([]);
   const [payoutHistory, setPayoutHistory] = useState([]);
 
-  // Initialize/Resize table data grid
+  // Initialize/Resize table data grid ONLY when modal opens or dimensions change
   useEffect(() => {
     if (showTablePrompt) {
-      const newData = Array(tableConfig.rows).fill(0).map((_, r) => 
-        Array(tableConfig.cols).fill(0).map((_, c) => tableData[r]?.[c] || "")
-      );
-      setTableData(newData);
+      setTableData(prev => {
+        const newData = Array(tableConfig.rows).fill(0).map((_, r) => 
+          Array(tableConfig.cols).fill(0).map((_, c) => prev[r]?.[c] || "")
+        );
+        return newData;
+      });
     }
   }, [tableConfig.rows, tableConfig.cols, showTablePrompt]);
 
@@ -262,12 +264,14 @@ export default function ContentArea({
   };
 
   const insertTableTemplate = () => {
-    const { rows, cols } = tableConfig;
     let table = "\n";
-    table += "| " + Array(cols).fill("Header").join(" | ") + " |\n";
-    table += "| " + Array(cols).fill("---").join(" | ") + " |\n";
-    for (let i = 0; i < rows; i++) {
-      table += "| " + Array(cols).fill("Data").join(" | ") + " |\n";
+    // Headers (using first row as header)
+    table += "| " + tableData[0].map(h => h || "Header").join(" | ") + " |\n";
+    // Separator
+    table += "| " + Array(tableConfig.cols).fill("---").join(" | ") + " |\n";
+    // Data Rows
+    for (let i = 1; i < tableData.length; i++) {
+      table += "| " + tableData[i].map(d => d || "").join(" | ") + " |\n";
     }
     table += "\n";
 

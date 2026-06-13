@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ChapterEdit({ chapter, onSave, onCancel }) {
   const [content, setContent] = useState(chapter.content || '');
@@ -8,13 +8,15 @@ export default function ChapterEdit({ chapter, onSave, onCancel }) {
   const [tableConfig, setTablePromptConfig] = useState({ rows: 3, cols: 2 });
   const [tableData, setTableData] = useState([]);
 
-  // Initialize/Resize table data grid
+  // Initialize/Resize table data grid ONLY when modal opens or dimensions change
   useEffect(() => {
     if (showTablePrompt) {
-      const newData = Array(tableConfig.rows).fill(0).map((_, r) => 
-        Array(tableConfig.cols).fill(0).map((_, c) => tableData[r]?.[c] || "")
-      );
-      setTableData(newData);
+      setTableData(prev => {
+        const newData = Array(tableConfig.rows).fill(0).map((_, r) => 
+          Array(tableConfig.cols).fill(0).map((_, c) => prev[r]?.[c] || "")
+        );
+        return newData;
+      });
     }
   }, [tableConfig.rows, tableConfig.cols, showTablePrompt]);
 
