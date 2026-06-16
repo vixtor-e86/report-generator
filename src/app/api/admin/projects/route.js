@@ -37,12 +37,12 @@ export async function GET(request) {
     ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     // Calculate detailed counts for each tier
-    const tiers = allProjects.map(p => p.tier || 'free');
+    // Use raw DB counts for accuracy where possible
     const counts = {
-      all: allProjects.length,
-      free: tiers.filter(t => t === 'free').length,
-      unlocked: tiers.filter(t => t === 'unlocked').length,
-      standard: (stdCount || 0), // Use raw DB count for accuracy
+      all: (freeCount || 0) + (stdCount || 0) + (premCount || 0),
+      free: (freeCount || 0),
+      unlocked: (freeProjects || []).filter(p => p.tier === 'unlocked').length, // This is an estimate based on current page if not indexed
+      standard: (stdCount || 0),
       premium: (premCount || 0)
     };
 
@@ -52,32 +52,45 @@ export async function GET(request) {
       const userIds = [...new Set(enrichedProjects.map(p => p.user_id).filter(Boolean))];
       
       if (userIds.length > 0) {
-        // Fetch Profiles
-        const { data: usersData } = await supabaseAdmin
-          .from('user_profiles')
-          .select('id, username, email')
-          .in('id', userIds);
-          
-        // Fetch Auth Users for emails (safety)
-        const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers({
-          perPage: 1000
-        });
+        try {
+          // Fetch Profiles
+          const { data: usersData, error: profileError } = await supabaseAdmin
+            .from('user_profiles')
+            .select('id, username, email')
+            .in('id', userIds);
+            
+          if (profileError) console.error('Profile enrichment error:', profileError);
 
-        enrichedProjects = enrichedProjects.map(project => {
-          const profile = usersData?.find(u => u.id === project.user_id);
-          const authUser = authUsers?.find(u => u.id === project.user_id);
+          // Fetch Auth Users for emails (safety) - Handle potential failure/rate limit
+          let authUsers = [];
+          try {
+            const { data: authData } = await supabaseAdmin.auth.admin.listUsers({
+              perPage: 1000
+            });
+            authUsers = authData?.users || [];
+          } catch (authErr) {
+            console.error('Auth users list error (skipping email safety):', authErr);
+          }
 
-          return {
-            ...project,
-            user_profiles: {
-              username: profile?.username || 'Student',
-              email: authUser?.email || profile?.email || 'N/A'
-            },
-            // Ensure numeric values
-            tokens_used: project.tokens_used || 0,
-            humanizer_words_used: project.humanizer_words_used || 0
-          };
-        });
+          enrichedProjects = enrichedProjects.map(project => {
+            const profile = usersData?.find(u => u.id === project.user_id);
+            const authUser = authUsers?.find(u => u.id === project.user_id);
+
+            return {
+              ...project,
+              user_profiles: {
+                username: profile?.username || 'Student',
+                email: authUser?.email || profile?.email || 'N/A'
+              },
+              // Ensure numeric values
+              tokens_used: project.tokens_used || 0,
+              humanizer_words_used: project.humanizer_words_used || 0
+            };
+          });
+        } catch (enrichError) {
+          console.error('General enrichment error:', enrichError);
+          // Return non-enriched projects if enrichment fails completely
+        }
       }
     }
 

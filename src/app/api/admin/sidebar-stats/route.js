@@ -11,11 +11,11 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
 
-    // 2. Pending Referral Payouts
+    // 2. Pending Referral Payouts (They use 'processing' as default)
     const { count: pendingReferrals } = await supabaseAdmin
       .from('referral_payouts')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
+      .eq('status', 'processing');
 
     // 3. Pending Seller Applications
     const { count: pendingSellers } = await supabaseAdmin
@@ -29,11 +29,18 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
 
+    // 5. Pending Marketplace Items (Blueprints)
+    const { count: pendingItems } = await supabaseAdmin
+      .from('marketplace_items')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+
     return NextResponse.json({
       payments: pendingPayments || 0,
       referrals: pendingReferrals || 0,
       sellers: pendingSellers || 0,
-      marketPayouts: pendingMarketPayouts || 0
+      marketPayouts: pendingMarketPayouts || 0,
+      blueprints: pendingItems || 0
     });
 
   } catch (error) {

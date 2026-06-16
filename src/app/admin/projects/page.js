@@ -21,7 +21,9 @@ export default function AdminProjectsPage() {
       if (limit > 50) setLoadingMore(true);
       else setLoading(true);
 
-      const response = await fetch(`/api/admin/projects?limit=${limit}`);
+      const response = await fetch(`/api/admin/projects?limit=${limit}`, {
+        cache: 'no-store'
+      });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       
@@ -48,10 +50,11 @@ export default function AdminProjectsPage() {
 
   const filteredProjects = projects.filter(project => {
     const matchesFilter = filter === 'all' || (project.tier || 'free') === filter;
+    const s = searchTerm.toLowerCase();
     const matchesSearch = 
-      project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.user_profiles?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.user_profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      (project.title || '').toLowerCase().includes(s) ||
+      (project.user_profiles?.username || '').toLowerCase().includes(s) ||
+      (project.user_profiles?.email || '').toLowerCase().includes(s);
     return matchesFilter && matchesSearch;
   });
 
