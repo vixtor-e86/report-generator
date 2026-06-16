@@ -14,8 +14,8 @@ export async function POST(request) {
       );
     }
 
-    // Fixed amount validation (5k, 10k, 20k, 50k)
-    const allowedAmounts = [5000, 10000, 20000, 50000];
+    // Fixed amount validation (2k, 5k, 10k, 20k, 50k)
+    const allowedAmounts = [2000, 5000, 10000, 20000, 50000];
     if (!allowedAmounts.includes(Number(amount))) {
       return NextResponse.json(
         { error: 'Invalid funding amount' },

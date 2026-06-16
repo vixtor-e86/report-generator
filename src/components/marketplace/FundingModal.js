@@ -11,13 +11,14 @@ import { formatCurrency } from '@/lib/utils';
 
 export default function FundingModal({ open, onOpenChange }) {
   const { user } = useUser();
-  const [fundingAmount, setFundingAmount] = useState(5000);
+  const [fundingAmount, setFundingAmount] = useState(2000);
   const [isFunding, setIsFunding] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [isSubmittingManual, setIsSubmittingManual] = useState(false);
   const [manualSubmitted, setManualSubmitted] = useState(false);
 
   const fundingOptions = [
+    { label: 'Lite', amount: 2000, description: 'Basic credits for small tasks' },
     { label: 'Starter', amount: 5000, description: 'Perfect for small tools' },
     { label: 'Essential', amount: 10000, description: 'Best for standard projects' },
     { label: 'Professional', amount: 20000, description: 'Bulk research & high-tier tools' },
