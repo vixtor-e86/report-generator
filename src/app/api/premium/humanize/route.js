@@ -95,58 +95,91 @@ export async function POST(request) {
       return NextResponse.json({ error: `Limit reached. ${limit - currentUsed} words remaining.` }, { status: 403 });
     }
 
-    // --- 3. PARALLEL HUMANIZATION WITH STEALTHGPT ---
+    // --- 3. CONCURRENCY LIMITER & HUMANIZATION WITH STEALTHGPT ---
+    class ConcurrencyLimiter {
+      constructor(limit) {
+        this.limit = limit;
+        this.active = 0;
+        this.queue = [];
+      }
+
+      async run(fn) {
+        if (this.active >= this.limit) {
+          await new Promise(resolve => this.queue.push(resolve));
+        }
+        this.active++;
+        try {
+          return await fn();
+        } finally {
+          this.active--;
+          if (this.queue.length > 0) {
+            const next = this.queue.shift();
+            next();
+          }
+        }
+      }
+    }
+
+    const limiter = new ConcurrencyLimiter(3);
+
     const humanizeBlock = async (text) => {
       if (text.trim().length < 5) return text;
 
+      const response = await fetch("https://stealthgpt.ai/api/stealthify", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "api-token": apiKey
+        },
+        body: JSON.stringify({
+          prompt: text,
+          rephrase: true,
+          tone: "College",
+          mode: "Medium",
+          qualityMode: "quality"
+        }),
+      });
+
+      let data;
+      const responseText = await response.text();
       try {
-        const response = await fetch("https://stealthgpt.ai/api/stealthify", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "api-token": apiKey
-          },
-          body: JSON.stringify({
-            prompt: text,
-            rephrase: true,
-            tone: "College",
-            mode: "Medium",
-            qualityMode: "quality"
-          }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          console.error("StealthGPT Error:", data);
-          return text;
-        }
-
-        let result = data.result || text;
-        // Clean up any double quotes the AI might wrap the response in
-        if (result.startsWith('"') && result.endsWith('"')) {
-            result = result.substring(1, result.length - 1);
-        }
-        return result.replace(/\$/g, '₦');
-
+        data = JSON.parse(responseText);
       } catch (e) {
-        console.error("StealthGPT Fetch Error:", e);
-        return text;
+        data = { message: `Engine returned non-JSON response: ${response.statusText}` };
       }
+
+      if (!response.ok) {
+        console.error("StealthGPT Error:", data);
+        throw new Error(data.message || data.error || `Humanizer failure: ${response.statusText || 'Engine returned status ' + response.status}`);
+      }
+
+      let result = data.result;
+      if (!result) {
+        console.error("StealthGPT response missing result:", data);
+        throw new Error("Humanization engine returned empty result.");
+      }
+
+      // Clean up any double quotes the AI might wrap the response in
+      if (result.startsWith('"') && result.endsWith('"')) {
+          result = result.substring(1, result.length - 1);
+      }
+      return result.replace(/\$/g, '₦');
     };
+
+    const humanizeBlockLimited = (text) => limiter.run(() => humanizeBlock(text));
 
     const processedBlocks = await Promise.all(
       blocks.map(async (block) => {
         if (block.type === 'body') {
-          // Split by paragraphs to preserve newlines
-          const paragraphs = block.content.split('\n');
+          // Split by paragraphs (double newlines / empty lines) to reduce API calls and preserve flow
+          const paragraphs = block.content.split(/\n\s*\n/);
           const humanizedParagraphs = await Promise.all(
             paragraphs.map(async (p) => {
                 if (!p.trim()) return ""; // Keep empty lines
-                return await humanizeBlock(p);
+                return await humanizeBlockLimited(p);
             })
           );
-          return humanizedParagraphs.join('\n');
+          return humanizedParagraphs.join('\n\n');
         }
         
         if (block.type === 'list_item') {
@@ -154,7 +187,7 @@ export async function POST(request) {
           if (bulletMatch) {
             const bullet = bulletMatch[1];
             const textPart = bulletMatch[2];
-            const humanizedText = await humanizeBlock(textPart);
+            const humanizedText = await humanizeBlockLimited(textPart);
             return bullet + humanizedText;
           }
         }
@@ -162,6 +195,7 @@ export async function POST(request) {
         return block.content;
       })
     );
+
 
     // --- 4. REASSEMBLE ---
     // Use double newline for headers to ensure they are well spaced
