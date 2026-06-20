@@ -7,7 +7,8 @@ function getReferenceInstructions(referenceStyle, faculty, chapterNumber, isLast
   const styleInstructions = {
     'apa': { inText: '(Author, Year)', format: 'Author, A. B. (Year). Title. Journal/Publisher.' },
     'ieee': { inText: '[1]', format: '[1] A. B. Author, "Title," Journal, vol. X, no. Y, pp. Z-Z, Year.' },
-    'harvard': { inText: '(Author Year)', format: 'Author, A.B. (Year) Title. City: Publisher.' }
+    'harvard': { inText: '(Author Year)', format: 'Author, A.B. (Year) Title. City: Publisher.' },
+    'mla': { inText: '(Author Page)', format: "Author's Last Name, First Name. \"Title of Work.\" Publisher, Year, Pages." }
   };
 
   const style = styleInstructions[referenceStyle] || styleInstructions['apa'];

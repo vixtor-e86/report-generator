@@ -128,6 +128,8 @@ export async function POST(request) {
       ? `### CITATION STYLE: STRICT IEEE\n1. IN-TEXT: [1], [2].\n2. BIBLIOGRAPHY: Numerical order.`
       : referenceStyle.toUpperCase() === 'HARVARD'
       ? `### CITATION STYLE: STRICT HARVARD\n1. IN-TEXT: (Author Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A.A. (Year) Title. City: Publisher.`
+      : referenceStyle.toUpperCase() === 'MLA'
+      ? `### CITATION STYLE: STRICT MLA\n1. IN-TEXT: (Author Page) e.g., (Okonkwo 45).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author's Last Name, First Name. "Title of Article." Journal or Book, Publisher, Year, Pages.`
       : `### CITATION STYLE: STRICT APA\n1. IN-TEXT: (Author, Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
 
     // --- 4. Enhanced Reference Sourcing ---

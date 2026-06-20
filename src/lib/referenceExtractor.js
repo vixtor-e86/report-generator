@@ -18,6 +18,16 @@ export function extractInTextCitations(content, referenceStyle) {
       const year = match[2];
       citations.add(`${author}${year}`);
     }
+  } else if (referenceStyle === 'mla') {
+    // Match (Author Page) - e.g. (Okonkwo 45) or (Okonkwo and Bello 12)
+    const pattern = /\(([A-Z][a-z]+(?:\s+(?:and|&)\s+[A-Z][a-z]+)?)[,\s]+(\d+)\)/g;
+    let match;
+    
+    while ((match = pattern.exec(content)) !== null) {
+      const author = match[1].replace(/\s+and\s+|&/, '').split(/\s+/)[0]; // First author only
+      const page = match[2];
+      citations.add(`${author}${page}`);
+    }
   } else if (referenceStyle === 'ieee') {
     // Match [1], [2], [3], etc.
     const pattern = /\[(\d+)\]/g;
@@ -72,7 +82,7 @@ export function extractFullReferences(content, referenceStyle, chapterNumber) {
       }
     });
   } else {
-    // APA/Harvard format: Author, A. B. (Year). Title...
+    // APA/Harvard/MLA format: Author, A. B. (Year). Title...
     lines.forEach((line) => {
       line = line.trim();
       if (!line || line.length < 20) return; // Skip empty or too short
@@ -89,7 +99,13 @@ export function extractFullReferences(content, referenceStyle, chapterNumber) {
         
         // Improve key to avoid collisions: Author + Year + first 15 chars of title
         // Extract title (text after the year/parenthesis)
-        const titlePart = line.split(yearMatch[0])[1] || "";
+        let titlePart = "";
+        if (referenceStyle === 'mla') {
+          const parts = line.split('.');
+          titlePart = parts[1] || parts[0];
+        } else {
+          titlePart = line.split(yearMatch[0])[1] || "";
+        }
         const titleSlug = titlePart.replace(/[^a-zA-Z0-9]/g, '').substring(0, 15).toLowerCase();
         const key = `${author}${year}${titleSlug}`;
         

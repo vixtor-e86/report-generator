@@ -178,6 +178,16 @@ function createFreePrompt(data) {
        - In-text: Use numbers in square brackets, e.g., "The algorithm uses BFS [1]." NOT (Author, Year).
        - References List: Numbered list [1], [2] ordered by appearance in the text.
        - Format: [1] A. B. Author, "Title," Publisher, Year.`
+    : referenceStyle.toLowerCase() === 'harvard'
+    ? `CITATION STYLE (HARVARD - STRICTLY ENFORCED):
+       - In-text: Use author-year format, e.g., "The algorithm uses BFS (Okonkwo 2023)." NOT [1].
+       - References List: Alphabetical order by author surname.
+       - Format: Author, A.B. (Year) Title. City: Publisher.`
+    : referenceStyle.toLowerCase() === 'mla'
+    ? `CITATION STYLE (MLA - STRICTLY ENFORCED):
+       - In-text: Use author-page format, e.g., "The algorithm uses BFS (Okonkwo 45)." NOT [1] or (Okonkwo, 2023).
+       - References List: Alphabetical order by author surname.
+       - Format: Author's Last Name, First Name. "Title of Article." Journal or Book, Publisher, Year, Pages.`
     : `CITATION STYLE (APA - STRICTLY ENFORCED):
        - In-text: Use author-date format, e.g., "The algorithm uses BFS (Okonkwo, 2023)." NOT [1].
        - References List: Alphabetical order by author surname.

@@ -52,7 +52,7 @@ function SortableItem({ id, file }) {
   );
 }
 
-export default function ExportModal({ isOpen, onClose, type, projectDocs, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification, projectData }) {
+export default function ExportModal({ isOpen, onClose, type, projectDocs, chapters, projectId, userId, setIsGlobalLoading, setGlobalLoadingText, onSaved, showNotification, projectData, referenceStyle }) {
   const [orderedDocs, setOrderedDocs] = useState([]);
   const [options, setOptions] = useState({ 
     includeAbstract: true, 
@@ -139,7 +139,10 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
           userId, 
           type, 
           orderedDocIds: isDocx ? [] : orderedDocs.map(d => d.id), 
-          options 
+          options: {
+            ...options,
+            referenceStyle: referenceStyle || 'APA'
+          } 
         })
       });
       const data = await response.json();

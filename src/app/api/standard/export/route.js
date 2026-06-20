@@ -172,15 +172,17 @@ export async function POST(request) {
       });
 
       if (rawRefsList.length > 0) {
+        const styleName = (project.reference_style || 'apa').toUpperCase();
         const refPrompt = `
           You are an expert academic editor. I will provide you with a list of raw references collected from various chapters of a technical report.
           Your task:
           1. Remove any exact or near-duplicate references.
-          2. Structure them into a professional, consistent academic format (APA/IEEE style).
-          3. Number them sequentially (1, 2, 3...).
-          4. Sort them alphabetically by the first author's last name or by title if no author is present.
-          5. Ensure each reference is complete and properly formatted.
-          6. Return ONLY the final numbered list of references, with no other text, commentary, or headers.
+          2. Structure them into a professional, consistent academic format matching the ${styleName} style guide.
+          3. Format and sort them appropriately:
+             - If ${styleName} is IEEE: Format as IEEE bibliography style, sort by appearance/usage order in text, and number them sequentially [1], [2], [3]...
+             - If ${styleName} is APA, HARVARD, or MLA: Format them according to the ${styleName} style guide, and sort them alphabetically by the first author's last name. Number them sequentially (1, 2, 3...) for presentation.
+          4. Ensure each reference is complete and properly formatted.
+          5. Return ONLY the final numbered list of references, with no other text, commentary, or headers.
 
           Raw References:
           ${rawRefsList.join('\n')}

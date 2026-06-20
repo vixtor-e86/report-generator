@@ -208,7 +208,7 @@ function drawPdfCertification(pdf, metadata) {
 }
 
 // --- NEW: Reference Extractor Logic ---
-function extractMasterReferences(chapters, dbReferences) {
+function extractMasterReferences(chapters, dbReferences, referenceStyle = 'APA') {
   const masterMap = new Map(); // Key: Normalized title, Value: Original formatted text
   
   const normalize = (text) => {
@@ -219,7 +219,17 @@ function extractMasterReferences(chapters, dbReferences) {
   if (dbReferences) {
     dbReferences.forEach(r => {
       const auths = Array.isArray(r.authors) ? r.authors.join(', ') : (r.authors || 'Unknown');
-      const refText = `${auths} (${r.year}). "${r.title}". ${r.venue || 'Research Journal'}.`;
+      let refText = "";
+      const styleUpper = (referenceStyle || 'APA').toUpperCase();
+      if (styleUpper === 'IEEE') {
+        refText = `${auths}, "${r.title}," ${r.venue || 'Research Journal'}, ${r.year}.`;
+      } else if (styleUpper === 'HARVARD') {
+        refText = `${auths} (${r.year}) ${r.title}. ${r.venue || 'Research Journal'}.`;
+      } else if (styleUpper === 'MLA') {
+        refText = `${auths}. "${r.title}." ${r.venue || 'Research Journal'}, ${r.year}.`;
+      } else {
+        refText = `${auths} (${r.year}). "${r.title}". ${r.venue || 'Research Journal'}.`;
+      }
       const key = normalize(r.title);
       if (key && !masterMap.has(key)) masterMap.set(key, refText.trim());
     });
@@ -251,12 +261,14 @@ export async function POST(request) {
     const { projectId, userId, type, orderedDocIds, options } = await request.json();
     if (!projectId || !userId) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
 
+    const referenceStyle = options?.referenceStyle || 'APA';
+
     const { data: project } = await supabaseAdmin.from('premium_projects').select('*, custom_templates(*)').eq('id', projectId).single();
     const { data: chapters } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).order('chapter_number', { ascending: true });
     
     const { data: dbReferences } = await supabaseAdmin.from('premium_research_papers').select('*').eq('project_id', projectId).order('created_at', { ascending: true });
 
-    const finalMasterReferences = extractMasterReferences(chapters, dbReferences);
+    const finalMasterReferences = extractMasterReferences(chapters, dbReferences, referenceStyle);
     const { data: assets } = await supabaseAdmin.from('premium_assets').select('*').eq('project_id', projectId);
 
     const imageMap = {};

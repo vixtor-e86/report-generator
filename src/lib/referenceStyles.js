@@ -50,6 +50,22 @@ export const REFERENCE_STYLES = {
     }
   },
 
+  mla: {
+    id: 'mla',
+    name: 'MLA Style',
+    fullName: 'Modern Language Association',
+    icon: '📚',
+    bestFor: 'Humanities, Literature, Art, Cultural Studies',
+    description: 'Most common in humanities and liberal arts',
+    inTextFormat: '(Author Page)',
+    referenceFormat: "Author's Last Name, First Name. \"Title of Work.\" Publisher/Journal, Year, Pages.",
+    examples: {
+      book: 'Adeyemi, Temitope A. Modern Electronic Systems Design. Tech Publishers, 2021.',
+      journal: 'Okafor, Chukwuma N., and Sani M. Bello. "Microcontroller Applications in Embedded Systems." Journal of Nigerian Engineering, vol. 15, no. 3, 2022, pp. 45-62.',
+      inText: 'According to Adeyemi, modern electronic design... (45) or Studies show microcontroller efficiency (Okafor and Bello 52).'
+    }
+  },
+
   none: {
     id: 'none',
     name: 'No References',
@@ -83,6 +99,7 @@ export function getReferenceStyleOptions() {
     { value: 'apa', label: 'APA Style (Social Sciences, Education)', icon: '📘' },
     { value: 'ieee', label: 'IEEE Style (Engineering, IT)', icon: '⚡' },
     { value: 'harvard', label: 'Harvard Style (Sciences, Humanities)', icon: '🎓' },
+    { value: 'mla', label: 'MLA Style (Humanities, Literature)', icon: '📚' },
     { value: 'none', label: 'No References (Add manually)', icon: '✏️' }
   ];
 }
