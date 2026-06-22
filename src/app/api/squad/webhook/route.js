@@ -47,116 +47,139 @@ export async function POST(request) {
 
       console.log('Processing Webhook Transaction:', tx_ref, 'Status:', status);
 
-      // 1. Find transaction in our database
-      const { data: existingTx, error: fetchError } = await supabaseAdmin
-        .from('payment_transactions')
-        .select('*')
-        .eq('paystack_reference', tx_ref)
-        .single();
+      // ✅ FLOW 1: Handle Wallet Funding Webhook (reference contains W3WL_FUND_)
+      if (tx_ref && tx_ref.includes('W3WL_FUND_')) {
+        console.log('Processing Wallet Deposit Webhook for ref:', tx_ref);
 
-      if (fetchError) {
-        console.error('Error fetching transaction in webhook:', fetchError);
-      }
+        // Find transaction record in wallet_transactions
+        const { data: walletTx, error: walletFetchError } = await supabaseAdmin
+          .from('wallet_transactions')
+          .select('*')
+          .eq('reference', tx_ref)
+          .single();
 
-      if (existingTx && existingTx.status !== 'paid') {
-        console.log('Updating transaction status to paid via webhook...');
-        
-        const { error: updateError } = await supabaseAdmin
-          .from('payment_transactions')
-          .update({
-            status: 'paid',
-            paid_at: new Date().toISOString(),
-            verified_at: new Date().toISOString(),
-            verification_response: payload
-          })
-          .eq('id', existingTx.id);
+        if (walletFetchError || !walletTx) {
+          console.error('Wallet transaction lookup failed in webhook for ref:', tx_ref, walletFetchError);
+        } else if (walletTx.status !== 'completed') {
+          console.log('Updating wallet transaction status to completed via webhook...');
 
-        if (updateError) {
-          console.error('Error updating transaction in webhook:', updateError);
-        }
-
-        // ✅ Handle Referral Commissions
-        try {
-          await supabaseAdmin.rpc('process_referral_purchase', {
-            p_referred_id: existingTx.user_id,
-            p_amount: existingTx.amount,
-            p_transaction_id: existingTx.id
-          });
-        } catch (refError) {
-          console.error('Referral processing error in webhook:', refError);
-        }
-
-        // ✅ Handle Wallet Funding
-        if (tx_ref && tx_ref.includes('W3WL_FUND_')) {
-          console.log('Processing Wallet Deposit in webhook for ref:', tx_ref);
-          
-          const { data: walletTx, error: wTxError } = await supabaseAdmin
+          // Update status to completed
+          await supabaseAdmin
             .from('wallet_transactions')
             .update({ status: 'completed' })
-            .eq('reference', tx_ref)
-            .select()
+            .eq('id', walletTx.id);
+
+          // Update wallet balance
+          const { data: wallet } = await supabaseAdmin
+            .from('marketplace_wallets')
+            .select('balance')
+            .eq('user_id', walletTx.user_id)
             .single();
 
-          if (wTxError) {
-            console.error('Error updating wallet tx in webhook:', wTxError);
-          }
-
-          if (walletTx) {
-            const { data: wallet, error: wError } = await supabaseAdmin
+          if (wallet) {
+            const newBalance = wallet.balance + walletTx.amount;
+            await supabaseAdmin
               .from('marketplace_wallets')
-              .select('balance')
-              .eq('user_id', walletTx.user_id)
-              .single();
-
-            if (wallet) {
-              const newBalance = wallet.balance + walletTx.amount;
-              await supabaseAdmin
-                .from('marketplace_wallets')
-                .update({ 
-                  balance: newBalance,
-                  updated_at: new Date().toISOString()
-                })
-                .eq('user_id', walletTx.user_id);
-              console.log('Wallet balance updated successfully via webhook!');
-            }
-          }
-        }
-
-        // ✅ Handle Project Unlock
-        if (tx_ref && tx_ref.includes('W3WL_UNLOCK_')) {
-          console.log('Handling Project Unlock in webhook for ref:', tx_ref);
-          const parts = tx_ref.split('_');
-          const projectId = parts.find((p, i) => parts[i-1] === 'UNLOCK');
-          
-          if (projectId) {
-            console.log('Unlocking Project ID in webhook:', projectId);
-            const { error: unlockError } = await supabaseAdmin
-              .from('projects')
               .update({ 
-                is_unlocked: true,
-                tier: 'unlocked'
+                balance: newBalance,
+                updated_at: new Date().toISOString()
               })
-              .eq('id', projectId);
-
-            if (unlockError) {
-              console.error('Error unlocking project in webhook:', unlockError);
-            } else {
-              console.log('Project successfully unlocked via webhook!');
-              
-              // Link transaction to project record
-              await supabaseAdmin
-                .from('payment_transactions')
-                .update({ project_id: projectId })
-                .eq('id', existingTx.id);
-            }
-          } else {
-            console.error('Could not extract Project ID from reference in webhook');
+              .eq('user_id', walletTx.user_id);
+            console.log('Wallet balance updated successfully via webhook!');
           }
+        } else {
+          console.log('Wallet transaction already marked completed.');
         }
-      } else if (existingTx) {
-        console.log('Transaction already marked as paid.');
+
+        // Best effort: Update general payment_transactions table if it exists
+        try {
+          await supabaseAdmin
+            .from('payment_transactions')
+            .update({
+              status: 'paid',
+              paid_at: new Date().toISOString(),
+              verified_at: new Date().toISOString(),
+              verification_response: payload
+            })
+            .eq('paystack_reference', tx_ref);
+        } catch (err) {
+          // ignore
+        }
       } else {
-        console.error('No pending transaction found for reference in webhook:', tx_ref);
+        // ✅ FLOW 2: Handle Blueprint Subscription / Project Unlock
+        // 1. Find transaction in our database
+        const { data: existingTx, error: fetchError } = await supabaseAdmin
+          .from('payment_transactions')
+          .select('*')
+          .eq('paystack_reference', tx_ref)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching transaction in webhook:', fetchError);
+        }
+
+        if (existingTx && existingTx.status !== 'paid') {
+          console.log('Updating transaction status to paid via webhook...');
+          
+          const { error: updateError } = await supabaseAdmin
+            .from('payment_transactions')
+            .update({
+              status: 'paid',
+              paid_at: new Date().toISOString(),
+              verified_at: new Date().toISOString(),
+              verification_response: payload
+            })
+            .eq('id', existingTx.id);
+
+          if (updateError) {
+            console.error('Error updating transaction in webhook:', updateError);
+          }
+
+          // ✅ Handle Referral Commissions
+          try {
+            await supabaseAdmin.rpc('process_referral_purchase', {
+              p_referred_id: existingTx.user_id,
+              p_amount: existingTx.amount,
+              p_transaction_id: existingTx.id
+            });
+          } catch (refError) {
+            console.error('Referral processing error in webhook:', refError);
+          }
+
+          // ✅ Handle Project Unlock (if referencing standard checkouts)
+          if (tx_ref && tx_ref.includes('W3WL_UNLOCK_')) {
+            console.log('Handling Project Unlock in webhook for ref:', tx_ref);
+            const parts = tx_ref.split('_');
+            const projectId = parts.find((p, i) => parts[i-1] === 'UNLOCK');
+            
+            if (projectId) {
+              console.log('Unlocking Project ID in webhook:', projectId);
+              const { error: unlockError } = await supabaseAdmin
+                .from('projects')
+                .update({ 
+                  is_unlocked: true,
+                  tier: 'unlocked'
+                })
+                .eq('id', projectId);
+
+              if (unlockError) {
+                console.error('Error unlocking project in webhook:', unlockError);
+              } else {
+                console.log('Project successfully unlocked via webhook!');
+                
+                // Link transaction to project record
+                await supabaseAdmin
+                  .from('payment_transactions')
+                  .update({ project_id: projectId })
+                  .eq('id', existingTx.id);
+              }
+            }
+          }
+        } else if (existingTx) {
+          console.log('Transaction already marked as paid.');
+        } else {
+          console.error('No pending transaction found for reference in webhook:', tx_ref);
+        }
       }
     }
 

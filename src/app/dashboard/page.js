@@ -173,6 +173,7 @@ export default function Dashboard() {
   const [pendingPremiumPayment, setPendingPremiumPayment] = useState(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showManualPayment, setShowManualPayment] = useState(false);
+  const [paymentTier, setPaymentTier] = useState(null);
   // Navigation State
   const [activeTab, setActiveTab] = useState('projects'); // projects, market, tools, seller
   const { wallet, deductFunds, refreshWallet, setShowFundingModal } = useWallet();
@@ -506,13 +507,17 @@ export default function Dashboard() {
         'You have an unused Standard payment. Would you like to use it or pay for a new one?',
         'confirm',
         () => router.push('/template-select'),
-        () => setShowManualPayment(true),
+        () => {
+          setPaymentTier('standard');
+          setShowManualPayment(true);
+        },
         'Use Existing',
         'Pay for New'
       );
       return;
     }
 
+    setPaymentTier('standard');
     setShowManualPayment(true);
   };
 
@@ -528,13 +533,17 @@ export default function Dashboard() {
         'You have an unused Premium payment. Would you like to use it or pay for a new one?',
         'confirm',
         () => router.push('/premium/template-selection'),
-        () => setShowManualPayment(true),
+        () => {
+          setPaymentTier('premium');
+          setShowManualPayment(true);
+        },
         'Use Existing',
         'Pay for New'
       );
       return;
     }
 
+    setPaymentTier('premium');
     setShowManualPayment(true);
   };
 
@@ -1371,9 +1380,13 @@ export default function Dashboard() {
         />
         <ManualPaymentModal 
             isOpen={showManualPayment} 
-            onClose={() => setShowManualPayment(false)} 
+            onClose={() => {
+                setShowManualPayment(false);
+                setPaymentTier(null);
+            }} 
             userId={authUser?.id}
             userEmail={authUser?.email}
+            initialTier={paymentTier}
         />
       </div>
 
