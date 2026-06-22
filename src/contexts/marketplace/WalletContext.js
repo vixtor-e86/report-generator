@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import FundingModal from '@/components/marketplace/FundingModal';
+import { toast } from 'sonner';
 
 const WalletContext = createContext(undefined);
 
@@ -53,6 +54,39 @@ export function WalletProvider({ children }) {
   useEffect(() => {
     fetchWalletData();
   }, [fetchWalletData]);
+
+  // ✅ Auto-Verify wallet funding payment on redirect
+  useEffect(() => {
+    async function verifyUrlPayment() {
+      if (typeof window === 'undefined' || !user) return;
+      const params = new URLSearchParams(window.location.search);
+      const transactionRef = params.get('transaction_ref') || params.get('tx_ref');
+      
+      if (transactionRef && transactionRef.includes('W3WL_FUND_') && !transactionRef.includes('MANUAL')) {
+        try {
+          const verifyUrl = `/api/squad/verify?transaction_ref=${transactionRef}`;
+          const res = await fetch(verifyUrl);
+          const data = await res.json();
+          if (data.verified) {
+            toast.success("Wallet funded successfully!");
+            fetchWalletData();
+          } else {
+            toast.error(data.message || "Failed to verify wallet funding");
+          }
+        } catch (err) {
+          console.error("Error verifying payment on mount:", err);
+        } finally {
+          // Clean URL params
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('transaction_ref');
+          newUrl.searchParams.delete('tx_ref');
+          window.history.replaceState({}, '', newUrl);
+        }
+      }
+    }
+
+    verifyUrlPayment();
+  }, [user, fetchWalletData]);
 
   const deductFunds = useCallback(async (amount, description, metadata = {}) => {
     if (wallet.balance < amount) return false;

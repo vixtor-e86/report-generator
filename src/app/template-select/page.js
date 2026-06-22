@@ -84,10 +84,11 @@ function TemplateSelectContent() {
         return;
       }
 
-      // Check for Flutterwave or Paystack params
+      // Check for Flutterwave, Paystack, or Squad params
       const transactionId = searchParams.get('transaction_id');
       const txRef = searchParams.get('tx_ref');
       const paymentRef = searchParams.get('payment_ref'); // Keep for backward compatibility
+      const transactionRef = searchParams.get('transaction_ref'); // Squad reference
       const status = searchParams.get('status');
       const returnTo = searchParams.get('return_to');
 
@@ -97,15 +98,23 @@ function TemplateSelectContent() {
         return;
       }
 
-      if (transactionId || txRef || paymentRef) {
+      const hasSquad = !!transactionRef;
+      const hasFlw = !!(transactionId || txRef || paymentRef);
+
+      if (hasSquad || hasFlw) {
         // User came back from payment provider
         setVerifyingPayment(true);
         try {
           // Construct verification URL
-          let verifyUrl = '/api/flutterwave/verify?';
-          if (transactionId) verifyUrl += `transaction_id=${transactionId}`;
-          else if (txRef) verifyUrl += `tx_ref=${txRef}`;
-          else if (paymentRef) verifyUrl += `tx_ref=${paymentRef}`; // Fallback
+          let verifyUrl;
+          if (hasSquad) {
+            verifyUrl = `/api/squad/verify?transaction_ref=${transactionRef}`;
+          } else {
+            verifyUrl = '/api/flutterwave/verify?';
+            if (transactionId) verifyUrl += `transaction_id=${transactionId}`;
+            else if (txRef) verifyUrl += `tx_ref=${txRef}`;
+            else if (paymentRef) verifyUrl += `tx_ref=${paymentRef}`; // Fallback
+          }
 
           const response = await fetch(verifyUrl);
           const data = await response.json();
@@ -139,12 +148,18 @@ function TemplateSelectContent() {
             newUrl.searchParams.delete('status');
             newUrl.searchParams.delete('payment_ref');
             newUrl.searchParams.delete('return_to');
+            newUrl.searchParams.delete('transaction_ref');
             window.history.replaceState({}, '', newUrl);
           } else {
             // ✅ Verification failed or was cancelled
-            if (returnTo) {
-              router.push(`/project/${returnTo}`);
-              return;
+            if (returnTo || (hasSquad && transactionRef && transactionRef.includes('UNLOCK'))) {
+              // Attempt to recover project ID from Squad ref to redirect back
+              const refParts = (transactionRef || '').split('_');
+              const extractedProjId = returnTo || refParts[2];
+              if (extractedProjId) {
+                router.push(`/project/${extractedProjId}`);
+                return;
+              }
             }
             
             const errorMessage = data.message || data.error || 'Payment verification failed.';
