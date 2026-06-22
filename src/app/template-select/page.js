@@ -124,7 +124,13 @@ function TemplateSelectContent() {
             setPaymentVerified(true);
             setPendingPayment(data.transaction);
 
-            // ✅ NEW: Direct redirect based on tier
+            // ✅ Redirect directly if return_to is present (unlock project)
+            if (returnTo) {
+              router.push(`/project/${returnTo}`);
+              return;
+            }
+
+            // ✅ Direct redirect based on tier
             if (data.transaction.tier === 'premium') {
               router.push('/premium/template-selection');
               return;

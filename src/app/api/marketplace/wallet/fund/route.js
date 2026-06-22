@@ -41,8 +41,8 @@ export async function POST(request) {
     // Squad expects amount in Kobo (Naira * 100)
     const amountInKobo = Math.round(Number(amount) * 100);
 
-    // Set callback URL to return to marketplace dashboard wallet tab
-    const callback_url = `${process.env.NEXT_PUBLIC_BASE_URL}/marketplace/dashboard?tab=wallet&transaction_ref=${transaction_ref}`;
+    // Set callback URL to return to the main dashboard
+    const callback_url = `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?transaction_ref=${transaction_ref}`;
 
     // Initialize Squad payment
     const response = await fetch(`${baseUrl}/transaction/initiate`, {
