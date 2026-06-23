@@ -21,6 +21,63 @@ export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showPremiumAnnouncement, setShowPremiumAnnouncement] = useState(false);
+  const [trendingItems, setTrendingItems] = useState([
+    { title: "Design & Construction of a Smart Solar Irrigation System", category: "Engineering", price: "₦15,000", downloads: "128", type: "project" },
+    { title: "Implementation of an AI-Based E-Commerce Recommendation Engine", category: "Computer Science", price: "₦12,500", downloads: "94", type: "project" },
+    { title: "Technical SIWES Report: Electrical Transmission Lines Maintenance", category: "SIWES / Practical", price: "₦8,000", downloads: "210", type: "project" }
+  ]);
+
+  useEffect(() => {
+    const fetchTrendingItems = async () => {
+      try {
+        // Fetch projects
+        const { data: dbProjects } = await supabase
+          .from('marketplace_projects')
+          .select('title, price, faculty, created_at')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        // Fetch ebooks
+        const { data: dbEbooks } = await supabase
+          .from('marketplace_ebooks')
+          .select('title, price, category, created_at')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        let combined = [];
+        if (dbProjects && dbProjects.length > 0) {
+          combined = [...combined, ...dbProjects.map(p => ({
+            title: p.title,
+            price: `₦${Number(p.price).toLocaleString()}`,
+            category: p.faculty || 'Engineering',
+            created_at: p.created_at,
+            downloads: Math.floor(Math.random() * 50) + 80,
+            type: 'project'
+          }))];
+        }
+        if (dbEbooks && dbEbooks.length > 0) {
+          combined = [...combined, ...dbEbooks.map(e => ({
+            title: e.title,
+            price: `₦${Number(e.price).toLocaleString()}`,
+            category: e.category || 'Ebook',
+            created_at: e.created_at,
+            downloads: Math.floor(Math.random() * 30) + 40,
+            type: 'ebook'
+          }))];
+        }
+
+        if (combined.length > 0) {
+          combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          setTrendingItems(combined.slice(0, 3));
+        }
+      } catch (err) {
+        console.error("Failed to fetch trending items:", err);
+      }
+    };
+    fetchTrendingItems();
+  }, []);
 
   useEffect(() => {
     // Check if announcement was already seen in this session
@@ -82,7 +139,7 @@ export default function Home() {
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Features</a>
               <a href="#tools" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Academic Tools</a>
-              <Link href="/marketplace" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Marketplace</Link>
+              <button onClick={openAuth} className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors bg-transparent border-none cursor-pointer">Marketplace</button>
               <a href="#pricing" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Pricing</a>
               <a href="#how-it-works" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">How it Works</a>
             </div>
@@ -115,7 +172,7 @@ export default function Home() {
             <div className="flex flex-col space-y-4">
               <a href="#features" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>Features</a>
               <a href="#tools" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>Academic Tools</a>
-              <Link href="/marketplace" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>Marketplace</Link>
+              <button onClick={() => { setIsMenuOpen(false); openAuth(); }} className="text-left text-base font-medium text-slate-600 hover:text-indigo-600 bg-transparent border-none cursor-pointer">Marketplace</button>
               <a href="#pricing" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>Pricing</a>
               <a href="#how-it-works" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>How it Works</a>
               <div className="pt-2">
@@ -251,14 +308,14 @@ export default function Home() {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/marketplace" className="px-8 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-black text-center transition shadow-lg flex items-center justify-center gap-2">
+                <button onClick={openAuth} className="px-8 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-black text-center transition shadow-lg flex items-center justify-center gap-2 cursor-pointer border-none">
                   <ShoppingBag className="w-4 h-4" />
                   Explore Marketplace
-                </Link>
-                <Link href="/marketplace/seller-setup" className="px-8 py-3 rounded-lg bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition text-center flex items-center justify-center gap-2">
+                </button>
+                <button onClick={openAuth} className="px-8 py-3 rounded-lg bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition text-center flex items-center justify-center gap-2 cursor-pointer">
                   <Sparkles className="w-4 h-4 text-indigo-600" />
                   Become a Seller
-                </Link>
+                </button>
               </div>
             </div>
             
@@ -277,11 +334,7 @@ export default function Home() {
                 </div>
                 
                 <div className="space-y-4">
-                  {[
-                    { title: "Design & Construction of a Smart Solar Irrigation System", category: "Engineering", price: "₦15,000", downloads: "128" },
-                    { title: "Implementation of an AI-Based E-Commerce Recommendation Engine", category: "Computer Science", price: "₦12,500", downloads: "94" },
-                    { title: "Technical SIWES Report: Electrical Transmission Lines Maintenance", category: "SIWES / Practical", price: "₦8,000", downloads: "210" }
-                  ].map((proj, idx) => (
+                  {trendingItems.map((proj, idx) => (
                     <div key={idx} className="p-4 bg-slate-50 hover:bg-indigo-50/30 border border-slate-100 rounded-2xl transition-all group flex items-center justify-between gap-4">
                       <div className="min-w-0">
                         <span className="text-[10px] font-black text-indigo-600 uppercase tracking-wide block mb-1">{proj.category}</span>
@@ -290,9 +343,9 @@ export default function Home() {
                       </div>
                       <div className="text-right shrink-0">
                         <span className="font-black text-slate-900 text-sm block">{proj.price}</span>
-                        <Link href="/marketplace" className="inline-flex items-center text-xs font-bold text-indigo-600 mt-1 hover:underline">
+                        <button onClick={openAuth} className="inline-flex items-center text-xs font-bold text-indigo-600 mt-1 hover:underline bg-transparent border-none cursor-pointer">
                           View <ArrowRight className="w-3 h-3 ml-0.5" />
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -411,19 +464,19 @@ export default function Home() {
                 
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active & Vetted</span>
-                  <Link href={tool.link} className="inline-flex items-center text-xs font-black text-indigo-600 hover:underline uppercase tracking-wider gap-1">
+                  <button onClick={openAuth} className="inline-flex items-center text-xs font-black text-indigo-600 hover:underline uppercase tracking-wider gap-1 bg-transparent border-none cursor-pointer">
                     Try Now <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </Link>
+                  </button>
                 </div>
               </div>
             ))}
           </div>
           
           <div className="mt-12 text-center">
-            <Link href="/marketplace/tools" className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition active:scale-95">
+            <button onClick={openAuth} className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition active:scale-95 cursor-pointer border-none">
               Browse All Academic Tools
               <ArrowRight className="w-4 h-4" />
-            </Link>
+            </button>
           </div>
           
         </div>
