@@ -36,7 +36,7 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Generation failed');
       if (activeTool === 'diagram') {
-        const encodedCode = btoa(data.code);
+        const encodedCode = btoa(unescape(encodeURIComponent(data.code)));
         const imageUrl = `https://mermaid.ink/img/${encodedCode}`;
         setResult({ type: 'diagram', imageUrl, code: data.code });
       } else {

@@ -50,7 +50,7 @@ export default function VisualStudio({
         if (!response.ok) throw new Error(data.error || 'Generation failed');
         
         if (activeVisualTool === 'diagram') {
-            const encodedCode = btoa(data.code);
+            const encodedCode = btoa(unescape(encodeURIComponent(data.code)));
             const imageUrl = `https://mermaid.ink/img/${encodedCode}`;
             setVisualResult({ type: 'diagram', imageUrl, code: data.code });
         } else {
