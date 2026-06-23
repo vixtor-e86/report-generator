@@ -7,6 +7,11 @@ import FeedbackWidget from '@/components/FeedbackWidget';
 import { PRICING, PRICING_FORMATTED } from '@/lib/pricing';
 import { supabase } from '@/lib/supabase';
 import bgImage from './bg.jpg';
+import { 
+  ShoppingBag, Sparkles, BookOpen, Wrench, 
+  ArrowRight, BarChart3, Code2, Presentation,
+  Image as ImageIcon, UserCheck
+} from 'lucide-react';
 
 import { useRouter } from 'next/navigation';
 
@@ -76,6 +81,8 @@ export default function Home() {
             
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Features</a>
+              <a href="#tools" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Academic Tools</a>
+              <Link href="/marketplace" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Marketplace</Link>
               <a href="#pricing" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Pricing</a>
               <a href="#how-it-works" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">How it Works</a>
             </div>
@@ -107,6 +114,8 @@ export default function Home() {
           <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-xl p-4 animate-in slide-in-from-top-5">
             <div className="flex flex-col space-y-4">
               <a href="#features" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>Features</a>
+              <a href="#tools" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>Academic Tools</a>
+              <Link href="/marketplace" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>Marketplace</Link>
               <a href="#pricing" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>Pricing</a>
               <a href="#how-it-works" className="text-base font-medium text-slate-600 hover:text-indigo-600" onClick={() => setIsMenuOpen(false)}>How it Works</a>
               <div className="pt-2">
@@ -198,6 +207,103 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Marketplace Section */}
+      <section id="marketplace" className="py-20 bg-slate-50 overflow-hidden border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            
+            {/* Left Column: Copy & CTAs */}
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-xs font-semibold uppercase tracking-wider mb-6">
+                <ShoppingBag className="w-3.5 h-3.5" />
+                Academic Marketplace & Ebook Hub
+              </div>
+              
+              <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
+                Buy Premium Blueprints <br className="hidden md:block" />
+                or <span className="text-indigo-600">Monetize Your Research</span>
+              </h2>
+              
+              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+                Skip the trial and error. Access a growing repository of vetted, top-tier project blueprints, SIWES technical reports, and specialized academic ebooks. Written by top graduates, approved by institutions.
+              </p>
+
+              <div className="space-y-4 mb-10">
+                <div className="flex items-start gap-3">
+                  <div className="mt-1 w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900">Vetted Academic Content</h4>
+                    <p className="text-sm text-slate-500">Every project upload goes through plagiarism, structure, and technical checks before listing.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="mt-1 w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900">Monetize Your Hard Work</h4>
+                    <p className="text-sm text-slate-500">Turn your final year projects, seminars, and technical papers into a steady income stream.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/marketplace" className="px-8 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-black text-center transition shadow-lg flex items-center justify-center gap-2">
+                  <ShoppingBag className="w-4 h-4" />
+                  Explore Marketplace
+                </Link>
+                <Link href="/marketplace/seller-setup" className="px-8 py-3 rounded-lg bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition text-center flex items-center justify-center gap-2">
+                  <Sparkles className="w-4 h-4 text-indigo-600" />
+                  Become a Seller
+                </Link>
+              </div>
+            </div>
+            
+            {/* Right Column: Visual Preview Card */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-violet-500/10 rounded-[32px] blur-3xl -z-10"></div>
+              
+              <div className="bg-white border border-slate-200 rounded-[32px] p-8 shadow-xl">
+                <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
+                  <div className="flex gap-2">
+                    <span className="w-3 h-3 rounded-full bg-red-400"></span>
+                    <span className="w-3 h-3 rounded-full bg-amber-400"></span>
+                    <span className="w-3 h-3 rounded-full bg-emerald-400"></span>
+                  </div>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Trending Blueprints</span>
+                </div>
+                
+                <div className="space-y-4">
+                  {[
+                    { title: "Design & Construction of a Smart Solar Irrigation System", category: "Engineering", price: "₦15,000", downloads: "128" },
+                    { title: "Implementation of an AI-Based E-Commerce Recommendation Engine", category: "Computer Science", price: "₦12,500", downloads: "94" },
+                    { title: "Technical SIWES Report: Electrical Transmission Lines Maintenance", category: "SIWES / Practical", price: "₦8,000", downloads: "210" }
+                  ].map((proj, idx) => (
+                    <div key={idx} className="p-4 bg-slate-50 hover:bg-indigo-50/30 border border-slate-100 rounded-2xl transition-all group flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-wide block mb-1">{proj.category}</span>
+                        <h4 className="font-bold text-slate-900 text-sm truncate group-hover:text-indigo-600 transition-colors">{proj.title}</h4>
+                        <span className="text-[11px] text-slate-400 font-medium">{proj.downloads} students bought</span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="font-black text-slate-900 text-sm block">{proj.price}</span>
+                        <Link href="/marketplace" className="inline-flex items-center text-xs font-bold text-indigo-600 mt-1 hover:underline">
+                          View <ArrowRight className="w-3 h-3 ml-0.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      </section>
+
       {/* Features Grid */}
       <section id="features" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -225,6 +331,101 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Academic Power Tools Section */}
+      <section id="tools" className="py-24 bg-white border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-xs font-semibold uppercase tracking-wider mb-4">
+              <Wrench className="w-3.5 h-3.5" />
+              Academic Power Tools
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 uppercase tracking-tight">AI Academic Utilities</h2>
+            <p className="text-lg text-slate-600">
+              A comprehensive suite of specialized tools built to solve specific student and researcher bottlenecks, available on-demand.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                title: "Diagram & Image Studio",
+                desc: "Describe flowcharts, block diagrams, or technical illustrations in plain English and let AI draft them in seconds.",
+                icon: <ImageIcon className="w-6 h-6 text-indigo-600" />,
+                badge: "₦200 / use",
+                link: "/marketplace/tools/diagram-studio"
+              },
+              {
+                title: "AI Text Humanizer",
+                desc: "Rephrase AI-generated project chapters to flow with natural, academic-grade tone while bypassing institutional detector tools.",
+                icon: <UserCheck className="w-6 h-6 text-indigo-600" />,
+                badge: "₦1,000 / 1k words",
+                link: "/marketplace/tools/ai-humanizer"
+              },
+              {
+                title: "Data Analysis Engine",
+                desc: "Upload CSV or Excel data sheets to instantly run statistics, output charts, and generate detailed interpretations.",
+                icon: <BarChart3 className="w-6 h-6 text-indigo-600" />,
+                badge: "₦1,500 / use",
+                link: "/marketplace/tools/data-analysis"
+              },
+              {
+                title: "Code Explainer",
+                desc: "Paste programming scripts (up to 500 lines) to receive structural flow explanations and block-by-block logic breakdowns.",
+                icon: <Code2 className="w-6 h-6 text-indigo-600" />,
+                badge: "₦500 / use",
+                link: "/marketplace/tools/code-explainer"
+              },
+              {
+                title: "Slide Presentation Deck",
+                desc: "Turn your research proposal, report, or thesis draft document directly into fully styled PowerPoint presentation slides.",
+                icon: <Presentation className="w-6 h-6 text-indigo-600" />,
+                badge: "₦2,000 / use",
+                link: "/marketplace/tools/slide-generator"
+              },
+              {
+                title: "Citation & Reference Finder",
+                desc: "Scan the web for peer-reviewed academic papers matching your study and generate perfectly formatted references.",
+                icon: <BookOpen className="w-6 h-6 text-indigo-600" />,
+                badge: "FREE / Deep Search ₦200",
+                link: "/marketplace/tools/reference-finder"
+              }
+            ].map((tool, idx) => (
+              <div key={idx} className="group p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-2xl hover:border-indigo-100 hover:shadow-indigo-100/50 transition-all duration-300 flex flex-col justify-between h-full">
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:border-indigo-200 transition-all">
+                      {tool.icon}
+                    </div>
+                    <span className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-[10px] font-black text-indigo-600 uppercase tracking-wider">
+                      {tool.badge}
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-indigo-600 transition-colors">{tool.title}</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed mb-6">{tool.desc}</p>
+                </div>
+                
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active & Vetted</span>
+                  <Link href={tool.link} className="inline-flex items-center text-xs font-black text-indigo-600 hover:underline uppercase tracking-wider gap-1">
+                    Try Now <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-12 text-center">
+            <Link href="/marketplace/tools" className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition active:scale-95">
+              Browse All Academic Tools
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          
         </div>
       </section>
 
