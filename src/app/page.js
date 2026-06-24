@@ -212,12 +212,12 @@ export default function Home() {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 max-w-5xl mx-auto leading-tight animate-in fade-in slide-in-from-bottom-5 duration-700 delay-100" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-            Structure Academic Blueprints <br className="hidden md:block" />
-            <span className="text-indigo-600">In Minutes, Not Weeks</span>
+            Structure & Monetize <br className="hidden md:block" />
+            <span className="text-indigo-600">Research Blueprints</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-white mb-10 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
-            Elevate your project research. Generate comprehensive academic blueprints with accurate citations for Engineering, Sciences, Arts, and more.
+            Elevate your research. Generate detailed academic blueprints with accurate citations, and sell your approved reports and ebooks to a global student marketplace.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-300">
@@ -260,99 +260,6 @@ export default function Home() {
               <div className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Citation Accuracy</div>
               <div className="text-slate-500 text-sm mt-1">APA, IEEE, Harvard & more</div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Marketplace Section */}
-      <section id="marketplace" className="py-20 bg-slate-50 overflow-hidden border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            
-            {/* Left Column: Copy & CTAs */}
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-xs font-semibold uppercase tracking-wider mb-6">
-                <ShoppingBag className="w-3.5 h-3.5" />
-                Academic Marketplace & Ebook Hub
-              </div>
-              
-              <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
-                Buy Premium Blueprints <br className="hidden md:block" />
-                or <span className="text-indigo-600">Monetize Your Research</span>
-              </h2>
-              
-              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                Skip the trial and error. Access a growing repository of vetted, top-tier project blueprints, SIWES technical reports, and specialized academic ebooks. Written by top graduates, approved by institutions.
-              </p>
-
-              <div className="space-y-4 mb-10">
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900">Vetted Academic Content</h4>
-                    <p className="text-sm text-slate-500">Every project upload goes through plagiarism, structure, and technical checks before listing.</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900">Monetize Your Hard Work</h4>
-                    <p className="text-sm text-slate-500">Turn your final year projects, seminars, and technical papers into a steady income stream.</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button onClick={openAuth} className="px-8 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-black text-center transition shadow-lg flex items-center justify-center gap-2 cursor-pointer border-none">
-                  <ShoppingBag className="w-4 h-4" />
-                  Explore Marketplace
-                </button>
-                <button onClick={openAuth} className="px-8 py-3 rounded-lg bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition text-center flex items-center justify-center gap-2 cursor-pointer">
-                  <Sparkles className="w-4 h-4 text-indigo-600" />
-                  Become a Seller
-                </button>
-              </div>
-            </div>
-            
-            {/* Right Column: Visual Preview Card */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-violet-500/10 rounded-[32px] blur-3xl -z-10"></div>
-              
-              <div className="bg-white border border-slate-200 rounded-[32px] p-8 shadow-xl">
-                <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
-                  <div className="flex gap-2">
-                    <span className="w-3 h-3 rounded-full bg-red-400"></span>
-                    <span className="w-3 h-3 rounded-full bg-amber-400"></span>
-                    <span className="w-3 h-3 rounded-full bg-emerald-400"></span>
-                  </div>
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Trending Blueprints</span>
-                </div>
-                
-                <div className="space-y-4">
-                  {trendingItems.map((proj, idx) => (
-                    <div key={idx} className="p-4 bg-slate-50 hover:bg-indigo-50/30 border border-slate-100 rounded-2xl transition-all group flex items-center justify-between gap-4">
-                      <div className="min-w-0">
-                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-wide block mb-1">{proj.category}</span>
-                        <h4 className="font-bold text-slate-900 text-sm truncate group-hover:text-indigo-600 transition-colors">{proj.title}</h4>
-                        <span className="text-[11px] text-slate-400 font-medium">{proj.downloads} students bought</span>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className="font-black text-slate-900 text-sm block">{proj.price}</span>
-                        <button onClick={openAuth} className="inline-flex items-center text-xs font-bold text-indigo-600 mt-1 hover:underline bg-transparent border-none cursor-pointer">
-                          View <ArrowRight className="w-3 h-3 ml-0.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            
           </div>
         </div>
       </section>
@@ -447,7 +354,7 @@ export default function Home() {
                 link: "/marketplace/tools/reference-finder"
               }
             ].map((tool, idx) => (
-              <div key={idx} className="group p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-2xl hover:border-indigo-100 hover:shadow-indigo-100/50 transition-all duration-300 flex flex-col justify-between h-full">
+              <div key={idx} className="group p-6 sm:p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-2xl hover:border-indigo-100 hover:shadow-indigo-100/50 transition-all duration-300 flex flex-col justify-between h-full">
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <div className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:border-indigo-200 transition-all">
@@ -615,6 +522,99 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Marketplace Section (Vetted Blueprints & Ebooks) */}
+      <section id="marketplace" className="py-16 md:py-24 bg-slate-50 overflow-hidden border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            
+            {/* Left Column: Copy & CTAs */}
+            <div className="text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-xs font-semibold uppercase tracking-wider mb-6">
+                <ShoppingBag className="w-3.5 h-3.5" />
+                Academic Marketplace & Ebook Hub
+              </div>
+              
+              <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6 uppercase">
+                Monetize <span className="text-indigo-600">Research Blueprints</span> <br className="hidden md:block" />
+                & Academic Ebooks
+              </h2>
+              
+              <p className="text-lg text-slate-600 mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                Skip the trial and error. Access a growing repository of vetted, top-tier project blueprints, SIWES technical reports, and specialized academic ebooks. Written by top graduates, approved by institutions.
+              </p>
+
+              <div className="space-y-4 mb-10 text-left max-w-md mx-auto lg:mx-0">
+                <div className="flex items-start gap-3">
+                  <div className="mt-1 w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900">Vetted Academic Content</h4>
+                    <p className="text-sm text-slate-500">Every project upload goes through plagiarism, structure, and technical checks before listing.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="mt-1 w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900">Monetize Your Hard Work</h4>
+                    <p className="text-sm text-slate-500">Turn your final year projects, seminars, and technical papers into a steady income stream.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <button onClick={openAuth} className="px-8 py-4 rounded-xl bg-slate-900 text-white font-semibold hover:bg-black text-center transition shadow-lg flex items-center justify-center gap-2 cursor-pointer border-none text-sm uppercase tracking-wider">
+                  <ShoppingBag className="w-4 h-4" />
+                  Explore Marketplace
+                </button>
+                <button onClick={openAuth} className="px-8 py-4 rounded-xl bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition text-center flex items-center justify-center gap-2 cursor-pointer text-sm uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4 text-indigo-600" />
+                  Become a Seller
+                </button>
+              </div>
+            </div>
+            
+            {/* Right Column: Visual Preview Card */}
+            <div className="relative w-full max-w-lg mx-auto lg:max-w-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-violet-500/10 rounded-[32px] blur-3xl -z-10"></div>
+              
+              <div className="bg-white border border-slate-200 rounded-[32px] p-6 sm:p-8 shadow-xl">
+                <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
+                  <div className="flex gap-2">
+                    <span className="w-3 h-3 rounded-full bg-red-400"></span>
+                    <span className="w-3 h-3 rounded-full bg-amber-400"></span>
+                    <span className="w-3 h-3 rounded-full bg-emerald-400"></span>
+                  </div>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Trending Blueprints</span>
+                </div>
+                
+                <div className="space-y-4">
+                  {trendingItems.map((proj, idx) => (
+                    <div key={idx} className="p-4 bg-slate-50 hover:bg-indigo-50/30 border border-slate-100 rounded-2xl transition-all group flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-wide block mb-1">{proj.category}</span>
+                        <h4 className="font-bold text-slate-900 text-sm line-clamp-2 group-hover:text-indigo-600 transition-colors leading-snug">{proj.title}</h4>
+                        <span className="text-[11px] text-slate-400 font-medium block mt-1">{proj.downloads} students bought</span>
+                      </div>
+                      <div className="text-left sm:text-right shrink-0 flex sm:flex-col justify-between sm:justify-start items-center sm:items-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60">
+                        <span className="font-black text-slate-900 text-sm block">{proj.price}</span>
+                        <button onClick={openAuth} className="inline-flex items-center text-xs font-bold text-indigo-600 hover:underline bg-transparent border-none cursor-pointer mt-1">
+                          View <ArrowRight className="w-3 h-3 ml-0.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="py-24 bg-white relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
@@ -645,12 +645,6 @@ export default function Home() {
                 Empowering students with AI tools to structure their research efficiently and professionally.
               </p>
               <div className="space-y-4 text-xs">
-                <div className="flex items-start gap-3">
-                  <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                  <p className="leading-relaxed">
-                    NO.1, ALHASSAN EGBA STREET, ANGWAN CHAIRMAN, ADO, NASARAWA STATE, NIGERIA
-                  </p>
-                </div>
                 <div className="flex items-center gap-3">
                   <svg className="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                   <a href="mailto:w3writelab@gmail.com" className="hover:text-white transition-colors">w3writelab@gmail.com</a>
