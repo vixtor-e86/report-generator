@@ -109,9 +109,15 @@ export default function AIHumanizer({
         setWordBalance(finalBalanceToUse);
       }
 
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const response = await fetch('/api/marketplace/tools/humanize', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ content: input })
       });
       
@@ -125,14 +131,8 @@ export default function AIHumanizer({
 
       if (data.error) throw new Error(data.error);
       
-      // 2. Deduct words from balance
-      const updatedBalance = Math.max(0, finalBalanceToUse - wordCount);
-      
-      await supabase
-        .from('tool_word_balances')
-        .update({ balance: updatedBalance })
-        .eq('user_id', user.id)
-        .eq('tool_id', 'ai-humanizer');
+      // Balance is securely updated on backend, use the returned balance
+      const updatedBalance = data.newBalance !== undefined ? data.newBalance : Math.max(0, finalBalanceToUse - wordCount);
 
       setWordBalance(updatedBalance);
       setOutput(data.result);

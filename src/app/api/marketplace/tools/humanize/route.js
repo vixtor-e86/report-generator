@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(request) {
   try {
@@ -25,10 +26,37 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No content provided' }, { status: 400 });
     }
 
+    // --- AUTHENTICATION & CREDIT CHECK ---
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
+    }
+    const token = authHeader.split(' ')[1];
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
+    }
+
     // Word count check
     const words = content.trim().split(/\s+/).filter(w => w.length > 0);
-    if (words.length > 2200) {
+    const wordCount = words.length;
+    if (wordCount > 2200) {
       return NextResponse.json({ error: 'Maximum 2000 words per request allowed.' }, { status: 400 });
+    }
+
+    // Check balance
+    const { data: balanceData, error: balanceError } = await supabaseAdmin
+      .from('tool_word_balances')
+      .select('balance')
+      .eq('user_id', user.id)
+      .eq('tool_id', 'ai-humanizer')
+      .maybeSingle();
+
+    const currentBalance = balanceData?.balance || 0;
+    if (currentBalance < wordCount) {
+      return NextResponse.json({ 
+        error: `Insufficient credits. This request requires ${wordCount} words, but you only have ${currentBalance} credits.` 
+      }, { status: 403 });
     }
 
     // --- 1. SEQUENTIAL STRUCTURAL PARSING ---
@@ -203,9 +231,22 @@ export async function POST(request) {
 
     finalOutput = finalOutput.replace(/\n{3,}/g, '\n\n').trim();
 
+    // --- DEDUCT CREDITS ---
+    const newBalance = Math.max(0, currentBalance - wordCount);
+    const { error: updateError } = await supabaseAdmin
+      .from('tool_word_balances')
+      .update({ balance: newBalance, updated_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+      .eq('tool_id', 'ai-humanizer');
+
+    if (updateError) {
+      console.error('Failed to deduct credits:', updateError);
+    }
+
     return NextResponse.json({ 
       success: true, 
-      result: finalOutput 
+      result: finalOutput,
+      newBalance
     });
 
   } catch (error) {

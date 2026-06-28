@@ -6,6 +6,17 @@ export async function POST(request) {
   try {
     const { content, projectId } = await request.json();
 
+    // --- AUTHENTICATION ---
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
+    }
+    const token = authHeader.split(' ')[1];
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
+    }
+
     // 1. Env Validation
     const limit = parseInt(process.env.HUMANIZER_LIMIT);
     const apiKey = process.env.STEALTHGPT_API_KEY; 
@@ -81,14 +92,18 @@ export async function POST(request) {
       }
     });
     
-    // Fetch Usage
+    // Fetch Usage & verify ownership
     const { data: project, error: fetchError } = await supabaseAdmin
       .from('premium_projects')
-      .select('humanizer_words_used')
+      .select('humanizer_words_used, user_id')
       .eq('id', projectId)
       .single();
 
     if (fetchError || !project) throw new Error('Project not found');
+    
+    if (project.user_id !== user.id) {
+      return NextResponse.json({ error: 'Unauthorized: You do not own this project' }, { status: 403 });
+    }
 
     const currentUsed = project.humanizer_words_used || 0;
     if (currentUsed + wordCount > limit) {
