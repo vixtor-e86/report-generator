@@ -104,7 +104,7 @@ export default function AIHumanizer({
             tool_id: 'ai-humanizer', 
             balance: finalBalanceToUse,
             updated_at: new Date().toISOString()
-          });
+          }, { onConflict: 'user_id,tool_id' });
         
         setWordBalance(finalBalanceToUse);
       }
