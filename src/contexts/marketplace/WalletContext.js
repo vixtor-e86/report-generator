@@ -91,28 +91,30 @@ export function WalletProvider({ children }) {
   const deductFunds = useCallback(async (amount, description, metadata = {}) => {
     if (wallet.balance < amount) return false;
 
-    const { error } = await supabase
-      .from('marketplace_wallets')
-      .update({ balance: wallet.balance - amount })
-      .eq('user_id', user.id);
+    try {
+      const response = await fetch('/api/marketplace/wallet/deduct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          description,
+          metadata,
+          userId: user.id
+        })
+      });
 
-    if (error) {
-      console.error('Deduction failed:', error);
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        console.error('Deduction failed:', data.error || 'Unknown error');
+        return false;
+      }
+
+      fetchWalletData();
+      return true;
+    } catch (err) {
+      console.error('Unexpected deduction error:', err);
       return false;
     }
-
-    // Record transaction
-    await supabase.from('wallet_transactions').insert({
-      user_id: user.id,
-      amount,
-      type: 'purchase',
-      status: 'completed',
-      description,
-      metadata,
-    });
-
-    fetchWalletData();
-    return true;
   }, [wallet.balance, user, fetchWalletData]);
 
   return (
