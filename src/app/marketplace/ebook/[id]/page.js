@@ -116,30 +116,16 @@ export default function EbookDetailPage({ params }) {
             })
         });
 
-        const sellerEarnings = Math.floor(ebook.price * 0.9);
         if (ebook.seller_id) {
-            const { data: sellerWallet } = await supabase
-                .from('marketplace_seller_wallets')
-                .select('balance, total_earned')
-                .eq('seller_id', ebook.seller_id)
-                .single();
-            
-            if (sellerWallet) {
-                await supabase
-                    .from('marketplace_seller_wallets')
-                    .update({ 
-                        balance: sellerWallet.balance + sellerEarnings,
-                        total_earned: (sellerWallet.total_earned || 0) + sellerEarnings,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('seller_id', ebook.seller_id);
-            }
-
-            await supabase.from('marketplace_notifications').insert({
-                user_id: ebook.user_id,
-                title: 'New Ebook Sale!',
-                message: `You earned ${formatCurrency(sellerEarnings)} from a sale of your ebook "${ebook.title}".`,
-                type: 'success'
+            await fetch('/api/marketplace/complete-purchase', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    itemId: ebook.id,
+                    itemType: 'ebook',
+                    price: ebook.price,
+                    title: ebook.title
+                })
             });
         }
 

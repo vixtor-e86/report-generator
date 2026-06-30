@@ -132,30 +132,16 @@ export default function ProjectDetailPage({ params }) {
             })
         });
 
-        const sellerEarnings = Math.floor(project.price * 0.7);
         if (project.seller_id) {
-            const { data: sellerWallet } = await supabase
-                .from('marketplace_seller_wallets')
-                .select('balance, total_earned')
-                .eq('seller_id', project.seller_id)
-                .single();
-            
-            if (sellerWallet) {
-                await supabase
-                    .from('marketplace_seller_wallets')
-                    .update({ 
-                        balance: sellerWallet.balance + sellerEarnings,
-                        total_earned: (sellerWallet.total_earned || 0) + sellerEarnings,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('seller_id', project.seller_id);
-            }
-
-            await supabase.from('marketplace_notifications').insert({
-                user_id: project.marketplace_sellers.user_id,
-                title: 'New Sale!',
-                message: `You earned ${formatCurrency(sellerEarnings)} from a sale of "${project.title}".`,
-                type: 'success'
+            await fetch('/api/marketplace/complete-purchase', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    itemId: project.id,
+                    itemType: 'blueprint',
+                    price: project.price,
+                    title: project.title
+                })
             });
         }
 

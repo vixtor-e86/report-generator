@@ -127,33 +127,16 @@ export default function MarketItemDetail({ itemId, itemType, onBack }) {
             })
         });
 
-        const commission = itemType === 'blueprint' ? 0.7 : 0.9;
-        const sellerEarnings = Math.floor(item.price * commission);
-        
         if (item.seller_id) {
-            const { data: sellerWallet } = await supabase
-                .from('marketplace_seller_wallets')
-                .select('balance, total_earned')
-                .eq('seller_id', item.seller_id)
-                .single();
-            
-            if (sellerWallet) {
-                await supabase
-                    .from('marketplace_seller_wallets')
-                    .update({ 
-                        balance: sellerWallet.balance + sellerEarnings,
-                        total_earned: (sellerWallet.total_earned || 0) + sellerEarnings,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('seller_id', item.seller_id);
-            }
-
-            const sellerUserId = item.marketplace_sellers?.user_id || item.user_id;
-            await supabase.from('marketplace_notifications').insert({
-                user_id: sellerUserId,
-                title: 'New Sale!',
-                message: `You earned ${formatCurrency(sellerEarnings)} from a sale of "${item.title}".`,
-                type: 'success'
+            await fetch('/api/marketplace/complete-purchase', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    itemId: item.id,
+                    itemType: itemType,
+                    price: item.price,
+                    title: item.title
+                })
             });
         }
 
@@ -500,7 +483,7 @@ export default function MarketItemDetail({ itemId, itemType, onBack }) {
                      <div>
                         <p className="text-white font-black text-xs uppercase tracking-widest">Contact Locked</p>
                         <p className="text-zinc-500 text-[10px] font-medium leading-relaxed mt-1">
-                          Purchase this item to unlock the seller's verified contact details.
+                          {"Purchase this item to unlock the seller's verified contact details."}
                         </p>
                      </div>
                      <Button 
