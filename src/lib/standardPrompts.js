@@ -111,7 +111,7 @@ function getFacultySpecificPrompt(chapterNumber, data) {
   ${getReferenceInstructions(referenceStyle, faculty, chapterNumber === (templateStructure?.chapters?.length || 5), existingReferences)}
 
   WRITING RULES:
-  1. Target: 3000 words. 
+  1. Target: 3000 - 5000 words. Make the content extremely comprehensive, detailed, and complete. Ensure it does not end prematurely or get cut off.
   2. Tone: Formal, Technical, Academic.
   3. Format: Markdown (## H1, ### H2).
   4. Currency: ₦ (NGN).

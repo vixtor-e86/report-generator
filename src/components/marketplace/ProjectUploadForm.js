@@ -9,6 +9,7 @@ import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
 import { Label } from '@/components/marketplace/ui/label';
 import { Textarea } from '@/components/marketplace/ui/textarea';
+import { Badge } from '@/components/marketplace/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 

@@ -127,6 +127,16 @@ function WorkspaceContent() {
   const [workspaceMode, setWorkspaceMode] = useState('editor');
   const [previewFile, setPreviewFile] = useState(null);
 
+  const handleFileClick = (file) => {
+    if (!file) return;
+    const isDoc = file.file_type?.includes('word') || file.file_type?.includes('document') || file.file_type?.includes('sheet') || file.file_type?.includes('excel');
+    if (isDoc) {
+      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(file.file_url)}`, '_blank');
+    } else {
+      window.open(file.file_url, '_blank');
+    }
+  };
+
   const [stickyGenSettings, setStickyGenSettings] = useState({
     projectTitle: '', projectDescription: '', componentsUsed: '', researchBooks: '', userPrompt: '',
     selectedImages: [], selectedPapers: [], selectedContextFiles: [], referenceStyle: 'APA', maxReferences: 10, skipReferences: false, targetWordCount: 2000 
@@ -239,7 +249,7 @@ function WorkspaceContent() {
       <Sidebar
         projectData={projectData} chapters={chapters} images={images} projectDocs={projectDocs} userProfile={userProfile}
         activeView={activeView} onViewChange={setActiveView} onUpload={handleUpload} uploading={uploading}
-        onDelete={handleDelete} deleting={deleting} onFileClick={setPreviewFile} 
+        onDelete={handleDelete} deleting={deleting} onFileClick={handleFileClick} 
         onError={(m) => showNotification('Upload Error', m, 'error')}
         storageUsed={projectStorageUsed} isOpen={isLeftSidebarOpen} onClose={() => setIsLeftSidebarOpen(false)}
         humanizerLimit={humanizerLimit}
@@ -272,7 +282,7 @@ function WorkspaceContent() {
             {isRightSidebarOpen && (
               <RightSidebar 
                 onClose={() => setIsRightSidebarOpen(false)} files={files} onUpload={(f) => handleUpload(f, 'sidebar')}
-                uploading={uploading} onDelete={handleDelete} deleting={deleting} onFileClick={setPreviewFile}
+                uploading={uploading} onDelete={handleDelete} deleting={deleting} onFileClick={handleFileClick}
                 onSearchClick={() => setIsSearchModalOpen(true)} onVisualToolsClick={() => setIsVisualToolsModalOpen(true)}
                 onPresentationClick={() => setIsPresentationModalOpen(true)} onHumanizerClick={() => setIsHumanizerModalOpen(true)}
               />
