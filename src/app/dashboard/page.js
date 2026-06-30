@@ -301,7 +301,7 @@ export default function Dashboard() {
   }, [activeTab, marketType]);
 
   const fetchSellerData = useCallback(async () => {
-    if (!globalProfile?.is_seller) return;
+    if (!globalProfile?.is_seller && !authUser?.isSeller) return;
     setLoadingSeller(true);
     try {
       // 1. Wallet

@@ -72,18 +72,6 @@ export default function ProjectDetailPage({ params }) {
 
           if (purchase) {
             setIsPurchased(true);
-          } else {
-            // Fallback for older transactions that didn't have project_id in metadata
-            const { data: legacyPurchase } = await supabase
-              .from('wallet_transactions')
-              .select('*')
-              .eq('user_id', user.id)
-              .eq('type', 'purchase')
-              .eq('status', 'completed')
-              .filter('description', 'ilike', `%${data.title}%`)
-              .maybeSingle();
-            
-            if (legacyPurchase) setIsPurchased(true);
           }
           
           setUserEmail(user.email || '');

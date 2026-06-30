@@ -68,18 +68,6 @@ export default function MarketItemDetail({ itemId, itemType, onBack }) {
 
           if (purchase) {
             setIsPurchased(true);
-          } else if (itemType === 'blueprint') {
-            // Legacy check for blueprints
-            const { data: legacyPurchase } = await supabase
-              .from('wallet_transactions')
-              .select('*')
-              .eq('user_id', user.id)
-              .eq('type', 'purchase')
-              .eq('status', 'completed')
-              .filter('description', 'ilike', `%${data.title}%`)
-              .maybeSingle();
-            
-            if (legacyPurchase) setIsPurchased(true);
           }
           
           setUserEmail(user.email || '');

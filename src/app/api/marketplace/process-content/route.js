@@ -15,11 +15,14 @@ export async function POST(request) {
       
       RULES:
       1. Remove any main headings like "Abstract", "Abstract Preview", "Chapter One", "Chapter 1: Introduction", etc.
-      2. Use clean Markdown for subsections if necessary.
-      3. The abstract should be restructured to be concise yet informative.
-      4. Chapter 1 should be cleaned up for better readability, fixing any formatting issues.
-      5. DO NOT add your own commentary. Return ONLY the restructured content.
-      6. Return a JSON object with two fields: "processedAbstract" and "processedChapter1".
+      2. Group sentences into well-structured, logical paragraphs. Break any large walls of text into smaller, readable paragraphs.
+      3. Clean up any weird line breaks, hyphenations, or double-spaces caused by PDF or Word document text extraction.
+      4. Ensure paragraphs are separated by exactly two newlines (\\n\\n) so they render beautifully in markdown.
+      5. Use clean Markdown for subsections or bullet points where appropriate (e.g. for objectives or scope).
+      6. The abstract should be restructured to be concise yet informative, presented in 1-2 clean paragraphs.
+      7. Chapter 1 should be restructured for maximum readability with proper logical paragraph flow.
+      8. DO NOT add your own commentary or wrap the fields in markdown code blocks inside the JSON.
+      9. Return a JSON object with two fields: "processedAbstract" and "processedChapter1".
 
       Abstract to process:
       ${abstract}
@@ -31,7 +34,7 @@ export async function POST(request) {
     `;
 
     const response = await callAI(prompt, {
-      provider: 'deepseek',
+      provider: process.env.AI_PROVIDER || 'gemini',
       temperature: 0.3,
       maxTokens: 3000
     });
