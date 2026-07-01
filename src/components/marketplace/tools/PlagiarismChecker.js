@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   ShieldCheck, RefreshCw, Upload, 
   FileText, AlertTriangle, ExternalLink,
@@ -38,11 +38,7 @@ export default function PlagiarismChecker({
   const MAX_WORDS = 2000;
   const currentPrice = 2000; // Fixed refill price
 
-  useEffect(() => {
-    if (user) fetchBalance();
-  }, [user]);
-
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
     const { data } = await supabase
       .from('tool_word_balances')
       .select('balance')
@@ -51,7 +47,11 @@ export default function PlagiarismChecker({
       .maybeSingle();
     
     if (data) setWordBalance(data.balance);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) fetchBalance();
+  }, [user, fetchBalance]);
 
   const handleInputChange = (e) => {
     const text = e.target.value;
@@ -76,7 +76,7 @@ export default function PlagiarismChecker({
     if (hasPaid && inputText.trim()) {
       startScanProcess(true);
     }
-  }, [hasPaid]);
+  }, [hasPaid, inputText, startScanProcess]);
 
   const extractPdfText = async (arrayBuffer) => {
     try {
@@ -147,7 +147,7 @@ export default function PlagiarismChecker({
     }
   };
 
-  const startScanProcess = async (skipPaymentCheck = false) => {
+  const startScanProcess = useCallback(async (skipPaymentCheck = false) => {
     if (!inputText.trim()) return;
     
     if (inputText.length < 100) {
@@ -223,12 +223,12 @@ export default function PlagiarismChecker({
       toast.success('Plagiarism scan complete!');
       
     } catch (err) {
-      toast.error('System under maintenance. Please try again later.');
+      toast.error(err.message || 'System under maintenance. Please try again later.');
       setScanStatus('idle');
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [inputText, wordCount, wordBalance, user, setIsProcessing, setShowPaymentDialog, setHasPaid]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 md:space-y-12">
@@ -385,7 +385,7 @@ export default function PlagiarismChecker({
                                 </div>
                                 <h5 className="font-black text-white uppercase tracking-tight text-sm md:text-md mb-3 md:mb-4 leading-tight line-clamp-2">{source.title || 'Academic Source'}</h5>
                                 <div className="h-px w-10 md:w-12 bg-zinc-700 mb-4 md:mb-6 group-hover:w-full transition-all duration-500" />
-                                <p className="text-xs md:text-sm text-zinc-600 leading-relaxed font-medium line-clamp-3 mb-6 md:mb-8 italic">"{source.snippet || 'No snippet available'}"</p>
+                                <p className="text-xs md:text-sm text-zinc-600 leading-relaxed font-medium line-clamp-3 mb-6 md:mb-8 italic">&ldquo;{source.snippet || 'No snippet available'}&rdquo;</p>
                             </div>
                             <div className="flex items-center gap-2 text-zinc-500 group-hover:text-white transition-colors">
                                 <Search className="w-3 h-3" />

@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import { formatCurrency } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ProposalDetailModal({ 
   isOpen, 
@@ -203,7 +204,7 @@ export default function ProposalDetailModal({
               <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
                 <div className="mb-6">
                   <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-2 block">Project Objective / Problem Gap</span>
-                  <p className="text-slate-600 leading-relaxed font-medium italic">"{topic.problem_gap}"</p>
+                  <p className="text-slate-600 leading-relaxed font-medium italic">&ldquo;{topic.problem_gap}&rdquo;</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6 pt-6 border-t border-slate-50">
@@ -260,7 +261,7 @@ export default function ProposalDetailModal({
                             <Sparkles className="w-8 h-8" />
                         </div>
                         <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Personalize Your Proposal</h3>
-                        <p className="text-slate-500 font-medium max-w-sm mx-auto">Add any specific instructions or requirements you'd like the AI to include in your technical proposal.</p>
+                        <p className="text-slate-500 font-medium max-w-sm mx-auto">Add any specific instructions or requirements you&apos;d like the AI to include in your technical proposal.</p>
                     </div>
 
                     <div className="relative">
@@ -342,7 +343,7 @@ export default function ProposalDetailModal({
 
                     {/* Document View */}
                     <div className="bg-white rounded-[40px] p-10 md:p-16 shadow-sm border border-slate-100 prose prose-slate max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tight prose-p:text-slate-600 prose-p:leading-relaxed prose-p:font-medium">
-                        <ReactMarkdown>{proposal}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{proposal}</ReactMarkdown>
                     </div>
 
                     {/* Ads / Upsell Card */}
