@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Sparkles, RefreshCw, Copy, UserCheck, FileText, Wallet
 } from 'lucide-react';
@@ -9,6 +9,8 @@ import { Badge } from '@/components/marketplace/ui/badge';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/marketplace/UserContext';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function AIHumanizer({ 
   isProcessing, 
@@ -26,12 +28,8 @@ export default function AIHumanizer({
   const MAX_WORDS = 1000;
   const isOverLimit = wordCount > MAX_WORDS;
 
-  // Fetch word balance on mount
-  useEffect(() => {
-    if (user) fetchBalance();
-  }, [user]);
-
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
+    if (!user) return;
     const { data, error } = await supabase
       .from('tool_word_balances')
       .select('balance')
@@ -40,7 +38,12 @@ export default function AIHumanizer({
       .maybeSingle();
     
     if (data) setWordBalance(data.balance);
-  };
+  }, [user]);
+
+  // Fetch word balance on mount
+  useEffect(() => {
+    if (user) fetchBalance();
+  }, [user, fetchBalance]);
 
   const handleInputChange = (e) => {
     const text = e.target.value;
@@ -60,9 +63,9 @@ export default function AIHumanizer({
     if (hasPaid && input.trim()) {
       handleProcess(true);
     }
-  }, [hasPaid]);
+  }, [hasPaid, input, handleProcess]);
 
-  const handleProcess = async (skipPaymentCheck = false) => {
+  const handleProcess = useCallback(async (skipPaymentCheck = false) => {
     if (!input.trim()) {
       toast.error('Please enter some text to process');
       return;
@@ -145,7 +148,7 @@ export default function AIHumanizer({
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [input, wordCount, wordBalance, user, setIsProcessing, setShowPaymentDialog, setHasPaid]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(output);
@@ -215,10 +218,23 @@ export default function AIHumanizer({
             </Button>
           )}
         </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-900 rounded-[24px] md:rounded-[32px] p-6 md:p-8 text-zinc-300 font-bold leading-relaxed whitespace-pre-wrap text-sm md:text-base">
-          {output || (
-            <div className="h-full flex flex-col items-center justify-center text-zinc-600 italic">
-              <UserCheck className="w-10 h-10 md:w-12 md:h-12 mb-4 opacity-10" />
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/30 border border-slate-100 rounded-[24px] md:rounded-[32px] p-6 md:p-8 text-slate-900 leading-relaxed text-sm md:text-base">
+          {output ? (
+            <div className="prose prose-slate max-w-none 
+              prose-headings:text-zinc-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tight
+              prose-p:text-slate-600 prose-p:font-bold prose-p:leading-relaxed
+              prose-strong:text-zinc-900 prose-strong:font-black
+              prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-emerald-700 prose-code:font-bold
+              prose-pre:bg-zinc-900 prose-pre:rounded-[20px] md:prose-pre:rounded-[24px] prose-pre:p-4 md:prose-pre:p-6 prose-pre:shadow-xl
+              prose-table:border prose-table:border-slate-100 prose-table:rounded-2xl prose-table:overflow-hidden
+              prose-th:bg-slate-50 prose-th:p-3 md:prose-th:p-4 prose-th:text-[9px] md:prose-th:text-[10px] prose-th:font-black prose-th:uppercase prose-th:tracking-widest
+              prose-td:p-3 md:prose-td:p-4 prose-td:text-xs md:prose-td:text-sm prose-td:border-t prose-td:border-slate-50
+            ">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{output}</ReactMarkdown>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-zinc-400 italic">
+              <UserCheck className="w-10 h-10 md:w-12 md:h-12 mb-4 opacity-20" />
               Humanized output will appear here
             </div>
           )}
