@@ -28,9 +28,20 @@ export async function POST(request) {
     // Get user info
     const { data: userProfile } = await supabase
       .from('user_profiles')
-      .select('username, email')
+      .select('username, full_name')
       .eq('id', userId)
       .single();
+
+    // Get user email from Supabase auth admin
+    let userEmail = 'Unknown';
+    try {
+      const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
+      if (authUser && authUser.user) {
+        userEmail = authUser.user.email || 'Unknown';
+      }
+    } catch (err) {
+      console.error('Failed to fetch user email from auth admin:', err);
+    }
 
     // Get project info
     const { data: project } = await supabase
@@ -64,8 +75,8 @@ export async function POST(request) {
       
       <h4>User Details:</h4>
       <ul>
-        <li><strong>Username:</strong> ${userProfile?.username || 'Unknown'}</li>
-        <li><strong>Email:</strong> ${userProfile?.email || 'Unknown'}</li>
+        <li><strong>Username:</strong> ${userProfile?.username || userProfile?.full_name || 'Unknown'}</li>
+        <li><strong>Email:</strong> ${userEmail}</li>
         <li><strong>User ID:</strong> ${userId}</li>
       </ul>
 

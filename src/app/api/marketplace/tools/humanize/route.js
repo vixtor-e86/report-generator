@@ -16,7 +16,7 @@ export async function POST(request) {
     }
 
     const { content } = payload;
-    const apiKey = process.env.STEALTHGPT_API_KEY;
+    const apiKey = process.env.RYNE_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json({ error: 'Humanization engine configuration missing on server' }, { status: 500 });
@@ -148,18 +148,26 @@ export async function POST(request) {
     const humanizeBlock = async (text) => {
       if (text.trim().length < 5) return text;
 
-      const response = await fetch("https://stealthgpt.ai/api/stealthify", {
+      const response = await fetch("https://ryne.ai/api/humanizer/models/supernova", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "api-token": apiKey
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          prompt: text,
-          rephrase: true,
-          tone: "College",
-          mode: "Medium",
-          qualityMode: "quality"
+          text: text,
+          tone: "academic",
+          purpose: "research paper",
+          language: "english",
+          user_id: apiKey,
+          shouldStream: false,
+          keepMarkdown: true,
+          beast_mode: true,
+          mode: "normal",
+          enableRestructure: true,
+          settings: {
+            preserveFormatting: true,
+            preserveQuotes: true
+          }
         }),
       });
 
@@ -172,13 +180,19 @@ export async function POST(request) {
       }
 
       if (!response.ok) {
-        console.error("StealthGPT Error:", data);
-        throw new Error(data.message || data.error || `Humanizer failure: ${response.statusText || 'Engine returned status ' + response.status}`);
+        console.error("Ryne AI Error:", data);
+        let errorMsg = data.message || data.error || data.code || `Humanizer failure: ${response.statusText || 'Engine returned status ' + response.status}`;
+        if (errorMsg === 'INSUFFICIENT_COINS') {
+          errorMsg = 'Insufficient humanizer API credits. Please contact admin.';
+        } else if (errorMsg === 'INVALID_KEY') {
+          errorMsg = 'Invalid humanizer API key configured.';
+        }
+        throw new Error(errorMsg);
       }
 
-      let result = data.result;
+      let result = data.content;
       if (!result) {
-        console.error("StealthGPT response missing result:", data);
+        console.error("Ryne AI response missing content:", data);
         throw new Error("Humanization engine returned empty result.");
       }
 
