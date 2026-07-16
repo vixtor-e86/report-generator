@@ -58,13 +58,6 @@ export default function AIHumanizer({
     }
   };
 
-  // Auto-execute after payment
-  useEffect(() => {
-    if (hasPaid && input.trim()) {
-      handleProcess(true);
-    }
-  }, [hasPaid, input, handleProcess]);
-
   const handleProcess = useCallback(async (skipPaymentCheck = false) => {
     if (!input.trim()) {
       toast.error('Please enter some text to process');
@@ -149,6 +142,13 @@ export default function AIHumanizer({
       setIsProcessing(false);
     }
   }, [input, wordCount, wordBalance, user, setIsProcessing, setShowPaymentDialog, setHasPaid]);
+
+  // Auto-execute after payment
+  useEffect(() => {
+    if (hasPaid && input.trim()) {
+      handleProcess(true);
+    }
+  }, [hasPaid, input, handleProcess]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(output);

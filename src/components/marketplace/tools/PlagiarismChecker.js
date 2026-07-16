@@ -71,12 +71,7 @@ export default function PlagiarismChecker({
     return () => { if (setCustomPrice) setCustomPrice(null); };
   }, [currentPrice, setCustomPrice]);
 
-  // Handle Payment Completion
-  useEffect(() => {
-    if (hasPaid && inputText.trim()) {
-      startScanProcess(true);
-    }
-  }, [hasPaid, inputText, startScanProcess]);
+
 
   const extractPdfText = async (arrayBuffer) => {
     try {
@@ -229,6 +224,13 @@ export default function PlagiarismChecker({
       setIsProcessing(false);
     }
   }, [inputText, wordCount, wordBalance, user, setIsProcessing, setShowPaymentDialog, setHasPaid]);
+
+  // Handle Payment Completion
+  useEffect(() => {
+    if (hasPaid && inputText.trim()) {
+      startScanProcess(true);
+    }
+  }, [hasPaid, inputText, startScanProcess]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 md:space-y-12">
