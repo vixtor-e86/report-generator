@@ -222,7 +222,18 @@ export default function EmailPage() {
 
       if (!response.ok) throw new Error(result.error || 'Failed to broadcast emails');
 
-      toast.success(`AWS SES Broadcast complete: ${result.success} succeeded, ${result.failed} failed.`);
+      if (result.failed > 0) {
+        const errorDetails = result.errors && result.errors.length > 0
+          ? result.errors.map(e => `${e.email}: ${e.error}`).join('\n')
+          : 'Unknown error occurred.';
+        
+        toast.error(`AWS SES Broadcast failed:\nSucceeded: ${result.success}\nFailed: ${result.failed}\n\nErrors:\n${errorDetails}`, {
+          duration: 10000
+        });
+      } else {
+        toast.success(`AWS SES Broadcast complete! All ${result.success} emails sent successfully.`);
+      }
+
       if (result.success > 0) {
         setRecipients([]);
         setSubject('');

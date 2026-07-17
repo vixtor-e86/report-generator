@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(request) {
   try {
     // 1. Fetch paid payment transactions
-    const { data: transactions, error: txError } = await supabase
+    const { data: transactions, error: txError } = await supabaseAdmin
       .from('payment_transactions')
       .select('user_id, amount, tier, status, created_at')
       .eq('status', 'paid');
@@ -20,7 +15,7 @@ export async function GET(request) {
     }
 
     // 2. Fetch user profiles
-    const { data: profiles, error: profileError } = await supabase
+    const { data: profiles, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('id, username, full_name, department, created_at');
 
@@ -32,15 +27,16 @@ export async function GET(request) {
     // 3. Fetch auth users for email details (uses fast pagination, up to 1000)
     let authUsers = [];
     try {
-      const { data: { users }, error: authError } = await supabase.auth.admin.listUsers({
-        page: 1,
+      const { data, error: authError } = await supabaseAdmin.auth.admin.listUsers({
         perPage: 1000
       });
-      if (!authError && users) {
-        authUsers = users;
+      if (!authError && data && data.users) {
+        authUsers = data.users;
+      } else if (authError) {
+        console.error('Auth user list error:', authError);
       }
     } catch (authErr) {
-      console.error('Auth user list failed (check credentials):', authErr);
+      console.error('Auth user list failed:', authErr);
     }
 
     // 4. Map auth users and profiles in memory
