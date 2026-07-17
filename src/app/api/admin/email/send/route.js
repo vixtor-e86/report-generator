@@ -16,7 +16,9 @@ function createMimeMessage({ from, to, subject, html, attachments }) {
   let raw = [];
   raw.push(`From: ${from}`);
   raw.push(`To: ${to}`);
-  raw.push(`Reply-To: W3 WriteLab <w3writelab@gmail.com>`);
+  if (!from.toLowerCase().includes('noreply')) {
+    raw.push(`Reply-To: W3 WriteLab <w3writelab@gmail.com>`);
+  }
   raw.push(`Subject: ${subject}`);
   raw.push(`Mime-Version: 1.0`);
   raw.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
