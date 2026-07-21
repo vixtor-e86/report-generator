@@ -232,6 +232,47 @@ export async function GET(request) {
       }
     }
 
+    // ✅ Process Humanizer Refill if reference starts with W3WL_REFILL_
+    if (transaction_ref && transaction_ref.startsWith('W3WL_REFILL_')) {
+      const parts = transaction_ref.split('_');
+      // Format: W3WL_REFILL_PROJECTID_WORDSAMOUNT_TIMESTAMP
+      if (parts.length >= 5) {
+        const refillProjectId = parts[2];
+        const refillWords = Number(parts[3]);
+        
+        if (refillProjectId && !isNaN(refillWords)) {
+          try {
+            // 1. Fetch current words used
+            const { data: currentProject } = await supabaseAdmin
+              .from('premium_projects')
+              .select('humanizer_words_used')
+              .eq('id', refillProjectId)
+              .single();
+
+            if (currentProject) {
+              const currentUsed = currentProject.humanizer_words_used || 0;
+              // Deduct paid words (ensure it doesn't go below 0)
+              const newWordsUsed = Math.max(0, currentUsed - refillWords);
+
+              // 2. Update premium_projects
+              const { error: refillError } = await supabaseAdmin
+                .from('premium_projects')
+                .update({ humanizer_words_used: newWordsUsed })
+                .eq('id', refillProjectId);
+
+              if (refillError) {
+                console.error('Failed to deduct humanizer words used:', refillError);
+              } else {
+                console.log(`Refilled ${refillWords} words for project ${refillProjectId}. Old usage: ${currentUsed}, New: ${newWordsUsed}`);
+              }
+            }
+          } catch (refillErr) {
+            console.error('Error executing humanizer refill:', refillErr);
+          }
+        }
+      }
+    }
+
     return NextResponse.json({
       verified: true,
       transaction: updatedTx

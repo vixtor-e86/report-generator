@@ -175,6 +175,44 @@ export async function POST(request) {
               }
             }
           }
+
+          // ✅ Handle Humanizer Refill in webhook (if reference contains W3WL_REFILL_)
+          if (tx_ref && tx_ref.includes('W3WL_REFILL_')) {
+            console.log('Handling Humanizer Refill in webhook for ref:', tx_ref);
+            const parts = tx_ref.split('_');
+            if (parts.length >= 5) {
+              const refillProjectId = parts[2];
+              const refillWords = Number(parts[3]);
+              
+              if (refillProjectId && !isNaN(refillWords)) {
+                try {
+                  const { data: currentProject } = await supabaseAdmin
+                    .from('premium_projects')
+                    .select('humanizer_words_used')
+                    .eq('id', refillProjectId)
+                    .single();
+
+                  if (currentProject) {
+                    const currentUsed = currentProject.humanizer_words_used || 0;
+                    const newWordsUsed = Math.max(0, currentUsed - refillWords);
+
+                    const { error: refillError } = await supabaseAdmin
+                      .from('premium_projects')
+                      .update({ humanizer_words_used: newWordsUsed })
+                      .eq('id', refillProjectId);
+
+                    if (refillError) {
+                      console.error('Failed to deduct humanizer words in webhook:', refillError);
+                    } else {
+                      console.log(`Webhook refilled ${refillWords} words for project ${refillProjectId}. Old: ${currentUsed}, New: ${newWordsUsed}`);
+                    }
+                  }
+                } catch (refillErr) {
+                  console.error('Error executing humanizer refill in webhook:', refillErr);
+                }
+              }
+            }
+          }
         } else if (existingTx) {
           console.log('Transaction already marked as paid.');
         } else {

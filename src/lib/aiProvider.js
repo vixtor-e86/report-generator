@@ -10,23 +10,36 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  * @returns {Promise<object>} - Response with content, tokens, and model info
  */
 export async function callAI(prompt, options = {}) {
-  const {
-    provider = process.env.AI_PROVIDER || 'deepseek',
-    model = null, // Optional model override
-    maxTokens = 4000,
-    temperature = 0.7,
-    stopSequences = null,
-    fileParts = null, // Support for Gemini multimodal
-  } = options;
+  try {
+    const {
+      provider = process.env.AI_PROVIDER || 'deepseek',
+      model = null, // Optional model override
+      maxTokens = 4000,
+      temperature = 0.7,
+      stopSequences = null,
+      fileParts = null, // Support for Gemini multimodal
+    } = options;
 
-  if (provider === 'gemini') {
-    return await callGemini(prompt, maxTokens, temperature, fileParts, model);
-  } else if (provider === 'claude') {
-    return await callClaude(prompt, maxTokens, temperature, stopSequences, model);
-  } else if (provider === 'deepseek') {
-    return await callDeepSeek(prompt, maxTokens, temperature, model);
-  } else {
-    throw new Error(`Invalid AI provider: ${provider}. Use 'gemini', 'claude', or 'deepseek'`);
+    if (provider === 'gemini') {
+      return await callGemini(prompt, maxTokens, temperature, fileParts, model);
+    } else if (provider === 'claude') {
+      return await callClaude(prompt, maxTokens, temperature, stopSequences, model);
+    } else if (provider === 'deepseek') {
+      return await callDeepSeek(prompt, maxTokens, temperature, model);
+    } else {
+      throw new Error(`Invalid AI provider: ${provider}. Use 'gemini', 'claude', or 'deepseek'`);
+    }
+  } catch (error) {
+    let errMsg = error.message;
+    const lower = errMsg.toLowerCase();
+    if (lower.includes('credit balance') || 
+        lower.includes('insufficient_credits') || 
+        lower.includes('billing') || 
+        lower.includes('insufficient credits') || 
+        lower.includes('credit_balance_too_low')) {
+      throw new Error('System under maintenance. Please try again later.');
+    }
+    throw error;
   }
 }
 

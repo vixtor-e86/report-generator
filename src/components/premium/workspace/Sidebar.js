@@ -25,7 +25,7 @@ const Icons = {
 export default function Sidebar({ 
   projectData, chapters, images, projectDocs = [], userProfile, activeView, onViewChange,
   onUpload, uploading, onDelete, deleting, onFileClick, onError, isOpen, onClose,
-  storageUsed = 0, storageLimit = 100 * 1024 * 1024, humanizerLimit = 0
+  storageUsed = 0, storageLimit = 100 * 1024 * 1024, humanizerLimit = 0, currentUser
 }) {
   // Use project-specific storage limit if defined in DB
   const finalStorageLimit = projectData?.storage_limit || storageLimit;
@@ -34,6 +34,38 @@ export default function Sidebar({
   const [showCaptionModal, setShowCaptionModal] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
   const [imageCaption, setImageCaption] = useState('');
+
+  // Refill top-up state
+  const [showRefillModal, setShowRefillModal] = useState(false);
+  const [refillWords, setRefillWords] = useState(1000);
+  const [loadingRefill, setLoadingRefill] = useState(false);
+
+  const handleRefillSubmit = async () => {
+    setLoadingRefill(true);
+    try {
+      const response = await fetch('/api/premium/humanize/refill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userProfile?.id,
+          email: currentUser?.email || projectData?.user_email || 'support@support.w3writelab.com',
+          projectId: projectData?.id,
+          wordsAmount: refillWords
+        })
+      });
+      const data = await response.json();
+      if (response.ok && data.authorization_url) {
+        window.location.href = data.authorization_url;
+      } else {
+        alert(data.error || 'Failed to initialize payment');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error. Failed to initiate checkout.');
+    } finally {
+      setLoadingRefill(false);
+    }
+  };
 
   const handleImageUploadRequest = (e) => {
     const file = e.target.files[0];
@@ -135,6 +167,29 @@ export default function Sidebar({
           <div className="upgrade-bar">
              <div className="upgrade-progress" style={{ width: `${barPercentage}%`, background: '#10b981' }}></div>
           </div>
+          {currentUsage >= 8000 && (
+            <button 
+              onClick={() => setShowRefillModal(true)} 
+              className="topup-btn"
+              style={{
+                width: '100%',
+                marginTop: '12px',
+                padding: '8px',
+                background: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                textAlign: 'center',
+                display: 'block',
+                transition: 'opacity 0.2s',
+              }}
+            >
+              Top Up Words
+            </button>
+          )}
         </div>
 
         <div className="upgrade-card token-card" style={{ marginTop: '8px' }}>
@@ -164,6 +219,66 @@ export default function Sidebar({
             <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '16px' }}>This caption will be used as the image reference in AI prompts.</p>
             <textarea value={imageCaption} onChange={(e) => setImageCaption(e.target.value)} placeholder="e.g., Block diagram of the power supply unit" style={{ width: '100%', height: '80px', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' }} autoFocus />
             <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}><button onClick={() => { setShowCaptionModal(false); setPendingFile(null); }} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #e5e7eb', background: 'white', cursor: 'pointer' }}>Cancel</button><button onClick={handleSaveWithCaption} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: '#111827', color: 'white', fontWeight: '600', cursor: 'pointer' }}>Save & Upload</button></div>
+          </div>
+        </div>
+      )}
+
+      {showRefillModal && (
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+          <div className="modal-container" style={{ background: 'white', padding: '24px', borderRadius: '24px', width: '100%', maxWidth: '420px', fontFamily: 'inherit' }}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '-0.025em' }}>Refill Humanizer Words</h3>
+            <p style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5', margin: '0 0 20px 0' }}>
+              Your Humanizer word usage is almost full. Purchase a top-up to deduct words from your used balance. Ranging from 1,000 to 6,000 words.
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '24px' }}>
+              {[1000, 2000, 3000, 4000, 5000, 6000].map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setRefillWords(opt)}
+                  style={{
+                    padding: '12px 8px',
+                    borderRadius: '12px',
+                    border: refillWords === opt ? '2px solid #10b981' : '1px solid #e2e8f0',
+                    background: refillWords === opt ? '#f0fdf4' : 'white',
+                    color: refillWords === opt ? '#10b981' : '#334155',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    textAlign: 'center',
+                    boxSizing: 'border-box',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <div>{opt.toLocaleString()} W</div>
+                  <div style={{ fontSize: '10px', fontWeight: '600', marginTop: '2px', color: refillWords === opt ? '#10b981' : '#64748b' }}>
+                    ₦{opt.toLocaleString()}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f8fafc', borderRadius: '16px', marginBottom: '24px' }}>
+              <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Total Amount</span>
+              <span style={{ fontSize: '18px', fontWeight: '900', color: '#0f172a' }}>₦{refillWords.toLocaleString()}</span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => setShowRefillModal(false)} 
+                disabled={loadingRefill}
+                style={{ flex: 1, padding: '12px', borderRadius: '14px', border: '1px solid #e2e8f0', background: 'white', color: '#64748b', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleRefillSubmit}
+                disabled={loadingRefill}
+                style={{ flex: 1, padding: '12px', borderRadius: '14px', border: 'none', background: '#10b981', color: 'white', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                {loadingRefill ? 'Processing...' : 'Pay Now'}
+              </button>
+            </div>
           </div>
         </div>
       )}

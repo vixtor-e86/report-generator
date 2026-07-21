@@ -222,6 +222,34 @@ function WorkspaceContent() {
     return () => { supabase.removeChannel(channel); };
   }, [projectId]);
 
+  // Handle humanizer top-up payment verification callback
+  useEffect(() => {
+    const verifiedRefill = searchParams.get('verified_refill');
+    if (verifiedRefill && projectId) {
+      async function verifyRefill() {
+        try {
+          setIsGlobalLoading(true);
+          setGlobalLoadingText('Verifying top-up payment...');
+          const res = await fetch(`/api/squad/verify?reference=${verifiedRefill}`);
+          const data = await res.json();
+          if (res.ok && data.verified) {
+            showNotification('Success', 'Humanizer top-up payment confirmed! Your usage balance has been refilled.', 'success');
+            loadWorkspaceData();
+          } else {
+            showNotification('Payment Error', data.error || 'Failed to verify top-up payment.', 'error');
+          }
+        } catch (err) {
+          console.error('Refill check error:', err);
+          showNotification('Payment Error', 'Top-up verification failed.', 'error');
+        } finally {
+          setIsGlobalLoading(false);
+          router.replace(`/premium/workspace?id=${projectId}`);
+        }
+      }
+      verifyRefill();
+    }
+  }, [searchParams, projectId, router]);
+
   // Land on Preview Mode when switching chapters
   useEffect(() => {
     if (activeView.startsWith('chapter-')) {
@@ -252,7 +280,7 @@ function WorkspaceContent() {
         onDelete={handleDelete} deleting={deleting} onFileClick={handleFileClick} 
         onError={(m) => showNotification('Upload Error', m, 'error')}
         storageUsed={projectStorageUsed} isOpen={isLeftSidebarOpen} onClose={() => setIsLeftSidebarOpen(false)}
-        humanizerLimit={humanizerLimit}
+        humanizerLimit={humanizerLimit} currentUser={currentUser}
       />
 
       <div className="main-workspace">
