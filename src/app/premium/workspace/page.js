@@ -230,7 +230,7 @@ function WorkspaceContent() {
         try {
           setIsGlobalLoading(true);
           setGlobalLoadingText('Verifying top-up payment...');
-          const res = await fetch(`/api/squad/verify?reference=${verifiedRefill}`);
+          const res = await fetch(`/api/squad/verify?transaction_ref=${verifiedRefill}`);
           const data = await res.json();
           if (res.ok && data.verified) {
             showNotification('Success', 'Humanizer top-up payment confirmed! Your usage balance has been refilled.', 'success');

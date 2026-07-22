@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const transactionRef = searchParams.get('transaction_ref') || searchParams.get('tx_ref');
+  const transactionRef = searchParams.get('transaction_ref') || searchParams.get('tx_ref') || searchParams.get('reference');
 
   if (!transactionRef) {
     return NextResponse.json({ error: 'Missing transaction reference' }, { status: 400 });
