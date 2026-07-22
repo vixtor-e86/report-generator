@@ -62,20 +62,25 @@ export async function POST(request) {
     const checkoutUrl = squadData.data.checkout_url;
 
     // Create payment transaction record (initially pending)
-    await supabaseAdmin
+    const { error: dbError } = await supabaseAdmin
       .from('payment_transactions')
       .insert({
         user_id: userId,
         project_id: null,
         amount,
         currency: 'NGN',
-        tier: 'refill',
+        tier: 'unlock', // set to unlock to pass database check constraint
         status: 'pending',
         paystack_reference: transaction_ref,
         paystack_authorization_url: checkoutUrl,
         ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '1.1.1.1',
         user_agent: request.headers.get('user-agent') || 'Squad Integration Refill Agent'
       });
+
+    if (dbError) {
+      console.error('Failed to create pending refill transaction in DB:', dbError);
+      return NextResponse.json({ error: 'Database transaction creation failed' }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,

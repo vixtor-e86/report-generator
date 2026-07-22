@@ -191,7 +191,9 @@ export default function TransactionsPage() {
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex flex-col">
                       <span className="font-extrabold text-slate-900 text-sm">₦{tx.amount?.toLocaleString()}</span>
-                      <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-tighter">{tx.tier}</span>
+                      <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-tighter">
+                        {tx.paystack_reference?.startsWith('W3WL_REFILL_') ? 'refill' : tx.tier}
+                      </span>
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
