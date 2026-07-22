@@ -3,10 +3,11 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(request) {
   try {
-    // 1. Fetch wallet transactions sorted by date
+    // 1. Fetch wallet transactions sorted by date (filtering out deposits, keeping purchases/use)
     const { data: transactions, error: txError } = await supabaseAdmin
       .from('wallet_transactions')
       .select('*')
+      .eq('type', 'purchase')
       .order('created_at', { ascending: false });
 
     if (txError) {

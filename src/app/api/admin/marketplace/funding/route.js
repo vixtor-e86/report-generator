@@ -13,13 +13,28 @@ export async function GET(request) {
       .eq('type', 'deposit')
       .order('created_at', { ascending: false });
 
+    // Fetch all auth users to search and enrich
+    const { data: authUsersData } = await supabaseAdmin.auth.admin.listUsers({
+      perPage: 1000
+    });
+    const allAuthUsers = authUsersData?.users || [];
+
     if (query) {
       if (query.includes('@')) {
-        // Search by user email (Requires finding user ID first)
-        const { data: users } = await supabaseAdmin.auth.admin.listUsers();
-        const user = users.users.find(u => u.email?.toLowerCase() === query.toLowerCase());
-        if (user) baseQuery = baseQuery.eq('user_id', user.id);
-        else return NextResponse.json([]);
+        // Search by user email
+        const user = allAuthUsers.find(u => u.email?.toLowerCase() === query.trim().toLowerCase());
+        if (user) {
+          baseQuery = baseQuery.eq('user_id', user.id);
+        } else {
+          // Check profile as fallback
+          const { data: profile } = await supabaseAdmin
+            .from('user_profiles')
+            .select('id')
+            .eq('email', query.trim())
+            .single();
+          if (profile) baseQuery = baseQuery.eq('user_id', profile.id);
+          else return NextResponse.json([]);
+        }
       } else {
         // Search by reference
         baseQuery = baseQuery.eq('reference', query);
@@ -31,17 +46,33 @@ export async function GET(request) {
     const { data: transactions, error } = await baseQuery;
     if (error) throw error;
 
-    // Enrich with user profiles
+    // Enrich with profiles and emails
     const userIds = [...new Set(transactions.map(t => t.user_id))];
     const { data: profiles } = await supabaseAdmin
       .from('user_profiles')
       .select('id, username, email')
       .in('id', userIds);
 
-    const enriched = transactions.map(tx => ({
-      ...tx,
-      user_profiles: profiles?.find(p => p.id === tx.user_id) || { username: 'Unknown', email: 'N/A' }
-    }));
+    const enriched = transactions.map(tx => {
+      const profile = profiles?.find(p => p.id === tx.user_id);
+      let email = profile?.email;
+      let username = profile?.username || 'Student';
+
+      if (!email) {
+        const authUser = allAuthUsers.find(u => u.id === tx.user_id);
+        if (authUser?.email) {
+          email = authUser.email;
+        }
+      }
+
+      return {
+        ...tx,
+        user_profiles: {
+          username,
+          email: email || 'Unknown Email'
+        }
+      };
+    });
 
     return NextResponse.json(enriched);
 

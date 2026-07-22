@@ -143,6 +143,42 @@ export async function PATCH(request) {
       }
     }
 
+    // ✅ Handle Humanizer Refill for Manual Verification
+    if (updated.paystack_reference && updated.paystack_reference.startsWith('W3WL_REFILL_')) {
+      const parts = updated.paystack_reference.split('_');
+      // Format: W3WL_REFILL_PROJECTID_WORDSAMOUNT_TIMESTAMP
+      if (parts.length >= 5) {
+        const refillProjectId = parts[2];
+        const refillWords = Number(parts[3]);
+        
+        if (refillProjectId && !isNaN(refillWords)) {
+          try {
+            // 1. Fetch current words used
+            const { data: currentProject } = await supabaseAdmin
+              .from('premium_projects')
+              .select('humanizer_words_used')
+              .eq('id', refillProjectId)
+              .single();
+
+            if (currentProject) {
+              const currentUsed = currentProject.humanizer_words_used || 0;
+              const newWordsUsed = Math.max(0, currentUsed - refillWords);
+
+              // 2. Update premium_projects
+              await supabaseAdmin
+                .from('premium_projects')
+                .update({ humanizer_words_used: newWordsUsed })
+                .eq('id', refillProjectId);
+
+              console.log(`Admin manually verified refill: ${refillWords} words for project ${refillProjectId}. Old: ${currentUsed}, New: ${newWordsUsed}`);
+            }
+          } catch (refillErr) {
+            console.error('Error executing manual humanizer refill:', refillErr);
+          }
+        }
+      }
+    }
+
     return NextResponse.json({ success: true, transaction: updated });
 
   } catch (error) {
