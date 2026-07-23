@@ -25,14 +25,26 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Failed to retrieve user profiles' }, { status: 500 });
     }
 
-    // 3. Fetch auth users to retrieve email addresses
+    // 3. Fetch auth users to retrieve email addresses (fully paginated to retrieve all 10,000+ users)
     let authUsers = [];
     try {
-      const { data, error: authError } = await supabaseAdmin.auth.admin.listUsers({
-        perPage: 1000
-      });
-      if (!authError && data && data.users) {
-        authUsers = data.users;
+      let page = 1;
+      let keepFetching = true;
+      while (keepFetching) {
+        const { data, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+          page,
+          perPage: 1000
+        });
+        if (authError || !data || !data.users || data.users.length === 0) {
+          keepFetching = false;
+        } else {
+          authUsers = authUsers.concat(data.users);
+          if (data.users.length < 1000) {
+            keepFetching = false;
+          } else {
+            page++;
+          }
+        }
       }
     } catch (authErr) {
       console.error('Auth user list failed in activities:', authErr);

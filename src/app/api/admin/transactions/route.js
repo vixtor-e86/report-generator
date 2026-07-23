@@ -2,6 +2,30 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+// Paginated helper to fetch all users from auth
+async function getAllAuthUsers() {
+  let authUsers = [];
+  let page = 1;
+  let keepFetching = true;
+  while (keepFetching) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page,
+      perPage: 1000
+    });
+    if (error || !data || !data.users || data.users.length === 0) {
+      keepFetching = false;
+    } else {
+      authUsers = authUsers.concat(data.users);
+      if (data.users.length < 1000) {
+        keepFetching = false;
+      } else {
+        page++;
+      }
+    }
+  }
+  return authUsers;
+}
+
 // GET — all transactions (paid + pending), newest first
 export async function GET(request) {
   try {
@@ -15,15 +39,10 @@ export async function GET(request) {
       .order('created_at', { ascending: false });
 
     let targetUserId = null;
+    const allAuthUsers = await getAllAuthUsers();
 
     if (email) {
-      // Increase perPage to find users beyond the first 50
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers({
-        perPage: 1000
-      });
-      if (authError) throw authError;
-
-      const user = authData.users.find(u => u.email?.toLowerCase() === email.trim().toLowerCase());
+      const user = allAuthUsers.find(u => u.email?.toLowerCase() === email.trim().toLowerCase());
       
       if (user) {
         targetUserId = user.id;
@@ -55,12 +74,6 @@ export async function GET(request) {
       .from('user_profiles')
       .select('id, username, email')
       .in('id', uniqueUserIds);
-
-    // Fetch more users to ensure we find everyone
-    const { data: authUsersData } = await supabaseAdmin.auth.admin.listUsers({
-      perPage: 1000
-    });
-    const allAuthUsers = authUsersData?.users || [];
 
     const enriched = await Promise.all(transactions.map(async tx => {
       const profile = profiles?.find(p => p.id === tx.user_id);

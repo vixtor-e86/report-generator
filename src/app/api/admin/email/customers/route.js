@@ -24,19 +24,29 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Failed to fetch profile data' }, { status: 500 });
     }
 
-    // 3. Fetch auth users for email details (uses fast pagination, up to 1000)
+    // 3. Fetch auth users for email details (fully paginated to retrieve all 10,000+ users)
     let authUsers = [];
     try {
-      const { data, error: authError } = await supabaseAdmin.auth.admin.listUsers({
-        perPage: 1000
-      });
-      if (!authError && data && data.users) {
-        authUsers = data.users;
-      } else if (authError) {
-        console.error('Auth user list error:', authError);
+      let page = 1;
+      let keepFetching = true;
+      while (keepFetching) {
+        const { data, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+          page,
+          perPage: 1000
+        });
+        if (authError || !data || !data.users || data.users.length === 0) {
+          keepFetching = false;
+        } else {
+          authUsers = authUsers.concat(data.users);
+          if (data.users.length < 1000) {
+            keepFetching = false;
+          } else {
+            page++;
+          }
+        }
       }
     } catch (authErr) {
-      console.error('Auth user list failed:', authErr);
+      console.error('Auth user list failed in email customers:', authErr);
     }
 
     // 4. Map auth users and profiles in memory

@@ -13,11 +13,30 @@ export async function GET(request) {
       .eq('type', 'deposit')
       .order('created_at', { ascending: false });
 
-    // Fetch all auth users to search and enrich
-    const { data: authUsersData } = await supabaseAdmin.auth.admin.listUsers({
-      perPage: 1000
-    });
-    const allAuthUsers = authUsersData?.users || [];
+    // Fetch all auth users to search and enrich (fully paginated to retrieve all 10,000+ users)
+    let allAuthUsers = [];
+    try {
+      let page = 1;
+      let keepFetching = true;
+      while (keepFetching) {
+        const { data, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+          page,
+          perPage: 1000
+        });
+        if (authError || !data || !data.users || data.users.length === 0) {
+          keepFetching = false;
+        } else {
+          allAuthUsers = allAuthUsers.concat(data.users);
+          if (data.users.length < 1000) {
+            keepFetching = false;
+          } else {
+            page++;
+          }
+        }
+      }
+    } catch (authErr) {
+      console.error('Auth user list failed in marketplace funding:', authErr);
+    }
 
     if (query) {
       if (query.includes('@')) {
