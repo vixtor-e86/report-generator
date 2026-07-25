@@ -57,7 +57,7 @@ async function callDeepSeek(prompt, maxTokens, temperature, modelOverride = null
     }
 
     // Only fallback to AI_MODEL if it looks like a deepseek model
-    const modelName = modelOverride || process.env.DEEPSEEK_MODEL || (process.env.AI_MODEL?.includes('deepseek') ? process.env.AI_MODEL : null) || "deepseek-chat";
+    const modelName = modelOverride || process.env.DEEPSEEK_MODEL || (process.env.AI_MODEL?.includes('deepseek') ? process.env.AI_MODEL : null) || "deepseek-v4-pro";
 
     const response = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",

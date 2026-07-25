@@ -40,7 +40,7 @@ export async function POST(request) {
 
     // 3. Summarize with Premium AI
     const provider = process.env.PREMIUM_AI_PROVIDER || 'deepseek';
-    const model = process.env.PREMIUM_AI_MODEL || 'deepseek-chat';
+    const model = process.env.PREMIUM_AI_MODEL || 'deepseek-v4-pro';
 
     const systemPrompt = `You are a technical research assistant. 
     Analyze the following scraped website content and extract valuable technical information, 

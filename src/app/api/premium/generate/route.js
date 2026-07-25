@@ -29,7 +29,7 @@ export async function POST(request) {
     if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
     const provider = process.env.PREMIUM_AI_PROVIDER || 'deepseek';
-    const model = process.env.PREMIUM_AI_MODEL || 'deepseek-chat';
+    const model = process.env.PREMIUM_AI_MODEL || 'deepseek-v4-pro';
 
     // --- 1.5 Table Processing ---
     let technicalTableInstruction = "";
