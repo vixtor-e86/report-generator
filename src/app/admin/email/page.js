@@ -27,7 +27,6 @@ export default function EmailPage() {
   const [customers, setCustomers] = useState([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSegment, setSelectedSegment] = useState('all');
 
   const fileInputRef = useRef(null);
 
