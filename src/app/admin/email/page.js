@@ -126,36 +126,79 @@ export default function EmailPage() {
     setRecipients(recipients.filter(e => e !== email));
   };
 
-  // Select standard segment criteria
-  const handleApplySegment = (segment) => {
-    setSelectedSegment(segment);
-    let selectedEmails = [];
+  const [selectedSegment, setSelectedSegment] = useState('recent_buyers');
+  const [recipientLimit, setRecipientLimit] = useState('10');
+
+  // Compute recipients dynamically based on segment and limit cap
+  const getFilteredEmails = useCallback((segment, limitVal) => {
+    const validCustomers = customers.filter(c => c.email && c.email !== 'Unknown' && c.email.includes('@'));
+    let sortedList = [];
 
     switch (segment) {
-      case 'all':
-        selectedEmails = customers.map(c => c.email).filter(e => e && e !== 'Unknown');
+      case 'recent_standard':
+        sortedList = [...validCustomers]
+          .filter(c => c.standardCount > 0 || (c.purchaseCount > 0 && c.premiumCount === 0))
+          .sort((a, b) => new Date(b.lastPurchaseDate || b.joinedAt || 0) - new Date(a.lastPurchaseDate || a.joinedAt || 0));
         break;
+
+      case 'recent_premium':
+        sortedList = [...validCustomers]
+          .filter(c => c.premiumCount > 0)
+          .sort((a, b) => new Date(b.lastPurchaseDate || b.joinedAt || 0) - new Date(a.lastPurchaseDate || a.joinedAt || 0));
+        break;
+
+      case 'recent_buyers':
+        sortedList = [...validCustomers]
+          .filter(c => c.purchaseCount > 0)
+          .sort((a, b) => new Date(b.lastPurchaseDate || b.joinedAt || 0) - new Date(a.lastPurchaseDate || a.joinedAt || 0));
+        break;
+
+      case 'recent_users':
+        sortedList = [...validCustomers]
+          .sort((a, b) => new Date(b.joinedAt || 0) - new Date(a.joinedAt || 0));
+        break;
+
       case 'paying':
-        selectedEmails = customers.filter(c => c.purchaseCount > 0).map(c => c.email);
+        sortedList = validCustomers.filter(c => c.purchaseCount > 0);
         break;
+
       case 'top_spenders':
-        selectedEmails = customers.filter(c => c.totalSpent >= 20000).map(c => c.email);
+        sortedList = validCustomers.filter(c => c.totalSpent >= 20000);
         break;
-      case 'frequent_buyers':
-        selectedEmails = customers.filter(c => c.purchaseCount >= 3).map(c => c.email);
-        break;
-      case 'premium_tier':
-        selectedEmails = customers.filter(c => c.premiumCount > 0).map(c => c.email);
-        break;
+
       case 'non_paying':
-        selectedEmails = customers.filter(c => c.purchaseCount === 0).map(c => c.email);
+        sortedList = validCustomers.filter(c => c.purchaseCount === 0);
         break;
+
+      case 'all':
       default:
-        selectedEmails = [];
+        sortedList = [...validCustomers];
     }
 
-    setRecipients(selectedEmails);
-    toast.success(`Segment "${segment.replace('_', ' ').toUpperCase()}" applied: ${selectedEmails.length} recipients selected.`);
+    let emails = sortedList.map(c => c.email);
+
+    if (limitVal && limitVal !== 'all') {
+      const cap = parseInt(limitVal, 10);
+      if (!isNaN(cap) && cap > 0) {
+        emails = emails.slice(0, cap);
+      }
+    }
+
+    return emails;
+  }, [customers]);
+
+  const handleApplySegment = (segment, capOverride = recipientLimit) => {
+    setSelectedSegment(segment);
+    const emails = getFilteredEmails(segment, capOverride);
+    setRecipients(emails);
+    toast.success(`Segment applied: ${emails.length} recipient(s) selected.`);
+  };
+
+  const handleLimitChange = (newLimit) => {
+    setRecipientLimit(newLimit);
+    const emails = getFilteredEmails(selectedSegment, newLimit);
+    setRecipients(emails);
+    toast.info(`Recipient limit cap set to ${newLimit}: ${emails.length} active.`);
   };
 
   const handleFileChange = (e) => {
@@ -378,26 +421,70 @@ export default function EmailPage() {
             </div>
 
             {/* Quick Segment Filter Buttons */}
-            <div className="flex flex-wrap gap-2">
-              <button onClick={() => handleApplySegment('all')} className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'all' ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                All ({customers.length})
-              </button>
-              <button onClick={() => handleApplySegment('paying')} className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'paying' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
-                Paying ({payingCustomersCount})
-              </button>
-              <button onClick={() => handleApplySegment('top_spenders')} className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'top_spenders' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>
-                Top Spenders ₦20k+ ({customers.filter(c => c.totalSpent >= 20000).length})
-              </button>
-              <button onClick={() => handleApplySegment('frequent_buyers')} className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'frequent_buyers' ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'}`}>
-                Frequent (3+) ({customers.filter(c => c.purchaseCount >= 3).length})
-              </button>
-              <button onClick={() => handleApplySegment('premium_tier')} className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'premium_tier' ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-700 hover:bg-purple-100'}`}>
-                Premium Buyers ({customers.filter(c => c.premiumCount > 0).length})
-              </button>
-              <button onClick={() => handleApplySegment('non_paying')} className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'non_paying' ? 'bg-slate-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                Non-paying ({customers.filter(c => c.purchaseCount === 0).length})
-              </button>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">1. Select Target Audience Segment</p>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => handleApplySegment('recent_standard')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'recent_standard' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'}`}>
+                  Last Standard Buyers
+                </button>
+                <button onClick={() => handleApplySegment('recent_premium')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'recent_premium' ? 'bg-purple-600 text-white shadow-sm' : 'bg-purple-50 text-purple-700 hover:bg-purple-100'}`}>
+                  Last Premium Buyers
+                </button>
+                <button onClick={() => handleApplySegment('recent_buyers')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'recent_buyers' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
+                  Last Recent Buyers
+                </button>
+                <button onClick={() => handleApplySegment('recent_users')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'recent_users' ? 'bg-blue-600 text-white shadow-sm' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}>
+                  Last Registered Users
+                </button>
+                <button onClick={() => handleApplySegment('paying')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'paying' ? 'bg-teal-600 text-white shadow-sm' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'}`}>
+                  All Paying ({payingCustomersCount})
+                </button>
+                <button onClick={() => handleApplySegment('top_spenders')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'top_spenders' ? 'bg-amber-600 text-white shadow-sm' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>
+                  Top Spenders ₦20k+ ({customers.filter(c => c.totalSpent >= 20000).length})
+                </button>
+                <button onClick={() => handleApplySegment('all')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'all' ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                  All Users ({customers.length})
+                </button>
+                <button onClick={() => handleApplySegment('non_paying')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'non_paying' ? 'bg-slate-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                  Non-paying ({customers.filter(c => c.purchaseCount === 0).length})
+                </button>
+              </div>
             </div>
+
+            {/* Safety Limit Cap Selector */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
+              <div className="flex justify-between items-center flex-wrap gap-2">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">2. Max Broadcast Recipient Cap (Sandbox Protection)</span>
+                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+                  Current Limit: {recipientLimit === 'all' ? 'Unlimited' : `${recipientLimit} users`}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {['5', '10', '25', '50', '100', '200', 'all'].map((cap) => (
+                  <button
+                    key={cap}
+                    onClick={() => handleLimitChange(cap)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+                      recipientLimit === cap 
+                        ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/20' 
+                        : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {cap === 'all' ? 'All (No Cap)' : cap === '200' ? '200 (Max Sandbox)' : `Last ${cap}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sandbox Limit Alert */}
+            {recipients.length > 200 && (
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs font-medium flex items-center justify-between flex-wrap gap-2">
+                <span>⚠️ <strong>Sandbox Alert:</strong> You have selected {recipients.length} recipients. If your SES / Resend account is still in sandbox mode, broadcasts exceeding 200 emails will fail.</span>
+                <button onClick={() => handleLimitChange('10')} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black uppercase transition">
+                  Cap to 10 Users
+                </button>
+              </div>
+            )}
 
             {/* Recipients Add Manual Input */}
             <div className="flex gap-2">
