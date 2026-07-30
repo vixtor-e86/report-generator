@@ -214,7 +214,6 @@ export default function PlagiarismChecker({
       setWordBalance(updatedBalance);
       setResult(data.data);
       setScanStatus('completed');
-      setHasPaid(false);
       toast.success('Plagiarism scan complete!');
       
     } catch (err) {
@@ -222,15 +221,17 @@ export default function PlagiarismChecker({
       setScanStatus('idle');
     } finally {
       setIsProcessing(false);
+      setHasPaid(false);
     }
   }, [inputText, wordCount, wordBalance, user, setIsProcessing, setShowPaymentDialog, setHasPaid]);
 
   // Handle Payment Completion
   useEffect(() => {
     if (hasPaid && inputText.trim()) {
+      setHasPaid(false);
       startScanProcess(true);
     }
-  }, [hasPaid, inputText, startScanProcess]);
+  }, [hasPaid, inputText, startScanProcess, setHasPaid]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 md:space-y-12">

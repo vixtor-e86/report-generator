@@ -75,6 +75,8 @@ export default function AIHumanizer({
         setShowPaymentDialog(true);
         return;
       }
+    } else {
+      setHasPaid(false);
     }
 
     setIsProcessing(true);
@@ -133,22 +135,22 @@ export default function AIHumanizer({
       setWordBalance(updatedBalance);
       setOutput(data.result);
       toast.success('Humanization complete!');
-      setHasPaid(false);
     } catch (err) {
       console.error(err);
       toast.error('System under maintenance. Please try again later.');
-      setHasPaid(false);
     } finally {
       setIsProcessing(false);
+      setHasPaid(false);
     }
   }, [input, wordCount, wordBalance, user, setIsProcessing, setShowPaymentDialog, setHasPaid]);
 
   // Auto-execute after payment
   useEffect(() => {
     if (hasPaid && input.trim()) {
+      setHasPaid(false);
       handleProcess(true);
     }
-  }, [hasPaid, input, handleProcess]);
+  }, [hasPaid, input, handleProcess, setHasPaid]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(output);

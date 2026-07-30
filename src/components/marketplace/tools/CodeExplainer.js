@@ -46,20 +46,21 @@ export default function CodeExplainer({
       if (data.error) throw new Error(data.error);
       setExplanation(data.explanation);
       toast.success('Code explained successfully!');
-      setHasPaid(false); // Reset for next use
     } catch (err) {
       toast.error(err.message);
     } finally {
       setIsProcessing(false);
+      setHasPaid(false);
     }
   }, [code, language, hasPaid, isOverLimit, setIsProcessing, setShowPaymentDialog, setHasPaid]);
 
   // Auto-execute after payment
   useEffect(() => {
     if (hasPaid && code.trim()) {
+      setHasPaid(false);
       handleExplain(true);
     }
-  }, [hasPaid, code, handleExplain]);
+  }, [hasPaid, code, handleExplain, setHasPaid]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(explanation);
