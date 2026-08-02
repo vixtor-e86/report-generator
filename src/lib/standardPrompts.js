@@ -107,7 +107,6 @@ function getFacultySpecificPrompt(chapterNumber, data) {
 
   REQUIRED SECTIONS:
   ${chapterInfo.sections.join('\n')}
-
   ${getReferenceInstructions(referenceStyle, faculty, chapterNumber === (templateStructure?.chapters?.length || 5), existingReferences)}
 
   WRITING RULES:
