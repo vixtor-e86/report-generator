@@ -251,43 +251,24 @@ function TemplateSelectContent() {
       popular: false,
       count: templates.filter(t => t.template_type === '6-chapter-thesis').length,
       chapters: 6
-    },
-    {
-      id: 'siwes',
-      name: 'SIWES/Industrial Training',
-      description: 'Industrial training and internship documentation',
-      icon: '🏭',
-      popular: false,
-      count: templates.filter(t => t.template_type === 'siwes').length,
-      chapters: 4
     }
   ];
 
   // Handle template type selection
   const handleTypeSelect = (typeId) => {
     setSelectedType(typeId);
-    if (typeId === 'siwes') {
-      // For SIWES, skip faculty selection and proceed directly
-      const siwesTemplate = templates.find(t => t.template_type === 'siwes');
-      if (siwesTemplate) {
-        router.replace(`/standard/new?template=${siwesTemplate.id}`);
-      } else {
-        router.replace(`/standard/new?type=${typeId}&faculty=general`);
-      }
-    } else {
-      // Load ALL available templates for this type
-      const selectedTemplates = templates
-        .filter(t => t.template_type === typeId)
-        .map(t => ({
-          id: t.id,
-          name: t.name,
-          faculty: t.faculty,
-          icon: t.icon || getFacultyIcon(t.faculty) || '📍',
-          template: t
-        }));
-      setAvailableFaculties(selectedTemplates);
-      setStep(2);
-    }
+    // Load ALL available templates for this type
+    const selectedTemplates = templates
+      .filter(t => t.template_type === typeId)
+      .map(t => ({
+        id: t.id,
+        name: t.name,
+        faculty: t.faculty,
+        icon: t.icon || getFacultyIcon(t.faculty) || '📍',
+        template: t
+      }));
+    setAvailableFaculties(selectedTemplates);
+    setStep(2);
   };
 
   // Handle template selection
@@ -551,7 +532,7 @@ function TemplateSelectContent() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-indigo-600 font-bold flex-shrink-0">•</span>
-                      <span><strong>SIWES/Industrial Training:</strong> Specifically for internship and industrial training documentation</span>
+                      <span><strong>SIWES / Industrial Training:</strong> Use the dedicated <strong>SIWES Script Generator</strong> tool in the Dashboard Tools section</span>
                     </li>
                   </ul>
                 </div>

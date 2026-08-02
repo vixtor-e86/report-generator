@@ -99,6 +99,16 @@ export const academicTools = [
     isAvailable: true,
     usageCount: 380,
   },
+  {
+    id: 'siwes-generator',
+    name: 'SIWES Script Generator',
+    description: 'Generate complete, institutional-grade Industrial Training (SIWES) technical reports & logbook documentation customized for your placement organization. ₦3,500 per report.',
+    icon: 'Briefcase',
+    pricePerUse: 3500,
+    category: 'generation',
+    isAvailable: true,
+    usageCount: 940,
+  },
 ];
 
 export const toolCategories = [

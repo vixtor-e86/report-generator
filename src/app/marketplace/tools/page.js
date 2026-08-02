@@ -6,7 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { 
   Search, Wrench, ShieldCheck, BookOpen, Presentation, 
   BarChart3, Code2, Lightbulb, RefreshCw, SpellCheck, 
-  Quote, Image, ArrowRight, Zap, Check, Star, Wallet
+  Quote, Image, ArrowRight, Zap, Check, Star, Wallet, Briefcase
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
@@ -30,6 +30,7 @@ const iconMap = {
   Image,
   Code2,
   RefreshCw,
+  Briefcase,
 };
 
 export default function AcademicToolsPage() {

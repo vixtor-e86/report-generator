@@ -33,7 +33,7 @@ import {
   ArrowRight, ArrowLeft, Sparkles, Layers, CheckCircle2, Wrench, ShieldCheck, 
   BookOpen, Presentation, BarChart3, Code2, Lightbulb, RefreshCw, 
   SpellCheck, Quote, Image as ImageIcon, Zap, Check, Wallet, Bell, AlertCircle,
-  UserCheck, Landmark, Clock, Phone, Mail, Book, TrendingUp, Plus, Eye, Trash2, Activity, Palette, ClipboardList, X
+  UserCheck, Landmark, Clock, Phone, Mail, Book, TrendingUp, Plus, Eye, Trash2, Activity, Palette, ClipboardList, X, Briefcase
 } from 'lucide-react';
 import { Input } from '@/components/marketplace/ui/input';
 import { Badge } from '@/components/marketplace/ui/badge';
@@ -62,6 +62,7 @@ import LanguageConverter from '@/components/marketplace/tools/LanguageConverter'
 import DataAnalysis from '@/components/marketplace/tools/DataAnalysis';
 import PlagiarismChecker from '@/components/marketplace/tools/PlagiarismChecker';
 import QuestionnaireGenerator from '@/components/marketplace/tools/QuestionnaireGenerator';
+import SIWESGenerator from '@/components/marketplace/tools/SIWESGenerator';
 
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -83,6 +84,7 @@ const iconMap = {
   Image: ImageIcon,
   Code2,
   RefreshCw,
+  Briefcase,
 };
 
 function MarketCard({ item, viewMode, onView }) {
@@ -1151,6 +1153,7 @@ export default function Dashboard() {
                             {selectedToolId === 'ai-humanizer' && <AIHumanizer {...toolProps} />}
                             {selectedToolId === 'diagram-studio' && <VisualStudio {...toolProps} />}
                             {selectedToolId === 'questionnaire-generator' && <QuestionnaireGenerator {...toolProps} />}
+                            {selectedToolId === 'siwes-generator' && <SIWESGenerator {...toolProps} />}
                         </div>
                     </div>
                 ) : (
