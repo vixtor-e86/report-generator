@@ -19,8 +19,8 @@ export async function POST(request) {
 
     // 1. Env Validation
     const limit = parseInt(process.env.HUMANIZER_LIMIT);
-    const apiKey = process.env.STEALTHGPT_API_KEY; 
-    if (isNaN(limit) || !apiKey) throw new Error('Server configuration error (Limit/API Key).');
+    const apiKey = process.env.WRITEHUMAN_API_KEY || process.env.HUMANIZER_API_KEY || process.env.STEALTHGPT_API_KEY; 
+    if (isNaN(limit) || !apiKey) throw new Error('Server configuration error (Limit/WRITEHUMAN_API_KEY).');
 
     if (!content || !projectId) return NextResponse.json({ error: 'Missing content or projectId' }, { status: 400 });
 
@@ -92,6 +92,13 @@ export async function POST(request) {
       }
     });
     
+    // Strict 2000-word limit restriction per single request for WriteHuman Standard Plan
+    if (wordCount > 2000) {
+      return NextResponse.json({ 
+        error: `Selection exceeds the 2,000 words limit per request (${wordCount} words). Please select a specific section to humanize section-by-section.` 
+      }, { status: 400 });
+    }
+
     // Fetch Usage & verify ownership
     const { data: project, error: fetchError } = await supabaseAdmin
       .from('premium_projects')
@@ -110,7 +117,7 @@ export async function POST(request) {
       return NextResponse.json({ error: `Limit reached. ${limit - currentUsed} words remaining.` }, { status: 403 });
     }
 
-    // --- 3. CONCURRENCY LIMITER & HUMANIZATION WITH STEALTHGPT ---
+    // --- 3. CONCURRENCY LIMITER & HUMANIZATION WITH WRITEHUMAN ENGINE ---
     class ConcurrencyLimiter {
       constructor(limit) {
         this.limit = limit;
@@ -135,25 +142,41 @@ export async function POST(request) {
       }
     }
 
-    const limiter = new ConcurrencyLimiter(3);
+    const limiter = new ConcurrencyLimiter(2);
 
     const humanizeBlock = async (text) => {
       if (text.trim().length < 5) return text;
 
-      const response = await fetch("https://stealthgpt.ai/api/stealthify", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "api-token": apiKey
-        },
-        body: JSON.stringify({
-          prompt: text,
-          rephrase: true,
-          tone: "College",
-          mode: "Medium",
-          qualityMode: "quality"
-        }),
-      });
+      let response;
+      try {
+        response = await fetch("https://api.writehuman.ai/v1/humanize", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+            "x-api-key": apiKey
+          },
+          body: JSON.stringify({
+            text: text,
+            content: text,
+            prompt: text
+          }),
+        });
+      } catch (err) {
+        response = await fetch("https://writehuman.ai/api/v1/humanize", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+            "x-api-key": apiKey
+          },
+          body: JSON.stringify({
+            text: text,
+            content: text,
+            prompt: text
+          }),
+        });
+      }
 
       let data;
       const responseText = await response.text();
@@ -164,21 +187,21 @@ export async function POST(request) {
       }
 
       if (!response.ok) {
-        console.error("StealthGPT Error:", data);
+        console.error("WriteHuman Error:", data);
         throw new Error(data.message || data.error || `Humanizer failure: ${response.statusText || 'Engine returned status ' + response.status}`);
       }
 
-      let result = data.result;
+      let result = data.result || data.text || data.humanized_text || data.output || data.outputText || data.data?.result || data.data?.text || data.data?.output;
       if (!result) {
-        console.error("StealthGPT response missing result:", data);
+        console.error("WriteHuman response missing result:", data);
         throw new Error("Humanization engine returned empty result.");
       }
 
       // Clean up any double quotes the AI might wrap the response in
-      if (result.startsWith('"') && result.endsWith('"')) {
+      if (typeof result === 'string' && result.startsWith('"') && result.endsWith('"')) {
           result = result.substring(1, result.length - 1);
       }
-      return result.replace(/\$/g, '₦');
+      return String(result).replace(/\$/g, '₦');
     };
 
     const humanizeBlockLimited = (text) => limiter.run(() => humanizeBlock(text));

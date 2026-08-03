@@ -16,10 +16,10 @@ export async function POST(request) {
     }
 
     const { content } = payload;
-    const apiKey = process.env.STEALTHGPT_API_KEY;
+    const apiKey = process.env.WRITEHUMAN_API_KEY || process.env.HUMANIZER_API_KEY || process.env.STEALTHGPT_API_KEY;
 
     if (!apiKey) {
-      return NextResponse.json({ error: 'Humanization engine configuration missing on server' }, { status: 500 });
+      return NextResponse.json({ error: 'Humanization engine configuration missing on server (WRITEHUMAN_API_KEY)' }, { status: 500 });
     }
 
     if (!content) {
@@ -37,11 +37,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
     }
 
-    // Word count check
+    // Word count check (Strict max 2000 words restriction for WriteHuman Standard Plan)
     const words = content.trim().split(/\s+/).filter(w => w.length > 0);
     const wordCount = words.length;
-    if (wordCount > 2200) {
-      return NextResponse.json({ error: 'Maximum 2000 words per request allowed.' }, { status: 400 });
+    if (wordCount > 2000) {
+      return NextResponse.json({ 
+        error: `Maximum 2,000 words per request allowed. This selection contains ${wordCount} words. Please humanize section by section.` 
+      }, { status: 400 });
     }
 
     // Check balance
@@ -118,7 +120,7 @@ export async function POST(request) {
       });
     }
 
-    // --- 2. CONCURRENCY LIMITER & HUMANIZATION WITH STEALTHGPT ---
+    // --- 2. CONCURRENCY LIMITER & HUMANIZATION WITH WRITEHUMAN ENGINE ---
     class ConcurrencyLimiter {
       constructor(limit) {
         this.limit = limit;
@@ -143,25 +145,42 @@ export async function POST(request) {
       }
     }
 
-    const limiter = new ConcurrencyLimiter(3);
+    const limiter = new ConcurrencyLimiter(2);
 
     const humanizeBlock = async (text) => {
       if (text.trim().length < 5) return text;
 
-      const response = await fetch("https://stealthgpt.ai/api/stealthify", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "api-token": apiKey
-        },
-        body: JSON.stringify({
-          prompt: text,
-          rephrase: true,
-          tone: "College",
-          mode: "Medium",
-          qualityMode: "quality"
-        }),
-      });
+      let response;
+      try {
+        response = await fetch("https://api.writehuman.ai/v1/humanize", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+            "x-api-key": apiKey
+          },
+          body: JSON.stringify({
+            text: text,
+            content: text,
+            prompt: text
+          }),
+        });
+      } catch (err) {
+        // Fallback endpoint attempt
+        response = await fetch("https://writehuman.ai/api/v1/humanize", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+            "x-api-key": apiKey
+          },
+          body: JSON.stringify({
+            text: text,
+            content: text,
+            prompt: text
+          }),
+        });
+      }
 
       let data;
       const responseText = await response.text();
@@ -172,21 +191,21 @@ export async function POST(request) {
       }
 
       if (!response.ok) {
-        console.error("StealthGPT Error:", data);
+        console.error("WriteHuman Error:", data);
         throw new Error(data.message || data.error || `Humanizer failure: ${response.statusText || 'Engine returned status ' + response.status}`);
       }
 
-      let result = data.result;
+      let result = data.result || data.text || data.humanized_text || data.output || data.outputText || data.data?.result || data.data?.text || data.data?.output;
       if (!result) {
-        console.error("StealthGPT response missing result:", data);
+        console.error("WriteHuman response missing result:", data);
         throw new Error("Humanization engine returned empty result.");
       }
 
       // Clean up any double quotes the AI might wrap the response in
-      if (result.startsWith('"') && result.endsWith('"')) {
+      if (typeof result === 'string' && result.startsWith('"') && result.endsWith('"')) {
           result = result.substring(1, result.length - 1);
       }
-      return result.replace(/\$/g, '₦');
+      return String(result).replace(/\$/g, '₦');
     };
 
     const humanizeBlockLimited = (text) => limiter.run(() => humanizeBlock(text));

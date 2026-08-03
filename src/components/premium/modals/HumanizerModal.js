@@ -80,6 +80,14 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
 
     if (!contentToHumanize) return;
 
+    const words = contentToHumanize.trim().split(/\s+/).filter(w => w.length > 0);
+    if (words.length > 2000) {
+      if (showNotification) {
+        showNotification('Selection Exceeds Limit', `This selection is ${words.length.toLocaleString()} words. Standard plan limits each request to 2,000 words maximum. Please select a specific section below to humanize section by section.`, 'error');
+      }
+      return;
+    }
+
     setIsProcessing(true);
     setStep('processing');
 
@@ -156,6 +164,9 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   };
 
   if (!isOpen) return null;
+
+  const currentChapter = chapters.find(c => c.id === selectedChapterId);
+  const fullChapterWordCount = currentChapter?.content ? currentChapter.content.trim().split(/\s+/).filter(w => w.length > 0).length : 0;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-4">
@@ -236,7 +247,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
               <div className="w-full max-w-md flex flex-col h-full max-h-[600px] space-y-6">
                 <div className="text-center shrink-0">
                   <h3 className="text-xl md:text-2xl font-black text-slate-900">Select Section</h3>
-                  <p className="text-sm text-slate-500 mt-1">Humanize the whole chapter or a specific part.</p>
+                  <p className="text-sm text-slate-500 mt-1">Humanize section by section (max 2,000 words per request).</p>
                 </div>
 
                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -245,24 +256,34 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
                       className={`flex items-center justify-between p-4 md:p-5 rounded-2xl border-2 transition-all text-left ${
                         selectedSectionId === 'all' ? 'border-slate-900 bg-white shadow-md' : 'border-slate-100 bg-white hover:border-slate-200'
                       }`}>
-                      <span className="font-black text-slate-900 uppercase text-xs">Full Chapter</span>
+                      <div>
+                        <span className="font-black text-slate-900 uppercase text-xs">Full Chapter</span>
+                        <p className={`text-[10px] font-bold mt-0.5 ${fullChapterWordCount > 2000 ? 'text-amber-600 font-black' : 'text-slate-400'}`}>
+                          {fullChapterWordCount.toLocaleString()} words {fullChapterWordCount > 2000 ? '(Exceeds 2,000w limit - pick a section below)' : ''}
+                        </p>
+                      </div>
                       {selectedSectionId === 'all' && <Icons.Check />}
                     </button>
 
                     <div className="h-px bg-slate-200 my-2" />
 
-                    {sections.map(section => (
-                      <button key={section.id} onClick={() => setSelectedSectionId(section.id)}
-                        className={`flex items-center justify-between p-4 md:p-5 rounded-2xl border-2 transition-all text-left ${
-                          selectedSectionId === section.id ? 'border-slate-900 bg-white shadow-md' : 'border-slate-100 bg-white hover:border-slate-200'
-                        }`}>
-                        <div className="flex-1 min-w-0 pr-4">
-                          <p className="text-xs font-black text-slate-900 truncate">{section.title}</p>
-                          <p className="text-[10px] text-slate-400 font-bold">{section.content.split(' ').length} words</p>
-                        </div>
-                        {selectedSectionId === section.id && <Icons.Check />}
-                      </button>
-                    ))}
+                    {sections.map(section => {
+                      const secWords = section.content ? section.content.trim().split(/\s+/).filter(w => w.length > 0).length : 0;
+                      return (
+                        <button key={section.id} onClick={() => setSelectedSectionId(section.id)}
+                          className={`flex items-center justify-between p-4 md:p-5 rounded-2xl border-2 transition-all text-left ${
+                            selectedSectionId === section.id ? 'border-slate-900 bg-white shadow-md' : 'border-slate-100 bg-white hover:border-slate-200'
+                          }`}>
+                          <div className="flex-1 min-w-0 pr-4">
+                            <p className="text-xs font-black text-slate-900 truncate">{section.title}</p>
+                            <p className={`text-[10px] font-bold ${secWords > 2000 ? 'text-amber-600 font-black' : 'text-slate-400'}`}>
+                              {secWords.toLocaleString()} words {secWords > 2000 ? '(Exceeds 2,000w limit)' : ''}
+                            </p>
+                          </div>
+                          {selectedSectionId === section.id && <Icons.Check />}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
