@@ -12,14 +12,15 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
+  const [userRole, setUserRole] = useState(null);
+
   useEffect(() => {
     async function fetchStats() {
       try {
-        // First, verify the user is an admin from the client-side
+        // First, verify the user is an admin or support from the client-side
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setLoading(false);
-          // Optional: redirect or show error
           return; 
         }
 
@@ -29,12 +30,13 @@ export default function AdminDashboard() {
           .eq('id', user.id)
           .single();
 
-        if (profile?.role !== 'admin') {
+        if (!['admin', 'support'].includes(profile?.role)) {
           setLoading(false);
-          // Optional: redirect or show error
           alert('You are not authorized to view this page.');
           return;
         }
+
+        setUserRole(profile?.role);
 
         // Now, fetch the protected stats from our API route
         const response = await fetch('/api/admin/stats');
@@ -91,19 +93,21 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Total Revenue */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-slate-500 text-sm font-medium uppercase tracking-wider">Total Revenue</h3>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+        {/* Total Revenue - Hidden for Support Role */}
+        {userRole !== 'support' && (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-slate-500 text-sm font-medium uppercase tracking-wider">Total Revenue</h3>
+              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
             </div>
+            <p className="text-3xl font-bold text-slate-900">₦{stats.totalRevenue.toLocaleString()}</p>
+            <div className="mt-2 text-xs text-slate-500">Lifetime earnings</div>
           </div>
-          <p className="text-3xl font-bold text-slate-900">₦{stats.totalRevenue.toLocaleString()}</p>
-          <div className="mt-2 text-xs text-slate-500">Lifetime earnings</div>
-        </div>
+        )}
 
         {/* Projects Today */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">

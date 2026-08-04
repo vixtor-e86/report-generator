@@ -85,9 +85,14 @@ export default function UsersPage() {
                         <div className="text-sm font-black text-slate-900 uppercase tracking-tight">{user.full_name || user.username || 'No Name'}</div>
                         <div className="flex gap-2 mt-0.5">
                             {user.role === 'admin' && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[8px] font-black uppercase bg-red-100 text-red-700 border border-red-200 tracking-widest">
-                                Admin
-                            </span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[8px] font-black uppercase bg-red-100 text-red-700 border border-red-200 tracking-widest">
+                                  Admin
+                              </span>
+                            )}
+                            {user.role === 'support' && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[8px] font-black uppercase bg-amber-100 text-amber-700 border border-amber-200 tracking-widest">
+                                  Support
+                              </span>
                             )}
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">ID: {user.id.slice(0, 8)}</span>
                         </div>
