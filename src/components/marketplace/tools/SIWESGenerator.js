@@ -1106,6 +1106,7 @@ export default function SIWESGenerator({
             </div>
           </div>
         </div>
+        </>
       )}
     </div>
   );
