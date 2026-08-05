@@ -201,10 +201,12 @@ export default function SIWESGenerator({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to refine section');
 
-      if (data.content && report) {
-        const updatedReport = { ...report, [partKey]: data.content };
+      if (data.content) {
+        const wasEmpty = !report?.[partKey] || report[partKey].trim().length < 10;
+        const updatedReport = report ? { ...report, [partKey]: data.content } : { [partKey]: data.content };
         setReport(updatedReport);
-        toast.success(`Section ${partKey.toUpperCase()} Refined!`);
+        const sectionLabel = partKey === 'abstract' ? 'Abstract' : partKey.toUpperCase();
+        toast.success(wasEmpty ? `Section ${sectionLabel} Generated!` : `Section ${sectionLabel} Refined!`);
       }
     } catch (err) {
       toast.error(err.message || 'Refining section failed');
@@ -277,6 +279,11 @@ export default function SIWESGenerator({
     (report.part3 || '').split(/\s+/).filter(Boolean).length +
     (report.part4 || '').split(/\s+/).filter(Boolean).length
   ) : 0;
+
+  // Helper to check if current active tab section has content
+  const currentSectionContent = report?.[activeTab] || '';
+  const hasSectionContent = Boolean(currentSectionContent && currentSectionContent.trim().length > 10);
+  const activeSectionLabel = activeTab === 'abstract' ? 'Abstract' : activeTab.toUpperCase();
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
@@ -412,7 +419,7 @@ export default function SIWESGenerator({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Student Name</label>
                   <Input
@@ -510,84 +517,92 @@ export default function SIWESGenerator({
       ) : (
         /* WORKSPACE & REPORT VIEW */
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Left Navigation Sidebar */}
+          {/* Left Navigation Sidebar / Mobile Horizontal Scrollbar */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="bg-white border border-[#e5e7eb] rounded-3xl p-5 shadow-sm space-y-3">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Report Sections</p>
+            <div className="bg-white border border-[#e5e7eb] rounded-3xl p-4 md:p-5 shadow-sm">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 mb-3">Report Sections</p>
               
-              <button
-                onClick={() => { setActiveTab('full'); setIsEditingSection(false); }}
-                className={`w-full text-left px-4 py-3.5 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
-                  activeTab === 'full' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <FileText className="w-4 h-4 text-indigo-400" /> Complete Report
-                </span>
-                <Badge variant="secondary" className="text-[9px] bg-white/20 text-current px-2">FULL</Badge>
-              </button>
+              <div className="flex overflow-x-auto lg:flex-col lg:overflow-visible gap-2 pb-2 lg:pb-0 custom-scrollbar">
+                <button
+                  onClick={() => { setActiveTab('full'); setIsEditingSection(false); }}
+                  className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
+                    activeTab === 'full' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5 whitespace-nowrap">
+                    <FileText className="w-4 h-4 text-indigo-400" /> Complete Report
+                  </span>
+                  <Badge variant="secondary" className="text-[9px] bg-white/20 text-current px-2 ml-2 hidden sm:inline-block">FULL</Badge>
+                </button>
 
-              <button
-                onClick={() => { setActiveTab('abstract'); setIsEditingSection(false); }}
-                className={`w-full text-left px-4 py-3.5 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
-                  activeTab === 'abstract' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <BookOpen className="w-4 h-4 text-indigo-400" /> Executive Summary
-                </span>
-              </button>
+                <button
+                  onClick={() => { setActiveTab('abstract'); setIsEditingSection(false); }}
+                  className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
+                    activeTab === 'abstract' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5 whitespace-nowrap">
+                    <BookOpen className="w-4 h-4 text-indigo-400" /> Abstract
+                  </span>
+                </button>
 
-              <button
-                onClick={() => { setActiveTab('part1'); setIsEditingSection(false); }}
-                className={`w-full text-left px-4 py-3.5 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
-                  activeTab === 'part1' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span className="flex items-center gap-2.5 truncate">
-                  <Building2 className="w-4 h-4 text-indigo-400 shrink-0" /> Part 1: Company Profile
-                </span>
-              </button>
+                <button
+                  onClick={() => { setActiveTab('part1'); setIsEditingSection(false); }}
+                  className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
+                    activeTab === 'part1' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5 whitespace-nowrap">
+                    <Building2 className="w-4 h-4 text-indigo-400 shrink-0" /> Part 1: Company Profile
+                  </span>
+                </button>
 
-              <button
-                onClick={() => { setActiveTab('part2'); setIsEditingSection(false); }}
-                className={`w-full text-left px-4 py-3.5 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
-                  activeTab === 'part2' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span className="flex items-center gap-2.5 truncate">
-                  <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0" /> Part 2: Safety & Tools
-                </span>
-              </button>
+                <button
+                  onClick={() => { setActiveTab('part2'); setIsEditingSection(false); }}
+                  className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
+                    activeTab === 'part2' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5 whitespace-nowrap">
+                    <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0" /> Part 2: Safety & Tools
+                  </span>
+                </button>
 
-              <button
-                onClick={() => { setActiveTab('part3'); setIsEditingSection(false); }}
-                className={`w-full text-left px-4 py-3.5 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
-                  activeTab === 'part3' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span className="flex items-center gap-2.5 truncate">
-                  <Wrench className="w-4 h-4 text-indigo-400 shrink-0" /> Part 3: Work Experience
-                </span>
-              </button>
+                <button
+                  onClick={() => { setActiveTab('part3'); setIsEditingSection(false); }}
+                  className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
+                    activeTab === 'part3' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5 whitespace-nowrap">
+                    <Wrench className="w-4 h-4 text-indigo-400 shrink-0" /> Part 3: Work Experience
+                  </span>
+                </button>
 
-              <button
-                onClick={() => { setActiveTab('part4'); setIsEditingSection(false); }}
-                className={`w-full text-left px-4 py-3.5 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
-                  activeTab === 'part4' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span className="flex items-center gap-2.5 truncate">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" /> Part 4: Challenges & Recs
-                </span>
-              </button>
+                <button
+                  onClick={() => { setActiveTab('part4'); setIsEditingSection(false); }}
+                  className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl font-black text-xs flex items-center justify-between transition-all ${
+                    activeTab === 'part4' ? 'bg-zinc-900 text-white shadow-lg' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5 whitespace-nowrap">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" /> Part 4: Challenges & Recs
+                  </span>
+                </button>
+              </div>
             </div>
 
-            {/* AI Refine Card */}
+            {/* AI Refine / Generate Card */}
             {activeTab !== 'full' && (
               <div className="bg-slate-900 text-white p-5 rounded-3xl space-y-3">
-                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">AI Refinement</p>
-                <p className="text-xs text-zinc-300 font-medium">Want to expand or re-generate this specific section?</p>
+                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                  {hasSectionContent ? 'AI Section Refinement' : 'AI Section Generation'}
+                </p>
+                <p className="text-xs text-zinc-300 font-medium">
+                  {hasSectionContent 
+                    ? 'Want to expand or re-generate this specific section?' 
+                    : `No content for ${activeSectionLabel} yet. Click below to generate it.`}
+                </p>
                 <Button
                   onClick={() => handleRefinePart(activeTab)}
                   disabled={isRefining}
@@ -595,19 +610,21 @@ export default function SIWESGenerator({
                   className="w-full bg-white text-black hover:bg-zinc-100 rounded-xl font-black text-[10px] uppercase tracking-widest py-4"
                 >
                   {isRefining ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Sparkles className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />}
-                  {isRefining ? 'Refining...' : `Refine ${activeTab.toUpperCase()}`}
+                  {isRefining 
+                    ? (hasSectionContent ? `Refining ${activeSectionLabel}...` : `Generating ${activeSectionLabel}...`)
+                    : (hasSectionContent ? `Refine ${activeSectionLabel}` : `Generate ${activeSectionLabel}`)}
                 </Button>
               </div>
             )}
           </div>
 
           {/* Right Workspace Main Panel */}
-          <div className="lg:col-span-3 bg-white border border-[#e5e7eb] rounded-[32px] p-6 md:p-8 shadow-sm flex flex-col min-h-[650px]">
+          <div className="lg:col-span-3 bg-white border border-[#e5e7eb] rounded-[32px] p-6 md:p-8 shadow-sm flex flex-col h-[650px] overflow-hidden">
             {/* Top Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-4 shrink-0">
               <div>
                 <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
-                  {activeTab === 'full' ? 'Complete Consolidated SIWES Report' : `Section: ${activeTab.toUpperCase()}`}
+                  {activeTab === 'full' ? 'Complete Consolidated SIWES Report' : `Section: ${activeTab === 'abstract' ? 'ABSTRACT' : activeTab.toUpperCase()}`}
                 </h2>
                 <p className="text-xs text-slate-500 font-medium">{companyName} — Industrial Training Attachment</p>
               </div>
@@ -635,8 +652,20 @@ export default function SIWESGenerator({
               </div>
             </div>
 
-            {/* Document Content View */}
+            {/* Document Content View - Scrollable Constrained Container */}
             <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 border border-slate-100 rounded-3xl p-6 md:p-8 text-slate-900 leading-relaxed text-sm">
+              {/* Clean Centered Section Title Header */}
+              <div className="mb-6 pb-4 border-b border-slate-200 text-center">
+                <h1 className="text-lg md:text-2xl font-black text-slate-900 uppercase tracking-tight">
+                  {activeTab === 'abstract' && 'ABSTRACT'}
+                  {activeTab === 'part1' && 'PART 1: COMPANY PROFILE & OVERVIEW'}
+                  {activeTab === 'part2' && 'PART 2: SAFETY PROCEDURES & TECHNICAL TOOLS'}
+                  {activeTab === 'part3' && 'PART 3: WORK EXPERIENCE & TECHNICAL ACTIVITIES'}
+                  {activeTab === 'part4' && 'PART 4: CHALLENGES, RECOMMENDATIONS & CONCLUSION'}
+                  {activeTab === 'full' && 'INDUSTRIAL TRAINING (SIWES) TECHNICAL REPORT'}
+                </h1>
+              </div>
+
               <div className="prose prose-slate max-w-none 
                 prose-headings:text-slate-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tight
                 prose-p:text-slate-700 prose-p:font-medium prose-p:leading-relaxed

@@ -147,34 +147,32 @@ export async function POST(request) {
     const humanizeBlock = async (text) => {
       if (text.trim().length < 5) return text;
 
+      const authHeaderVal = apiKey.startsWith('Bearer ') ? apiKey : `Bearer ${apiKey}`;
+      const headers = { 
+        "Content-Type": "application/json",
+        "Authorization": authHeaderVal,
+        "x-api-key": apiKey
+      };
+
+      const requestPayload = {
+        text: text,
+        content: text,
+        tone: "academic",
+        language: "en"
+      };
+
       let response;
       try {
         response = await fetch("https://api.writehuman.ai/v1/humanize", {
           method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
-            "x-api-key": apiKey
-          },
-          body: JSON.stringify({
-            text: text,
-            content: text,
-            prompt: text
-          }),
+          headers,
+          body: JSON.stringify(requestPayload),
         });
       } catch (err) {
         response = await fetch("https://writehuman.ai/api/v1/humanize", {
           method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
-            "x-api-key": apiKey
-          },
-          body: JSON.stringify({
-            text: text,
-            content: text,
-            prompt: text
-          }),
+          headers,
+          body: JSON.stringify(requestPayload),
         });
       }
 
@@ -183,17 +181,28 @@ export async function POST(request) {
       try {
         data = JSON.parse(responseText);
       } catch (e) {
-        data = { message: `Engine returned non-JSON response: ${response.statusText}` };
+        data = { message: `Engine returned non-JSON response (${response.status}): ${responseText || response.statusText}` };
       }
 
       if (!response.ok) {
-        console.error("WriteHuman Error:", data);
-        throw new Error(data.message || data.error || `Humanizer failure: ${response.statusText || 'Engine returned status ' + response.status}`);
+        console.error("WriteHuman API Error:", response.status, data);
+        throw new Error(data.message || data.error || data.detail || `Humanizer failure: HTTP ${response.status}`);
       }
 
-      let result = data.result || data.text || data.humanized_text || data.output || data.outputText || data.data?.result || data.data?.text || data.data?.output;
+      // Extract result (WriteHuman V1 returns array in 'results', e.g. data.results[0])
+      let result = (Array.isArray(data.results) && data.results.length > 0 ? data.results[0] : null) || 
+                   data.result || 
+                   data.text || 
+                   data.humanized_text || 
+                   data.output || 
+                   data.outputText || 
+                   (Array.isArray(data.data?.results) ? data.data.results[0] : null) || 
+                   data.data?.result || 
+                   data.data?.text || 
+                   data.data?.output;
+
       if (!result) {
-        console.error("WriteHuman response missing result:", data);
+        console.error("WriteHuman response missing result key:", data);
         throw new Error("Humanization engine returned empty result.");
       }
 

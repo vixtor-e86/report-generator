@@ -454,53 +454,51 @@ function TemplateSelectContent() {
             </div>
 
             {/* Template Type Cards - Mobile Responsive */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12">
-              {templateTypes.map((type, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6 sm:gap-8 lg:gap-10 mb-8 sm:mb-12">
+              {templateTypes.map((type) => (
                 <div
                   key={type.id}
-                  className={`bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 transition-all duration-300 hover:shadow-2xl cursor-pointer ${
-                    type.popular ? 'border-indigo-500 sm:scale-105' : 'border-gray-200 hover:border-indigo-300'
+                  className={`bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 transition-all duration-300 hover:shadow-2xl cursor-pointer flex flex-col justify-between ${
+                    type.popular ? 'border-indigo-500 md:scale-[1.02]' : 'border-gray-200 hover:border-indigo-300'
                   }`}
                   onClick={() => handleTypeSelect(type.id)}
                 >
                   {/* Popular Badge */}
                   {type.popular && (
-                    <div className="bg-indigo-600 text-white text-xs font-bold px-3 sm:px-4 py-1 rounded-t-xl text-center">
+                    <div className="bg-indigo-600 text-white text-xs font-bold px-3 sm:px-4 py-1 rounded-t-xl text-center uppercase tracking-wider">
                       MOST POPULAR
                     </div>
                   )}
 
-                  <div className="p-4 sm:p-6 lg:p-8">
+                  <div className="p-6 sm:p-8 flex flex-col justify-between flex-1">
                     {/* Icon & Title */}
-                    <div className="text-center mb-4 sm:mb-6">
-                      <div className="text-4xl sm:text-5xl lg:text-6xl mb-3 sm:mb-4">{type.icon}</div>
-                      <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2">
+                    <div className="text-center mb-6">
+                      <div className="text-5xl lg:text-6xl mb-4">{type.icon}</div>
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                         {type.name}
                       </h3>
-                      <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
+                      <p className="text-gray-600 text-sm leading-relaxed">
                         {type.description}
                       </p>
                     </div>
 
                     {/* Faculty Count Badge */}
-                    {type.id !== 'siwes' && (
-                      <div className="flex items-center justify-center gap-2 mb-4 sm:mb-6 text-xs sm:text-sm text-gray-600">
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        <span className="font-semibold">{type.count} Faculties Available</span>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-center gap-2 mb-6 text-sm text-gray-600">
+                      <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      <span className="font-semibold">{type.count} Faculties Available</span>
+                    </div>
 
                     {/* Select Button */}
                     <button
-                      className={`w-full py-2.5 sm:py-3 rounded-lg font-semibold transition text-sm sm:text-base ${
+                      className={`w-full py-3 rounded-xl font-bold transition text-sm sm:text-base shadow-sm ${
                         type.popular
                           ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                           : 'bg-gray-900 text-white hover:bg-gray-800'
                       }`}
                     >
-                      {type.id === 'siwes' ? 'Continue' : 'Choose Faculty →'}
+                      Choose Faculty →
                     </button>
                   </div>
                 </div>
