@@ -1,6 +1,6 @@
-"use client";
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import { 
   Mail, Users, FileText, Send, Eye, Trash, Plus, 
   Search, Check, TrendingUp, Award, DollarSign, RefreshCw 
@@ -9,6 +9,26 @@ import { toast } from 'sonner';
 
 export default function EmailPage() {
   const searchParams = useSearchParams();
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    async function fetchUserRole() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          setUserRole(profile?.role);
+        }
+      } catch (err) {
+        console.error('Fetch user role error:', err);
+      }
+    }
+    fetchUserRole();
+  }, []);
   
   // State for composing
   const [recipients, setRecipients] = useState([]);
@@ -349,13 +369,15 @@ export default function EmailPage() {
             <p className="text-lg md:text-2xl font-black text-slate-950">{totalPurchases}</p>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-amber-50 rounded-xl text-amber-600"><DollarSign className="w-5 h-5" /></div>
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Revenue</p>
-            <p className="text-lg md:text-2xl font-black text-slate-950">₦{totalRevenue.toLocaleString()}</p>
+        {userRole !== 'support' && (
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-amber-50 rounded-xl text-amber-600"><DollarSign className="w-5 h-5" /></div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Revenue</p>
+              <p className="text-lg md:text-2xl font-black text-slate-950">₦{totalRevenue.toLocaleString()}</p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -438,9 +460,11 @@ export default function EmailPage() {
                 <button onClick={() => handleApplySegment('paying')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'paying' ? 'bg-teal-600 text-white shadow-sm' : 'bg-teal-50 text-teal-700 hover:bg-teal-100'}`}>
                   All Paying ({payingCustomersCount})
                 </button>
-                <button onClick={() => handleApplySegment('top_spenders')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'top_spenders' ? 'bg-amber-600 text-white shadow-sm' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>
-                  Top Spenders ₦20k+ ({customers.filter(c => c.totalSpent >= 20000).length})
-                </button>
+                {userRole !== 'support' && (
+                  <button onClick={() => handleApplySegment('top_spenders')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'top_spenders' ? 'bg-amber-600 text-white shadow-sm' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>
+                    Top Spenders ₦20k+ ({customers.filter(c => c.totalSpent >= 20000).length})
+                  </button>
+                )}
                 <button onClick={() => handleApplySegment('all')} className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${selectedSegment === 'all' ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                   All Users ({customers.length})
                 </button>
@@ -551,7 +575,7 @@ export default function EmailPage() {
                           <th className="p-3">Customer Details</th>
                           <th className="p-3">Department</th>
                           <th className="p-3 text-right">Tier/Orders</th>
-                          <th className="p-3 text-right">Spent</th>
+                          {userRole !== 'support' && <th className="p-3 text-right">Spent</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs">
@@ -591,7 +615,7 @@ export default function EmailPage() {
                                   <span className="text-[10px] text-slate-400 mt-0.5">{customer.purchaseCount} purchases</span>
                                 </div>
                               </td>
-                              <td className="p-3 text-right font-black text-slate-950">₦{(customer.totalSpent).toLocaleString()}</td>
+                              {userRole !== 'support' && <td className="p-3 text-right font-black text-slate-950">₦{(customer.totalSpent).toLocaleString()}</td>}
                             </tr>
                           );
                         })}
