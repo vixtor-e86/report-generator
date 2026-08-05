@@ -201,29 +201,6 @@ export default function SIWESGenerator({
     setUploadedVisuals((prev) => prev.filter((v) => v.id !== id));
   };
 
-  // Save state on update
-  useEffect(() => {
-    try {
-      const payload = {
-        companyName,
-        companyAddress,
-        department,
-        duration,
-        institution,
-        course,
-        studentName,
-        matricNumber,
-        objectives,
-        workDescription,
-        equipment,
-        report
-      };
-      localStorage.setItem('w3_siwes_generator_saved_data', JSON.stringify(payload));
-    } catch (e) {
-      console.error('Failed to save SIWES state:', e);
-    }
-  }, [companyName, companyAddress, department, duration, institution, course, studentName, matricNumber, objectives, workDescription, equipment, report]);
-
   const handleObjectiveChange = (index, value) => {
     const updated = [...objectives];
     updated[index] = value;
@@ -247,6 +224,7 @@ export default function SIWESGenerator({
     setWorkDescription('');
     setEquipment('');
     setUploadedVisuals([]);
+    setRefineCounts({ abstract: 0, part1: 0, part2: 0, part3: 0, part4: 0 });
     setActiveTab('form');
     setSiwesTab('current');
     toast.success('Ready to setup your new SIWES report!');
@@ -284,6 +262,21 @@ export default function SIWESGenerator({
       return updated;
     });
     toast.info('Report deleted from history.');
+  };
+
+  const handleSaveSetupUpdate = () => {
+    if (!companyName.trim()) {
+      toast.error('Please specify your Placement Company Name');
+      return;
+    }
+    if (report) {
+      saveReportToHistory(report, companyName, department, institution);
+      setActiveTab('full');
+      setSiwesTab('current');
+      toast.success('Setup details & technical visuals updated successfully!');
+    } else {
+      handleGenerate();
+    }
   };
 
   const handleGenerate = useCallback(async (skipPaymentCheck = false) => {
@@ -359,21 +352,6 @@ export default function SIWESGenerator({
       }
     }
   }, [hasPaid, pendingNewProject, companyName, workDescription, handleGenerate, setHasPaid]);
-
-  const handleSaveSetupUpdate = () => {
-    if (!companyName.trim()) {
-      toast.error('Please specify your Placement Company Name');
-      return;
-    }
-    if (report) {
-      saveReportToHistory(report, companyName, department, institution);
-      setActiveTab('full');
-      setSiwesTab('current');
-      toast.success('Setup details & technical visuals updated successfully!');
-    } else {
-      handleGenerate();
-    }
-  };
 
   // Handle Refine Single Section (Max 2 Refinements per Section)
   const handleRefinePart = async (partKey) => {
@@ -477,7 +455,6 @@ export default function SIWESGenerator({
     );
   };
 
-  // Helper to get active text content
   const getActiveContent = () => {
     if (!report) return '';
     if (activeTab === 'abstract') return report.abstract || '';
@@ -500,7 +477,6 @@ export default function SIWESGenerator({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Total word count calculation
   const totalWords = report ? (
     (report.abstract || '').split(/\s+/).filter(Boolean).length +
     (report.part1 || '').split(/\s+/).filter(Boolean).length +
@@ -509,11 +485,11 @@ export default function SIWESGenerator({
     (report.part4 || '').split(/\s+/).filter(Boolean).length
   ) : 0;
 
-  // Helper to check if current active tab section has content
   const currentSectionContent = report?.[activeTab] || '';
   const hasSectionContent = Boolean(currentSectionContent && currentSectionContent.trim().length > 10);
   const activeSectionLabel = activeTab === 'abstract' ? 'Abstract' : activeTab.toUpperCase();
 
+  // Main UI Render
   return (
     <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
       {/* Header Banner */}
@@ -593,6 +569,7 @@ export default function SIWESGenerator({
         </div>
       </div>
 
+      {/* Sub-Tab View Rendering */}
       {siwesTab === 'saved' ? (
         /* SAVED REPORTS HISTORY VIEW */
         <div className="bg-white border border-[#e5e7eb] rounded-[32px] md:rounded-[40px] p-6 md:p-10 shadow-sm space-y-6">
@@ -650,11 +627,9 @@ export default function SIWESGenerator({
             </div>
           )}
         </div>
-      ) : (
-        /* MAIN WORKSPACE VIEW */
-        (!report || activeTab === 'form') ? (
-            /* SETUP FORM VIEW */
-            <div className="bg-white border border-[#e5e7eb] rounded-[32px] md:rounded-[40px] p-6 md:p-10 shadow-sm space-y-8">
+      ) : (!report || activeTab === 'form') ? (
+        /* SETUP FORM VIEW */
+        <div className="bg-white border border-[#e5e7eb] rounded-[32px] md:rounded-[40px] p-6 md:p-10 shadow-sm space-y-8">
           <div className="flex items-center justify-between border-b border-slate-100 pb-6">
             <div>
               <h2 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tight">Placement & Technical Details</h2>
@@ -694,68 +669,73 @@ export default function SIWESGenerator({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Department / Unit *</label>
-                <Input
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  placeholder="e.g. Electrical & Instrumentation Maintenance Unit"
-                  className="bg-white border-slate-200 rounded-xl font-medium text-sm text-slate-900 focus:border-black"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Duration of Training</label>
-                <Input
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  placeholder="e.g. 6 Months (24 Weeks) or 3 Months"
-                  className="bg-white border-slate-200 rounded-xl font-medium text-sm text-slate-900 focus:border-black"
-                />
-              </div>
-            </div>
-
-            {/* Section 2: Student Academic Context */}
-            <div className="space-y-4 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
-              <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest">
-                <GraduationCap className="w-4 h-4" /> Academic Context (Optional for Cover)
-              </div>
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Institution / University Name</label>
-                <Input
-                  value={institution}
-                  onChange={(e) => setInstitution(e.target.value)}
-                  placeholder="e.g. University of Lagos / Yaba College of Tech"
-                  className="bg-white border-slate-200 rounded-xl font-medium text-sm text-slate-900 focus:border-black"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Course / Department</label>
-                <Input
-                  value={course}
-                  onChange={(e) => setCourse(e.target.value)}
-                  placeholder="e.g. Electrical & Electronics Engineering"
-                  className="bg-white border-slate-200 rounded-xl font-medium text-sm text-slate-900 focus:border-black"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Student Name</label>
+                  <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Department / Unit *</label>
                   <Input
-                    value={studentName}
-                    onChange={(e) => setStudentName(e.target.value)}
-                    placeholder="e.g. Victor Adeleke"
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    placeholder="e.g. Electrical Engineering Dept"
                     className="bg-white border-slate-200 rounded-xl font-medium text-sm text-slate-900 focus:border-black"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Matric Number</label>
+                  <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Attachment Duration</label>
+                  <select
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-medium text-slate-900 focus:border-black focus:outline-none"
+                  >
+                    <option>3 Months (12 Weeks)</option>
+                    <option>6 Months (24 Weeks)</option>
+                    <option>9 Months (36 Weeks)</option>
+                    <option>1 Year (52 Weeks)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2: Student Metadata */}
+            <div className="space-y-4 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+              <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest">
+                <GraduationCap className="w-4 h-4" /> Academic Affiliation
+              </div>
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Institution Name</label>
+                <Input
+                  value={institution}
+                  onChange={(e) => setInstitution(e.target.value)}
+                  placeholder="e.g. University of Lagos (UNILAG)"
+                  className="bg-white border-slate-200 rounded-xl font-medium text-sm text-slate-900 focus:border-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Course of Study</label>
+                <Input
+                  value={course}
+                  onChange={(e) => setCourse(e.target.value)}
+                  placeholder="e.g. Mechanical / Civil / Computer Engineering"
+                  className="bg-white border-slate-200 rounded-xl font-medium text-sm text-slate-900 focus:border-black"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Student Full Name</label>
+                  <Input
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                    placeholder="e.g. Victor Okafor"
+                    className="bg-white border-slate-200 rounded-xl font-medium text-sm text-slate-900 focus:border-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-1.5 uppercase tracking-wide">Matric / Reg Number</label>
                   <Input
                     value={matricNumber}
                     onChange={(e) => setMatricNumber(e.target.value)}
-                    placeholder="e.g. ENG/2021/0492"
+                    placeholder="e.g. 190407022"
                     className="bg-white border-slate-200 rounded-xl font-medium text-sm text-slate-900 focus:border-black"
                   />
                 </div>
@@ -763,60 +743,70 @@ export default function SIWESGenerator({
             </div>
           </div>
 
-          {/* Section 3: Training Objectives */}
+          {/* Section 3: Primary Work Duties & Tools */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+              <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest">
+                <Wrench className="w-4 h-4" /> Industrial Experience & Operations *
+              </div>
+              <label className="block text-xs font-black text-slate-700 uppercase tracking-wide">
+                Describe the key technical activities, equipment used, and operations performed *
+              </label>
+              <Textarea
+                rows={5}
+                value={workDescription}
+                onChange={(e) => setWorkDescription(e.target.value)}
+                placeholder="e.g. I participated in routine preventive maintenance on 500kVA diesel generators, calibrated industrial pressure transmitters using HART communicators, performed troubleshooting on PLC control panels, and assisted in wiring distribution boxes..."
+                className="bg-white border-slate-200 rounded-2xl font-medium text-sm text-slate-900 focus:border-black"
+              />
+            </div>
+
+            <div className="space-y-3 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+              <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest">
+                <ShieldCheck className="w-4 h-4" /> Tools & Equipment Handled
+              </div>
+              <label className="block text-xs font-black text-slate-700 uppercase tracking-wide">
+                List specific tools, software, or machinery utilized
+              </label>
+              <Textarea
+                rows={5}
+                value={equipment}
+                onChange={(e) => setEquipment(e.target.value)}
+                placeholder="e.g. Digital Multimeters, Oscilloscopes, HART Communicator 475, AutoCAD 2024, MATLAB, Vernier Calipers, Hydraulic Press, Personal Protective Equipment (PPE)..."
+                className="bg-white border-slate-200 rounded-2xl font-medium text-sm text-slate-900 focus:border-black"
+              />
+            </div>
+          </div>
+
+          {/* Section 4: Training Objectives */}
           <div className="space-y-4 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest">
-                <ShieldCheck className="w-4 h-4" /> Training Objectives (5 Core Goals)
+                <FileText className="w-4 h-4" /> SIWES Attachment Objectives (5 Points)
               </div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Customizable</span>
+              <Badge variant="outline" className="text-[10px] font-bold text-indigo-600 border-indigo-200 bg-indigo-50">
+                Institutional Standard
+              </Badge>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {objectives.map((obj, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <span className="w-6 h-6 bg-zinc-900 text-white text-[10px] font-black rounded-lg flex items-center justify-center shrink-0">
+                <div key={idx} className="flex items-center gap-2 bg-white p-3 rounded-2xl border border-slate-200">
+                  <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 text-xs font-black shrink-0">
                     {idx + 1}
                   </span>
-                  <Input
+                  <input
+                    type="text"
                     value={obj}
                     onChange={(e) => handleObjectiveChange(idx, e.target.value)}
-                    placeholder={`Objective ${idx + 1}`}
-                    className="bg-white border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:border-black"
+                    className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none text-xs font-medium text-slate-900"
                   />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Section 4: Practical Activities & Equipment */}
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-900 uppercase tracking-wide">
-                Work Experience Description & Daily Tasks *
-              </label>
-              <Textarea
-                value={workDescription}
-                onChange={(e) => setWorkDescription(e.target.value)}
-                rows={4}
-                placeholder="Describe your daily duties, project participation, maintenance routines, or technical operations carried out during your attachment..."
-                className="bg-slate-50 border-slate-200 rounded-2xl p-4 font-medium text-sm text-slate-900 focus:border-black focus:ring-0 resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-900 uppercase tracking-wide">
-                Specialized Tools, Equipment, Software & Machinery Used
-              </label>
-              <Input
-                value={equipment}
-                onChange={(e) => setEquipment(e.target.value)}
-                placeholder="e.g. Multimeter, Oscilloscope, AutoCAD, MATLAB, Heavy Lathe Machine, Safety Harness, PLC Module"
-                className="bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900 focus:border-black"
-              />
-            </div>
-          </div>
-
-          {/* Section 5: Technical Visuals & Figures */}
+          {/* Section 5: Technical Visuals, Diagrams & Figures Upload (Max 10) */}
           <div className="space-y-4 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest">
@@ -864,8 +854,8 @@ export default function SIWESGenerator({
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
                         <img src={visual.data} alt="" className="w-full h-full object-cover" />
                       </div>
-                      <div className="flex-1 min-w-0 pr-4">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Chapter / Part *</label>
+                      <div className="flex-1 space-y-1">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Chapter</label>
                         <select
                           value={visual.targetSection}
                           onChange={(e) => updateVisualField(visual.id, 'targetSection', e.target.value)}
