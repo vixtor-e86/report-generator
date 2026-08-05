@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from 'react';
 import { 
-  Monitor, RefreshCw, ChevronLeft, ChevronRight, Sparkles, Download, ListTree, FileText, Plus, X, MessageSquare, Hash, Upload, BookOpen, Palette, Layers, Search
+  Monitor, RefreshCw, ChevronLeft, ChevronRight, Sparkles, Download, ListTree, FileText, Plus, X, MessageSquare, Hash, Upload, BookOpen, Palette, Layers, Search, HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Textarea } from '@/components/marketplace/ui/textarea';
@@ -34,6 +34,27 @@ const SlideRenderer = ({ slide, template }) => {
           <div style={{ ...commonStyles, backgroundColor: template.secondaryColor, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10%', textAlign: 'center' }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: '900', color: 'white', textTransform: 'uppercase' }}>{slide.title}</h2>
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4%', background: template.accentColor }} />
+          </div>
+        );
+      case 'qa':
+        return (
+          <div style={{ ...commonStyles, backgroundColor: '#0f172a', padding: '6%', color: 'white', overflowY: 'auto' }}>
+            <div style={{ width: '40px', height: '4px', background: template.accentColor, marginBottom: '0.8rem' }} />
+            <h2 style={{ fontSize: '1.2rem', fontWeight: '900', color: 'white', marginBottom: '1rem', textTransform: 'uppercase' }}>
+              {slide.title}
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              {slide.qaList?.map((qa, i) => (
+                <div key={i} style={{ backgroundColor: 'rgba(255,255,255,0.06)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <p style={{ fontSize: '0.8rem', fontWeight: '800', color: template.accentColor, marginBottom: '3px' }}>
+                    Q{i + 1}: {qa.question}
+                  </p>
+                  <p style={{ fontSize: '0.75rem', color: '#cbd5e1', fontWeight: '500', lineHeight: '1.35' }}>
+                    A: {qa.answer}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         );
       default:
@@ -81,6 +102,7 @@ export default function SlideGenerator({
   const [customOutline, setCustomOutline] = useState(['Introduction', 'Background', 'Methodology', 'Results', 'Conclusion']);
   const [newOutlineItem, setNewOutlineItem] = useState('');
   const [slideCountRange, setSlideCountRange] = useState('12-18');
+  const [includeQA, setIncludeQA] = useState(false);
   const [savedPresentations, setSavedPresentations] = useState([]);
   const [activeTab, setActiveTab] = useState('create'); // 'create' | 'saved'
   const fileInputRef = useRef(null);
@@ -134,6 +156,15 @@ export default function SlideGenerator({
       });
     });
     if (data.conclusion) slideList.push({ type: 'conclusion', title: data.conclusion.title, bullets: data.conclusion.bullets });
+    
+    if (data.defenseQA && Array.isArray(data.defenseQA) && data.defenseQA.length > 0) {
+      slideList.push({
+        type: 'qa',
+        title: 'ANTICIPATED DEFENSE QUESTIONS & ANSWERS',
+        qaList: data.defenseQA
+      });
+    }
+
     return slideList;
   };
 
@@ -166,7 +197,8 @@ export default function SlideGenerator({
           images: uploadedImages.map(img => ({ id: img.id, caption: img.caption })),
           currentSlides: isIterative ? generatedSlides : null,
           customOutline,
-          slideCountRange
+          slideCountRange,
+          includeQA
         })
       });
       const data = await response.json();
@@ -252,6 +284,18 @@ export default function SlideGenerator({
         case 'section':
           pptSlide.background = { color: secondaryColor };
           pptSlide.addText(slide.title.toUpperCase(), { x: '10%', y: '40%', w: '80%', h: '20%', fontSize: 36, bold: true, color: 'FFFFFF', align: 'center' });
+          break;
+        case 'qa':
+          pptSlide.background = { color: '0F172A' };
+          pptSlide.addText('ANTICIPATED DEFENSE QUESTIONS & ANSWERS', { x: '8%', y: '8%', w: '84%', h: '12%', fontSize: 22, bold: true, color: 'FFFFFF' });
+          if (slide.qaList) {
+            let yPos = 22;
+            slide.qaList.forEach((qa, i) => {
+              pptSlide.addText(`Q${i+1}: ${qa.question}`, { x: '8%', y: `${yPos}%`, w: '84%', h: '6%', fontSize: 12, bold: true, color: accentColor });
+              pptSlide.addText(`A: ${qa.answer}`, { x: '8%', y: `${yPos + 6}%`, w: '84%', h: '10%', fontSize: 10, color: 'CBD5E1' });
+              yPos += 18;
+            });
+          }
           break;
         case 'content':
         case 'conclusion':
@@ -629,6 +673,30 @@ export default function SlideGenerator({
                                 {range} SLIDES
                             </button>
                         ))}
+                    </div>
+                </div>
+
+                {/* Optional Defense Q&A Toggle Card */}
+                <div className="bg-white border border-slate-200 rounded-[32px] md:rounded-[40px] p-6 md:p-8 shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <HelpCircle className="w-4 h-4 text-indigo-600" />
+                                <h3 className="text-xs font-black uppercase tracking-wide text-slate-900">Include Defense Q&A Slide</h3>
+                            </div>
+                            <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                                Generate likely examiner defense questions & model answers at the end of your slide deck.
+                            </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+                            <input 
+                                type="checkbox" 
+                                checked={includeQA} 
+                                onChange={(e) => setIncludeQA(e.target.checked)} 
+                                className="sr-only peer" 
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
                     </div>
                 </div>
 

@@ -9,7 +9,67 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Search query is required' }, { status: 400 });
     }
 
-    if (mode === 'deep') {
+    if (mode === 'verify') {
+      const { style = 'APA 7th' } = await request.json().catch(() => ({}));
+      
+      const systemPrompt = `You are an expert academic citation verifier and scholarly bibliographer.
+      The user has provided a list of references/citations to audit and verify for academic authenticity.
+      
+      Target Citation Style: ${style}
+      Input Text:
+      ${query}
+      
+      Your task:
+      1. Split the input text into distinct individual references.
+      2. For EACH reference:
+         - Determine if it represents a REAL, authentic published academic paper/book/conference OR if it appears hallucinated/fake/unverifiable.
+         - Extract Title, Authors, Year, Journal/Venue, and DOI (if available).
+         - Reformat the citation perfectly into the requested style: ${style}.
+         - Provide a brief verification assessment explaining whether metadata matches known literature or if formatting errors/hallucinations were detected.
+      
+      Return a valid JSON object with this EXACT structure:
+      {
+        "auditedReferences": [
+          {
+            "id": 1,
+            "originalText": "Raw text pasted",
+            "status": "verified | unverified | corrected",
+            "confidenceScore": 95,
+            "title": "Paper Title",
+            "authors": ["Author 1", "Author 2"],
+            "year": "2023",
+            "journal": "Journal Name",
+            "doi": "10.xxxx/xxxx",
+            "standardizedCitation": "Perfectly formatted citation string in ${style}",
+            "notes": "Clear verification notes on authenticity, DOI validity, and formatting changes."
+          }
+        ]
+      }
+      
+      Rules:
+      - Return ONLY the JSON object. No extra text or markdown.`;
+
+      const aiResponse = await callAI(systemPrompt, {
+        provider: 'claude',
+        maxTokens: 3500,
+        temperature: 0.2
+      });
+
+      let verifyData;
+      try {
+        const jsonString = aiResponse.content.replace(/```json/g, '').replace(/```/g, '').trim();
+        verifyData = JSON.parse(jsonString);
+      } catch (parseError) {
+        console.error('Verify Parse Error:', aiResponse.content);
+        throw new Error('AI failed to audit references. Please check the text format and try again.');
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        data: verifyData.auditedReferences || []
+      });
+
+    } else if (mode === 'deep') {
       // 1. Paid Claude-powered DeepSearch (₦200)
       const systemPrompt = `You are an advanced academic research assistant. 
       The user is performing a "DeepSearch" for high-quality, relevant academic references and journals.

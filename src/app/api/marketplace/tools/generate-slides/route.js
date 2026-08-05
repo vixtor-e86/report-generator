@@ -3,7 +3,7 @@ import { callAI } from '@/lib/aiProvider';
 
 export async function POST(request) {
   try {
-    const { content, prompt, images, currentSlides, customOutline, slideCountRange } = await request.json();
+    const { content, prompt, images, currentSlides, customOutline, slideCountRange, includeQA } = await request.json();
 
     if (!content && !currentSlides) {
       return NextResponse.json({ error: 'Content or existing slides are required' }, { status: 400 });
@@ -23,6 +23,10 @@ export async function POST(request) {
       ? `The presentation should aim for a total length within the range of ${slideCountRange} slides.`
       : 'Aim for a comprehensive technical length (approx 12-18 slides).';
 
+    const qaContext = includeQA 
+      ? `CRITICAL REQUIREMENT: The user requested Defense Q&A. You MUST include a "defenseQA" array at the root of the JSON object containing 3 to 5 anticipated defense/examiner questions with thorough model answers derived from the content.`
+      : '';
+
     const isRefinement = !!currentSlides;
 
     const systemPrompt = isRefinement 
@@ -40,6 +44,7 @@ export async function POST(request) {
       ${structureContext}
       ${lengthContext}
       ${imageContext}
+      ${qaContext}
       
       Structure the response as a valid JSON object with this EXACT structure:
       {
@@ -62,7 +67,7 @@ export async function POST(request) {
         "conclusion": {
           "title": "Synthesis & Future Direction",
           "bullets": ["Final point 1", "Final point 2"]
-        }
+        }${includeQA ? `,\n        "defenseQA": [\n          { "question": "Anticipated Question 1?", "answer": "Model Answer 1" },\n          { "question": "Anticipated Question 2?", "answer": "Model Answer 2" }\n        ]` : ''}
       }
       
       Specific Instructions: ${prompt || 'Make it professional and technically detailed.'}
