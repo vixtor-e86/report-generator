@@ -3,7 +3,7 @@ import {
   Briefcase, Sparkles, RefreshCw, Copy, Check, Download, 
   Building2, GraduationCap, ShieldCheck, Wrench, BookOpen, 
   FileText, CheckCircle2, AlertCircle, ArrowLeft, Layers, Edit3, Eye,
-  Upload, Camera, X
+  Upload, Camera, X, Plus, Trash2, Clock
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Textarea } from '@/components/marketplace/ui/textarea';
@@ -42,7 +42,7 @@ export default function SIWESGenerator({
   const [workDescription, setWorkDescription] = useState('');
   const [equipment, setEquipment] = useState('');
 
-  // Technical Visuals & Figures state
+  // Technical Visuals & Figures state (Max 10)
   const [uploadedVisuals, setUploadedVisuals] = useState([]);
   const visualInputRef = useRef(null);
 
@@ -55,7 +55,21 @@ export default function SIWESGenerator({
   const [isRefining, setIsRefining] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Restore saved state from local storage on mount
+  // Saved Reports History State
+  const [savedSIWESReports, setSavedSIWESReports] = useState([]);
+  const [siwesTab, setSiwesTab] = useState('current'); // 'current' | 'saved'
+  const [pendingNewProject, setPendingNewProject] = useState(false);
+
+  // Refinement limit state per section (Max 2 per section)
+  const [refineCounts, setRefineCounts] = useState({
+    abstract: 0,
+    part1: 0,
+    part2: 0,
+    part3: 0,
+    part4: 0
+  });
+
+  // Restore saved current state & history from local storage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem('w3_siwes_generator_saved_data');
@@ -73,17 +87,61 @@ export default function SIWESGenerator({
         if (parsed.workDescription) setWorkDescription(parsed.workDescription);
         if (parsed.equipment) setEquipment(parsed.equipment);
         if (parsed.uploadedVisuals && Array.isArray(parsed.uploadedVisuals)) setUploadedVisuals(parsed.uploadedVisuals);
+        if (parsed.refineCounts) setRefineCounts(parsed.refineCounts);
         if (parsed.report) {
           setReport(parsed.report);
           setActiveTab('full');
         }
+      }
+
+      const historySaved = localStorage.getItem('w3_saved_siwes_history');
+      if (historySaved) {
+        setSavedSIWESReports(JSON.parse(historySaved));
       }
     } catch (e) {
       console.error('Failed to restore SIWES state:', e);
     }
   }, []);
 
-  // Save state on update
+  // Save current report to history list
+  const saveReportToHistory = useCallback((currentReportData, company, dept, inst) => {
+    if (!currentReportData) return;
+    const historyItem = {
+      id: Date.now().toString(),
+      title: `${company || 'SIWES'} Technical Report`,
+      companyName: company,
+      department: dept,
+      institution: inst,
+      createdAt: new Date().toISOString(),
+      formData: {
+        companyName: company,
+        companyAddress,
+        department: dept,
+        duration,
+        institution: inst,
+        course,
+        studentName,
+        matricNumber,
+        objectives,
+        workDescription,
+        equipment,
+        uploadedVisuals
+      },
+      report: currentReportData
+    };
+
+    setSavedSIWESReports((prev) => {
+      const updated = [historyItem, ...prev.filter(item => item.companyName !== company)];
+      try {
+        localStorage.setItem('w3_saved_siwes_history', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save to SIWES history:', e);
+      }
+      return updated;
+    });
+  }, [companyAddress, duration, course, studentName, matricNumber, objectives, workDescription, equipment, uploadedVisuals]);
+
+  // Save active state on update
   useEffect(() => {
     try {
       const payload = {
@@ -99,19 +157,20 @@ export default function SIWESGenerator({
         workDescription,
         equipment,
         uploadedVisuals,
+        refineCounts,
         report
       };
       localStorage.setItem('w3_siwes_generator_saved_data', JSON.stringify(payload));
     } catch (e) {
       console.error('Failed to save SIWES state:', e);
     }
-  }, [companyName, companyAddress, department, duration, institution, course, studentName, matricNumber, objectives, workDescription, equipment, uploadedVisuals, report]);
+  }, [companyName, companyAddress, department, duration, institution, course, studentName, matricNumber, objectives, workDescription, equipment, uploadedVisuals, refineCounts, report]);
 
   const handleVisualUpload = (e) => {
     const files = e.target.files;
     if (!files) return;
-    if (uploadedVisuals.length + files.length > 6) {
-      toast.error('Maximum 6 technical visuals allowed per report.');
+    if (uploadedVisuals.length + files.length > 10) {
+      toast.error('Maximum 10 technical visuals allowed per report.');
       return;
     }
     Array.from(files).forEach((file) => {
@@ -171,6 +230,62 @@ export default function SIWESGenerator({
     setObjectives(updated);
   };
 
+  const handleStartNewProject = () => {
+    if (report) {
+      saveReportToHistory(report, companyName, department, institution);
+      toast.info('Current report saved to history!');
+    }
+    setPendingNewProject(true);
+    setShowPaymentDialog(true);
+  };
+
+  const handleResetForNewProject = () => {
+    setReport(null);
+    setCompanyName('');
+    setCompanyAddress('');
+    setDepartment('');
+    setWorkDescription('');
+    setEquipment('');
+    setUploadedVisuals([]);
+    setActiveTab('form');
+    setSiwesTab('current');
+    toast.success('Ready to setup your new SIWES report!');
+  };
+
+  const handleLoadReportFromHistory = (item) => {
+    if (item.formData) {
+      setCompanyName(item.formData.companyName || '');
+      setCompanyAddress(item.formData.companyAddress || '');
+      setDepartment(item.formData.department || '');
+      setDuration(item.formData.duration || '6 Months (24 Weeks)');
+      setInstitution(item.formData.institution || '');
+      setCourse(item.formData.course || '');
+      setStudentName(item.formData.studentName || '');
+      setMatricNumber(item.formData.matricNumber || '');
+      if (item.formData.objectives) setObjectives(item.formData.objectives);
+      setWorkDescription(item.formData.workDescription || '');
+      setEquipment(item.formData.equipment || '');
+      if (item.formData.uploadedVisuals) setUploadedVisuals(item.formData.uploadedVisuals);
+    }
+    setReport(item.report);
+    setActiveTab('full');
+    setSiwesTab('current');
+    toast.success(`Loaded "${item.title}" into workspace.`);
+  };
+
+  const handleDeleteReportFromHistory = (id) => {
+    setSavedSIWESReports((prev) => {
+      const updated = prev.filter(i => i.id !== id);
+      try {
+        localStorage.setItem('w3_saved_siwes_history', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to update SIWES history:', e);
+      }
+      return updated;
+    });
+    toast.info('Report deleted from history.');
+  };
+
   const handleGenerate = useCallback(async (skipPaymentCheck = false) => {
     if (!companyName.trim()) {
       toast.error('Please specify your Placement Company/Organization Name');
@@ -219,7 +334,8 @@ export default function SIWESGenerator({
       if (data.report) {
         setReport(data.report);
         setActiveTab('full');
-        toast.success('SIWES Technical Report Generated Successfully!');
+        saveReportToHistory(data.report, companyName, department, institution);
+        toast.success('SIWES Technical Report Generated & Saved to History!');
       }
     } catch (err) {
       console.error(err);
@@ -228,18 +344,46 @@ export default function SIWESGenerator({
       setIsProcessing(false);
       setHasPaid(false);
     }
-  }, [companyName, companyAddress, department, duration, institution, course, studentName, matricNumber, objectives, workDescription, equipment, setIsProcessing, setShowPaymentDialog, setHasPaid]);
+  }, [companyName, companyAddress, department, duration, institution, course, studentName, matricNumber, objectives, workDescription, equipment, saveReportToHistory, setIsProcessing, setShowPaymentDialog, setHasPaid]);
 
   // Handle Payment Trigger Effect
   useEffect(() => {
-    if (hasPaid && companyName.trim() && workDescription.trim()) {
-      setHasPaid(false);
-      handleGenerate(true);
+    if (hasPaid) {
+      if (pendingNewProject) {
+        setPendingNewProject(false);
+        setHasPaid(false);
+        handleResetForNewProject();
+      } else if (companyName.trim() && workDescription.trim()) {
+        setHasPaid(false);
+        handleGenerate(true);
+      }
     }
-  }, [hasPaid, companyName, workDescription, handleGenerate, setHasPaid]);
+  }, [hasPaid, pendingNewProject, companyName, workDescription, handleGenerate, setHasPaid]);
 
-  // Handle Refine Single Section
+  const handleSaveSetupUpdate = () => {
+    if (!companyName.trim()) {
+      toast.error('Please specify your Placement Company Name');
+      return;
+    }
+    if (report) {
+      saveReportToHistory(report, companyName, department, institution);
+      setActiveTab('full');
+      setSiwesTab('current');
+      toast.success('Setup details & technical visuals updated successfully!');
+    } else {
+      handleGenerate();
+    }
+  };
+
+  // Handle Refine Single Section (Max 2 Refinements per Section)
   const handleRefinePart = async (partKey) => {
+    const currentCount = refineCounts[partKey] || 0;
+    if (currentCount >= 2) {
+      const sectionLabel = partKey === 'abstract' ? 'Abstract' : partKey.toUpperCase();
+      toast.error(`Maximum 2 AI refinement limit reached for ${sectionLabel}. You can edit the text directly.`);
+      return;
+    }
+
     setIsRefining(true);
     try {
       const response = await fetch('/api/marketplace/tools/siwes-generator', {
@@ -268,8 +412,16 @@ export default function SIWESGenerator({
         const wasEmpty = !report?.[partKey] || report[partKey].trim().length < 10;
         const updatedReport = report ? { ...report, [partKey]: data.content } : { [partKey]: data.content };
         setReport(updatedReport);
+        saveReportToHistory(updatedReport, companyName, department, institution);
+
+        const newCount = currentCount + 1;
+        setRefineCounts((prev) => ({
+          ...prev,
+          [partKey]: newCount
+        }));
+
         const sectionLabel = partKey === 'abstract' ? 'Abstract' : partKey.toUpperCase();
-        toast.success(wasEmpty ? `Section ${sectionLabel} Generated!` : `Section ${sectionLabel} Refined!`);
+        toast.success(wasEmpty ? `Section ${sectionLabel} Generated! (${newCount}/2 used)` : `Section ${sectionLabel} Refined! (${newCount}/2 used)`);
       }
     } catch (err) {
       toast.error(err.message || 'Refining section failed');
@@ -393,24 +545,117 @@ export default function SIWESGenerator({
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             {report && (
               <Button
-                onClick={() => setActiveTab('form')}
+                onClick={() => { setActiveTab('form'); setSiwesTab('current'); }}
                 variant="outline"
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-2xl font-black text-xs uppercase tracking-widest px-5 py-3 shrink-0"
               >
                 <Edit3 className="w-4 h-4 mr-2" /> Modify Setup
               </Button>
             )}
-            <div className="bg-indigo-600/90 text-white font-black text-xs md:text-sm px-5 py-3 rounded-2xl border border-indigo-400/30 shadow-xl uppercase tracking-wider shrink-0 text-center">
-              ₦3,500 per report
-            </div>
+            <Button
+              onClick={handleStartNewProject}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest px-5 py-3 shadow-lg flex items-center gap-2 shrink-0"
+            >
+              <Plus className="w-4 h-4" /> Start New Project (₦3,500)
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Main Container */}
-      {(!report || activeTab === 'form') ? (
-        /* SETUP FORM VIEW */
-        <div className="bg-white border border-[#e5e7eb] rounded-[32px] md:rounded-[40px] p-6 md:p-10 shadow-sm space-y-8">
+      {/* Top Workspace & History Sub-Tabs */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSiwesTab('current')}
+            className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
+              siwesTab === 'current' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            <FileText className="w-4 h-4" /> Active Workspace
+          </button>
+          <button
+            onClick={() => setSiwesTab('saved')}
+            className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
+              siwesTab === 'saved' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            <Clock className="w-4 h-4" /> Saved Reports
+            {savedSIWESReports.length > 0 && (
+              <Badge variant="secondary" className="bg-white/20 text-white font-black text-[10px] px-2 py-0.5 rounded-full">
+                {savedSIWESReports.length}
+              </Badge>
+            )}
+          </button>
+        </div>
+
+        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+          {report ? `Working on: ${companyName || 'SIWES Technical Report'}` : 'No active report generated'}
+        </div>
+      </div>
+
+      {siwesTab === 'saved' ? (
+        /* SAVED REPORTS HISTORY VIEW */
+        <div className="bg-white border border-[#e5e7eb] rounded-[32px] md:rounded-[40px] p-6 md:p-10 shadow-sm space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tight">Saved SIWES Projects History</h2>
+              <p className="text-xs text-slate-500 font-medium">Access and redownload your previously generated SIWES technical reports.</p>
+            </div>
+            <Badge variant="outline" className="font-black text-xs uppercase px-3 py-1">
+              {savedSIWESReports.length} Saved Projects
+            </Badge>
+          </div>
+
+          {savedSIWESReports.length === 0 ? (
+            <div className="py-16 text-center">
+              <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No saved SIWES reports yet</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {savedSIWESReports.map((item) => (
+                <div key={item.id} className="bg-slate-50 border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4 hover:border-indigo-500 transition-all group relative">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <Badge className="bg-indigo-100 text-indigo-700 font-black text-[9px] uppercase tracking-widest mb-2">
+                        {item.department || 'Technical Attachment'}
+                      </Badge>
+                      <h3 className="text-base font-black text-slate-900 uppercase tracking-tight group-hover:text-indigo-600 transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="text-xs font-medium text-slate-500 mt-1">
+                        {item.institution || 'University Attachment'} • {new Date(item.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteReportFromHistory(item.id)}
+                      className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                      title="Delete saved report"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <Button
+                      onClick={() => handleLoadReportFromHistory(item)}
+                      variant="outline"
+                      className="flex-1 bg-white border-slate-200 hover:bg-slate-100 text-slate-900 font-black text-xs uppercase tracking-wider rounded-xl py-3"
+                    >
+                      <Eye className="w-3.5 h-3.5 mr-1.5" /> Load into Workspace
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* MAIN WORKSPACE VIEW */
+        <>
+          {(!report || activeTab === 'form') ? (
+            /* SETUP FORM VIEW */
+            <div className="bg-white border border-[#e5e7eb] rounded-[32px] md:rounded-[40px] p-6 md:p-10 shadow-sm space-y-8">
           <div className="flex items-center justify-between border-b border-slate-100 pb-6">
             <div>
               <h2 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tight">Placement & Technical Details</h2>
@@ -579,7 +824,7 @@ export default function SIWESGenerator({
                 <Camera className="w-4 h-4" /> Technical Visuals, Diagrams & Figures (Optional)
               </div>
               <Badge variant="outline" className="text-[10px] font-bold text-slate-500 uppercase px-3 py-1">
-                {uploadedVisuals.length} / 6 Visuals Added
+                {uploadedVisuals.length} / 10 Visuals Added
               </Badge>
             </div>
             <p className="text-xs text-slate-500 font-medium">
@@ -592,7 +837,7 @@ export default function SIWESGenerator({
             >
               <Upload className="w-6 h-6 text-slate-400 group-hover:text-indigo-600 group-hover:scale-110 transition-all" />
               <p className="text-xs font-black text-slate-700 uppercase tracking-wide">
-                Click to upload figures (PNG, JPG — Max 6)
+                Click to upload figures (PNG, JPG — Max 10)
               </p>
               <input 
                 type="file" 
@@ -650,16 +895,29 @@ export default function SIWESGenerator({
             )}
           </div>
 
-          {/* Submit Action */}
+          {/* Submit / Save Setup Action */}
           <Button
-            onClick={() => handleGenerate()}
+            onClick={() => {
+              if (report) {
+                handleSaveSetupUpdate();
+              } else {
+                handleGenerate();
+              }
+            }}
             disabled={isProcessing || !companyName.trim() || !workDescription.trim()}
-            className="w-full bg-black hover:bg-zinc-800 text-white rounded-2xl py-8 font-black uppercase text-xs tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 transition-all active:scale-98"
+            className={`w-full text-white rounded-2xl py-8 font-black uppercase text-xs tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 transition-all active:scale-98 ${
+              report ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-black hover:bg-zinc-800'
+            }`}
           >
             {isProcessing ? (
               <>
                 <RefreshCw className="w-5 h-5 animate-spin text-indigo-400" />
                 Architecting SIWES Technical Report (Generating 4 Parts)...
+              </>
+            ) : report ? (
+              <>
+                <Check className="w-5 h-5 text-emerald-400" />
+                Save Setup Details & Update Technical Visuals
               </>
             ) : (
               <>
@@ -747,27 +1005,40 @@ export default function SIWESGenerator({
               </div>
             </div>
 
-            {/* AI Refine / Generate Card */}
+            {/* AI Refine / Generate Card with 2-Refinement Limit */}
             {activeTab !== 'full' && (
               <div className="bg-slate-900 text-white p-5 rounded-3xl space-y-3">
-                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                  {hasSectionContent ? 'AI Section Refinement' : 'AI Section Generation'}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                    {hasSectionContent ? 'AI Section Refinement' : 'AI Section Generation'}
+                  </p>
+                  <Badge variant="outline" className={`text-[9px] font-black uppercase px-2 py-0.5 ${
+                    (refineCounts[activeTab] || 0) >= 2 
+                      ? 'bg-red-500/20 text-red-400 border-red-500/30' 
+                      : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                  }`}>
+                    {refineCounts[activeTab] || 0}/2 Used
+                  </Badge>
+                </div>
                 <p className="text-xs text-zinc-300 font-medium">
-                  {hasSectionContent 
-                    ? 'Want to expand or re-generate this specific section?' 
-                    : `No content for ${activeSectionLabel} yet. Click below to generate it.`}
+                  {(refineCounts[activeTab] || 0) >= 2
+                    ? `Refinement limit reached for ${activeSectionLabel} (2/2). Use editor to customize text.`
+                    : hasSectionContent 
+                      ? 'Want to expand or re-generate this specific section?' 
+                      : `No content for ${activeSectionLabel} yet. Click below to generate it.`}
                 </p>
                 <Button
                   onClick={() => handleRefinePart(activeTab)}
-                  disabled={isRefining}
+                  disabled={isRefining || (refineCounts[activeTab] || 0) >= 2}
                   size="sm"
-                  className="w-full bg-white text-black hover:bg-zinc-100 rounded-xl font-black text-[10px] uppercase tracking-widest py-4"
+                  className="w-full bg-white text-black hover:bg-zinc-100 disabled:opacity-50 disabled:bg-zinc-800 disabled:text-zinc-400 rounded-xl font-black text-[10px] uppercase tracking-widest py-4"
                 >
                   {isRefining ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Sparkles className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />}
-                  {isRefining 
-                    ? (hasSectionContent ? `Refining ${activeSectionLabel}...` : `Generating ${activeSectionLabel}...`)
-                    : (hasSectionContent ? `Refine ${activeSectionLabel}` : `Generate ${activeSectionLabel}`)}
+                  {(refineCounts[activeTab] || 0) >= 2
+                    ? `Limit Reached (2/2)`
+                    : isRefining 
+                      ? (hasSectionContent ? `Refining ${activeSectionLabel}...` : `Generating ${activeSectionLabel}...`)
+                      : (hasSectionContent ? `Refine ${activeSectionLabel}` : `Generate ${activeSectionLabel}`)}
                 </Button>
               </div>
             )}
