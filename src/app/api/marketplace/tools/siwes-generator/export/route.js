@@ -6,11 +6,9 @@ import {
   TextRun, 
   HeadingLevel, 
   AlignmentType,
-  Header,
   Footer,
   PageNumber,
-  NumberFormat,
-  BorderStyle
+  ImageRun
 } from 'docx';
 
 export async function POST(request) {
@@ -24,10 +22,70 @@ export async function POST(request) {
       studentName = '', 
       matricNumber = '', 
       duration = '', 
-      report = {} 
+      report = {},
+      uploadedVisuals = []
     } = await request.json();
 
     const { abstract = '', part1 = '', part2 = '', part3 = '', part4 = '' } = report;
+
+    // Helper to convert base64 to Buffer for docx ImageRun
+    const base64ToBuffer = (base64Str) => {
+      if (!base64Str || typeof base64Str !== 'string') return null;
+      try {
+        const base64Data = base64Str.replace(/^data:image\/\w+;base64,/, '');
+        return Buffer.from(base64Data, 'base64');
+      } catch (e) {
+        console.error('Base64 convert error:', e);
+        return null;
+      }
+    };
+
+    // Helper to generate docx image paragraphs for a section
+    const getVisualDocxParagraphs = (sectionKey) => {
+      if (!Array.isArray(uploadedVisuals)) return [];
+      const sectionVisuals = uploadedVisuals.filter(v => v.targetSection === sectionKey && v.data);
+      if (sectionVisuals.length === 0) return [];
+
+      const result = [
+        new Paragraph({
+          text: 'TECHNICAL FIGURES & SCHEMATICS',
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 360, after: 180 }
+        })
+      ];
+
+      sectionVisuals.forEach((v) => {
+        const imageBuffer = base64ToBuffer(v.data);
+        if (imageBuffer) {
+          result.push(
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [
+                new ImageRun({
+                  data: imageBuffer,
+                  transformation: { width: 480, height: 300 }
+                })
+              ],
+              spacing: { before: 180, after: 80 }
+            }),
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [
+                new TextRun({
+                  text: v.caption ? `${v.caption}` : 'Technical Figure',
+                  italic: true,
+                  size: 20,
+                  color: '555555'
+                })
+              ],
+              spacing: { after: 280 }
+            })
+          );
+        }
+      });
+
+      return result;
+    };
 
     // Helper to convert markdown text to docx paragraphs
     const convertMarkdownToDocx = (mdText) => {
@@ -249,12 +307,16 @@ export async function POST(request) {
             ...convertMarkdownToDocx(abstract),
             new Paragraph({ text: '', pageBreakBefore: true }),
             ...convertMarkdownToDocx(part1),
+            ...getVisualDocxParagraphs('part1'),
             new Paragraph({ text: '', pageBreakBefore: true }),
             ...convertMarkdownToDocx(part2),
+            ...getVisualDocxParagraphs('part2'),
             new Paragraph({ text: '', pageBreakBefore: true }),
             ...convertMarkdownToDocx(part3),
+            ...getVisualDocxParagraphs('part3'),
             new Paragraph({ text: '', pageBreakBefore: true }),
-            ...convertMarkdownToDocx(part4)
+            ...convertMarkdownToDocx(part4),
+            ...getVisualDocxParagraphs('part4')
           ]
         }
       ]

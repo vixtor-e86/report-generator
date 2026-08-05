@@ -212,8 +212,7 @@ export default function SIWESGenerator({
       saveReportToHistory(report, companyName, department, institution);
       toast.info('Current report saved to history!');
     }
-    setPendingNewProject(true);
-    setShowPaymentDialog(true);
+    handleResetForNewProject();
   };
 
   const handleResetForNewProject = () => {
@@ -425,7 +424,8 @@ export default function SIWESGenerator({
           course,
           studentName,
           matricNumber,
-          report
+          report,
+          uploadedVisuals
         })
       });
 
@@ -455,15 +455,20 @@ export default function SIWESGenerator({
     );
   };
 
+  const cleanContentHeader = (text) => {
+    if (!text) return '';
+    return text.replace(/^#+\s*(PART\s*\d+:?|EXECUTIVE\s*SUMMARY|ABSTRACT)[^\n]*\n+/i, '').trim();
+  };
+
   const getActiveContent = () => {
     if (!report) return '';
-    if (activeTab === 'abstract') return report.abstract || '';
-    if (activeTab === 'part1') return (report.part1 || '') + getSectionVisualsMarkdown('part1');
-    if (activeTab === 'part2') return (report.part2 || '') + getSectionVisualsMarkdown('part2');
-    if (activeTab === 'part3') return (report.part3 || '') + getSectionVisualsMarkdown('part3');
-    if (activeTab === 'part4') return (report.part4 || '') + getSectionVisualsMarkdown('part4');
+    if (activeTab === 'abstract') return cleanContentHeader(report.abstract || '');
+    if (activeTab === 'part1') return cleanContentHeader(report.part1 || '') + getSectionVisualsMarkdown('part1');
+    if (activeTab === 'part2') return cleanContentHeader(report.part2 || '') + getSectionVisualsMarkdown('part2');
+    if (activeTab === 'part3') return cleanContentHeader(report.part3 || '') + getSectionVisualsMarkdown('part3');
+    if (activeTab === 'part4') return cleanContentHeader(report.part4 || '') + getSectionVisualsMarkdown('part4');
     if (activeTab === 'full') {
-      return `${report.abstract || ''}\n\n---\n\n${(report.part1 || '') + getSectionVisualsMarkdown('part1')}\n\n---\n\n${(report.part2 || '') + getSectionVisualsMarkdown('part2')}\n\n---\n\n${(report.part3 || '') + getSectionVisualsMarkdown('part3')}\n\n---\n\n${(report.part4 || '') + getSectionVisualsMarkdown('part4')}`;
+      return `${cleanContentHeader(report.abstract || '')}\n\n---\n\n${cleanContentHeader(report.part1 || '') + getSectionVisualsMarkdown('part1')}\n\n---\n\n${cleanContentHeader(report.part2 || '') + getSectionVisualsMarkdown('part2')}\n\n---\n\n${cleanContentHeader(report.part3 || '') + getSectionVisualsMarkdown('part3')}\n\n---\n\n${cleanContentHeader(report.part4 || '') + getSectionVisualsMarkdown('part4')}`;
     }
     return '';
   };
@@ -532,7 +537,7 @@ export default function SIWESGenerator({
               onClick={handleStartNewProject}
               className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest px-5 py-3 shadow-lg flex items-center gap-2 shrink-0"
             >
-              <Plus className="w-4 h-4" /> Start New Project (₦3,500)
+              <Plus className="w-4 h-4" /> Start New Project
             </Button>
           </div>
         </div>
@@ -1092,6 +1097,40 @@ export default function SIWESGenerator({
                   {getActiveContent()}
                 </ReactMarkdown>
               </div>
+
+              {/* Render Technical Visuals Gallery in Workspace */}
+              {(() => {
+                const currentVisuals = activeTab === 'full' 
+                  ? uploadedVisuals 
+                  : uploadedVisuals.filter(v => v.targetSection === activeTab);
+                if (!currentVisuals || currentVisuals.length === 0) return null;
+
+                return (
+                  <div className="mt-8 pt-6 border-t-2 border-slate-200/80 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <Camera className="w-4 h-4 text-indigo-600" /> Attached Technical Figures & Schematics ({currentVisuals.length})
+                      </h3>
+                      <Badge variant="outline" className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border-indigo-200">
+                        Chapter Visuals
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {currentVisuals.map((v, i) => (
+                        <div key={v.id || i} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm space-y-2 text-center">
+                          <div className="w-full h-48 rounded-xl overflow-hidden bg-slate-100 border border-slate-100 flex items-center justify-center">
+                            <img src={v.data} alt={v.caption || 'Technical Figure'} className="w-full h-full object-contain" />
+                          </div>
+                          <p className="text-xs font-bold text-slate-700 italic">
+                            {v.caption || `Figure ${i + 1}: Technical Diagram`}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

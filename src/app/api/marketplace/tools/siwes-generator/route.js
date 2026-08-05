@@ -65,13 +65,13 @@ REQUIREMENTS:
 - Word count: 300 - 500 words.
 - Tone: Formal, academic, professional technical writing.
 - Style: First-person narrative ("During my 6-month SIWES attachment at...").
-- Structure: Start directly with "## EXECUTIVE SUMMARY" followed by clear paragraphs covering: Attachment Overview, Key Activities & Systems Handled, Technical Skills Acquired, and Conclusion.`;
+- Do NOT output a top main heading like "## EXECUTIVE SUMMARY" (the UI header already displays it). Start directly with paragraphs.`;
       } else if (refinePart === 'part1') {
         partPrompt = `You are an expert SIWES report writer. Write PART 1 of a SIWES technical report.
 ${commonContext}
 
 REQUIREMENTS:
-- Title: "## PART 1: INTRODUCTION & ORGANIZATION PROFILE"
+- Do NOT output a top main heading like "## PART 1: INTRODUCTION" (the UI header already displays it). Start directly with ### 1.1.
 - Include these exact sections with ### subheadings:
   ### 1.1 Background & Objectives of SIWES (ITF Policy & Objectives)
   ### 1.2 Company History & Profile of ${companyName}
@@ -83,7 +83,7 @@ REQUIREMENTS:
 ${commonContext}
 
 REQUIREMENTS:
-- Title: "## PART 2: SAFETY REGULATIONS, EQUIPMENT & TOOLS USED"
+- Do NOT output a top main heading like "## PART 2: SAFETY REGULATIONS" (the UI header already displays it). Start directly with ### 2.1.
 - Include these exact sections with ### subheadings:
   ### 2.1 Health, Safety & Environment (HSE) Policy & Rules
   ### 2.2 Personal Protective Equipment (PPE) & Mandatory Regulations
@@ -95,7 +95,7 @@ REQUIREMENTS:
 ${commonContext}
 
 REQUIREMENTS:
-- Title: "## PART 3: DETAILED WORK EXPERIENCE & LOGBOOK ACTIVITIES"
+- Do NOT output a top main heading like "## PART 3: DETAILED WORK EXPERIENCE" (the UI header already displays it). Start directly with ### 3.1.
 - Include these exact sections with ### subheadings:
   ### 3.1 Overview of Weekly & Monthly Practical Assignments
   ### 3.2 Key Technical Operations & Maintenance Tasks Performed (Detailing: ${workDescription})
@@ -107,7 +107,7 @@ REQUIREMENTS:
 ${commonContext}
 
 REQUIREMENTS:
-- Title: "## PART 4: CHALLENGES, SKILLS ACQUIRED, CONCLUSION & RECOMMENDATIONS"
+- Do NOT output a top main heading like "## PART 4: CHALLENGES" (the UI header already displays it). Start directly with ### 4.1.
 - Include these exact sections with ### subheadings:
   ### 4.1 Technical & Operational Challenges Encountered
   ### 4.2 Practical Skills & Competencies Acquired
@@ -126,14 +126,14 @@ REQUIREMENTS:
       abstract: `You are an expert SIWES report writer. Write a formal EXECUTIVE SUMMARY (ABSTRACT) for a SIWES technical report.
 ${commonContext}
 REQUIREMENTS:
-- Start directly with "## EXECUTIVE SUMMARY"
+- Do NOT output a top main heading like "## EXECUTIVE SUMMARY" or "# ABSTRACT" (the UI header already displays it). Start directly with the opening paragraph.
 - 300 - 500 words.
 - Professional academic tone covering training overview, key activities at ${companyName}, technical achievements, and conclusion.`,
 
       part1: `You are an expert SIWES report writer. Write PART 1 of a SIWES technical report.
 ${commonContext}
 REQUIREMENTS:
-- Start with "## PART 1: INTRODUCTION & ORGANIZATION PROFILE"
+- Do NOT output a top main heading like "## PART 1: INTRODUCTION" (the UI header already displays it). Start directly with ### 1.1.
 - Include subheadings:
   ### 1.1 Background & Objectives of SIWES (ITF Policy & Objectives)
   ### 1.2 Company History & Profile of ${companyName}
@@ -144,7 +144,7 @@ REQUIREMENTS:
       part2: `You are an expert SIWES report writer. Write PART 2 of a SIWES technical report.
 ${commonContext}
 REQUIREMENTS:
-- Start with "## PART 2: SAFETY REGULATIONS, EQUIPMENT & TOOLS USED"
+- Do NOT output a top main heading like "## PART 2: SAFETY REGULATIONS" (the UI header already displays it). Start directly with ### 2.1.
 - Include subheadings:
   ### 2.1 Health, Safety & Environment (HSE) Policy & Rules
   ### 2.2 Personal Protective Equipment (PPE) & Mandatory Regulations
@@ -155,7 +155,7 @@ REQUIREMENTS:
       part3: `You are an expert SIWES report writer. Write PART 3 of a SIWES technical report.
 ${commonContext}
 REQUIREMENTS:
-- Start with "## PART 3: DETAILED WORK EXPERIENCE & LOGBOOK ACTIVITIES"
+- Do NOT output a top main heading like "## PART 3: DETAILED WORK EXPERIENCE" (the UI header already displays it). Start directly with ### 3.1.
 - Include subheadings:
   ### 3.1 Overview of Weekly & Monthly Practical Assignments
   ### 3.2 Key Technical Operations & Maintenance Tasks Performed (Detailing: ${workDescription})
@@ -166,7 +166,7 @@ REQUIREMENTS:
       part4: `You are an expert SIWES report writer. Write PART 4 of a SIWES technical report.
 ${commonContext}
 REQUIREMENTS:
-- Start with "## PART 4: CHALLENGES, SKILLS ACQUIRED, CONCLUSION & RECOMMENDATIONS"
+- Do NOT output a top main heading like "## PART 4: CHALLENGES" (the UI header already displays it). Start directly with ### 4.1.
 - Include subheadings:
   ### 4.1 Technical & Operational Challenges Encountered
   ### 4.2 Practical Skills & Competencies Acquired
