@@ -250,8 +250,9 @@ export default function Dashboard() {
   const [showUploadProject, setShowUploadProject] = useState(false);
   const [showUploadEbook, setShowUploadEbook] = useState(false);
 
-  // DERIVED ADMIN STATUS
+  // DERIVED ADMIN / SELLER PORTAL STATUS
   const isAdmin = globalProfile?.role === 'admin';
+  const hasAdminAccess = ['admin', 'support', 'seller'].includes(globalProfile?.role) || globalProfile?.is_seller || authUser?.isSeller;
 
   // --- BROWSER HISTORY MANAGEMENT ---
   useEffect(() => {
@@ -676,13 +677,13 @@ export default function Dashboard() {
               </DropdownMenu>
 
               <div className="hidden md:flex items-center gap-4">
-                {isAdmin && (
+                {hasAdminAccess && (
                   <Link
                     href="/admin"
                     className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-black transition-all shadow-lg border border-indigo-500"
                   >
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    Admin
+                    {globalProfile?.role === 'seller' || globalProfile?.is_seller || authUser?.isSeller ? 'Seller / Admin' : globalProfile?.role === 'support' ? 'Support Console' : 'Admin Console'}
                   </Link>
                 )}
                 
@@ -691,7 +692,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-3">
                   <div className="text-right hidden lg:block">
                     <p className="text-xs font-semibold text-slate-900 leading-none">{globalProfile?.username || 'Student'}</p>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{isAdmin ? 'Admin' : 'Scholar'}</p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{isAdmin ? 'Admin' : globalProfile?.role === 'seller' || globalProfile?.is_seller ? 'Seller' : 'Scholar'}</p>
                   </div>
                   <div className="h-9 w-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm shrink-0">
                     {(globalProfile?.username || authUser?.email || 'U')[0].toUpperCase()}
@@ -734,14 +735,14 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {isAdmin && (
+            {hasAdminAccess && (
               <Link 
                 href="/admin" 
                 onClick={() => setIsMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 font-black uppercase text-[10px] tracking-[0.2em] shadow-sm active:scale-95 transition-all"
               >
                 <ShieldCheck className="w-4 h-4" />
-                Admin Console
+                {globalProfile?.role === 'seller' || globalProfile?.is_seller || authUser?.isSeller ? 'Seller / Admin Console' : globalProfile?.role === 'support' ? 'Support Console' : 'Admin Console'}
               </Link>
             )}
             

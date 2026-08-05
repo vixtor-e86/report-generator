@@ -1,10 +1,9 @@
-"use client";
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Briefcase, Sparkles, RefreshCw, Copy, Check, Download, 
   Building2, GraduationCap, ShieldCheck, Wrench, BookOpen, 
-  FileText, CheckCircle2, AlertCircle, ArrowLeft, Layers, Edit3, Eye
+  FileText, CheckCircle2, AlertCircle, ArrowLeft, Layers, Edit3, Eye,
+  Upload, Camera, X
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Textarea } from '@/components/marketplace/ui/textarea';
@@ -43,6 +42,10 @@ export default function SIWESGenerator({
   const [workDescription, setWorkDescription] = useState('');
   const [equipment, setEquipment] = useState('');
 
+  // Technical Visuals & Figures state
+  const [uploadedVisuals, setUploadedVisuals] = useState([]);
+  const visualInputRef = useRef(null);
+
   // Generated Report State
   const [report, setReport] = useState(null); // { abstract, part1, part2, part3, part4 }
   const [activeTab, setActiveTab] = useState('form'); // 'form' | 'abstract' | 'part1' | 'part2' | 'part3' | 'part4' | 'full'
@@ -69,6 +72,7 @@ export default function SIWESGenerator({
         if (parsed.objectives && Array.isArray(parsed.objectives)) setObjectives(parsed.objectives);
         if (parsed.workDescription) setWorkDescription(parsed.workDescription);
         if (parsed.equipment) setEquipment(parsed.equipment);
+        if (parsed.uploadedVisuals && Array.isArray(parsed.uploadedVisuals)) setUploadedVisuals(parsed.uploadedVisuals);
         if (parsed.report) {
           setReport(parsed.report);
           setActiveTab('full');
@@ -78,6 +82,65 @@ export default function SIWESGenerator({
       console.error('Failed to restore SIWES state:', e);
     }
   }, []);
+
+  // Save state on update
+  useEffect(() => {
+    try {
+      const payload = {
+        companyName,
+        companyAddress,
+        department,
+        duration,
+        institution,
+        course,
+        studentName,
+        matricNumber,
+        objectives,
+        workDescription,
+        equipment,
+        uploadedVisuals,
+        report
+      };
+      localStorage.setItem('w3_siwes_generator_saved_data', JSON.stringify(payload));
+    } catch (e) {
+      console.error('Failed to save SIWES state:', e);
+    }
+  }, [companyName, companyAddress, department, duration, institution, course, studentName, matricNumber, objectives, workDescription, equipment, uploadedVisuals, report]);
+
+  const handleVisualUpload = (e) => {
+    const files = e.target.files;
+    if (!files) return;
+    if (uploadedVisuals.length + files.length > 6) {
+      toast.error('Maximum 6 technical visuals allowed per report.');
+      return;
+    }
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedVisuals((prev) => [
+          ...prev,
+          {
+            id: Date.now() + Math.random(),
+            data: reader.result,
+            caption: file.name.replace(/\.[^/.]+$/, ''),
+            targetSection: 'part3'
+          }
+        ]);
+        toast.info('Visual added. Select target section & caption.');
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const updateVisualField = (id, field, value) => {
+    setUploadedVisuals((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, [field]: value } : v))
+    );
+  };
+
+  const removeVisual = (id) => {
+    setUploadedVisuals((prev) => prev.filter((v) => v.id !== id));
+  };
 
   // Save state on update
   useEffect(() => {
@@ -248,16 +311,30 @@ export default function SIWESGenerator({
     }
   };
 
+  const getSectionVisualsMarkdown = (sectionKey) => {
+    const visuals = uploadedVisuals.filter((v) => v.targetSection === sectionKey);
+    if (visuals.length === 0) return '';
+    return (
+      '\n\n### Technical Figures & Visuals\n\n' +
+      visuals
+        .map(
+          (v) =>
+            `![${v.caption || 'Technical Figure'}](${v.data})\n\n*${v.caption || 'Technical Figure'}*`
+        )
+        .join('\n\n')
+    );
+  };
+
   // Helper to get active text content
   const getActiveContent = () => {
     if (!report) return '';
     if (activeTab === 'abstract') return report.abstract || '';
-    if (activeTab === 'part1') return report.part1 || '';
-    if (activeTab === 'part2') return report.part2 || '';
-    if (activeTab === 'part3') return report.part3 || '';
-    if (activeTab === 'part4') return report.part4 || '';
+    if (activeTab === 'part1') return (report.part1 || '') + getSectionVisualsMarkdown('part1');
+    if (activeTab === 'part2') return (report.part2 || '') + getSectionVisualsMarkdown('part2');
+    if (activeTab === 'part3') return (report.part3 || '') + getSectionVisualsMarkdown('part3');
+    if (activeTab === 'part4') return (report.part4 || '') + getSectionVisualsMarkdown('part4');
     if (activeTab === 'full') {
-      return `${report.abstract || ''}\n\n---\n\n${report.part1 || ''}\n\n---\n\n${report.part2 || ''}\n\n---\n\n${report.part3 || ''}\n\n---\n\n${report.part4 || ''}`;
+      return `${report.abstract || ''}\n\n---\n\n${(report.part1 || '') + getSectionVisualsMarkdown('part1')}\n\n---\n\n${(report.part2 || '') + getSectionVisualsMarkdown('part2')}\n\n---\n\n${(report.part3 || '') + getSectionVisualsMarkdown('part3')}\n\n---\n\n${(report.part4 || '') + getSectionVisualsMarkdown('part4')}`;
     }
     return '';
   };
@@ -313,17 +390,17 @@ export default function SIWESGenerator({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             {report && (
               <Button
                 onClick={() => setActiveTab('form')}
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-2xl font-black text-xs uppercase tracking-widest px-6 py-6"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-2xl font-black text-xs uppercase tracking-widest px-5 py-3 shrink-0"
               >
                 <Edit3 className="w-4 h-4 mr-2" /> Modify Setup
               </Button>
             )}
-            <div className="bg-indigo-600/90 text-white font-black text-xs md:text-sm px-6 py-4 rounded-2xl border border-indigo-400/30 shadow-xl uppercase tracking-wider shrink-0 text-center">
+            <div className="bg-indigo-600/90 text-white font-black text-xs md:text-sm px-5 py-3 rounded-2xl border border-indigo-400/30 shadow-xl uppercase tracking-wider shrink-0 text-center">
               ₦3,500 per report
             </div>
           </div>
@@ -493,6 +570,84 @@ export default function SIWESGenerator({
                 className="bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900 focus:border-black"
               />
             </div>
+          </div>
+
+          {/* Section 5: Technical Visuals & Figures */}
+          <div className="space-y-4 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest">
+                <Camera className="w-4 h-4" /> Technical Visuals, Diagrams & Figures (Optional)
+              </div>
+              <Badge variant="outline" className="text-[10px] font-bold text-slate-500 uppercase px-3 py-1">
+                {uploadedVisuals.length} / 6 Visuals Added
+              </Badge>
+            </div>
+            <p className="text-xs text-slate-500 font-medium">
+              Upload photos, schematics, flowcharts, or machinery diagrams and select which chapter/part of the report they should be placed in.
+            </p>
+
+            <div 
+              onClick={() => visualInputRef.current?.click()}
+              className="border-2 border-dashed border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/30 rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group"
+            >
+              <Upload className="w-6 h-6 text-slate-400 group-hover:text-indigo-600 group-hover:scale-110 transition-all" />
+              <p className="text-xs font-black text-slate-700 uppercase tracking-wide">
+                Click to upload figures (PNG, JPG — Max 6)
+              </p>
+              <input 
+                type="file" 
+                ref={visualInputRef} 
+                onChange={handleVisualUpload} 
+                multiple 
+                accept="image/*" 
+                className="hidden" 
+              />
+            </div>
+
+            {uploadedVisuals.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                {uploadedVisuals.map((visual) => (
+                  <div key={visual.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative space-y-3">
+                    <button 
+                      onClick={() => removeVisual(visual.id)}
+                      className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 transition-colors"
+                      title="Remove visual"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                        <img src={visual.data} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0 pr-4">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Chapter / Part *</label>
+                        <select
+                          value={visual.targetSection}
+                          onChange={(e) => updateVisualField(visual.id, 'targetSection', e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 p-2 focus:border-black"
+                        >
+                          <option value="part1">Part 1: Company Profile</option>
+                          <option value="part2">Part 2: Safety & Tools</option>
+                          <option value="part3">Part 3: Work Experience</option>
+                          <option value="part4">Part 4: Challenges & Recs</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Figure Caption</label>
+                      <Input
+                        value={visual.caption}
+                        onChange={(e) => updateVisualField(visual.id, 'caption', e.target.value)}
+                        placeholder="e.g. Figure 3.1: Circuit Diagram of Motor Control Unit"
+                        className="bg-slate-50 border-slate-200 rounded-xl text-xs font-medium text-slate-900"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Submit Action */}

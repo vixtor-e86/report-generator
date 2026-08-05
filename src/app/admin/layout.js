@@ -25,16 +25,16 @@ export default function AdminLayout({ children }) {
 
         const { data: profile } = await supabase
           .from('user_profiles')
-          .select('role, username')
+          .select('role, username, is_seller')
           .eq('id', user.id)
           .single();
 
-        if (!['admin', 'support'].includes(profile?.role)) {
+        if (!['admin', 'support', 'seller'].includes(profile?.role) && !profile?.is_seller) {
           router.push('/dashboard');
           return;
         }
 
-        setUser({ ...user, username: profile.username, role: profile.role });
+        setUser({ ...user, username: profile.username, role: profile.role, is_seller: profile.is_seller });
         setLoading(false);
         fetchSidebarStats();
       } catch (error) {
