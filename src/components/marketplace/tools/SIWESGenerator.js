@@ -652,8 +652,7 @@ export default function SIWESGenerator({
         </div>
       ) : (
         /* MAIN WORKSPACE VIEW */
-        <>
-          {(!report || activeTab === 'form') ? (
+        (!report || activeTab === 'form') ? (
             /* SETUP FORM VIEW */
             <div className="bg-white border border-[#e5e7eb] rounded-[32px] md:rounded-[40px] p-6 md:p-10 shadow-sm space-y-8">
           <div className="flex items-center justify-between border-b border-slate-100 pb-6">
@@ -1106,7 +1105,6 @@ export default function SIWESGenerator({
             </div>
           </div>
         </div>
-        </>
       )}
     </div>
   );
