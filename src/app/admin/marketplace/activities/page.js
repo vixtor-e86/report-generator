@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 import { 
   Activity, Search, ArrowDownCircle, ShoppingBag, 
   AlertCircle, RefreshCw, BookOpen, Cpu, ShieldCheck
@@ -11,6 +12,26 @@ export default function MarketplaceActivitiesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    async function fetchUserRole() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          setUserRole(profile?.role);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    fetchUserRole();
+  }, []);
 
   const fetchActivities = useCallback(async () => {
     setLoading(true);
@@ -130,13 +151,15 @@ export default function MarketplaceActivitiesPage() {
             <p className="text-lg md:text-2xl font-black text-slate-950">{blueprintEbookSales}</p>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-slate-900 text-white rounded-xl"><ArrowDownCircle className="w-5 h-5" /></div>
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Revenue</p>
-            <p className="text-lg md:text-2xl font-black text-slate-950">₦{totalVolume.toLocaleString()}</p>
+        {userRole !== 'support' && (
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-slate-900 text-white rounded-xl"><ArrowDownCircle className="w-5 h-5" /></div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Total Revenue</p>
+              <p className="text-lg md:text-2xl font-black text-slate-950">₦{totalVolume.toLocaleString()}</p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Main Content Area */}

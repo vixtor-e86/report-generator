@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
 export default function MarketplaceOverview() {
@@ -10,10 +11,21 @@ export default function MarketplaceOverview() {
     totalSpent: 0
   });
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
     async function fetchStats() {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          setUserRole(profile?.role);
+        }
+
         const response = await fetch('/api/admin/marketplace/stats');
         const data = await response.json();
         setStats(data);
@@ -28,9 +40,13 @@ export default function MarketplaceOverview() {
 
   const cards = [
     { name: 'Total Wallets', value: stats.totalWallets, detail: 'Registered users', color: 'bg-zinc-900', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
-    { name: 'Current Liquidity', value: `₦${stats.totalLiquidity.toLocaleString()}`, detail: 'Sum of all balances', color: 'bg-blue-600', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+    ...(userRole !== 'support' ? [
+      { name: 'Current Liquidity', value: `₦${stats.totalLiquidity.toLocaleString()}`, detail: 'Sum of all balances', color: 'bg-blue-600', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
+    ] : []),
     { name: 'Pending Deposits', value: stats.pendingFunding, detail: 'Awaiting verification', color: 'bg-amber-500', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { name: 'Platform Revenue', value: `₦${stats.totalSpent.toLocaleString()}`, detail: 'Total user spending', color: 'bg-emerald-600', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
+    ...(userRole !== 'support' ? [
+      { name: 'Platform Revenue', value: `₦${stats.totalSpent.toLocaleString()}`, detail: 'Total user spending', color: 'bg-emerald-600', icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' }
+    ] : []),
   ];
 
   return (

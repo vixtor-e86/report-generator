@@ -1,15 +1,27 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export default function WalletsAdmin() {
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [userRole, setUserRole] = useState(null);
 
   const fetchWallets = async () => {
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        setUserRole(profile?.role);
+      }
+
       const response = await fetch('/api/admin/marketplace/wallets');
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
@@ -39,7 +51,7 @@ export default function WalletsAdmin() {
 
       {/* Search & Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex items-center gap-4">
+        <div className={`${userRole === 'support' ? 'lg:col-span-3' : 'lg:col-span-2'} bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex items-center gap-4`}>
           <input
             type="text"
             placeholder="Search by name or email..."
@@ -48,12 +60,14 @@ export default function WalletsAdmin() {
             className="flex-1 px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-900"
           />
         </div>
-        <div className="bg-blue-600 p-6 rounded-[32px] shadow-xl text-white">
-          <p className="text-blue-200 text-[10px] font-black uppercase tracking-widest mb-1">Total Marketplace Liquidity</p>
-          <p className="text-3xl font-black">
-            ₦{wallets.reduce((acc, curr) => acc + (curr.balance || 0), 0).toLocaleString()}
-          </p>
-        </div>
+        {userRole !== 'support' && (
+          <div className="bg-blue-600 p-6 rounded-[32px] shadow-xl text-white">
+            <p className="text-blue-200 text-[10px] font-black uppercase tracking-widest mb-1">Total Marketplace Liquidity</p>
+            <p className="text-3xl font-black">
+              ₦{wallets.reduce((acc, curr) => acc + (curr.balance || 0), 0).toLocaleString()}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Wallets Table */}
