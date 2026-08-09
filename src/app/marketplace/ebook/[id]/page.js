@@ -424,13 +424,13 @@ export default function EbookDetailPage({ params }) {
                         </a>
                     )}
 
-                    <a href={`mailto:${isOfficial ? 'w3writelab@gmail.com' : ebook.marketplace_sellers?.email_updates}`} className="flex items-center gap-4 p-4 bg-blue-50 rounded-3xl border border-blue-100 hover:bg-blue-100 transition-colors group">
+                    <a href={`mailto:${isOfficial ? 'ahlymarh37@gmail.com' : ebook.marketplace_sellers?.email_updates}`} className="flex items-center gap-4 p-4 bg-blue-50 rounded-3xl border border-blue-100 hover:bg-blue-100 transition-colors group">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 group-hover:scale-110 transition-transform">
                         <Mail className="w-6 h-6" />
                       </div>
                       <div>
                         <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Email Address</p>
-                        <p className="text-zinc-900 font-black">{isOfficial ? 'w3writelab@gmail.com' : ebook.marketplace_sellers?.email_updates}</p>
+                        <p className="text-zinc-900 font-black">{isOfficial ? 'ahlymarh37@gmail.com' : ebook.marketplace_sellers?.email_updates}</p>
                       </div>
                     </a>
                   </>

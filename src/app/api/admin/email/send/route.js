@@ -17,7 +17,7 @@ function createMimeMessage({ from, to, subject, html, attachments }) {
   raw.push(`From: ${from}`);
   raw.push(`To: ${to}`);
   if (!from.toLowerCase().includes('noreply')) {
-    raw.push(`Reply-To: W3 WriteLab <w3writelab@gmail.com>`);
+    raw.push(`Reply-To: W3 WriteLab <ahlymarh37@gmail.com>`);
   }
   raw.push(`Subject: ${subject}`);
   raw.push(`Mime-Version: 1.0`);
@@ -103,7 +103,7 @@ function getBrandedTemplate(subject, bodyText, category) {
         <div style="margin-top: 12px;">
           <a href="${baseUrl}" style="color: #6366f1; text-decoration: none; font-weight: 600; font-size: 11px; margin: 0 8px;">Website</a>
           <a href="${baseUrl}/terms" style="color: #6366f1; text-decoration: none; font-weight: 600; font-size: 11px; margin: 0 8px;">Terms</a>
-          <a href="mailto:support@w3writelab.com" style="color: #6366f1; text-decoration: none; font-weight: 600; font-size: 11px; margin: 0 8px;">Support</a>
+          <a href="mailto:ahlymarh37@gmail.com" style="color: #6366f1; text-decoration: none; font-weight: 600; font-size: 11px; margin: 0 8px;">Support</a>
         </div>
       </div>
       

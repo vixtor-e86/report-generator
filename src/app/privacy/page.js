@@ -173,7 +173,7 @@ export default function PrivacyPage() {
               How Can You Contact Us About This Notice?
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
-              <p>If you have questions or comments about this notice, you may email us at <a href="mailto:w3writelab@gmail.com" className="text-blue-600 font-bold hover:underline">w3writelab@gmail.com</a> or contact us by post at:</p>
+              <p>If you have questions or comments about this notice, you may email us at <a href="mailto:ahlymarh37@gmail.com" className="text-blue-600 font-bold hover:underline">ahlymarh37@gmail.com</a> or contact us by post at:</p>
               <div className="bg-white border border-slate-200 rounded-2xl p-6">
                 <p className="font-bold text-slate-900">W3 writelab</p>
                 <p>NO.1, ALHASSAN EGBA STREET, ANGWAN CHAIRMAN, ADO,</p>

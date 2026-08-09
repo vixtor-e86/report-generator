@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 
 const Icons = {
   Check: ({ className }) => (
@@ -21,9 +22,29 @@ export default function TransactionsPage() {
   const [emailInput, setEmailInput] = useState('');
   const [activeEmail, setActiveEmail] = useState('');
   const [searchError, setSearchError] = useState('');
+  const [userRole, setUserRole] = useState(null);
 
   const [confirmModal, setConfirmModal] = useState({ open: false, transaction: null });
   const [marking, setMarking] = useState(false);
+
+  useEffect(() => {
+    async function fetchUserRole() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          setUserRole(profile?.role);
+        }
+      } catch (err) {
+        console.error('Fetch user role error:', err);
+      }
+    }
+    fetchUserRole();
+  }, []);
 
   const isValidEmail = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
 
@@ -213,7 +234,9 @@ export default function TransactionsPage() {
                     )}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-right sticky right-0 bg-white group-hover:bg-slate-50 transition shadow-l shadow-white">
-                    {tx.status !== 'paid' ? (
+                    {userRole === 'support' ? (
+                      <span className="text-slate-400 italic text-[11px] font-bold uppercase">VIEW ONLY</span>
+                    ) : tx.status !== 'paid' ? (
                       <button 
                         onClick={() => setConfirmModal({ open: true, transaction: tx })}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-black shadow-sm active:scale-95 transition inline-flex items-center gap-1.5"

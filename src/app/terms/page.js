@@ -76,7 +76,7 @@ export default function TermsPage() {
 
         <div className="mt-32 pt-12 border-t border-slate-200 text-center">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-4">W3 WRITELAB LEGAL DIVISION</p>
-          <p className="text-slate-500 font-medium">For inquiries: <a href="mailto:w3writelab@gmail.com" className="text-indigo-600 font-bold hover:underline">w3writelab@gmail.com</a></p>
+          <p className="text-slate-500 font-medium">For inquiries: <a href="mailto:ahlymarh37@gmail.com" className="text-indigo-600 font-bold hover:underline">ahlymarh37@gmail.com</a></p>
         </div>
       </div>
     </div>
