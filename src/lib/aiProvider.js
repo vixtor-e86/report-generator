@@ -59,6 +59,8 @@ async function callDeepSeek(prompt, maxTokens, temperature, modelOverride = null
     // Only fallback to AI_MODEL if it looks like a deepseek model
     const modelName = modelOverride || process.env.DEEPSEEK_MODEL || (process.env.AI_MODEL?.includes('deepseek') ? process.env.AI_MODEL : null) || "deepseek-v4-pro";
 
+    const safeMaxTokens = Math.min(maxTokens || 8192, 8192);
+
     const response = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
       headers: {
@@ -68,7 +70,7 @@ async function callDeepSeek(prompt, maxTokens, temperature, modelOverride = null
       body: JSON.stringify({
         model: modelName,
         messages: [{ role: "user", content: textPrompt }],
-        max_tokens: maxTokens,
+        max_tokens: safeMaxTokens,
         temperature: temperature,
         stream: false
       })
@@ -109,10 +111,12 @@ async function callGemini(prompt, maxTokens, temperature, fileParts = null, mode
     // Only fallback to AI_MODEL if it looks like a gemini model
     const modelName = modelOverride || process.env.GEMINI_MODEL || (process.env.AI_MODEL?.includes('gemini') ? process.env.AI_MODEL : null) || 'gemini-1.5-pro';
     
+    const safeMaxTokens = Math.min(maxTokens || 8192, 8192);
+
     const model = genAI.getGenerativeModel({
       model: modelName,
       generationConfig: {
-        maxOutputTokens: maxTokens,
+        maxOutputTokens: safeMaxTokens,
         temperature: temperature,
       }
     });
@@ -164,6 +168,8 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
     // Only fallback to AI_MODEL if it looks like a claude model
     const modelName = modelOverride || process.env.CLAUDE_MODEL || (process.env.AI_MODEL?.includes('claude') ? process.env.AI_MODEL : null) || "claude-3-5-sonnet-20240620";
 
+    const safeMaxTokens = Math.min(maxTokens || 8192, 8192);
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -173,7 +179,7 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
       },
       body: JSON.stringify({
         model: modelName,
-        max_tokens: maxTokens,
+        max_tokens: safeMaxTokens,
         temperature: temperature,
         messages: [{ role: "user", content: prompt }],
         ...(stopSequences && { stop_sequences: stopSequences })

@@ -97,7 +97,7 @@ export async function POST(request) {
 
     // Generate using DeepSeek (via callAI which defaults to DeepSeek)
     const result = await callAI(prompt, {
-      maxTokens: 12000, // Expanded token limit for exhaustive chapter generation
+      maxTokens: 8192, // Maximum allowed completion tokens for DeepSeek & Gemini
       temperature: 0.7,
       provider: 'deepseek'
     });
