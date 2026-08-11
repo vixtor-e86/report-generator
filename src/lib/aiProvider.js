@@ -14,7 +14,7 @@ export async function callAI(prompt, options = {}) {
     const {
       provider = process.env.AI_PROVIDER || 'deepseek',
       model = null, // Optional model override
-      maxTokens = 4000,
+      maxTokens = 8192,
       temperature = 0.7,
       stopSequences = null,
       fileParts = null, // Support for Gemini multimodal

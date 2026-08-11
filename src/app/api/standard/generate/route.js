@@ -124,7 +124,7 @@ export async function POST(request) {
     const startTime = Date.now();
     
     // Uses .env defaults: AI_PROVIDER and AI_MODEL
-    const aiResult = await callAI(prompt, { maxTokens: 8000, temperature: 0.7 });
+    const aiResult = await callAI(prompt, { maxTokens: 12000, temperature: 0.7 });
     
     const durationSeconds = Math.round((Date.now() - startTime) / 1000);
 

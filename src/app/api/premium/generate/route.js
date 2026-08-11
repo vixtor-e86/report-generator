@@ -71,7 +71,7 @@ export async function POST(request) {
       4. Maintain technical accuracy and respect the ${referenceStyle.toUpperCase()} citation style.
       5. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.`;
 
-      const aiResponse = await callAI(surgicalPrompt, { provider, model, maxTokens: 4000, temperature: 0.4 });
+      const aiResponse = await callAI(surgicalPrompt, { provider, model, maxTokens: 8000, temperature: 0.4 });
       
       let finalAiContent = aiResponse.content.trim();
       
@@ -247,7 +247,7 @@ export async function POST(request) {
     ${skipReferences ? '--- STRICT: NO REFERENCES OR CITATIONS. ---' : '--- MANDATORY: Include "## References" at the end. ---'}`;
 
     // --- 7. Call AI & Save ---
-    const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 8000, temperature: 0.6 });
+    const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 12000, temperature: 0.6 });
 
     let { data: chapter } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
     if (!chapter) {

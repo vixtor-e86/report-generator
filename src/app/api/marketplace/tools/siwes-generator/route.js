@@ -117,7 +117,7 @@ REQUIREMENTS:
 - Minimum 1000 words. Practical, reflective, and professional.`;
       }
 
-      const res = await callAI(partPrompt, { maxTokens: 4500, temperature: 0.7 });
+      const res = await callAI(partPrompt, { maxTokens: 8192, temperature: 0.7 });
       return NextResponse.json({ success: true, part: refinePart, content: res.content });
     }
 
@@ -178,11 +178,11 @@ REQUIREMENTS:
 
     // Execute prompts concurrently
     const [abstractRes, part1Res, part2Res, part3Res, part4Res] = await Promise.all([
-      callAI(prompts.abstract, { maxTokens: 2500, temperature: 0.7 }),
-      callAI(prompts.part1, { maxTokens: 4500, temperature: 0.7 }),
-      callAI(prompts.part2, { maxTokens: 4500, temperature: 0.7 }),
-      callAI(prompts.part3, { maxTokens: 5000, temperature: 0.7 }),
-      callAI(prompts.part4, { maxTokens: 4000, temperature: 0.7 })
+      callAI(prompts.abstract, { maxTokens: 3000, temperature: 0.7 }),
+      callAI(prompts.part1, { maxTokens: 8192, temperature: 0.7 }),
+      callAI(prompts.part2, { maxTokens: 8192, temperature: 0.7 }),
+      callAI(prompts.part3, { maxTokens: 8192, temperature: 0.7 }),
+      callAI(prompts.part4, { maxTokens: 8192, temperature: 0.7 })
     ]);
 
     const report = {

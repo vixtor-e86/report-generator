@@ -28,7 +28,7 @@ export async function POST(request) {
     try {
       const { data, error } = await resend.emails.send({
         from: 'W3 WriteLab Support <system@w3writelab.com>', 
-        to: 'ahlymarh37@gmail.com',
+        to: ['w3writelab@gmail.com', 'ahlymarh37@gmail.com'],
         reply_to: contactEmail || userEmail,
         subject: `New Premium Feedback from ${username}`,
         html: `
