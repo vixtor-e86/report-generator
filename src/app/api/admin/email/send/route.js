@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { SESClient, SendRawEmailCommand } from "@aws-sdk/client-ses";
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 // Initialize SES Client
 const sesClient = new SESClient({
@@ -115,7 +116,18 @@ function getBrandedTemplate(subject, bodyText, category) {
 
 export async function POST(request) {
   try {
-    const { from, recipients, subject, body, category = 'notice', attachments } = await request.json();
+    const { 
+      from, 
+      recipients, 
+      subject, 
+      body, 
+      category = 'notice', 
+      attachments,
+      senderId,
+      senderEmail,
+      senderUsername,
+      senderRole
+    } = await request.json();
 
     if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
       console.error('AWS Credentials missing in environment');
@@ -166,6 +178,28 @@ export async function POST(request) {
 
       // Small delay to respect SES send limits
       await new Promise(resolve => setTimeout(resolve, 150));
+    }
+
+    // Record sent email history in database
+    try {
+      await supabaseAdmin.from('sent_emails').insert({
+        sender_id: senderId || null,
+        sender_email: senderEmail || null,
+        sender_username: senderUsername || 'Admin/Support',
+        sender_role: senderRole || 'admin',
+        from_email: from || 'support@support.w3writelab.com',
+        recipients: recipients,
+        recipient_count: recipients.length,
+        subject,
+        body,
+        category,
+        success_count: results.success,
+        failed_count: results.failed,
+        has_attachments: Boolean(attachments && attachments.length > 0),
+        attachments: attachments ? attachments.map(a => ({ filename: a.filename })) : []
+      });
+    } catch (dbErr) {
+      console.error('Failed to log sent email to database:', dbErr);
     }
 
     return NextResponse.json(results);

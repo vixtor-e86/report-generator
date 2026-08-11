@@ -4,13 +4,15 @@ import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { 
   Mail, Users, FileText, Send, Eye, Trash, Plus, 
-  Search, Check, TrendingUp, Award, DollarSign, RefreshCw 
+  Search, Check, TrendingUp, Award, DollarSign, RefreshCw,
+  Clock, Paperclip, CheckCircle2, XCircle, X
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function EmailPage() {
   const searchParams = useSearchParams();
   const [userRole, setUserRole] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     async function fetchUserRole() {
@@ -19,18 +21,30 @@ export default function EmailPage() {
         if (user) {
           const { data: profile } = await supabase
             .from('user_profiles')
-            .select('role')
+            .select('id, username, role')
             .eq('id', user.id)
             .single();
           setUserRole(profile?.role);
+          setCurrentUser({
+            id: user.id,
+            email: user.email,
+            username: profile?.username || user.email,
+            role: profile?.role || 'admin'
+          });
         }
       } catch (err) {
         console.error('Fetch user role error:', err);
       }
     }
     fetchUserRole();
-  }, []);
-  
+  // State for tabs & sent history
+  const [mainTab, setMainTab] = useState('compose'); // 'compose' | 'history'
+  const [sentHistory, setSentHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyCategory, setHistoryCategory] = useState('all');
+  const [selectedSentItem, setSelectedSentItem] = useState(null);
+
   // State for composing
   const [recipients, setRecipients] = useState([]);
   const [newEmail, setNewEmail] = useState('');
@@ -50,6 +64,25 @@ export default function EmailPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const fileInputRef = useRef(null);
+
+  const fetchSentHistory = useCallback(async () => {
+    setLoadingHistory(true);
+    try {
+      const response = await fetch('/api/admin/email/history');
+      const data = await response.json();
+      if (response.ok && data.history) {
+        setSentHistory(data.history);
+      }
+    } catch (err) {
+      console.error('Fetch sent history error:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSentHistory();
+  }, [fetchSentHistory]);
 
   const senderOptions = [
     "support@support.w3writelab.com",
@@ -277,7 +310,11 @@ export default function EmailPage() {
           subject,
           body,
           category,
-          attachments: processedAttachments
+          attachments: processedAttachments,
+          senderId: currentUser?.id,
+          senderEmail: currentUser?.email,
+          senderUsername: currentUser?.username,
+          senderRole: currentUser?.role
         })
       });
 
@@ -302,6 +339,7 @@ export default function EmailPage() {
         setSubject('');
         setBody('');
         setAttachments([]);
+        fetchSentHistory();
       }
     } catch (error) {
       console.error('Send error:', error);
@@ -344,10 +382,53 @@ export default function EmailPage() {
         <div className="text-xs text-slate-400 bg-white/5 border border-white/10 px-4 py-2.5 rounded-2xl flex items-center gap-2 font-bold uppercase">
           <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
           SES verified on support.w3writelab.com
-        </div>
       </div>
 
-      {/* Analytics Cards */}
+      {/* Workspace Sub-Tabs: Compose Broadcast vs Sent Emails Log */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-3 rounded-3xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMainTab('compose')}
+            className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
+              mainTab === 'compose'
+                ? 'bg-slate-900 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            <Send className="w-4 h-4" /> Compose & Broadcast
+          </button>
+          <button
+            onClick={() => setMainTab('history')}
+            className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
+              mainTab === 'history'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            <Clock className="w-4 h-4" /> Sent Emails Log
+            {sentHistory.length > 0 && (
+              <span className="bg-white/20 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                {sentHistory.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {mainTab === 'history' && (
+          <button 
+            onClick={fetchSentHistory} 
+            disabled={loadingHistory}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loadingHistory ? 'animate-spin' : ''}`} />
+            Refresh Log
+          </button>
+        )}
+      </div>
+
+      {mainTab === 'compose' ? (
+        <>
+          {/* Analytics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-slate-100 rounded-xl text-slate-900"><Users className="w-5 h-5" /></div>
@@ -763,6 +844,160 @@ export default function EmailPage() {
           </div>
         </div>
       </div>
+      </>
+      ) : (
+        /* Sent Emails Log Tab View */
+        <div className="space-y-6">
+          {/* History Search & Filters */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div className="relative w-full md:w-96">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by subject, sender or recipient..."
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
+              {['all', 'notice', 'update', 'promotion', 'survey', 'plain'].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setHistoryCategory(cat)}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition ${
+                    historyCategory === cat
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sent Emails History Table */}
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date & Time</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Sender Details</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject & Category</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Recipients</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loadingHistory ? (
+                    <tr>
+                      <td colSpan="6" className="py-20 text-center">
+                        <RefreshCw className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-2" />
+                        <p className="text-xs text-slate-500 font-bold">Loading sent emails history log...</p>
+                      </td>
+                    </tr>
+                  ) : (() => {
+                    const filteredHistory = sentHistory.filter(item => {
+                      const matchesCategory = historyCategory === 'all' || item.category === historyCategory;
+                      const s = historySearch.toLowerCase();
+                      const matchesSearch = !s || 
+                        (item.subject || '').toLowerCase().includes(s) ||
+                        (item.sender_username || '').toLowerCase().includes(s) ||
+                        (item.sender_email || '').toLowerCase().includes(s) ||
+                        (Array.isArray(item.recipients) && item.recipients.some(r => r.toLowerCase().includes(s)));
+                      return matchesCategory && matchesSearch;
+                    });
+
+                    if (filteredHistory.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan="6" className="py-20 text-center text-slate-400 font-bold text-sm">
+                            No sent emails found matching your filters.
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return filteredHistory.map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50/80 transition">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-xs font-bold text-slate-900">
+                            {new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </div>
+                          <div className="text-[10px] font-black text-indigo-600 tracking-wider uppercase mt-0.5">
+                            {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 text-xs">{item.sender_username || 'Admin'}</span>
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${
+                                  item.sender_role === 'support' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-900 text-white'
+                                }`}>
+                                  {item.sender_role || 'Admin'}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-slate-500 font-medium">{item.from_email || item.sender_email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 ${
+                              item.category === 'notice' ? 'bg-amber-100 text-amber-700' :
+                              item.category === 'update' ? 'bg-blue-100 text-blue-700' :
+                              item.category === 'promotion' ? 'bg-emerald-100 text-emerald-700' :
+                              item.category === 'survey' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {item.category || 'notice'}
+                            </span>
+                            <span className="font-bold text-slate-900 text-xs truncate max-w-xs">{item.subject}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-full text-slate-800 font-black text-xs">
+                            <Users className="w-3.5 h-3.5 text-slate-500" />
+                            {item.recipient_count || (Array.isArray(item.recipients) ? item.recipients.length : 0)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          {item.failed_count === 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-700">
+                              <CheckCircle2 className="w-3 h-3" /> SENT
+                            </span>
+                          ) : item.success_count > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black bg-amber-100 text-amber-700">
+                              PARTIAL ({item.success_count}/{item.recipient_count})
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black bg-red-100 text-red-700">
+                              <XCircle className="w-3 h-3" /> FAILED
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <button
+                            onClick={() => setSelectedSentItem(item)}
+                            className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ml-auto"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> View Message
+                          </button>
+                        </td>
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Live Preview Modal */}
       {showPreview && (
@@ -845,6 +1080,67 @@ export default function EmailPage() {
                 className="px-6 py-2.5 bg-slate-950 hover:bg-slate-900 text-white font-black uppercase tracking-widest text-[10px] rounded-xl active:scale-95 transition-all"
               >
                 Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Sent Item Detail Modal */}
+      {selectedSentItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-200 bg-slate-50 flex justify-between items-center shrink-0">
+              <div>
+                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Sent Email Details</span>
+                <h3 className="text-lg font-black text-slate-950 truncate max-w-md mt-0.5">{selectedSentItem.subject}</h3>
+              </div>
+              <button onClick={() => setSelectedSentItem(null)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6 text-sm flex-1">
+              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
+                <div>
+                  <p className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Sent By</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{selectedSentItem.sender_username} ({selectedSentItem.sender_role || 'Admin'})</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Sent At</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{new Date(selectedSentItem.created_at).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">From Header</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{selectedSentItem.from_email}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Recipients Count</p>
+                  <p className="font-bold text-indigo-600 mt-0.5">{selectedSentItem.recipient_count} Recipients</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest mb-2">Message Body</p>
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 text-xs text-slate-800 space-y-3 font-medium whitespace-pre-wrap leading-relaxed">
+                  {selectedSentItem.body}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest mb-2">Recipient List ({Array.isArray(selectedSentItem.recipients) ? selectedSentItem.recipients.length : 0})</p>
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 max-h-40 overflow-y-auto text-xs text-slate-700 flex flex-wrap gap-1.5 custom-scrollbar">
+                  {Array.isArray(selectedSentItem.recipients) ? selectedSentItem.recipients.map((rec, i) => (
+                    <span key={i} className="px-2.5 py-1 bg-white border border-slate-200 rounded-xl font-mono text-[11px] text-slate-800 shadow-2xs">
+                      {rec}
+                    </span>
+                  )) : <p>No recipient data</p>}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end shrink-0">
+              <button onClick={() => setSelectedSentItem(null)} className="px-6 py-2.5 bg-slate-900 hover:bg-slate-950 text-white rounded-xl text-xs font-black uppercase tracking-wider transition">
+                Close Log
               </button>
             </div>
           </div>
