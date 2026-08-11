@@ -37,6 +37,8 @@ export default function EmailPage() {
       }
     }
     fetchUserRole();
+  }, []);
+
   // State for tabs & sent history
   const [mainTab, setMainTab] = useState('compose'); // 'compose' | 'history'
   const [sentHistory, setSentHistory] = useState([]);
@@ -382,6 +384,7 @@ export default function EmailPage() {
         <div className="text-xs text-slate-400 bg-white/5 border border-white/10 px-4 py-2.5 rounded-2xl flex items-center gap-2 font-bold uppercase">
           <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
           SES verified on support.w3writelab.com
+        </div>
       </div>
 
       {/* Workspace Sub-Tabs: Compose Broadcast vs Sent Emails Log */}
