@@ -1,5 +1,15 @@
 export const academicTools = [
   {
+    id: 'language-converter',
+    name: 'Language Converter',
+    description: 'Convert and refine text across 20+ languages. 100% FREE for all users.',
+    icon: 'SpellCheck',
+    pricePerUse: 0,
+    category: 'writing',
+    isAvailable: true,
+    usageCount: 1560,
+  },
+  {
     id: 'project-finder',
     name: 'Project Finder',
     description: 'Find unique and trending academic project topics. Powered by AI with web search to ensure relevance and novelty.',
@@ -80,19 +90,9 @@ export const academicTools = [
     usageCount: 0,
   },
   {
-    id: 'language-converter',
-    name: 'Language Converter',
-    description: 'Convert and refine text across 20+ languages. ₦200 per use.',
-    icon: 'SpellCheck',
-    pricePerUse: 200,
-    category: 'writing',
-    isAvailable: true,
-    usageCount: 1560,
-  },
-  {
     id: 'diagram-studio',
     name: 'Diagram & Image Studio',
-    description: 'Create professional diagrams, flowcharts, and concept illustrations from text descriptions.',
+    description: 'Create professional diagrams, flowcharts, and concept illustrations from text descriptions. 5 FREE generations daily, ₦200 per image after.',
     icon: 'Image',
     pricePerUse: 200,
     category: 'generation',

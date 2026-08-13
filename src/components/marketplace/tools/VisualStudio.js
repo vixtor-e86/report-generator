@@ -1,24 +1,53 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { 
-  Zap, RefreshCw, Copy, Download, Image, Activity, Palette
+  Zap, RefreshCw, Copy, Download, Image, Activity, Palette, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Textarea } from '@/components/marketplace/ui/textarea';
 import { Input } from '@/components/marketplace/ui/input';
 import { toast } from 'sonner';
+import { useUser } from '@/contexts/marketplace/UserContext';
+
+const DAILY_FREE_LIMIT = 5;
+
+const getTodayKey = () => {
+  return new Date().toISOString().split('T')[0];
+};
 
 export default function VisualStudio({ 
   isProcessing, 
   setIsProcessing, 
   hasPaid, 
   setHasPaid, 
-  setShowPaymentDialog 
+  setShowPaymentDialog,
+  setCustomPrice 
 }) {
+  const { user } = useUser();
   const [activeVisualTool, setActiveVisualTool] = useState('diagram');
   const [prompt, setPrompt] = useState('');
   const [visualResult, setVisualResult] = useState(null);
   const [visualCaption, setVisualCaption] = useState('');
+  const [dailyCount, setDailyCount] = useState(0);
+
+  // Load daily usage count on mount / user change
+  useEffect(() => {
+    const key = `diagram_studio_daily_${user?.id || 'guest'}_${getTodayKey()}`;
+    const stored = localStorage.getItem(key);
+    const count = stored ? parseInt(stored, 10) : 0;
+    setDailyCount(count);
+
+    if (setCustomPrice) {
+      setCustomPrice(count < DAILY_FREE_LIMIT ? 0 : 200);
+    }
+  }, [user]);
+
+  // Sync price when daily count updates
+  useEffect(() => {
+    if (setCustomPrice) {
+      setCustomPrice(dailyCount < DAILY_FREE_LIMIT ? 0 : 200);
+    }
+  }, [dailyCount]);
 
   // Auto-execute after payment
   useEffect(() => {
@@ -30,42 +59,54 @@ export default function VisualStudio({
   const handleVisualGeneration = async (skipPaymentCheck = false) => {
     if (!prompt.trim()) return toast.error("Please describe your visual");
 
-    if (!hasPaid && !skipPaymentCheck) {
-        setShowPaymentDialog(true);
-        return;
+    const isFreeGeneration = dailyCount < DAILY_FREE_LIMIT;
+
+    if (!isFreeGeneration && !hasPaid && !skipPaymentCheck) {
+      if (setCustomPrice) setCustomPrice(200);
+      setShowPaymentDialog(true);
+      return;
     }
 
     setIsProcessing(true);
     try {
-        const response = await fetch('/api/premium/visual-tools', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                type: activeVisualTool, 
-                prompt: prompt,
-                isMarketplace: true
-            })
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Generation failed');
-        
-        if (activeVisualTool === 'diagram') {
-            const encodedCode = btoa(unescape(encodeURIComponent(data.code)))
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_')
-                .replace(/=+$/, '');
-            const imageUrl = `https://mermaid.ink/img/${encodedCode}`;
-            setVisualResult({ type: 'diagram', imageUrl, code: data.code });
-        } else {
-            setVisualResult({ type: 'image', imageUrl: data.imageUrl });
-        }
-        setVisualCaption(prompt.substring(0, 50));
+      const response = await fetch('/api/premium/visual-tools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          type: activeVisualTool, 
+          prompt: prompt,
+          isMarketplace: true
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Generation failed');
+      
+      if (activeVisualTool === 'diagram') {
+        const encodedCode = btoa(unescape(encodeURIComponent(data.code)))
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '');
+        const imageUrl = `https://mermaid.ink/img/${encodedCode}`;
+        setVisualResult({ type: 'diagram', imageUrl, code: data.code });
+      } else {
+        setVisualResult({ type: 'image', imageUrl: data.imageUrl });
+      }
+      setVisualCaption(prompt.substring(0, 50));
+
+      if (isFreeGeneration) {
+        const newCount = dailyCount + 1;
+        const key = `diagram_studio_daily_${user?.id || 'guest'}_${getTodayKey()}`;
+        localStorage.setItem(key, newCount.toString());
+        setDailyCount(newCount);
+        toast.success(`Generated using free daily quota (${newCount}/${DAILY_FREE_LIMIT} used today)`);
+      } else {
         toast.success('Visual generated successfully!');
         setHasPaid(false);
+      }
     } catch (err) {
-        toast.error(err.message);
+      toast.error(err.message || 'Generation failed.');
     } finally {
-        setIsProcessing(false);
+      setIsProcessing(false);
     }
   };
 
@@ -75,6 +116,26 @@ export default function VisualStudio({
         {/* Controls Column */}
         <div className="lg:w-96 space-y-6 md:space-y-8">
           <div className="bg-white border border-[#e5e7eb] rounded-[32px] md:rounded-[40px] p-6 md:p-8 shadow-sm">
+            
+            {/* Daily Quota Status Banner */}
+            <div className={`p-3.5 rounded-2xl border text-xs font-bold mb-6 flex items-center justify-between gap-2 ${
+              dailyCount < DAILY_FREE_LIMIT 
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
+                : 'bg-amber-50 border-amber-200 text-amber-900'
+            }`}>
+              <div className="flex items-center gap-2">
+                <Sparkles className={`w-4 h-4 shrink-0 ${dailyCount < DAILY_FREE_LIMIT ? 'text-emerald-600' : 'text-amber-600'}`} />
+                <span className="text-[10px] md:text-xs font-black uppercase tracking-wider">
+                  {dailyCount < DAILY_FREE_LIMIT ? 'Free Daily Quota' : 'Daily Limit Reached'}
+                </span>
+              </div>
+              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                dailyCount < DAILY_FREE_LIMIT ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-200 text-amber-900'
+              }`}>
+                {dailyCount} / {DAILY_FREE_LIMIT} Used
+              </span>
+            </div>
+
             <div className="flex bg-slate-100 p-1 rounded-xl md:rounded-2xl gap-1 mb-6 md:mb-8">
               <button 
                 onClick={() => setActiveVisualTool('diagram')} 
@@ -95,7 +156,7 @@ export default function VisualStudio({
               <Textarea 
                 value={prompt} 
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder={activeVisualTool === 'diagram' ? "e.g. A flowchart..." : "e.g. A 3D render..."}
+                placeholder={activeVisualTool === 'diagram' ? "e.g. A flowchart showing user authentication steps..." : "e.g. A 3D realistic illustration of a smart grid system..."}
                 className="min-h-[140px] md:min-h-[160px] p-4 rounded-xl md:rounded-2xl border-2 border-slate-100 focus:border-slate-900 outline-none text-sm font-bold text-zinc-900 leading-relaxed resize-none transition-all bg-slate-50/50"
               />
             </div>
@@ -105,7 +166,13 @@ export default function VisualStudio({
               disabled={isProcessing || !prompt.trim()}
               className="w-full mt-6 md:mt-8 py-6 md:py-8 bg-slate-900 hover:bg-black text-white rounded-[20px] md:rounded-[24px] font-black text-[10px] md:text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3"
             >
-              {isProcessing ? <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <><Zap className="w-3.5 h-3.5 md:w-4 md:h-4" /> GENERATE (₦200)</>}
+              {isProcessing ? (
+                <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
+              ) : dailyCount < DAILY_FREE_LIMIT ? (
+                <><Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-400" /> GENERATE FREE ({dailyCount}/{DAILY_FREE_LIMIT} USED)</>
+              ) : (
+                <><Zap className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400" /> GENERATE (₦200)</>
+              )}
             </Button>
           </div>
 

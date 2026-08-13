@@ -1,15 +1,13 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   Languages, Sparkles, RefreshCw, Copy, 
-  Check, Zap, Info, ArrowRight, MessageSquare,
-  Globe2, Type, Wallet
+  Check, Zap, Info, MessageSquare,
+  Globe2, Type
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Badge } from '@/components/marketplace/ui/badge';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
-import { useUser } from '@/contexts/marketplace/UserContext';
 
 const LANGUAGES = [
   // Core Nigerian
@@ -45,45 +43,23 @@ const MODES = [
 
 export default function LanguageConverter({ 
   isProcessing, 
-  setIsProcessing,
-  hasPaid,
-  setHasPaid,
-  setShowPaymentDialog
+  setIsProcessing
 }) {
-  const { user } = useUser();
   const [inputText, setInputText] = useState('');
   const [convertedText, setConvertedText] = useState('');
   const [targetLang, setTargetLang] = useState('pidgin');
   const [mode, setMode] = useState('standard');
   const [copied, setCopied] = useState(false);
-  const [wordBalance, setWordBalance] = useState(0);
 
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
   const MAX_WORDS = 2000;
   const isOverLimit = wordCount > MAX_WORDS;
-
-  // Fetch word balance on mount
-  useEffect(() => {
-    if (user) fetchBalance();
-  }, [user]);
-
-  const fetchBalance = async () => {
-    const { data } = await supabase
-      .from('tool_word_balances')
-      .select('balance')
-      .eq('user_id', user.id)
-      .eq('tool_id', 'language-converter')
-      .maybeSingle();
-    
-    if (data) setWordBalance(data.balance);
-  };
 
   const handleInputChange = (e) => {
     const text = e.target.value;
     const words = text.trim() ? text.trim().split(/\s+/) : [];
     
     if (words.length > MAX_WORDS) {
-      // If pasting more than 2000 words, truncate it
       const truncatedText = text.split(/\s+/).slice(0, MAX_WORDS).join(' ');
       setInputText(truncatedText);
       toast.error(`Word limit reached! Only the first ${MAX_WORDS} words were kept.`);
@@ -92,14 +68,7 @@ export default function LanguageConverter({
     }
   };
 
-  // Auto-execute after payment
-  useEffect(() => {
-    if (hasPaid && inputText.trim()) {
-      handleConvert(true);
-    }
-  }, [hasPaid]);
-
-  const handleConvert = async (skipPaymentCheck = false) => {
+  const handleConvert = async () => {
     if (!inputText.trim()) return toast.error("Please enter text to convert.");
     
     if (wordCount > MAX_WORDS) {
@@ -107,41 +76,8 @@ export default function LanguageConverter({
       return;
     }
 
-    // Word Balance Logic
-    if (!skipPaymentCheck) {
-      if (wordBalance < wordCount) {
-        setShowPaymentDialog(true);
-        return;
-      }
-    }
-
     setIsProcessing(true);
     try {
-      let finalBalanceToUse = wordBalance;
-
-      // 1. Refill balance if user just paid
-      if (skipPaymentCheck) {
-        const { data: current } = await supabase
-          .from('tool_word_balances')
-          .select('balance')
-          .eq('user_id', user.id)
-          .eq('tool_id', 'language-converter')
-          .maybeSingle();
-        
-        finalBalanceToUse = (current?.balance || 0) + 2000;
-        
-        await supabase
-          .from('tool_word_balances')
-          .upsert({ 
-            user_id: user.id, 
-            tool_id: 'language-converter', 
-            balance: finalBalanceToUse,
-            updated_at: new Date().toISOString()
-          });
-        
-        setWordBalance(finalBalanceToUse);
-      }
-
       const response = await fetch('/api/marketplace/tools/language-converter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -154,19 +90,8 @@ export default function LanguageConverter({
       const data = await response.json();
       if (data.error) throw new Error(data.error);
 
-      // 2. Deduct words from balance
-      const updatedBalance = Math.max(0, finalBalanceToUse - wordCount);
-      
-      await supabase
-        .from('tool_word_balances')
-        .update({ balance: updatedBalance })
-        .eq('user_id', user.id)
-        .eq('tool_id', 'language-converter');
-
-      setWordBalance(updatedBalance);
       setConvertedText(data.convertedText);
       toast.success('Conversion complete!');
-      setHasPaid(false);
     } catch (err) {
       toast.error(err.message || 'System under maintenance. Please try again later.');
     } finally {
@@ -218,12 +143,12 @@ export default function LanguageConverter({
         </div>
 
         <div className="ml-auto flex items-center gap-3 md:gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0">
-          <div className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 bg-zinc-900 text-white rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg">
-            <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-400" />
-            {wordBalance.toLocaleString()} <span className="hidden xs:inline ml-1">Credits</span>
+          <div className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 bg-emerald-500 text-white rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-md">
+            <Zap className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+            100% FREE
           </div>
           <Badge variant="outline" className={`rounded-full px-3 md:px-4 py-1.5 md:py-2 font-black text-[9px] md:text-[10px] ${isOverLimit ? 'text-red-500 border-red-200 bg-red-50' : 'text-slate-600'}`}>
-            {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()}
+            {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()} Words
           </Badge>
         </div>
       </div>
@@ -258,12 +183,12 @@ export default function LanguageConverter({
           />
 
           <Button 
-            onClick={() => handleConvert()}
+            onClick={handleConvert}
             disabled={isProcessing || !inputText.trim() || isOverLimit}
             className="w-full bg-black hover:bg-zinc-800 text-white rounded-[20px] md:rounded-[24px] py-6 md:py-10 font-black uppercase text-[10px] md:text-xs tracking-[0.2em] shadow-xl mt-6 md:mt-8 flex items-center justify-center gap-3 md:gap-4 shrink-0 transition-all active:scale-95"
           >
             {isProcessing ? <RefreshCw className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />}
-            {isProcessing ? 'Converting...' : wordBalance >= wordCount ? 'Execute (Using Credits)' : `Refill & Execute (₦200)`}
+            {isProcessing ? 'Converting...' : 'Convert Text (FREE)'}
           </Button>
         </div>
 
@@ -313,11 +238,11 @@ export default function LanguageConverter({
           <div className="flex-1 text-center md:text-left">
             <h4 className="text-lg md:text-xl font-black uppercase tracking-tight mb-2">Multi-Cultural Support</h4>
             <p className="text-xs md:text-sm text-indigo-100 font-medium leading-relaxed">
-              Our tool handles <span className="text-white font-bold">Nigerian Pidgin, Yoruba, Igbo, and Hausa</span> with deep cultural nuance. Now with a carry-over balance system.
+              Our tool handles <span className="text-white font-bold">Nigerian Pidgin, Yoruba, Igbo, and Hausa</span> with deep cultural nuance. Enjoy instant translation across 20+ global languages completely free.
             </p>
           </div>
           <Badge className="bg-white text-indigo-600 px-4 md:px-6 py-2 md:py-3 rounded-full font-black uppercase text-[9px] md:text-[10px] tracking-widest shadow-xl">
-            ₦200 / 2,000 Words
+            100% FREE / 2,000 Words
           </Badge>
         </div>
       </div>
