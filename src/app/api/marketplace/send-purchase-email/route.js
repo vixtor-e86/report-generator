@@ -17,6 +17,7 @@ export async function POST(request) {
     const { data, error } = await resend.emails.send({
       from: 'W3 Hub <noreply@w3writelab.com>', 
       to: email,
+      reply_to: 'ahlymarh37@gmail.com',
       subject: `Your Project Download: ${projectTitle}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 20px;">

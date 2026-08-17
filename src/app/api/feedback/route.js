@@ -103,25 +103,31 @@ export async function POST(request) {
 
     // Send email using Resend
     const resendApiKey = process.env.RESEND_API_KEY;
-    const adminEmail = process.env.ADMIN_EMAIL || 'your-email@example.com';
+    const adminEmails = ['w3writelab@gmail.com', 'ahlymarh37@gmail.com'];
 
     if (resendApiKey) {
-      const emailResponse = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: 'W3 WriteLab <onboarding@resend.dev>', // Change this when you verify your domain
-          to: [adminEmail],
-          subject: `⭐ New ${rating}-Star Feedback - W3 WriteLab`,
-          html: emailContent
-        })
-      });
+      try {
+        const emailResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: 'W3 WriteLab Support <system@w3writelab.com>',
+            to: adminEmails,
+            reply_to: 'ahlymarh37@gmail.com',
+            subject: `⭐ New ${rating}-Star Feedback - W3 WriteLab`,
+            html: emailContent
+          })
+        });
 
-      if (!emailResponse.ok) {
-        console.error('Failed to send email:', await emailResponse.text());
+        if (!emailResponse.ok) {
+          const errText = await emailResponse.text();
+          console.error('Failed to send feedback email via Resend:', errText);
+        }
+      } catch (emailErr) {
+        console.error('Feedback email sending error:', emailErr);
       }
     } else {
       console.warn('RESEND_API_KEY not configured - feedback saved but email not sent');
