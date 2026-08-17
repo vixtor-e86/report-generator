@@ -14,7 +14,8 @@ export default function Sidebar({
   onChapterSelect,
   onImageUploadComplete,
   sidebarOpen,
-  onToggleSidebar
+  onToggleSidebar,
+  onOpenRefillModal
 }) {
   const [showCaptionModal, setShowCaptionModal] = useState(false);
   const [tempImageData, setTempImageData] = useState(null);
@@ -142,6 +143,15 @@ export default function Sidebar({
         </div>
         <div className="px-4 py-3 border-b border-slate-200 bg-white/50">
           <TokenBar used={project.tokens_used} limit={project.tokens_limit} />
+          {(project.tokens_used >= 80000 || (project.tokens_used / project.tokens_limit) >= 0.8) && (
+            <button
+              onClick={onOpenRefillModal}
+              className="w-full mt-2.5 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Top Up Tokens
+            </button>
+          )}
         </div>
 
         {/* Navigation */}

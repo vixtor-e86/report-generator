@@ -213,7 +213,11 @@ export default function TransactionsPage() {
                     <div className="flex flex-col">
                       <span className="font-extrabold text-slate-900 text-sm">₦{tx.amount?.toLocaleString()}</span>
                       <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-tighter">
-                        {tx.paystack_reference?.startsWith('W3WL_REFILL_') ? 'refill' : tx.tier}
+                        {tx.paystack_reference?.startsWith('W3WL_REFILL_') 
+                          ? 'humanizer refill' 
+                          : tx.paystack_reference?.includes('TOKEN_REFILL') 
+                          ? 'token refill' 
+                          : tx.tier}
                       </span>
                     </div>
                   </td>
@@ -265,8 +269,10 @@ export default function TransactionsPage() {
             <h3 className="text-xl font-black text-slate-900 mb-2">Verify Payment?</h3>
             <p className="text-sm text-slate-500 mb-6">
               Confirming this will mark the transaction as <b>Paid</b> and{' '}
-              {confirmModal.transaction.tier === 'refill' 
+              {confirmModal.transaction.tier === 'refill' || confirmModal.transaction.paystack_reference?.startsWith('W3WL_REFILL_')
                 ? 'refill humanizer words for '
+                : confirmModal.transaction.paystack_reference?.includes('TOKEN_REFILL')
+                ? 'refill AI tokens for '
                 : confirmModal.transaction.tier === 'unlock'
                 ? 'grant full project access to '
                 : 'activate the subscription for '}

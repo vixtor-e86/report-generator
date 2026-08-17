@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Sidebar from '@/components/standard/Sidebar';
 import TopBar from '@/components/standard/TopBar';
@@ -9,6 +9,7 @@ import ChapterEdit from '@/components/standard/ChapterEdit';
 import ModifyModal from '@/components/standard/ModifyModal';
 import PreviewModal from '@/components/standard/PreviewModal'; // ✅ NEW
 import SuggestionsModal from '@/components/standard/SuggestionsModal';
+import RefillTokenModal from '@/components/standard/RefillTokenModal'; // ✅ NEW
 import LoadingModal from '@/components/premium/modals/LoadingModal'; // Reusing premium loading modal
 import FeedbackWidget from '@/components/FeedbackWidget';// ✅ NEW
 import ReferralFAB from '@/components/ReferralFAB';
@@ -18,6 +19,7 @@ export default function StandardWorkspace({ params }) {
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // State Management
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,7 @@ export default function StandardWorkspace({ params }) {
   const [showModifyModal, setShowModifyModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false); // ✅ NEW
   const [showSuggestionsModal, setShowSuggestionsModal] = useState(false); // ✅ NEW
+  const [showRefillModal, setShowRefillModal] = useState(false); // ✅ Token refill modal
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const [globalLoadingText, setGlobalLoadingText] = useState('AI is writing your chapter...');
@@ -130,6 +133,34 @@ export default function StandardWorkspace({ params }) {
       loadWorkspace();
     }
   }, [projectId, router]);
+
+  // Handle token top-up payment verification callback
+  useEffect(() => {
+    const verifiedRefill = searchParams?.get('verified_token_refill');
+    if (verifiedRefill && projectId) {
+      async function verifyTokenRefill() {
+        try {
+          setIsGlobalLoading(true);
+          setGlobalLoadingText('Verifying token top-up payment...');
+          const res = await fetch(`/api/squad/verify?transaction_ref=${verifiedRefill}`);
+          const data = await res.json();
+          if (res.ok && data.verified) {
+            showNotification('Success', 'Token top-up confirmed! Your tokens have been refilled.', 'success');
+            await refreshProject();
+          } else {
+            showNotification('Payment Error', data.error || 'Failed to verify token top-up.', 'error');
+          }
+        } catch (err) {
+          console.error('Token refill check error:', err);
+          showNotification('Payment Error', 'Token top-up verification failed.', 'error');
+        } finally {
+          setIsGlobalLoading(false);
+          router.replace(`/standard/${projectId}`);
+        }
+      }
+      verifyTokenRefill();
+    }
+  }, [searchParams, projectId, router]);
 
   // Refresh chapters from database
   const refreshChapters = async () => {
@@ -247,7 +278,22 @@ export default function StandardWorkspace({ params }) {
         throw new Error(data.error || 'Generation failed');
       }
 
-      // Refresh data
+      // Immediately update local state so the UI reflects the new chapter content without delay
+      if (data.content) {
+        setChapters(prev => prev.map(ch => 
+          ch.chapter_number === selectedChapter 
+            ? { 
+                ...ch, 
+                content: data.content, 
+                status: 'draft', 
+                ai_model_used: data.model || ch.ai_model_used,
+                version: (ch.version || 0) + 1
+              } 
+            : ch
+        ));
+      }
+
+      // Refresh data from database
       await refreshChapters();
       await refreshProject();
 
@@ -290,7 +336,22 @@ export default function StandardWorkspace({ params }) {
         throw new Error(data.error || 'Regeneration failed');
       }
 
-      // Refresh data
+      // Immediately update local state so the UI reflects the regenerated content without delay
+      if (data.content) {
+        setChapters(prev => prev.map(ch => 
+          ch.chapter_number === selectedChapter 
+            ? { 
+                ...ch, 
+                content: data.content, 
+                status: 'draft', 
+                ai_model_used: data.model || ch.ai_model_used,
+                version: data.version || (ch.version || 1) + 1
+              } 
+            : ch
+        ));
+      }
+
+      // Refresh data from database
       await refreshChapters();
       await refreshProject();
 
@@ -326,6 +387,13 @@ export default function StandardWorkspace({ params }) {
       if (!response.ok) {
         throw new Error(data.error || 'Save failed');
       }
+
+      // Immediately update local state
+      setChapters(prev => prev.map(ch => 
+        ch.id === currentChapter.id
+          ? { ...ch, content: newContent, status: 'edited' }
+          : ch
+      ));
 
       // Refresh chapters
       await refreshChapters();
@@ -375,6 +443,7 @@ export default function StandardWorkspace({ params }) {
         onImageUploadComplete={refreshImages}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        onOpenRefillModal={() => setShowRefillModal(true)}
       />
 
       {/* Main Content Area */}
@@ -458,6 +527,21 @@ export default function StandardWorkspace({ params }) {
           userId={user.id}
         />
       )}
+
+      {/* ✅ NEW: Token Refill Modal */}
+      {showRefillModal && (
+        <RefillTokenModal
+          isOpen={showRefillModal}
+          onClose={() => setShowRefillModal(false)}
+          projectId={project.id}
+          userId={user?.id}
+          userEmail={user?.email}
+          tier="standard"
+          currentTokensUsed={project.tokens_used}
+          tokensLimit={project.tokens_limit}
+        />
+      )}
+
       {/* Feedback Widget */}
       <FeedbackWidget projectId={project.id} userId={user.id} />
 

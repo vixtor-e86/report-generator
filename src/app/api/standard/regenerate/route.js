@@ -123,7 +123,7 @@ export async function POST(request) {
     // 9. Fetch template structure
     const { data: template } = await supabase
       .from('templates')
-      .select('structure')
+      .select('structure, faculty')
       .eq('id', project.template_id)
       .single();
 
@@ -131,16 +131,28 @@ export async function POST(request) {
       throw new Error('Template not found');
     }
 
-    // 10. Build AI prompt with custom instruction
+    // 9.5 Fetch existing project references
+    const { data: existingReferences } = await supabase
+      .from('project_references')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('order_number', { ascending: true });
+
+    // 10. Build AI prompt with custom instruction and full project context
     const prompt = getStandardPrompt(chapterNumber, {
       projectTitle: project.title,
       department: project.department,
-      components: project.components,
+      components: project.components || [],
       description: project.description,
       images: images || [],
       context,
       customInstruction: customInstruction || '',
-      templateStructure: template.structure
+      templateStructure: template.structure,
+      faculty: project.faculty || template.faculty || 'Engineering',
+      referenceStyle: project.reference_style || 'apa',
+      existingReferences: existingReferences || [],
+      useManualObjectives: project.use_manual_objectives,
+      manualObjectives: project.manual_objectives || []
     });
 
     // 11. Store custom instruction if provided
@@ -153,7 +165,7 @@ export async function POST(request) {
       });
     }
 
-    // 12. ✅ NEW: Call AI using unified provider
+    // 12. Call AI using unified provider with fallback
     const startTime = Date.now();
     
     const aiResult = await callAI(prompt, {
@@ -161,6 +173,10 @@ export async function POST(request) {
       temperature: 0.7
     });
     
+    if (!aiResult?.content || typeof aiResult.content !== 'string' || aiResult.content.trim().length < 50) {
+      throw new Error('AI returned an empty response. No tokens were deducted. Please try again.');
+    }
+
     const endTime = Date.now();
     const durationSeconds = Math.round((endTime - startTime) / 1000);
 
@@ -179,8 +195,8 @@ export async function POST(request) {
         regeneration_count: (chapter.regeneration_count || 0) + 1,
         user_modifications: userModifications,
         ai_model_used: aiResult.model,
-        tokens_input: aiResult.tokensUsed.input,
-        tokens_output: aiResult.tokensUsed.output,
+        tokens_input: aiResult.tokensUsed?.input || 0,
+        tokens_output: aiResult.tokensUsed?.output || 0,
         generation_time_seconds: durationSeconds,
         generated_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -195,8 +211,20 @@ export async function POST(request) {
       );
     }
 
-    // 15. Update project tokens_used
-    const newTokensUsed = project.tokens_used + aiResult.tokensUsed.total;
+    // 14.5 Extract references if enabled
+    if (project.reference_style && project.reference_style !== 'none') {
+      try {
+        const { extractFullReferences, storeReferences } = await import('@/lib/referenceExtractor');
+        const extractedRefs = extractFullReferences(aiResult.content, project.reference_style, chapterNumber);
+        if (extractedRefs.length > 0) {
+          await storeReferences(supabase, projectId, extractedRefs, chapterNumber);
+        }
+      } catch (e) { console.error('Ref processing error:', e); }
+    }
+
+    // 15. Update project tokens_used (only on valid output)
+    const tokensUsedToAdd = aiResult.tokensUsed?.total || 0;
+    const newTokensUsed = (project.tokens_used || 0) + tokensUsedToAdd;
     await supabase
       .from('standard_projects')
       .update({
@@ -216,9 +244,9 @@ export async function POST(request) {
         action_type: customInstruction ? 'modify' : 'regenerate',
         ai_provider: aiResult.provider,
         ai_model: aiResult.model,
-        tokens_input: aiResult.tokensUsed.input,
-        tokens_output: aiResult.tokensUsed.output,
-        tokens_total: aiResult.tokensUsed.total,
+        tokens_input: aiResult.tokensUsed?.input || 0,
+        tokens_output: aiResult.tokensUsed?.output || 0,
+        tokens_total: tokensUsedToAdd,
         duration_seconds: durationSeconds,
         user_instruction: customInstruction || null,
         success: true
@@ -228,8 +256,8 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       content: aiResult.content,
-      tokensUsed: aiResult.tokensUsed.total,
-      tokensRemaining: project.tokens_limit - newTokensUsed,
+      tokensUsed: tokensUsedToAdd,
+      tokensRemaining: Math.max(0, project.tokens_limit - newTokensUsed),
       version: newVersion,
       durationSeconds,
       model: aiResult.model,
@@ -259,7 +287,7 @@ export async function POST(request) {
           project_id: projectId,
           chapter_number: chapterNumber,
           action_type: customInstruction ? 'modify' : 'regenerate',
-          ai_provider: process.env.AI_PROVIDER || 'gemini',
+          ai_provider: process.env.AI_PROVIDER || 'deepseek',
           success: false,
           error_message: error.message
         });

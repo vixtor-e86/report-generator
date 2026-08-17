@@ -273,6 +273,75 @@ export async function GET(request) {
       }
     }
 
+    // ✅ Process AI Token Refill (Standard & Premium)
+    if (transaction_ref && (transaction_ref.startsWith('W3WL_TOKEN_REFILL_') || transaction_ref.startsWith('W3WL_STANDARD_TOKEN_REFILL_') || transaction_ref.startsWith('W3WL_PREMIUM_TOKEN_REFILL_'))) {
+      let tier = 'standard';
+      let refillProjectId = null;
+      let refillTokens = 0;
+
+      if (transaction_ref.startsWith('W3WL_TOKEN_REFILL_')) {
+        const parts = transaction_ref.split('_');
+        // W3WL_TOKEN_REFILL_<tier>_<projectId>_<tokensAmount>_<timestamp>
+        tier = parts[3] || 'standard';
+        refillProjectId = parts[4];
+        refillTokens = Number(parts[5]);
+      } else if (transaction_ref.startsWith('W3WL_STANDARD_TOKEN_REFILL_')) {
+        const parts = transaction_ref.split('_');
+        tier = 'standard';
+        refillProjectId = parts[4];
+        refillTokens = Number(parts[5]);
+      } else if (transaction_ref.startsWith('W3WL_PREMIUM_TOKEN_REFILL_')) {
+        const parts = transaction_ref.split('_');
+        tier = 'premium';
+        refillProjectId = parts[4];
+        refillTokens = Number(parts[5]);
+      }
+
+      if (refillProjectId && !isNaN(refillTokens) && refillTokens > 0) {
+        try {
+          if (tier === 'standard') {
+            const { data: currentProject } = await supabaseAdmin
+              .from('standard_projects')
+              .select('tokens_used')
+              .eq('id', refillProjectId)
+              .single();
+
+            if (currentProject) {
+              const currentUsed = currentProject.tokens_used || 0;
+              const newTokensUsed = Math.max(0, currentUsed - refillTokens);
+
+              await supabaseAdmin
+                .from('standard_projects')
+                .update({ tokens_used: newTokensUsed })
+                .eq('id', refillProjectId);
+
+              console.log(`Standard token refilled: ${refillTokens} tokens for project ${refillProjectId}. Old: ${currentUsed}, New: ${newTokensUsed}`);
+            }
+          } else if (tier === 'premium') {
+            const { data: currentProject } = await supabaseAdmin
+              .from('premium_projects')
+              .select('tokens_used')
+              .eq('id', refillProjectId)
+              .single();
+
+            if (currentProject) {
+              const currentUsed = currentProject.tokens_used || 0;
+              const newTokensUsed = Math.max(0, currentUsed - refillTokens);
+
+              await supabaseAdmin
+                .from('premium_projects')
+                .update({ tokens_used: newTokensUsed })
+                .eq('id', refillProjectId);
+
+              console.log(`Premium token refilled: ${refillTokens} tokens for project ${refillProjectId}. Old: ${currentUsed}, New: ${newTokensUsed}`);
+            }
+          }
+        } catch (tokenRefillErr) {
+          console.error('Error executing token refill in verify:', tokenRefillErr);
+        }
+      }
+    }
+
     return NextResponse.json({
       verified: true,
       transaction: updatedTx

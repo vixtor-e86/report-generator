@@ -53,7 +53,7 @@ ${existingRefsText}
 }
 
 function getSIWESPrompt(partNumber, data) {
-  const { projectTitle, department, components, description, images = [], context = '', manualObjectives = [] } = data;
+  const { projectTitle, department, components = [], description, images = [], context = '', manualObjectives = [], customInstruction = '' } = data;
   const companyName = components[0] || 'the organization';
   
   let objectivesInstruction = '';
@@ -61,11 +61,17 @@ function getSIWESPrompt(partNumber, data) {
     objectivesInstruction = `\n\n### MANDATORY TRAINING OBJECTIVES:\n${manualObjectives.map((o, i) => `${i + 1}. ${o}`).join('\n')}\n`;
   }
 
+  let customInstructionText = '';
+  if (customInstruction && customInstruction.trim()) {
+    customInstructionText = `\n\n### USER MODIFICATIONS / SPECIAL INSTRUCTIONS:\n${customInstruction.trim()}\n`;
+  }
+
   return `You are an expert SIWES report writer.
   
 TRAINING: ${companyName} (${department})
 SCOPE: ${description}
 ${objectivesInstruction}
+${customInstructionText}
 ${context ? `CONTEXT: ${context}` : ''}
 
 PART: Part ${partNumber}
@@ -75,9 +81,23 @@ RULES: Use first-person ("I assigned..."). No AI fluff. Nigerian university stan
 }
 
 function getFacultySpecificPrompt(chapterNumber, data) {
-  const { projectTitle, department, components, description, images = [], context = '', templateStructure, faculty, referenceStyle = 'apa', existingReferences = [], manualObjectives = [] } = data;
+  const { 
+    projectTitle, 
+    department, 
+    components = [], 
+    description, 
+    images = [], 
+    context = '', 
+    templateStructure, 
+    faculty = 'Engineering', 
+    referenceStyle = 'apa', 
+    existingReferences = [], 
+    manualObjectives = [],
+    customInstruction = ''
+  } = data;
+
   const chapterInfo = templateStructure?.chapters?.find(ch => ch.number === chapterNumber);
-  if (!chapterInfo) throw new Error(`Chapter ${chapterNumber} missing`);
+  if (!chapterInfo) throw new Error(`Chapter ${chapterNumber} missing from template structure`);
 
   let objectivesInstruction = '';
   if (chapterNumber === 1 && manualObjectives.length > 0) {
@@ -95,19 +115,28 @@ function getFacultySpecificPrompt(chapterNumber, data) {
     STRICT RULE: Use the exact format {{figureX.Y}} when placing images.`;
   }
 
+  let customInstructionText = '';
+  if (customInstruction && customInstruction.trim()) {
+    customInstructionText = `\n\n### USER MODIFICATIONS / SPECIAL INSTRUCTIONS (HIGH PRIORITY):\n${customInstruction.trim()}\n`;
+  }
+
+  const totalChapters = templateStructure?.chapters?.length || 5;
+  const isLastChapter = chapterNumber === totalChapters;
+
   const prompt = `You are a senior academic researcher. 
   TASK: Author Chapter ${chapterNumber}: ${chapterInfo.title} for the project "${projectTitle}".
   
   PROJECT: ${description}
   FIELD: ${faculty} (${department})
-  COMPONENTS: ${components.join(', ')}
+  COMPONENTS: ${Array.isArray(components) ? components.join(', ') : components}
   ${objectivesInstruction}
   ${imageInstructions}
+  ${customInstructionText}
   ${context ? `\nPREVIOUS CONTEXT:\n${context}` : ''}
 
   REQUIRED SECTIONS:
   ${chapterInfo.sections.join('\n')}
-  ${getReferenceInstructions(referenceStyle, faculty, chapterNumber === (templateStructure?.chapters?.length || 5), existingReferences)}
+  ${getReferenceInstructions(referenceStyle, faculty, chapterNumber, isLastChapter, existingReferences)}
 
   WRITING RULES:
   1. Target: 3000 - 5000 words. Make the content extremely comprehensive, detailed, and complete. Ensure it does not end prematurely or get cut off.

@@ -250,6 +250,34 @@ function WorkspaceContent() {
     }
   }, [searchParams, projectId, router]);
 
+  // Handle AI token top-up payment verification callback
+  useEffect(() => {
+    const verifiedTokenRefill = searchParams.get('verified_token_refill');
+    if (verifiedTokenRefill && projectId) {
+      async function verifyTokenRefill() {
+        try {
+          setIsGlobalLoading(true);
+          setGlobalLoadingText('Verifying token top-up payment...');
+          const res = await fetch(`/api/squad/verify?transaction_ref=${verifiedTokenRefill}`);
+          const data = await res.json();
+          if (res.ok && data.verified) {
+            showNotification('Success', 'AI Token top-up confirmed! Your tokens have been refilled.', 'success');
+            loadWorkspaceData();
+          } else {
+            showNotification('Payment Error', data.error || 'Failed to verify token top-up payment.', 'error');
+          }
+        } catch (err) {
+          console.error('Token refill check error:', err);
+          showNotification('Payment Error', 'Token top-up verification failed.', 'error');
+        } finally {
+          setIsGlobalLoading(false);
+          router.replace(`/premium/workspace?id=${projectId}`);
+        }
+      }
+      verifyTokenRefill();
+    }
+  }, [searchParams, projectId, router]);
+
   // Land on Preview Mode when switching chapters
   useEffect(() => {
     if (activeView.startsWith('chapter-')) {

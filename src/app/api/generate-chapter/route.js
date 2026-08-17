@@ -103,6 +103,9 @@ export async function POST(request) {
     });
 
     const content = result.content;
+    if (!content || typeof content !== 'string' || content.trim().length < 50) {
+      throw new Error('AI returned an empty response. Please try generating again.');
+    }
 
     // Update chapter in database
     const { error: updateError } = await supabaseAdmin

@@ -213,6 +213,75 @@ export async function POST(request) {
               }
             }
           }
+
+          // ✅ Handle AI Token Refill in webhook (Standard & Premium)
+          if (tx_ref && (tx_ref.includes('W3WL_TOKEN_REFILL_') || tx_ref.includes('W3WL_STANDARD_TOKEN_REFILL_') || tx_ref.includes('W3WL_PREMIUM_TOKEN_REFILL_'))) {
+            console.log('Handling Token Refill in webhook for ref:', tx_ref);
+            let tier = 'standard';
+            let refillProjectId = null;
+            let refillTokens = 0;
+
+            if (tx_ref.includes('W3WL_TOKEN_REFILL_')) {
+              const parts = tx_ref.split('_');
+              tier = parts[3] || 'standard';
+              refillProjectId = parts[4];
+              refillTokens = Number(parts[5]);
+            } else if (tx_ref.includes('W3WL_STANDARD_TOKEN_REFILL_')) {
+              const parts = tx_ref.split('_');
+              tier = 'standard';
+              refillProjectId = parts[4];
+              refillTokens = Number(parts[5]);
+            } else if (tx_ref.includes('W3WL_PREMIUM_TOKEN_REFILL_')) {
+              const parts = tx_ref.split('_');
+              tier = 'premium';
+              refillProjectId = parts[4];
+              refillTokens = Number(parts[5]);
+            }
+
+            if (refillProjectId && !isNaN(refillTokens) && refillTokens > 0) {
+              try {
+                if (tier === 'standard') {
+                  const { data: currentProject } = await supabaseAdmin
+                    .from('standard_projects')
+                    .select('tokens_used')
+                    .eq('id', refillProjectId)
+                    .single();
+
+                  if (currentProject) {
+                    const currentUsed = currentProject.tokens_used || 0;
+                    const newTokensUsed = Math.max(0, currentUsed - refillTokens);
+
+                    await supabaseAdmin
+                      .from('standard_projects')
+                      .update({ tokens_used: newTokensUsed })
+                      .eq('id', refillProjectId);
+
+                    console.log(`Webhook refilled ${refillTokens} Standard tokens for project ${refillProjectId}. Old: ${currentUsed}, New: ${newTokensUsed}`);
+                  }
+                } else if (tier === 'premium') {
+                  const { data: currentProject } = await supabaseAdmin
+                    .from('premium_projects')
+                    .select('tokens_used')
+                    .eq('id', refillProjectId)
+                    .single();
+
+                  if (currentProject) {
+                    const currentUsed = currentProject.tokens_used || 0;
+                    const newTokensUsed = Math.max(0, currentUsed - refillTokens);
+
+                    await supabaseAdmin
+                      .from('premium_projects')
+                      .update({ tokens_used: newTokensUsed })
+                      .eq('id', refillProjectId);
+
+                    console.log(`Webhook refilled ${refillTokens} Premium tokens for project ${refillProjectId}. Old: ${currentUsed}, New: ${newTokensUsed}`);
+                  }
+                }
+              } catch (tokenRefillErr) {
+                console.error('Error executing token refill in webhook:', tokenRefillErr);
+              }
+            }
+          }
         } else if (existingTx) {
           console.log('Transaction already marked as paid.');
         } else {

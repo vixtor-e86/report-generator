@@ -10,6 +10,9 @@ const supabase = createClient(
 );
 
 export async function POST(request) {
+  let activeChapterId = null;
+  let hasExistingContent = false;
+
   try {
     const { projectId, chapterNumber, userId } = await request.json();
 
@@ -39,6 +42,9 @@ export async function POST(request) {
       .single();
 
     if (!chapter) return NextResponse.json({ error: 'Chapter not found' }, { status: 404 });
+
+    activeChapterId = chapter.id;
+    hasExistingContent = !!chapter.content;
 
     await supabase.from('standard_chapters').update({ status: 'generating' }).eq('id', chapter.id);
 
@@ -109,12 +115,12 @@ export async function POST(request) {
     const prompt = getStandardPrompt(chapterNumber, {
       projectTitle: project.title,
       department: project.department,
-      components: project.components,
+      components: project.components || [],
       description: project.description,
       images: images || [],
       context,
-      templateStructure: template.structure,
-      faculty: template.faculty || 'Engineering',
+      templateStructure: template?.structure,
+      faculty: project.faculty || template?.faculty || 'Engineering',
       referenceStyle: project.reference_style || 'apa',
       existingReferences: finalReferencesList,
       useManualObjectives: project.use_manual_objectives,
@@ -123,18 +129,23 @@ export async function POST(request) {
 
     const startTime = Date.now();
     
-    // Uses .env defaults: AI_PROVIDER and AI_MODEL
+    // Uses default AI Provider (DeepSeek / Gemini with fallback)
     const aiResult = await callAI(prompt, { maxTokens: 8192, temperature: 0.7 });
     
+    if (!aiResult?.content || typeof aiResult.content !== 'string' || aiResult.content.trim().length < 50) {
+      throw new Error('AI returned an empty response. No tokens were deducted. Please try generating again.');
+    }
+
     const durationSeconds = Math.round((Date.now() - startTime) / 1000);
 
+    // Save generated chapter to database
     await supabase.from('standard_chapters').update({
       content: aiResult.content,
       status: 'draft',
       version: (chapter.version || 0) + 1,
       ai_model_used: aiResult.model,
-      tokens_input: aiResult.tokensUsed.input,
-      tokens_output: aiResult.tokensUsed.output,
+      tokens_input: aiResult.tokensUsed?.input || 0,
+      tokens_output: aiResult.tokensUsed?.output || 0,
       generation_time_seconds: durationSeconds,
       generated_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -150,15 +161,33 @@ export async function POST(request) {
       } catch (e) { console.error('Ref processing error:', e); }
     }
 
-    await supabase.from('standard_projects').update({
-      tokens_used: project.tokens_used + aiResult.tokensUsed.total,
-      last_generated_at: new Date().toISOString()
-    }).eq('id', projectId);
+    // Only deduct tokens when content is successfully saved
+    const tokensUsedToAdd = aiResult.tokensUsed?.total || 0;
+    if (tokensUsedToAdd > 0) {
+      await supabase.from('standard_projects').update({
+        tokens_used: (project.tokens_used || 0) + tokensUsedToAdd,
+        last_generated_at: new Date().toISOString()
+      }).eq('id', projectId);
+    }
 
-    return NextResponse.json({ success: true, content: aiResult.content, model: aiResult.model });
+    return NextResponse.json({ 
+      success: true, 
+      content: aiResult.content, 
+      model: aiResult.model,
+      tokensUsed: tokensUsedToAdd
+    });
 
   } catch (error) {
     console.error('Gen Error:', error);
+    if (activeChapterId) {
+      try {
+        await supabase.from('standard_chapters').update({ 
+          status: hasExistingContent ? 'draft' : 'not_generated' 
+        }).eq('id', activeChapterId);
+      } catch (statusErr) {
+        console.error('Failed to reset chapter status:', statusErr);
+      }
+    }
     return NextResponse.json({ error: error.message || 'Failed to generate' }, { status: 500 });
   }
 }

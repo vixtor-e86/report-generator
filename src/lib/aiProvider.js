@@ -1,45 +1,73 @@
 // /src/lib/aiProvider.js
-// Unified AI Provider - Switch between Gemini, Claude, and DeepSeek seamlessly
+// Unified AI Provider - Switch between Gemini, Claude, and DeepSeek seamlessly with auto-failover
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
- * Main function to call AI models
+ * Main function to call AI models with automatic fallback
  * @param {string|array} prompt - The prompt string or array of parts (for multimodal)
  * @param {object} options - Configuration options
  * @returns {Promise<object>} - Response with content, tokens, and model info
  */
 export async function callAI(prompt, options = {}) {
-  try {
-    const {
-      provider = process.env.AI_PROVIDER || 'deepseek',
-      model = null, // Optional model override
-      maxTokens = 8192,
-      temperature = 0.7,
-      stopSequences = null,
-      fileParts = null, // Support for Gemini multimodal
-    } = options;
+  const {
+    provider = process.env.AI_PROVIDER || 'deepseek',
+    model = null, // Optional model override
+    maxTokens = 8192,
+    temperature = 0.7,
+    stopSequences = null,
+    fileParts = null, // Support for Gemini multimodal
+    fallback = true // Automatically try alternate provider if primary fails
+  } = options;
 
-    if (provider === 'gemini') {
-      return await callGemini(prompt, maxTokens, temperature, fileParts, model);
-    } else if (provider === 'claude') {
-      return await callClaude(prompt, maxTokens, temperature, stopSequences, model);
-    } else if (provider === 'deepseek') {
-      return await callDeepSeek(prompt, maxTokens, temperature, model);
+  const tryCall = async (p, m) => {
+    if (p === 'gemini') {
+      return await callGemini(prompt, maxTokens, temperature, fileParts, m);
+    } else if (p === 'claude') {
+      return await callClaude(prompt, maxTokens, temperature, stopSequences, m);
+    } else if (p === 'deepseek') {
+      return await callDeepSeek(prompt, maxTokens, temperature, m);
     } else {
-      throw new Error(`Invalid AI provider: ${provider}. Use 'gemini', 'claude', or 'deepseek'`);
+      throw new Error(`Invalid AI provider: ${p}. Use 'gemini', 'claude', or 'deepseek'`);
     }
-  } catch (error) {
-    let errMsg = error.message;
+  };
+
+  try {
+    const result = await tryCall(provider, model);
+    if (!result || !result.content || typeof result.content !== 'string' || result.content.trim().length < 20) {
+      throw new Error(`Provider ${provider} returned empty or invalid response`);
+    }
+    return result;
+  } catch (primaryError) {
+    console.warn(`Primary AI provider (${provider}) failed:`, primaryError.message);
+
+    // If fallback is enabled, try backup providers
+    if (fallback) {
+      const candidates = ['deepseek', 'gemini'].filter(p => p !== provider);
+      for (const backupProvider of candidates) {
+        try {
+          console.log(`Attempting fallback to ${backupProvider}...`);
+          const backupResult = await tryCall(backupProvider, null);
+          if (backupResult && backupResult.content && backupResult.content.trim().length >= 20) {
+            console.log(`✅ Fallback to ${backupProvider} succeeded!`);
+            return backupResult;
+          }
+        } catch (backupError) {
+          console.warn(`Fallback to ${backupProvider} failed:`, backupError.message);
+        }
+      }
+    }
+
+    let errMsg = primaryError.message;
     const lower = errMsg.toLowerCase();
     if (lower.includes('credit balance') || 
         lower.includes('insufficient_credits') || 
         lower.includes('billing') || 
         lower.includes('insufficient credits') || 
         lower.includes('credit_balance_too_low')) {
-      throw new Error('System under maintenance. Please try again later.');
+      throw new Error('AI service credits are low or under maintenance. Please try again later.');
     }
-    throw error;
+    throw primaryError;
   }
 }
 
@@ -56,20 +84,25 @@ async function callDeepSeek(prompt, maxTokens, temperature, modelOverride = null
       throw new Error('DEEPSEEK_API_KEY not found in environment variables');
     }
 
-    // Only fallback to AI_MODEL if it looks like a deepseek model
-    const modelName = modelOverride || process.env.DEEPSEEK_MODEL || (process.env.AI_MODEL?.includes('deepseek') ? process.env.AI_MODEL : null) || "deepseek-v4-pro";
+    // Default to 'deepseek-chat' (DeepSeek-V3 / Flash) which produces fast, high-quality, full chapters without spending token budget on hidden reasoning
+    let modelName = modelOverride || process.env.DEEPSEEK_MODEL || (process.env.AI_MODEL?.includes('deepseek') ? process.env.AI_MODEL : null) || 'deepseek-chat';
+
+    // Normalize model name if set to deepseek-v4-pro to prevent token exhaustion during reasoning
+    if (modelName === 'deepseek-v4-pro') {
+      modelName = 'deepseek-chat';
+    }
 
     const safeMaxTokens = Math.min(maxTokens || 8192, 8192);
 
-    const response = await fetch("https://api.deepseek.com/chat/completions", {
-      method: "POST",
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
       },
       body: JSON.stringify({
         model: modelName,
-        messages: [{ role: "user", content: textPrompt }],
+        messages: [{ role: 'user', content: textPrompt }],
         max_tokens: safeMaxTokens,
         temperature: temperature,
         stream: false
@@ -77,27 +110,41 @@ async function callDeepSeek(prompt, maxTokens, temperature, modelOverride = null
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`System error: ${errorData.error?.message || response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`DeepSeek API error (${response.status}): ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
-    const text = data.choices[0].message.content;
+    if (!data.choices || data.choices.length === 0) {
+      throw new Error('DeepSeek returned no choices in response');
+    }
+
+    let text = data.choices[0]?.message?.content || '';
+
+    // If content is empty but reasoning was generated, check if it hit length limit
+    if ((!text || text.trim().length === 0) && data.choices[0]?.message?.reasoning_content) {
+      console.warn('DeepSeek returned reasoning without final content');
+      throw new Error('DeepSeek model exhausted tokens during reasoning. Please retry.');
+    }
+
+    if (!text || text.trim().length === 0) {
+      throw new Error('DeepSeek returned empty content');
+    }
 
     return {
       content: text,
       tokensUsed: {
-        input: data.usage.prompt_tokens,
-        output: data.usage.completion_tokens,
-        total: data.usage.total_tokens
+        input: data.usage?.prompt_tokens || estimateTokens(textPrompt),
+        output: data.usage?.completion_tokens || estimateTokens(text),
+        total: data.usage?.total_tokens || (estimateTokens(textPrompt) + estimateTokens(text))
       },
-      model: data.model,
+      model: data.model || modelName,
       provider: 'deepseek'
     };
 
   } catch (error) {
-    console.error('System API Error:', error);
-    throw new Error(`System generation failed: ${error.message}`);
+    console.error('DeepSeek API Error:', error);
+    throw new Error(`DeepSeek generation failed: ${error.message}`);
   }
 }
 
@@ -106,11 +153,20 @@ async function callDeepSeek(prompt, maxTokens, temperature, modelOverride = null
  */
 async function callGemini(prompt, maxTokens, temperature, fileParts = null, modelOverride = null) {
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY not found in environment variables');
+    }
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // Only fallback to AI_MODEL if it looks like a gemini model
-    const modelName = modelOverride || process.env.GEMINI_MODEL || (process.env.AI_MODEL?.includes('gemini') ? process.env.AI_MODEL : null) || 'gemini-1.5-pro';
+    // Default to 'gemini-2.5-flash' or 'gemini-flash-latest'
+    let modelName = modelOverride || process.env.GEMINI_MODEL || (process.env.AI_MODEL?.includes('gemini') ? process.env.AI_MODEL : null) || 'gemini-2.5-flash';
     
+    // Map deprecated model names to current working models
+    if (modelName === 'gemini-1.5-flash' || modelName === 'gemini-1.5-flash-latest' || modelName === 'gemini-2.0-flash' || modelName === 'gemini-1.5-pro') {
+      modelName = 'gemini-2.5-flash';
+    }
+
     const safeMaxTokens = Math.min(maxTokens || 8192, 8192);
 
     const model = genAI.getGenerativeModel({
@@ -136,6 +192,10 @@ async function callGemini(prompt, maxTokens, temperature, fileParts = null, mode
     const response = result.response;
     const text = response.text();
 
+    if (!text || text.trim().length === 0) {
+      throw new Error('Gemini returned empty text response');
+    }
+
     const tokensInput = estimateTokens(JSON.stringify(contentParts));
     const tokensOutput = estimateTokens(text);
 
@@ -151,8 +211,8 @@ async function callGemini(prompt, maxTokens, temperature, fileParts = null, mode
     };
 
   } catch (error) {
-    console.error('System API Error:', error);
-    throw new Error(`System generation failed: ${error.message}`);
+    console.error('Gemini API Error:', error);
+    throw new Error(`Gemini generation failed: ${error.message}`);
   }
 }
 
@@ -165,53 +225,60 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
       throw new Error('ANTHROPIC_API_KEY not found in environment variables');
     }
 
-    // Only fallback to AI_MODEL if it looks like a claude model
-    const modelName = modelOverride || process.env.CLAUDE_MODEL || (process.env.AI_MODEL?.includes('claude') ? process.env.AI_MODEL : null) || "claude-3-5-sonnet-20240620";
+    let modelName = modelOverride || process.env.CLAUDE_MODEL || (process.env.AI_MODEL?.includes('claude') ? process.env.AI_MODEL : null) || 'claude-3-5-sonnet-20241022';
+
+    if (modelName === 'claude-sonnet-4-6') {
+      modelName = 'claude-3-5-sonnet-20241022';
+    }
 
     const safeMaxTokens = Math.min(maxTokens || 8192, 8192);
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01"
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
         model: modelName,
         max_tokens: safeMaxTokens,
         temperature: temperature,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: 'user', content: prompt }],
         ...(stopSequences && { stop_sequences: stopSequences })
       })
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`System error: ${errorData.error?.message || response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Claude API error (${response.status}): ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
     
     const text = data.content
-      .filter(block => block.type === 'text')
-      .map(block => block.text)
-      .join('\n');
+      ?.filter(block => block.type === 'text')
+      ?.map(block => block.text)
+      ?.join('\n') || '';
+
+    if (!text || text.trim().length === 0) {
+      throw new Error('Claude returned empty content');
+    }
 
     return {
       content: text,
       tokensUsed: {
-        input: data.usage.input_tokens,
-        output: data.usage.output_tokens,
-        total: data.usage.input_tokens + data.usage.output_tokens
+        input: data.usage?.input_tokens || estimateTokens(prompt),
+        output: data.usage?.output_tokens || estimateTokens(text),
+        total: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)
       },
-      model: data.model,
+      model: data.model || modelName,
       provider: 'claude'
     };
 
   } catch (error) {
-    console.error('System API Error:', error);
-    throw new Error(`System generation failed: ${error.message}`);
+    console.error('Claude API Error:', error);
+    throw new Error(`Claude generation failed: ${error.message}`);
   }
 }
 
@@ -254,7 +321,7 @@ export function calculateCost(inputTokens, outputTokens, provider = 'deepseek') 
  * Check if we have enough tokens left in project limit
  */
 export function checkTokenLimit(tokensUsed, tokensLimit, estimatedNewTokens = 0) {
-  const remaining = tokensLimit - tokensUsed;
+  const remaining = Math.max(0, tokensLimit - tokensUsed);
   const percentage = (tokensUsed / tokensLimit) * 100;
   const allowed = (tokensUsed + estimatedNewTokens) <= tokensLimit;
 

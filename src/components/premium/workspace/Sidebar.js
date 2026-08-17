@@ -1,10 +1,10 @@
-// src/components/premium/workspace/Sidebar.js
 'use client';
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useFileUpload } from '@/hooks/useFileUpload';
+import RefillTokenModal from '@/components/standard/RefillTokenModal';
 
 const Icons = {
   ChevronDown: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>,
@@ -39,6 +39,9 @@ export default function Sidebar({
   const [showRefillModal, setShowRefillModal] = useState(false);
   const [refillWords, setRefillWords] = useState(1000);
   const [loadingRefill, setLoadingRefill] = useState(false);
+
+  // AI Token Refill state
+  const [showTokenRefillModal, setShowTokenRefillModal] = useState(false);
 
   const handleRefillSubmit = async () => {
     setLoadingRefill(true);
@@ -154,6 +157,29 @@ export default function Sidebar({
             <span className="token-count">{((projectData?.tokens_used || 0) / 1000).toFixed(0)}k / {((projectData?.tokens_limit || 300000) / 1000).toFixed(0)}k</span>
           </div>
           <div className="upgrade-bar"><div className="upgrade-progress" style={{ width: `${Math.min(((projectData?.tokens_used || 0) / (projectData?.tokens_limit || 300000)) * 100, 100)}%` }}></div></div>
+          {((projectData?.tokens_used || 0) >= 100000 || ((projectData?.tokens_used || 0) / (projectData?.tokens_limit || 300000)) >= 0.7) && (
+            <button 
+              onClick={() => setShowTokenRefillModal(true)} 
+              className="topup-btn"
+              style={{
+                width: '100%',
+                marginTop: '12px',
+                padding: '8px',
+                background: '#6366f1',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                textAlign: 'center',
+                display: 'block',
+                transition: 'opacity 0.2s',
+              }}
+            >
+              Top Up Tokens
+            </button>
+          )}
         </div>
 
         {/* Humanizer Usage Bar (Strict Authority from .env) */}
@@ -281,6 +307,18 @@ export default function Sidebar({
             </div>
           </div>
         </div>
+      )}
+      {showTokenRefillModal && (
+        <RefillTokenModal
+          isOpen={showTokenRefillModal}
+          onClose={() => setShowTokenRefillModal(false)}
+          projectId={projectData?.id}
+          userId={userProfile?.id}
+          userEmail={currentUser?.email || projectData?.user_email}
+          tier="premium"
+          currentTokensUsed={projectData?.tokens_used}
+          tokensLimit={projectData?.tokens_limit || 300000}
+        />
       )}
     </div>
     </>
