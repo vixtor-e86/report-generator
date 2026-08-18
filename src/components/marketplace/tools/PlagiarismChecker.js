@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   ShieldCheck, RefreshCw, Upload, 
   FileText, AlertTriangle, ExternalLink,
@@ -26,6 +26,7 @@ export default function PlagiarismChecker({
   setCustomPrice
 }) {
   const { user } = useUser();
+  const resultsRef = useRef(null);
   const [inputText, setInputText] = useState('');
   const [fileName, setFileName] = useState('');
   const [result, setResult] = useState(null);
@@ -39,6 +40,7 @@ export default function PlagiarismChecker({
   const currentPrice = 2000; // Fixed refill price
 
   const fetchBalance = useCallback(async () => {
+    if (!user?.id) return;
     const { data } = await supabase
       .from('tool_word_balances')
       .select('balance')
@@ -64,14 +66,16 @@ export default function PlagiarismChecker({
     } else {
       setInputText(text);
     }
+
+    if (scanStatus === 'completed') {
+      setScanStatus('idle');
+    }
   };
 
   useEffect(() => {
     if (setCustomPrice) setCustomPrice(currentPrice);
     return () => { if (setCustomPrice) setCustomPrice(null); };
   }, [currentPrice, setCustomPrice]);
-
-
 
   const extractPdfText = async (arrayBuffer) => {
     try {
@@ -128,6 +132,7 @@ export default function PlagiarismChecker({
         }
 
         setInputText(extractedText);
+        setScanStatus('idle');
         setIsExtracting(false);
         toast.success(`${file.name} uploaded and text extracted.`);
       };
@@ -168,7 +173,7 @@ export default function PlagiarismChecker({
       let finalBalanceToUse = wordBalance;
 
       // 1. Refill balance if user just paid
-      if (skipPaymentCheck) {
+      if (skipPaymentCheck && user?.id) {
         const { data: current } = await supabase
           .from('tool_word_balances')
           .select('balance')
@@ -190,6 +195,7 @@ export default function PlagiarismChecker({
         setWordBalance(finalBalanceToUse);
       }
 
+      console.log('🔍 [Plagiarism Scan] Sending text for analysis (' + wordCount + ' words)...');
       const response = await fetch('/api/marketplace/tools/plagiarism-checker', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -197,6 +203,7 @@ export default function PlagiarismChecker({
       });
       
       const data = await response.json();
+      console.log('🔍 [Plagiarism Scan] Response data:', data);
 
       if (!response.ok) {
           throw new Error(data.error || 'Scan failed');
@@ -205,18 +212,32 @@ export default function PlagiarismChecker({
       // 2. Deduct words from balance
       const updatedBalance = Math.max(0, finalBalanceToUse - wordCount);
       
-      await supabase
-        .from('tool_word_balances')
-        .update({ balance: updatedBalance })
-        .eq('user_id', user.id)
-        .eq('tool_id', 'plagiarism-checker');
+      if (user?.id) {
+        await supabase
+          .from('tool_word_balances')
+          .update({ balance: updatedBalance })
+          .eq('user_id', user.id)
+          .eq('tool_id', 'plagiarism-checker');
+      }
 
       setWordBalance(updatedBalance);
       setResult(data.data);
       setScanStatus('completed');
-      toast.success('Plagiarism scan complete!');
+      
+      const score = data.data?.score || 0;
+      if (score === 0) {
+        toast.success('🎉 Plagiarism scan complete! 100% Original (0% Match)');
+      } else {
+        toast.success(`Plagiarism scan complete! ${score}% similarity detected.`);
+      }
+
+      // Smooth scroll to results
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
       
     } catch (err) {
+      console.error('Plagiarism Scan Error:', err);
       toast.error(err.message || 'System under maintenance. Please try again later.');
       setScanStatus('idle');
     } finally {
@@ -306,7 +327,7 @@ export default function PlagiarismChecker({
                 className="w-full bg-black hover:bg-zinc-800 text-white rounded-[20px] md:rounded-[24px] py-6 md:py-10 font-black uppercase text-xs md:text-sm tracking-[0.2em] shadow-2xl mt-6 md:mt-8 flex items-center justify-center gap-3 md:gap-4 shrink-0 transition-all active:scale-[0.98]"
             >
                 {isProcessing ? <RefreshCw className="w-5 h-5 md:w-6 md:h-6 animate-spin" /> : <Zap className="w-5 h-5 md:w-6 md:h-6 text-yellow-400 fill-yellow-400" />}
-                {isProcessing ? 'Analyzing...' : wordBalance >= wordCount ? 'Execute (Using Credits)' : `Refill & Execute (₦${currentPrice.toLocaleString()})`}
+                {isProcessing ? 'Analyzing...' : wordBalance >= wordCount ? 'Execute Scan (Using Credits)' : `Refill & Execute (₦${currentPrice.toLocaleString()})`}
             </Button>
           )}
 
@@ -326,11 +347,49 @@ export default function PlagiarismChecker({
                 <p className="text-center text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Performing deep-layer linguistic cross-matching</p>
             </div>
           )}
+
+          {scanStatus === 'completed' && (
+            <div className="mt-6 md:mt-8 p-4 md:p-6 bg-zinc-900 rounded-[20px] md:rounded-[24px] border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-white">
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-black ${
+                  (result?.score || 0) > 20 
+                    ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+                    : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                }`}>
+                  <span className="text-base font-black leading-none">{result?.score || 0}%</span>
+                  <span className="text-[7px] uppercase tracking-tighter opacity-80">Match</span>
+                </div>
+                <div>
+                  <p className="text-xs md:text-sm font-black uppercase tracking-tight">
+                    {(result?.score || 0) === 0 ? '100% Original — Zero Match Found' : `${result?.score}% Similarity Detected`}
+                  </p>
+                  <p className="text-[10px] md:text-xs text-zinc-400">
+                    {result?.sources?.length || 0} matching source{(result?.sources?.length === 1 ? '' : 's')} in global index
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button 
+                  onClick={() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className="flex-1 sm:flex-none bg-white hover:bg-zinc-100 text-black text-[10px] md:text-xs font-black uppercase tracking-wider rounded-xl px-5 py-3 shadow-md"
+                >
+                  View Audit Below ↓
+                </Button>
+                <Button 
+                  onClick={() => { setScanStatus('idle'); setResult(null); setInputText(''); setFileName(''); }}
+                  variant="outline"
+                  className="flex-1 sm:flex-none border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800 text-[10px] md:text-xs font-black uppercase tracking-wider rounded-xl px-4 py-3"
+                >
+                  New Scan
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {result && (
-        <div className="bg-zinc-900 rounded-[32px] md:rounded-[64px] p-6 md:p-12 shadow-3xl animate-in fade-in slide-in-from-bottom-10 duration-700 text-white border border-white/5">
+        <div ref={resultsRef} id="scan-results" className="bg-zinc-900 rounded-[32px] md:rounded-[64px] p-6 md:p-12 shadow-3xl animate-in fade-in slide-in-from-bottom-10 duration-700 text-white border border-white/5 scroll-mt-10">
           <div className="flex flex-col lg:flex-row items-center justify-between mb-10 md:mb-16 gap-8 md:gap-12">
             <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 text-center md:text-left">
               <div className="relative w-32 h-32 md:w-40 md:h-40 flex items-center justify-center bg-white/5 rounded-full border border-white/10 shrink-0">

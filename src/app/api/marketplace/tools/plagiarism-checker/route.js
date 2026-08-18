@@ -19,18 +19,25 @@ export async function POST(request) {
     // Calculate word count
     const totalWords = text.trim().split(/\s+/).length;
 
-    // Call Plagiarism API (tsearch text search)
-    const url = `https://www.copyscape.com/api/?u=${encodeURIComponent(COPYSCAPE_USERNAME)}&k=${encodeURIComponent(COPYSCAPE_API_KEY)}&o=tsearch&f=json`;
-    
-    const response = await fetch(url, {
+    // Call Plagiarism API via URLSearchParams POST (Copyscape standard integration)
+    const params = new URLSearchParams();
+    params.append('u', COPYSCAPE_USERNAME);
+    params.append('k', COPYSCAPE_API_KEY);
+    params.append('o', 'tsearch');
+    params.append('f', 'json');
+    params.append('t', text);
+
+    const response = await fetch('https://www.copyscape.com/api/', {
       method: 'POST',
       headers: {
-        'Content-Type': 'text/plain; charset=utf-8'
+        'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
       },
-      body: text
+      body: params.toString()
     });
 
     const responseText = await response.text();
+    console.log('[Plagiarism API Response Status]:', response.status, 'Body:', responseText.slice(0, 300));
+    
     let data;
     try {
       data = JSON.parse(responseText);
@@ -49,7 +56,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Plagiarism scan failed. Please try again.' }, { status: response.status || 500 });
     }
 
-    // Process matches (handles data.result array, data.results array, or single object)
+    // Process matches (handles data.result array, data.results array, single object, or count === 0)
     let rawMatches = [];
     if (Array.isArray(data.result)) {
       rawMatches = data.result;
@@ -89,7 +96,9 @@ export async function POST(request) {
         score: overallScore,
         total_words: totalWords,
         sources: sources,
-        credits_used: 1
+        credits_used: 1,
+        query_words: data.querywords || totalWords,
+        scanned_at: new Date().toISOString()
       }
     });
 
