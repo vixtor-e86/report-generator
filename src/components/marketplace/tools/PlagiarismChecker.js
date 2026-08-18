@@ -195,7 +195,7 @@ export default function PlagiarismChecker({
         setWordBalance(finalBalanceToUse);
       }
 
-      console.log('🔍 [Plagiarism Scan] Sending text for analysis (' + wordCount + ' words)...');
+      console.log('[Plagiarism Scan] Sending text for analysis (' + wordCount + ' words)...');
       const response = await fetch('/api/marketplace/tools/plagiarism-checker', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -203,7 +203,7 @@ export default function PlagiarismChecker({
       });
       
       const data = await response.json();
-      console.log('🔍 [Plagiarism Scan] Response data:', data);
+      console.log('[Plagiarism Scan] Response data:', data);
 
       if (!response.ok) {
           throw new Error(data.error || 'Scan failed');
@@ -226,9 +226,9 @@ export default function PlagiarismChecker({
       
       const score = data.data?.score || 0;
       if (score === 0) {
-        toast.success('🎉 Plagiarism scan complete! 100% Original (0% Match)');
+        toast.success('Plagiarism scan complete: 100% original (0% match).');
       } else {
-        toast.success(`Plagiarism scan complete! ${score}% similarity detected.`);
+        toast.success(`Plagiarism scan complete: ${score}% similarity detected.`);
       }
 
       // Smooth scroll to results
@@ -373,7 +373,7 @@ export default function PlagiarismChecker({
                   onClick={() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                   className="flex-1 sm:flex-none bg-white hover:bg-zinc-100 text-black text-[10px] md:text-xs font-black uppercase tracking-wider rounded-xl px-5 py-3 shadow-md"
                 >
-                  View Audit Below ↓
+                  View Audit Below
                 </Button>
                 <Button 
                   onClick={() => { setScanStatus('idle'); setResult(null); setInputText(''); setFileName(''); }}
