@@ -102,7 +102,7 @@ export default function EmailPage() {
     },
     update: {
       subject: "[Launch] We just released major improvements!",
-      body: "Hello Writer,\n\nWe are excited to share a brand new product update with you!\n\nWhat is new:\n1. Improved AI Document Restructuring: Abstract formatting now creates clean academic paragraphs.\n2. Upgraded Plagiarism Engine: We have fully integrated the Copyscape Premium API for faster and more precise checks.\n3. Topic Finder Tabs: Save and explore proposal ideas directly from your dashboard.\n\nHead over to your workspace to try out the new features!\n\nBest regards,\nProduct Engineering - W3 WriteLab"
+      body: "Hello Writer,\n\nWe are excited to share a brand new product update with you!\n\nWhat is new:\n1. Improved AI Document Restructuring: Abstract formatting now creates clean academic paragraphs.\n2. Upgraded Plagiarism Engine: We have fully integrated an enterprise integrity scan engine for faster and more precise checks.\n3. Topic Finder Tabs: Save and explore proposal ideas directly from your dashboard.\n\nHead over to your workspace to try out the new features!\n\nBest regards,\nProduct Engineering - W3 WriteLab"
     },
     promotion: {
       subject: "[Limited Offer] Upgrade to Premium & Save 30% Today",

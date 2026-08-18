@@ -12,16 +12,14 @@ export async function POST(request) {
     const COPYSCAPE_API_KEY = (process.env.COPYSCAPE_API_KEY || '').trim().replace(/^["'](.+)["']$/, '$1');
 
     if (!COPYSCAPE_USERNAME || !COPYSCAPE_API_KEY) {
-      console.error('Copyscape credentials missing in environment variables');
-      return NextResponse.json({ error: 'Plagiarism service not configured on server.' }, { status: 500 });
+      console.error('Plagiarism credentials missing in environment variables (COPYSCAPE_USERNAME or COPYSCAPE_API_KEY)');
+      return NextResponse.json({ error: 'Plagiarism scan service is currently offline for maintenance.' }, { status: 503 });
     }
 
     // Calculate word count
     const totalWords = text.trim().split(/\s+/).length;
 
-    // Call Copyscape API
-    // We send a POST request with u, k, o=tsearch, f=json in query string
-    // and raw text as request body (Raw POST)
+    // Call Plagiarism API (tsearch text search)
     const url = `https://www.copyscape.com/api/?u=${encodeURIComponent(COPYSCAPE_USERNAME)}&k=${encodeURIComponent(COPYSCAPE_API_KEY)}&o=tsearch&f=json`;
     
     const response = await fetch(url, {
@@ -37,38 +35,52 @@ export async function POST(request) {
     try {
       data = JSON.parse(responseText);
     } catch (e) {
-      console.error('Copyscape API Parse Error (Status ' + response.status + '):', responseText);
-      return NextResponse.json({ error: 'Failed to parse Copyscape response.' }, { status: 502 });
+      console.error('Plagiarism API Parse Error (Status ' + response.status + '):', responseText);
+      return NextResponse.json({ error: 'Plagiarism scan service encountered an error. Please try again.' }, { status: 502 });
     }
 
     if (!response.ok || data.error) {
-      console.error('Copyscape API Error:', data.error || responseText);
-      // Account for credit issue, invalid key, etc.
+      console.error('Plagiarism API Error:', data.error || responseText);
+      
+      // Account for credit issue or key issues on server without exposing provider name to client
       if (data.error && data.error.toLowerCase().includes('credit')) {
-        return NextResponse.json({ error: 'Insufficient Copyscape API credits.' }, { status: 402 });
+        return NextResponse.json({ error: 'Plagiarism scan service is currently undergoing scheduled maintenance. Please try again shortly.' }, { status: 503 });
       }
-      return NextResponse.json({ error: data.error || 'Copyscape scan failed.' }, { status: response.status || 500 });
+      return NextResponse.json({ error: 'Plagiarism scan failed. Please try again.' }, { status: response.status || 500 });
     }
 
-    // Process Copyscape matches
-    const rawMatches = Array.isArray(data.results) ? data.results : [];
+    // Process matches (handles data.result array, data.results array, or single object)
+    let rawMatches = [];
+    if (Array.isArray(data.result)) {
+      rawMatches = data.result;
+    } else if (Array.isArray(data.results)) {
+      rawMatches = data.results;
+    } else if (data.result && typeof data.result === 'object') {
+      rawMatches = [data.result];
+    } else if (data.results && typeof data.results === 'object') {
+      rawMatches = [data.results];
+    }
     
     // Map matches to format expected by the frontend:
     // source.score, source.url, source.title, source.snippet
     const sources = rawMatches.map(match => {
-      const matchWords = match.min_match_words || 0;
-      // Calculate match percentage for this source
-      const score = totalWords > 0 ? Math.min(100, Math.round((matchWords / totalWords) * 100)) : 0;
+      const matchWords = Number(match.minwordsmatched || match.min_match_words || match.wordsmatched || 0);
+      const percent = match.percentmatched ? Number(match.percentmatched) : 0;
+      const score = percent > 0 
+        ? Math.min(100, Math.round(percent))
+        : totalWords > 0 
+        ? Math.min(100, Math.round((matchWords / totalWords) * 100)) 
+        : 0;
       
       return {
         score: score,
         url: match.url || '',
         title: match.title || 'Web Source',
-        snippet: match.textsnippet || 'Matching content detected.'
+        snippet: match.textsnippet || match.snippet || 'Matching content detected in external academic/web records.'
       };
     });
 
-    // Calculate overall plagiarism score (max score among all matches to prevent exceeding 100%)
+    // Calculate overall plagiarism score
     const overallScore = sources.length > 0 ? Math.max(...sources.map(s => s.score)) : 0;
 
     return NextResponse.json({
@@ -77,7 +89,7 @@ export async function POST(request) {
         score: overallScore,
         total_words: totalWords,
         sources: sources,
-        credits_used: 1 // Standard query credit cost
+        credits_used: 1
       }
     });
 

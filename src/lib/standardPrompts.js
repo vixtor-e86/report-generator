@@ -13,12 +13,23 @@ function getReferenceInstructions(referenceStyle, faculty, chapterNumber, isLast
 
   const style = styleInstructions[referenceStyle] || styleInstructions['apa'];
   
-  // Dynamic Citation Count based on user request (Chapter 2 needs more)
-  let countRange = "8-12";
-  if (chapterNumber === 2) {
+  // Dynamic Citation Count based on chapter requirements:
+  // Chapter 1: Maximum 10 references (6-10)
+  // Chapter 2: Minimum 15 references (15-20)
+  let countRange = "6-10";
+  let countInstruction = "between 6 and 10 references";
+  if (chapterNumber === 1) {
+    countRange = "6-10";
+    countInstruction = "between 6 and 10 references (STRICT MAXIMUM: 10 references, DO NOT exceed 10)";
+  } else if (chapterNumber === 2) {
     countRange = "15-20";
-  } else if (chapterNumber === 1 || chapterNumber === 3) {
-    countRange = "10-14";
+    countInstruction = "between 15 and 20 references (STRICT MINIMUM: at least 15 references)";
+  } else if (chapterNumber === 3) {
+    countRange = "8-12";
+    countInstruction = "between 8 and 12 references";
+  } else {
+    countRange = "6-10";
+    countInstruction = "between 6 and 10 references (Maximum 10)";
   }
 
   let existingRefsText = '';
@@ -33,12 +44,14 @@ function getReferenceInstructions(referenceStyle, faculty, chapterNumber, isLast
 
   return `
 CITATION RULES (${referenceStyle.toUpperCase()}):
-1. In-Text: Use ${style.inText}. Distribute exactly ${countRange} citations naturally throughout the technical analysis.
-2. Sourcing: Combine the provided project references with other elite technical sources:
+1. In-Text Citations: Use ${style.inText}. Distribute citations naturally throughout the technical analysis.
+2. Citation Count Requirement: Include ${countInstruction} in your technical analysis.
+   ${chapterNumber === 1 ? '- CHAPTER 1 RULE: Maximum of 10 references allowed.' : ''}
+   ${chapterNumber === 2 ? '- CHAPTER 2 RULE: Minimum of 15 references required for comprehensive literature review.' : ''}
+3. Sourcing: Combine the provided project references with other elite technical sources:
    - Real Academic/Technical Papers (2020-2026).
    - High-authority Online Articles (e.g., IEEE Spectrum, NASA, MIT Tech Review).
    - Official Documentation and Datasheets (e.g., Arduino, STMicroelectronics, Academic Sites).
-3. Fulfillment: You MUST include exactly ${countRange} references in your technical analysis.
 4. **STRICT NO DUPLICATES**: Do not list the same reference twice. Cross-check your final list against the "PROJECT-WIDE REFERENCES" provided above.
 ${existingRefsText}
 5. **MANDATORY**: At the end of THIS chapter, you MUST include a "## References" section. 

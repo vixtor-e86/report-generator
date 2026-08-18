@@ -10,7 +10,7 @@ import bgImage from './bg.jpg';
 import { 
   ShoppingBag, Sparkles, BookOpen, Wrench, 
   ArrowRight, BarChart3, Code2, Presentation,
-  Image as ImageIcon, UserCheck
+  Image as ImageIcon, UserCheck, Search, Languages, ShieldCheck
 } from 'lucide-react';
 
 import { useRouter } from 'next/navigation';
@@ -312,24 +312,67 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                title: "Diagram & Image Studio",
-                desc: "Describe flowcharts, block diagrams, or technical illustrations in plain English and let AI draft them in seconds.",
-                icon: <ImageIcon className="w-6 h-6 text-indigo-600" />,
-                badge: "₦200 / use",
-                link: "/marketplace/tools/diagram-studio"
+                title: "Reference Finder & Citation Auditor",
+                desc: "Discover peer-reviewed papers, extract real DOIs, and audit/verify existing references against global academic databases to detect fake or hallucinated citations.",
+                icon: <BookOpen className="w-6 h-6 text-emerald-600" />,
+                badge: "100% FREE (Audit & Search)",
+                isFree: true,
+                link: "/marketplace/tools/reference-finder"
+              },
+              {
+                title: "Project Topic Finder",
+                desc: "Discover high-scoring, trending academic research topics with novelty verification and automated proposal outline suggestions.",
+                icon: <Search className="w-6 h-6 text-emerald-600" />,
+                badge: "100% FREE",
+                isFree: true,
+                link: "/marketplace/tools/project-finder"
+              },
+              {
+                title: "Academic Language Converter",
+                desc: "Translate and refine research texts across 20+ languages with academic syntax preserving technical terminology.",
+                icon: <Languages className="w-6 h-6 text-emerald-600" />,
+                badge: "100% FREE",
+                isFree: true,
+                link: "/marketplace/tools/language-converter"
+              },
+              {
+                title: "Plagiarism & Integrity Scan",
+                desc: "Deep similarity scanning supporting PDF and DOCX uploads to verify document originality against billions of web and academic records.",
+                icon: <ShieldCheck className="w-6 h-6 text-indigo-600" />,
+                badge: "₦2,000 / 10k words",
+                isFree: false,
+                link: "/marketplace/tools/plagiarism-checker"
               },
               {
                 title: "AI Text Humanizer",
                 desc: "Rephrase AI-generated project chapters to flow with natural, academic-grade tone while bypassing institutional detector tools.",
                 icon: <UserCheck className="w-6 h-6 text-indigo-600" />,
                 badge: "₦1,000 / 1k words",
+                isFree: false,
                 link: "/marketplace/tools/ai-humanizer"
+              },
+              {
+                title: "Diagram & Image Studio",
+                desc: "Describe flowcharts, block diagrams, or technical illustrations in plain English and let AI draft them in seconds.",
+                icon: <ImageIcon className="w-6 h-6 text-indigo-600" />,
+                badge: "5 FREE Daily / ₦200",
+                isFree: false,
+                link: "/marketplace/tools/diagram-studio"
+              },
+              {
+                title: "Slide Presentation Deck",
+                desc: "Turn your research proposal, report, or thesis draft document directly into fully styled PowerPoint presentation slides.",
+                icon: <Presentation className="w-6 h-6 text-indigo-600" />,
+                badge: "₦2,000 / use",
+                isFree: false,
+                link: "/marketplace/tools/slide-generator"
               },
               {
                 title: "Data Analysis Engine",
                 desc: "Upload CSV or Excel data sheets to instantly run statistics, output charts, and generate detailed interpretations.",
                 icon: <BarChart3 className="w-6 h-6 text-indigo-600" />,
                 badge: "₦1,500 / use",
+                isFree: false,
                 link: "/marketplace/tools/data-analysis"
               },
               {
@@ -337,30 +380,26 @@ export default function Home() {
                 desc: "Paste programming scripts (up to 500 lines) to receive structural flow explanations and block-by-block logic breakdowns.",
                 icon: <Code2 className="w-6 h-6 text-indigo-600" />,
                 badge: "₦500 / use",
+                isFree: false,
                 link: "/marketplace/tools/code-explainer"
-              },
-              {
-                title: "Slide Presentation Deck",
-                desc: "Turn your research proposal, report, or thesis draft document directly into fully styled PowerPoint presentation slides.",
-                icon: <Presentation className="w-6 h-6 text-indigo-600" />,
-                badge: "₦2,000 / use",
-                link: "/marketplace/tools/slide-generator"
-              },
-              {
-                title: "Citation & Reference Finder",
-                desc: "Scan the web for peer-reviewed academic papers matching your study and generate perfectly formatted references.",
-                icon: <BookOpen className="w-6 h-6 text-indigo-600" />,
-                badge: "FREE / Deep Search ₦200",
-                link: "/marketplace/tools/reference-finder"
               }
             ].map((tool, idx) => (
               <div key={idx} className="group p-6 sm:p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-2xl hover:border-indigo-100 hover:shadow-indigo-100/50 transition-all duration-300 flex flex-col justify-between h-full">
                 <div>
                   <div className="flex items-center justify-between mb-6">
-                    <div className="w-12 h-12 bg-white rounded-2xl border border-slate-200 flex items-center justify-center shadow-sm group-hover:scale-110 group-hover:border-indigo-200 transition-all">
+                    <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shadow-sm group-hover:scale-110 transition-all ${
+                      tool.isFree 
+                        ? 'bg-emerald-50/50 border-emerald-200 group-hover:border-emerald-300' 
+                        : 'bg-white border-slate-200 group-hover:border-indigo-200'
+                    }`}>
                       {tool.icon}
                     </div>
-                    <span className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-[10px] font-black text-indigo-600 uppercase tracking-wider">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
+                      tool.isFree 
+                        ? 'bg-emerald-50 border border-emerald-200 text-emerald-700 shadow-sm' 
+                        : 'bg-indigo-50 border border-indigo-100 text-indigo-600'
+                    }`}>
+                      {tool.isFree && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
                       {tool.badge}
                     </span>
                   </div>
@@ -370,7 +409,9 @@ export default function Home() {
                 </div>
                 
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active & Vetted</span>
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${tool.isFree ? 'text-emerald-600 font-extrabold' : 'text-slate-400'}`}>
+                    {tool.isFree ? '100% Free Access' : 'Active & Vetted'}
+                  </span>
                   <button onClick={openAuth} className="inline-flex items-center text-xs font-black text-indigo-600 hover:underline uppercase tracking-wider gap-1 bg-transparent border-none cursor-pointer">
                     Try Now <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </button>
