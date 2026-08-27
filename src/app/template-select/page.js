@@ -72,14 +72,14 @@ function TemplateSelectContent() {
       // Don't proceed if no user
       if (!user) return;
 
-      // ✅ NEW: Admin bypass
+      // ✅ Admin and Support bypass
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('role')
         .eq('id', user.id)
         .single();
       
-      if (profile?.role === 'admin') {
+      if (profile?.role === 'admin' || profile?.role === 'support') {
         setPaymentVerified(true);
         return;
       }

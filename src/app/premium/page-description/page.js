@@ -52,7 +52,7 @@ function ProjectDescriptionContent() {
         setUserProfile(profile);
 
         // Check for unused premium payment
-        if (profile?.role !== 'admin') {
+        if (profile?.role !== 'admin' && profile?.role !== 'support') {
           const { data: unusedPayments } = await supabase
             .from('payment_transactions')
             .select('*')
@@ -123,7 +123,7 @@ function ProjectDescriptionContent() {
   };
 
   const handleCreateProject = async () => {
-    if (isLoading) return; // Prevent multiple clicks
+    if (isLoading) return; 
 
     if (validateForm()) {
       setIsLoading(true);
@@ -133,7 +133,8 @@ function ProjectDescriptionContent() {
 
         // 🛡️ IDEMPOTENCY CHECK: Prevent duplicates
         // 1. Check if this specific payment is already linked to a project
-        if (pendingPayment) {
+        const hasFreeAccess = userProfile?.role === 'admin' || userProfile?.role === 'support';
+        if (!hasFreeAccess && pendingPayment) {
           const { data: alreadyLinked } = await supabase
             .from('payment_transactions')
             .select('project_id')
@@ -194,7 +195,6 @@ function ProjectDescriptionContent() {
 
         sessionStorage.removeItem('custom_template_structure');
 
-        const isAdmin = userProfile?.role === 'admin';
         const { data: newProject, error: projectError } = await supabase
           .from('premium_projects')
           .insert({
@@ -208,8 +208,8 @@ function ProjectDescriptionContent() {
             current_chapter: 1,
             tokens_limit: 300000,
             tokens_used: 0,
-            payment_status: isAdmin ? 'admin_bypass' : 'paid',
-            amount_paid: isAdmin ? 0 : PRICING.PREMIUM,
+            payment_status: hasFreeAccess ? 'admin_bypass' : 'paid',
+            amount_paid: hasFreeAccess ? 0 : PRICING.PREMIUM,
             template_id: newCustomTemplate.id,
             use_manual_objectives: true,
             manual_objectives: formData.manualObjectives.filter(o => o.trim())

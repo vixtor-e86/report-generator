@@ -253,6 +253,7 @@ export default function Dashboard() {
   // DERIVED ROLE ACCESS
   const isAdmin = globalProfile?.role === 'admin';
   const isSupport = globalProfile?.role === 'support';
+  const hasFreeAccess = isAdmin || isSupport;
 
   // --- BROWSER HISTORY MANAGEMENT ---
   useEffect(() => {
@@ -500,7 +501,7 @@ export default function Dashboard() {
   };
 
   const handleCreateFree = () => {
-    if (!isAdmin) {
+    if (!hasFreeAccess) {
       const freeProjects = projects.filter(p => p.tier === 'free');
       if (freeProjects.length >= 1) {
         showNotification('Limit Reached', 'You have already used your 1 free project. Upgrade to Standard or Premium to create more.', 'warning');
@@ -511,7 +512,7 @@ export default function Dashboard() {
   };
 
   const handleCreateStandard = async () => {
-    if (isAdmin) {
+    if (hasFreeAccess) {
       router.push('/template-select');
       return;
     }
@@ -537,7 +538,7 @@ export default function Dashboard() {
   };
 
   const handleCreatePremium = async () => {
-    if (isAdmin) {
+    if (hasFreeAccess) {
       router.push('/premium/template-selection');
       return;
     }
@@ -854,7 +855,7 @@ export default function Dashboard() {
         {activeTab === 'projects' && (
           <div className="animate-in fade-in duration-500">
             {/* Payment Success Alert (Standard) */}
-            {pendingStandardPayment && !isAdmin && (
+            {pendingStandardPayment && !hasFreeAccess && (
             <div className="mb-8 rounded-xl border border-emerald-200 bg-emerald-50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-2">
                 <div className="p-3 bg-emerald-100 rounded-full text-emerald-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
@@ -870,7 +871,7 @@ export default function Dashboard() {
             )}
 
             {/* Payment Success Alert (Premium) */}
-            {pendingPremiumPayment && !isAdmin && (
+            {pendingPremiumPayment && !hasFreeAccess && (
             <div className="mb-8 rounded-xl border border-purple-200 bg-purple-50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-2">
                 <div className="p-3 bg-purple-100 rounded-full text-purple-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -905,10 +906,10 @@ export default function Dashboard() {
                 <div className="mt-auto">
                 <button 
                     onClick={handleCreateFree}
-                    disabled={!isAdmin && hasFreeProject}
+                    disabled={!hasFreeAccess && hasFreeProject}
                     className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border-2 border-slate-100 text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {!isAdmin && hasFreeProject ? 'Limit Reached' : 'Launch Free Blueprint'}
+                    {!hasFreeAccess && hasFreeProject ? 'Limit Reached' : 'Launch Free Blueprint'}
                 </button>
                 </div>
             </div>
@@ -921,7 +922,7 @@ export default function Dashboard() {
                     <h3 className="font-black text-white text-lg uppercase tracking-tight">Standard</h3>
                     <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest">Professional Grade</p>
                 </div>
-                <span className="text-2xl font-black text-white tracking-tighter">{isAdmin ? 'Free' : `₦${PRICING.STANDARD.toLocaleString()}`}</span>
+                <span className="text-2xl font-black text-white tracking-tighter">{hasFreeAccess ? 'Free' : `₦${PRICING.STANDARD.toLocaleString()}`}</span>
                 </div>
                 <ul className="space-y-3 mb-10">
                 <li className="flex gap-2 text-xs font-bold text-indigo-100 uppercase tracking-tight"><Check className="w-4 h-4 text-indigo-400 shrink-0" /> Smart Improvements</li>
@@ -934,7 +935,7 @@ export default function Dashboard() {
                     disabled={creatingPayment}
                     className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-600/20 disabled:opacity-70"
                 >
-                    {creatingPayment ? 'Processing...' : (isAdmin ? 'Launch Standard Blueprint' : 'Select Standard Blueprint')}
+                    {creatingPayment ? 'Processing...' : (hasFreeAccess ? 'Launch Standard Blueprint' : 'Select Standard Blueprint')}
                 </button>
                 </div>
             </div>
@@ -946,7 +947,7 @@ export default function Dashboard() {
                     <h3 className="font-black text-slate-900 text-lg uppercase tracking-tight">Premium</h3>
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Maximum Power</p>
                 </div>
-                <span className="text-2xl font-black text-slate-900 tracking-tighter">{isAdmin ? 'Free' : `₦${PRICING.PREMIUM.toLocaleString()}`}</span>
+                <span className="text-2xl font-black text-slate-900 tracking-tighter">{hasFreeAccess ? 'Free' : `₦${PRICING.PREMIUM.toLocaleString()}`}</span>
                 </div>
                 <ul className="space-y-3 mb-10">
                 <li className="flex gap-2 text-xs font-bold text-slate-600 uppercase tracking-tight"><Check className="w-4 h-4 text-purple-500 shrink-0" /> Superior AI Engine</li>
@@ -959,7 +960,7 @@ export default function Dashboard() {
                     disabled={creatingPayment}
                     className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-black shadow-xl disabled:opacity-70"
                 >
-                    {creatingPayment ? 'Processing...' : (isAdmin ? 'Launch Premium Blueprint' : 'Select Premium Blueprint')}
+                    {creatingPayment ? 'Processing...' : (hasFreeAccess ? 'Launch Premium Blueprint' : 'Select Premium Blueprint')}
                 </button>
                 </div>
             </div>

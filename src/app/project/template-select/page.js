@@ -26,8 +26,8 @@ export default function FreeTemplateSelect() {
         .eq('id', user.id)
         .single();
 
-      // Check if user already has a free project (Skip if admin)
-      if (profile?.role !== 'admin') {
+      // Check if user already has a free project (Skip if admin or support)
+      if (profile?.role !== 'admin' && profile?.role !== 'support') {
         const { data: existingProjects } = await supabase
           .from('projects')
           .select('id')

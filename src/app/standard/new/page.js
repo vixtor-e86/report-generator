@@ -86,7 +86,7 @@ function NewProjectContent() {
         return;
       }
 
-      const adminStatus = profile.role === 'admin';
+      const adminStatus = profile.role === 'admin' || profile.role === 'support';
       setIsAdmin(adminStatus);
 
       if (!templateId) {

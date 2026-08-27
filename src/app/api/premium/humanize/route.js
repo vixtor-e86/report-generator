@@ -18,9 +18,9 @@ export async function POST(request) {
     }
 
     // 1. Env Validation
-    const limit = parseInt(process.env.HUMANIZER_LIMIT);
-    const apiKey = process.env.WRITEHUMAN_API_KEY || process.env.HUMANIZER_API_KEY || process.env.STEALTHGPT_API_KEY; 
-    if (isNaN(limit) || !apiKey) throw new Error('Server configuration error (Limit/WRITEHUMAN_API_KEY).');
+    const limit = parseInt(process.env.HUMANIZER_LIMIT) || 20000;
+    const apiKey = process.env.STEALTHGPT_API_KEY || process.env.HUMANIZER_API_KEY || process.env.WRITEHUMAN_API_KEY; 
+    if (!apiKey) throw new Error('Server configuration error: STEALTHGPT_API_KEY missing.');
 
     if (!content || !projectId) return NextResponse.json({ error: 'Missing content or projectId' }, { status: 400 });
 
@@ -92,10 +92,9 @@ export async function POST(request) {
       }
     });
     
-    // Strict 2000-word limit restriction per single request for WriteHuman Standard Plan
-    if (wordCount > 2000) {
+    if (wordCount > 3000) {
       return NextResponse.json({ 
-        error: `Selection exceeds the 2,000 words limit per request (${wordCount} words). Please select a specific section to humanize section-by-section.` 
+        error: `Selection exceeds the 3,000 words limit per request (${wordCount} words). Please select a specific section to humanize section-by-section.` 
       }, { status: 400 });
     }
 
@@ -117,7 +116,7 @@ export async function POST(request) {
       return NextResponse.json({ error: `Limit reached. ${limit - currentUsed} words remaining.` }, { status: 403 });
     }
 
-    // --- 3. CONCURRENCY LIMITER & HUMANIZATION WITH WRITEHUMAN ENGINE ---
+    // --- 3. CONCURRENCY LIMITER & HUMANIZATION WITH STEALTHGPT ENGINE ---
     class ConcurrencyLimiter {
       constructor(limit) {
         this.limit = limit;
@@ -147,29 +146,28 @@ export async function POST(request) {
     const humanizeBlock = async (text) => {
       if (text.trim().length < 5) return text;
 
-      const authHeaderVal = apiKey.startsWith('Bearer ') ? apiKey : `Bearer ${apiKey}`;
       const headers = { 
         "Content-Type": "application/json",
-        "Authorization": authHeaderVal,
-        "x-api-key": apiKey
+        "api-token": apiKey
       };
 
       const requestPayload = {
-        text: text,
-        content: text,
-        tone: "academic",
-        language: "en"
+        prompt: text,
+        rephrase: true,
+        tone: "College",
+        mode: "Medium",
+        qualityMode: "quality"
       };
 
       let response;
       try {
-        response = await fetch("https://api.writehuman.ai/v1/humanize", {
+        response = await fetch("https://www.stealthgpt.ai/api/stealthify", {
           method: "POST",
           headers,
           body: JSON.stringify(requestPayload),
         });
       } catch (err) {
-        response = await fetch("https://writehuman.ai/api/v1/humanize", {
+        response = await fetch("https://stealthgpt.ai/api/stealthify", {
           method: "POST",
           headers,
           body: JSON.stringify(requestPayload),
@@ -185,24 +183,30 @@ export async function POST(request) {
       }
 
       if (!response.ok) {
-        console.error("WriteHuman API Error:", response.status, data);
+        console.error("StealthGPT API Error:", response.status, data);
+        const errMsg = (data.message || data.error || data.detail || '').toLowerCase();
+        if (response.status === 402 || errMsg.includes('payment') || errMsg.includes('credit') || errMsg.includes('coins')) {
+          throw new Error('Humanizer API credits exhausted. Please contact support or recharge account.');
+        }
+        if (response.status === 401 || errMsg.includes('invalid') || errMsg.includes('token') || errMsg.includes('key')) {
+          throw new Error('Invalid humanizer API configuration.');
+        }
         throw new Error(data.message || data.error || data.detail || `Humanizer failure: HTTP ${response.status}`);
       }
 
-      // Extract result (WriteHuman V1 returns array in 'results', e.g. data.results[0])
-      let result = (Array.isArray(data.results) && data.results.length > 0 ? data.results[0] : null) || 
-                   data.result || 
+      // Extract result from StealthGPT response
+      let result = data.result || 
+                   data.content || 
                    data.text || 
                    data.humanized_text || 
                    data.output || 
-                   data.outputText || 
-                   (Array.isArray(data.data?.results) ? data.data.results[0] : null) || 
+                   (Array.isArray(data.results) ? data.results[0] : null) || 
                    data.data?.result || 
-                   data.data?.text || 
-                   data.data?.output;
+                   data.data?.content || 
+                   data.data?.text;
 
       if (!result) {
-        console.error("WriteHuman response missing result key:", data);
+        console.error("StealthGPT response missing result key:", data);
         throw new Error("Humanization engine returned empty result.");
       }
 
