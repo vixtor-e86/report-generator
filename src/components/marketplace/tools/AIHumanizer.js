@@ -137,7 +137,7 @@ export default function AIHumanizer({
       toast.success('Humanization complete!');
     } catch (err) {
       console.error(err);
-      toast.error('System under maintenance. Please try again later.');
+      toast.error(err.message || 'Humanization failed. Please try again.');
     } finally {
       setIsProcessing(false);
       setHasPaid(false);
