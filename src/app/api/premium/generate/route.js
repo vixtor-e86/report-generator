@@ -192,8 +192,13 @@ export async function POST(request) {
       }
     }
 
-    // --- 6. Construct Structured System Prompt ---
-    const currentChapterData = project.custom_templates?.structure?.chapters?.find(ch => (ch.number || ch.chapter || ch.id) === chapterNumber);
+    const rawChapters = project.custom_templates?.structure?.chapters || [];
+    const rawNums = rawChapters.map(ch => ch.number || ch.chapter);
+    const hasDuplicates = rawNums.length > 1 && (new Set(rawNums.filter(Boolean)).size !== rawNums.length || rawNums.some(n => !n));
+    const currentChapterData = rawChapters.find((ch, idx) => {
+      const num = hasDuplicates ? (idx + 1) : (ch.number || ch.chapter || (idx + 1));
+      return num === chapterNumber;
+    });
     const chapterTitle = currentChapterData?.title || `Chapter ${chapterNumber}`;
     const mandatorySections = currentChapterData?.sections?.length > 0 ? `## MANDATORY SECTIONS\n` + currentChapterData.sections.map(s => `- ${s}`).join('\n') : '';
 

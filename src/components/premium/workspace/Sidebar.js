@@ -123,18 +123,28 @@ export default function Sidebar({
               ))}
               <label htmlFor="doc-upload" className={`sub-nav-item upload-item ${uploading ? 'opacity-50 pointer-events-none' : ''}`} style={{ marginBottom: '12px' }}><input id="doc-upload" type="file" accept=".pdf,.docx" onChange={handleDocUpload} style={{ display: 'none' }} disabled={uploading} /><Icons.Plus /> Add Component</label>
               <div className="sub-nav-header">Current Project</div>
-              {(projectData.template?.structure?.chapters || chapters).map((chapter) => {
-                const chNum = chapter.number || chapter.chapter || chapter.id;
-                return (
-                  <button 
-                    key={chNum} 
-                    className={`sub-nav-item ${activeView === `chapter-${chNum}` ? 'active' : ''}`} 
-                    onClick={() => onViewChange(`chapter-${chNum}`)}
-                  >
-                    Chapter {chNum}
-                  </button>
-                );
-              })}
+              {(() => {
+                const list = (chapters && chapters.length > 0)
+                  ? chapters
+                  : (projectData.template?.structure?.chapters || []);
+                
+                // Check for duplicate or corrupted chapter numbers (e.g. all 1s)
+                const rawNums = list.map(c => c.number || c.chapter);
+                const hasDuplicateNums = rawNums.length > 1 && (new Set(rawNums.filter(Boolean)).size !== rawNums.length || rawNums.some(n => !n));
+
+                return list.map((chapter, index) => {
+                  const chNum = hasDuplicateNums ? (index + 1) : (chapter.number || chapter.chapter || (index + 1));
+                  return (
+                    <button 
+                      key={chNum} 
+                      className={`sub-nav-item ${activeView === `chapter-${chNum}` ? 'active' : ''}`} 
+                      onClick={() => onViewChange(`chapter-${chNum}`)}
+                    >
+                      Chapter {chNum}
+                    </button>
+                  );
+                });
+              })()}
               <div className="sub-nav-header">Assets</div>
               {images.map((img) => (
                 <div key={img.id} className={`sub-nav-item ${activeView === `image-${img.id}` ? 'active' : ''}`} style={{ paddingRight: '8px' }}>

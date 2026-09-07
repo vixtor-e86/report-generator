@@ -330,8 +330,12 @@ export async function POST(request) {
       // 4. TOC
       if (options.includeTOC && project.custom_templates) {
         const tocItems = [new Paragraph({ text: 'TABLE OF CONTENTS', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 400 } })];
-        project.custom_templates.structure.chapters.forEach(ch => {
-          const chNum = ch.chapter || ch.number || ch.id;
+        const rawChapters = project.custom_templates?.structure?.chapters || [];
+        const rawNums = rawChapters.map(c => c.number || c.chapter);
+        const hasDuplicates = rawNums.length > 1 && (new Set(rawNums.filter(Boolean)).size !== rawNums.length || rawNums.some(n => !n));
+
+        rawChapters.forEach((ch, idx) => {
+          const chNum = hasDuplicates ? (idx + 1) : (ch.chapter || ch.number || ch.id || (idx + 1));
           tocItems.push(new Paragraph({ children: [new TextRun({ text: `Chapter ${chNum}: ${ch.title}`, bold: true, size: 24, font: 'Times New Roman' })], spacing: { before: 200 } }));
           ch.sections?.filter(s => s && s.trim()).forEach(s => tocItems.push(new Paragraph({ text: s, indent: { left: 720 }, spacing: { before: 100 } })));
         });
@@ -453,9 +457,13 @@ export async function POST(request) {
       if (options.includeTOC && project.custom_templates) {
         pdf.setFont("times", "bold"); pdf.setFontSize(20); pdf.text("TABLE OF CONTENTS", 20, 40);
         pdf.setFontSize(12); let ty = 60;
-        project.custom_templates.structure.chapters.forEach(ch => {
+        const rawPdfChapters = project.custom_templates?.structure?.chapters || [];
+        const rawPdfNums = rawPdfChapters.map(c => c.number || c.chapter);
+        const hasPdfDuplicates = rawPdfNums.length > 1 && (new Set(rawPdfNums.filter(Boolean)).size !== rawPdfNums.length || rawPdfNums.some(n => !n));
+
+        rawPdfChapters.forEach((ch, idx) => {
           if (ty > 270) { footer(); pdf.addPage(); currPage++; ty = 30; }
-          const chNum = ch.chapter || ch.number || ch.id;
+          const chNum = hasPdfDuplicates ? (idx + 1) : (ch.chapter || ch.number || ch.id || (idx + 1));
           pdf.setFont("times", "bold"); pdf.text(`Chapter ${chNum}: ${ch.title}`, 20, ty); ty += 8;
           pdf.setFont("times", "normal"); ch.sections?.filter(s => s && s.trim()).slice(0,5).forEach(s => { pdf.text("- " + s, 30, ty); ty += 6; }); ty += 4;
         });

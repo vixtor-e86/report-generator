@@ -88,7 +88,7 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
         >
           <div>
             <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#111827' }}>
-              Edit Chapter {chapter.chapter || chapter.number}
+              Edit Chapter {chapter.number || chapter.chapter || (chapter._index !== undefined ? chapter._index + 1 : chapter.id || 1)}
             </h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
               Modify the structure of this chapter
@@ -152,7 +152,7 @@ export default function EditTemplateModal({ chapter, isOpen, onClose, onSave }) 
                     color: '#9ca3af',
                     minWidth: '32px'
                   }}>
-                    {(chapter.chapter || chapter.number)}.{idx + 1}
+                    {(chapter.number || chapter.chapter || (chapter._index !== undefined ? chapter._index + 1 : chapter.id || 1))}.{idx + 1}
                   </span>
                   <input
                     type="text"

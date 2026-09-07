@@ -106,7 +106,16 @@ export default function ManualBuilder({ onBack, onProceed }) {
           Back
         </button>
         <button
-          onClick={() => onProceed({ type: 'manual', chapters })}
+          onClick={() => {
+            const sanitizedChapters = chapters.map((ch, idx) => ({
+              id: idx + 1,
+              number: idx + 1,
+              chapter: idx + 1,
+              title: ch.title.trim() || `Chapter ${idx + 1}`,
+              sections: ch.sections.filter(s => s && s.trim())
+            }));
+            onProceed({ type: 'manual', chapters: sanitizedChapters });
+          }}
           className="btn-primary"
         >
           Create Template

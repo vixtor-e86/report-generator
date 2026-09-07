@@ -293,9 +293,21 @@ export default function ContentArea({
 
   const handleSaveChapterTemplate = (updatedChapter) => {
     const currentStructure = projectData.template?.structure || { chapters: [] };
-    const newChapters = currentStructure.chapters.map(ch => 
-      (ch.chapter || ch.number) === (updatedChapter.chapter || updatedChapter.number) ? updatedChapter : ch
-    );
+    const newChapters = currentStructure.chapters.map((ch, idx) => {
+      // Prioritize explicit _index if passed from modal
+      if (updatedChapter._index !== undefined) {
+        return idx === updatedChapter._index 
+          ? { ...ch, ...updatedChapter, number: idx + 1, chapter: idx + 1 } 
+          : ch;
+      }
+      // Safe fallback: only match if both IDs are defined and equal
+      const chId = ch.id || ch.number || ch.chapter;
+      const targetId = updatedChapter.id || updatedChapter.number || updatedChapter.chapter;
+      if (chId !== undefined && targetId !== undefined && chId === targetId) {
+        return { ...ch, ...updatedChapter, number: idx + 1, chapter: idx + 1 };
+      }
+      return ch;
+    });
     onUpdateTemplate({ ...currentStructure, chapters: newChapters });
   };
 
@@ -478,22 +490,25 @@ export default function ContentArea({
             
             <div style={{ padding: '32px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
-                {projectData.template?.structure?.chapters.map((ch) => (
-                  <div key={ch.chapter || ch.number} style={{ background: '#f9fafb', borderRadius: '20px', border: '1px solid #e5e7eb', padding: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                      <div>
-                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chapter {ch.chapter || ch.number}</span>
-                        <h4 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: '800', color: '#111827' }}>{ch.title}</h4>
+                {projectData.template?.structure?.chapters.map((ch, chIdx) => {
+                  const chNum = ch.number || ch.chapter || (chIdx + 1);
+                  return (
+                    <div key={chNum || chIdx} style={{ background: '#f9fafb', borderRadius: '20px', border: '1px solid #e5e7eb', padding: '24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                        <div>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chapter {chNum}</span>
+                          <h4 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: '800', color: '#111827' }}>{ch.title || `Chapter ${chNum}`}</h4>
+                        </div>
+                        <button onClick={() => setEditingTemplate({ ...ch, _index: chIdx, number: chNum, chapter: chNum })} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>Edit Structure</button>
                       </div>
-                      <button onClick={() => setEditingTemplate(ch)} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>Edit Structure</button>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {ch.sections?.map((s, idx) => (
+                          <span key={idx} style={{ background: 'white', border: '1px solid #f1f5f9', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', color: '#6b7280' }}>{s}</span>
+                        ))}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {ch.sections?.map((s, idx) => (
-                        <span key={idx} style={{ background: 'white', border: '1px solid #f1f5f9', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', color: '#6b7280' }}>{s}</span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

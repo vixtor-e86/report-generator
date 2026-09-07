@@ -182,6 +182,17 @@ function ProjectDescriptionContent() {
           if (sourceTemplate) finalStructure = sourceTemplate.structure;
         }
 
+        // Ensure every chapter in finalStructure has a unique 1-indexed number, chapter, and id
+        if (finalStructure?.chapters && Array.isArray(finalStructure.chapters)) {
+          finalStructure.chapters = finalStructure.chapters.map((ch, idx) => ({
+            ...ch,
+            number: idx + 1,
+            chapter: idx + 1,
+            id: idx + 1,
+            title: ch.title || `Chapter ${idx + 1}`
+          }));
+        }
+
         const customTemplateData = {
           user_id: user.id,
           name: sourceTemplate ? sourceTemplate.name : 'Custom Template',

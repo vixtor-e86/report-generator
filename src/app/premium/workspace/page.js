@@ -184,10 +184,19 @@ function WorkspaceContent() {
       const { data: chapterContent } = await supabase.from('premium_chapters').select('*').eq('project_id', projectId);
 
       if (project.custom_templates?.structure?.chapters) {
-        setChapters(project.custom_templates.structure.chapters.map(ch => {
-          const chNum = ch.number || ch.chapter || ch.id;
+        const rawChapters = project.custom_templates.structure.chapters;
+        const rawNums = rawChapters.map(ch => ch.number || ch.chapter);
+        const hasDuplicates = rawNums.length > 1 && (new Set(rawNums.filter(Boolean)).size !== rawNums.length || rawNums.some(n => !n));
+
+        setChapters(rawChapters.map((ch, idx) => {
+          const chNum = hasDuplicates ? (idx + 1) : (ch.number || ch.chapter || (idx + 1));
           const existing = chapterContent?.find(cc => cc.chapter_number === chNum);
-          return { id: existing?.id || chNum, number: chNum, title: ch.title, content: existing?.content || '' };
+          return { 
+            id: existing?.id || chNum, 
+            number: chNum, 
+            title: (existing?.title && existing.title !== ch.title && hasDuplicates) ? existing.title : (ch.title || `Chapter ${chNum}`), 
+            content: existing?.content || '' 
+          };
         }));
       }
     } catch (err) {

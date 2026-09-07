@@ -17,7 +17,7 @@ export default function StructureConfirmationModal({
 
   const currentChapterNumber = activeChapter?.number || activeChapter?.id || 0;
   const chapterStructure = projectData?.template?.structure?.chapters?.find(
-    ch => (ch.chapter || ch.number) === currentChapterNumber
+    (ch, idx) => (ch.chapter || ch.number || (idx + 1)) === currentChapterNumber
   );
 
   return (
