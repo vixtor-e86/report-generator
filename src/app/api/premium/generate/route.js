@@ -143,6 +143,12 @@ export async function POST(request) {
 2. FOOTNOTE DEFINITIONS: Define each footnote at the bottom of the chapter using:
    [^1]: Author, *Title* (City: Publisher, Year), Page.
 3. BIBLIOGRAPHY: Conclude the chapter with an alphabetical "## Bibliography".`
+      : refStyleUpper === 'VANCOUVER'
+      ? `### CITATION STYLE: STRICT VANCOUVER (MEDICINE & HEALTH SCIENCES)
+1. IN-TEXT: Sequential numbers in square brackets [1], [2] or (1), (2), placed immediately after punctuation. Numbering MUST strictly follow the order in which citations first appear in the chapter.
+2. BIBLIOGRAPHY / REFERENCES: Conclude the chapter with a numbered "## References" section ordered sequentially:
+   [1] Author AA, Author BB. Title of article. Abbreviated Journal Title. Year;Volume(Issue):Pages.
+   [2] Author AA. Title of book. Edition. Place of publication: Publisher; Year.`
       : `### CITATION STYLE: STRICT APA\n1. IN-TEXT: (Author, Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
 
     // --- 4. Enhanced Reference Sourcing ---

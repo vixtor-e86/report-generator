@@ -179,8 +179,9 @@ export async function POST(request) {
           1. Remove any exact or near-duplicate references.
           2. Structure them into a professional, consistent academic format matching the ${styleName} style guide.
           3. Format and sort them appropriately:
-             - If ${styleName} is IEEE: Format as IEEE bibliography style, sort by appearance/usage order in text, and number them sequentially [1], [2], [3]...
-             - If ${styleName} is APA, HARVARD, or MLA: Format them according to the ${styleName} style guide, and sort them alphabetically by the first author's last name. Number them sequentially (1, 2, 3...) for presentation.
+             - If ${styleName} is IEEE or VANCOUVER: Format as ${styleName} bibliography style, sort by appearance/usage order in text, and number them sequentially [1], [2], [3]...
+             - If ${styleName} is APA, HARVARD, MLA, or CHICAGO: Format them according to the ${styleName} style guide, and sort them alphabetically by the first author's last name. Number them sequentially (1, 2, 3...) for presentation.
+             - If ${styleName} is OSCOLA: Format as an OSCOLA Table of Authorities or Bibliography.
           4. Ensure each reference is complete and properly formatted.
           5. Return ONLY the final numbered list of references, with no other text, commentary, or headers.
 

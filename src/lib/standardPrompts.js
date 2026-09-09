@@ -10,7 +10,8 @@ function getReferenceInstructions(referenceStyle, faculty, chapterNumber, isLast
     'harvard': { inText: '(Author Year)', format: 'Author, A.B. (Year) Title. City: Publisher.' },
     'mla': { inText: '(Author Page)', format: "Author's Last Name, First Name. \"Title of Work.\" Publisher, Year, Pages." },
     'oscola': { inText: 'numbered markdown footnotes [^1], [^2] placed after punctuation (NO in-text author brackets)', format: 'Author, Title (Publisher Year) / Case Name [Year] Report Page / Act Name Year, s X' },
-    'chicago': { inText: 'numbered markdown footnotes [^1], [^2] placed after punctuation', format: 'Author, Title (City: Publisher, Year), Page.' }
+    'chicago': { inText: 'numbered markdown footnotes [^1], [^2] placed after punctuation', format: 'Author, Title (City: Publisher, Year), Page.' },
+    'vancouver': { inText: 'sequential numbers in square brackets [1], [2] in exact order of appearance in text', format: '[1] Author AA, Author BB. Title of article. Abbreviated Journal Title. Year;Volume(Issue):Pages.' }
   };
 
   const isFootnoteStyle = referenceStyle === 'oscola' || referenceStyle === 'chicago';

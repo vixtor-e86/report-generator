@@ -28,13 +28,13 @@ export function extractInTextCitations(content, referenceStyle) {
       const page = match[2];
       citations.add(`${author}${page}`);
     }
-  } else if (referenceStyle === 'ieee' || referenceStyle === 'oscola' || referenceStyle === 'chicago') {
-    // Match [1], [2], or footnotes [^1], [^2], etc.
-    const pattern = /\[\^?(\d+)\]/g;
+  } else if (referenceStyle === 'ieee' || referenceStyle === 'oscola' || referenceStyle === 'chicago' || referenceStyle === 'vancouver') {
+    // Match [1], [2], or footnotes [^1], [^2], or (1), (2)
+    const pattern = /(?:\[\^?(\d+)\]|\((\d+)\))/g;
     let match;
     
     while ((match = pattern.exec(content)) !== null) {
-      citations.add(match[1]); // Just the number
+      citations.add(match[1] || match[2]); // Just the number
     }
   }
   
@@ -59,7 +59,7 @@ export function extractFullReferences(content, referenceStyle, chapterNumber) {
   const referencesText = referencesMatch[1];
   const lines = referencesText.split('\n').filter(line => line.trim());
   
-  if (referenceStyle === 'ieee' || referenceStyle === 'oscola' || referenceStyle === 'chicago') {
+  if (referenceStyle === 'ieee' || referenceStyle === 'oscola' || referenceStyle === 'chicago' || referenceStyle === 'vancouver') {
     // Numbered or Footnote format: [1] ... or [^1]: ... or 1. ...
     lines.forEach((line) => {
       const match = line.match(/^(?:\[\^?(\d+)\]:?|\b(\d+)\.)\s+(.+)$/);
@@ -212,8 +212,8 @@ export async function compileAllReferences(supabase, projectId, referenceStyle) 
   // Sort references
   let sortedRefs;
   
-  if (referenceStyle === 'ieee') {
-    // IEEE: Sort by first usage order
+  if (referenceStyle === 'ieee' || referenceStyle === 'vancouver') {
+    // IEEE & Vancouver: Sort by first usage order
     sortedRefs = allRefs.sort((a, b) => {
       const aFirst = Math.min(...(a.used_in_chapters || [a.first_used_in_chapter]));
       const bFirst = Math.min(...(b.used_in_chapters || [b.first_used_in_chapter]));

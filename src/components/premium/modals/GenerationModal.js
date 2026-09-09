@@ -351,12 +351,13 @@ export default function GenerationModal({
                       <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '700' }}>Reference Style</label>
                         <select value={stickyData.referenceStyle} onChange={(e) => setStickyData({...stickyData, referenceStyle: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
-                          <option value="APA">APA Style (Social Sciences, Education)</option>
-                          <option value="OSCOLA">OSCOLA Style (Law & Legal Studies - Footnotes ⚖️)</option>
-                          <option value="IEEE">IEEE Style (Engineering, IT)</option>
+                          <option value="APA">APA Style (Social Sciences, Education 📘)</option>
+                          <option value="Harvard">Harvard Style (Sciences, Business, Management 🎓)</option>
                           <option value="Chicago">Chicago Style (History, Humanities - Footnotes 🏛️)</option>
-                          <option value="Harvard">Harvard Style (Sciences)</option>
-                          <option value="MLA">MLA Style (Humanities, Literature)</option>
+                          <option value="OSCOLA">OSCOLA Style (Law & Legal Studies - Footnotes ⚖️)</option>
+                          <option value="Vancouver">Vancouver Style (Medicine, Health & Life Sciences 🩺)</option>
+                          <option value="IEEE">IEEE Style (Engineering, Computer Science, IT ⚡)</option>
+                          <option value="MLA">MLA Style (Humanities, Literature 📚)</option>
                         </select>
                       </div>
                       <div>

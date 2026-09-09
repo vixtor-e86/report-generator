@@ -197,6 +197,11 @@ function createFreePrompt(data) {
        - In-text: Use author-year format, e.g., "The algorithm uses BFS (Okonkwo 2023)." NOT [1].
        - References List: Alphabetical order by author surname.
        - Format: Author, A.B. (Year) Title. City: Publisher.`
+    : referenceStyle.toLowerCase() === 'vancouver'
+    ? `CITATION STYLE (VANCOUVER - STRICTLY ENFORCED):
+       - In-text: Use sequential numbers in square brackets or parentheses, e.g., "The clinical trial demonstrated high efficacy [1]." NOT (Author, Year).
+       - References List: Numbered list [1], [2] in EXACT sequential order of appearance in the chapter.
+       - Format: [1] Author AA, Author BB. Title of article. Abbreviated Journal Name. Year;Volume(Issue):Pages.`
     : referenceStyle.toLowerCase() === 'mla'
     ? `CITATION STYLE (MLA - STRICTLY ENFORCED):
        - In-text: Use author-page format, e.g., "The algorithm uses BFS (Okonkwo 45)." NOT [1] or (Okonkwo, 2023).

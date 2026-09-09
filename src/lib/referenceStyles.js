@@ -100,6 +100,22 @@ export const REFERENCE_STYLES = {
     }
   },
 
+  vancouver: {
+    id: 'vancouver',
+    name: 'Vancouver Style',
+    fullName: 'Vancouver System (International Committee of Medical Journal Editors)',
+    icon: '🩺',
+    bestFor: 'Medicine, Nursing, Pharmacy, Biomedical Sciences, Public Health',
+    description: 'Numeric citation system where references are numbered consecutively in order of appearance in the text',
+    inTextFormat: '[1], [2] or (1), (2)',
+    referenceFormat: '[1] Author AA, Author BB. Title of article. Abbreviated Journal Title. Year;Volume(Issue):Pages.',
+    examples: {
+      book: '[1] Adeyemi TA. Clinical Biochemistry and Diagnostic Medicine. 2nd ed. Lagos: Medical Science Publishers; 2021.',
+      journal: '[2] Okafor CN, Bello SM. Epidemiological analysis of infectious disease transmission models. Niger Med J. 2022;63(4):112-125.',
+      inText: 'Recent clinical trials confirmed the efficacy of the therapeutic protocol [1]. Similar pharmacological responses were recorded across cohorts [2], [3].'
+    }
+  },
+
   none: {
     id: 'none',
     name: 'No References',
@@ -130,12 +146,13 @@ export function getAllReferenceStyles() {
 // Get style options for dropdown
 export function getReferenceStyleOptions() {
   return [
-    { value: 'apa', label: 'APA Style (Social Sciences, Education)', icon: '📘' },
-    { value: 'oscola', label: 'OSCOLA Style (Law & Legal Studies - Footnotes)', icon: '⚖️' },
-    { value: 'ieee', label: 'IEEE Style (Engineering, IT)', icon: '⚡' },
+    { value: 'apa', label: 'APA Style (Social Sciences, Education, Psychology)', icon: '📘' },
+    { value: 'harvard', label: 'Harvard Style (Sciences, Business, Management)', icon: '🎓' },
     { value: 'chicago', label: 'Chicago Style (History, Humanities - Footnotes)', icon: '🏛️' },
-    { value: 'harvard', label: 'Harvard Style (Sciences, Humanities)', icon: '🎓' },
-    { value: 'mla', label: 'MLA Style (Humanities, Literature)', icon: '📚' },
+    { value: 'oscola', label: 'OSCOLA Style (Law & Legal Studies - Footnotes)', icon: '⚖️' },
+    { value: 'vancouver', label: 'Vancouver Style (Medicine, Health & Life Sciences)', icon: '🩺' },
+    { value: 'ieee', label: 'IEEE Style (Engineering, Computer Science, IT)', icon: '⚡' },
+    { value: 'mla', label: 'MLA Style (Humanities, Literature, Languages)', icon: '📚' },
     { value: 'none', label: 'No References (Add manually)', icon: '✏️' }
   ];
 }
