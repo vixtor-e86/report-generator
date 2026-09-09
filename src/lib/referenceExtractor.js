@@ -28,9 +28,9 @@ export function extractInTextCitations(content, referenceStyle) {
       const page = match[2];
       citations.add(`${author}${page}`);
     }
-  } else if (referenceStyle === 'ieee') {
-    // Match [1], [2], [3], etc.
-    const pattern = /\[(\d+)\]/g;
+  } else if (referenceStyle === 'ieee' || referenceStyle === 'oscola' || referenceStyle === 'chicago') {
+    // Match [1], [2], or footnotes [^1], [^2], etc.
+    const pattern = /\[\^?(\d+)\]/g;
     let match;
     
     while ((match = pattern.exec(content)) !== null) {
@@ -42,30 +42,30 @@ export function extractInTextCitations(content, referenceStyle) {
 }
 
 /**
- * Extract full references from ## REFERENCES section
+ * Extract full references from ## REFERENCES or ## BIBLIOGRAPHY section
  * Returns array of reference objects
  */
 export function extractFullReferences(content, referenceStyle, chapterNumber) {
   const references = [];
   
-  // Find REFERENCES section
-  const referencesMatch = content.match(/##\s*REFERENCES\s*\n([\s\S]+?)(?:\n##|$)/i);
+  // Find REFERENCES or BIBLIOGRAPHY section
+  const referencesMatch = content.match(/##\s*(?:REFERENCES|BIBLIOGRAPHY|TABLE OF AUTHORITIES)\s*\n([\s\S]+?)(?:\n##|$)/i);
   
   if (!referencesMatch) {
-    console.log('No REFERENCES section found in content');
+    console.log('No REFERENCES or BIBLIOGRAPHY section found in content');
     return references;
   }
   
   const referencesText = referencesMatch[1];
   const lines = referencesText.split('\n').filter(line => line.trim());
   
-  if (referenceStyle === 'ieee') {
-    // IEEE format: [1] Author, "Title," Journal, details
+  if (referenceStyle === 'ieee' || referenceStyle === 'oscola' || referenceStyle === 'chicago') {
+    // Numbered or Footnote format: [1] ... or [^1]: ... or 1. ...
     lines.forEach((line) => {
-      const match = line.match(/^\[(\d+)\]\s+(.+)$/);
+      const match = line.match(/^(?:\[\^?(\d+)\]:?|\b(\d+)\.)\s+(.+)$/);
       if (match) {
-        const number = match[1];
-        const fullText = match[2].trim();
+        const number = match[1] || match[2];
+        const fullText = match[3].trim();
         
         // Try to extract author and year
         const authorMatch = fullText.match(/^([A-Z][a-z]+(?:,?\s+[A-Z]\.?\s*)+)/);

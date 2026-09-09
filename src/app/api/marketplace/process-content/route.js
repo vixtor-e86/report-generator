@@ -5,60 +5,99 @@ export async function POST(request) {
   try {
     const { abstract, chapter1 } = await request.json();
 
-    if (!abstract || !chapter1) {
-      return NextResponse.json({ error: "Abstract and Chapter 1 are required" }, { status: 400 });
+    if (!abstract && !chapter1) {
+      return NextResponse.json({ error: "Abstract or Chapter 1 is required" }, { status: 400 });
     }
 
-    const prompt = `
-      You are an expert technical editor. I will provide you with an academic project's Abstract and Chapter 1 preview.
-      Your task is to restructure them into a clean, professional Markdown format.
-      
-      RULES:
-      1. Remove any main headings like "Abstract", "Abstract Preview", "Chapter One", "Chapter 1: Introduction", etc.
-      2. Group sentences into well-structured, logical paragraphs. Break any large walls of text into smaller, readable paragraphs.
-      3. Clean up any weird line breaks, hyphenations, or double-spaces caused by PDF or Word document text extraction.
-      4. Ensure paragraphs are separated by exactly two newlines (\\n\\n) so they render beautifully in markdown.
-      5. Use clean Markdown for subsections or bullet points where appropriate (e.g. for objectives or scope).
-      6. The abstract should be restructured to be concise yet informative, presented in 1-2 clean paragraphs.
-      7. Chapter 1 should be restructured for maximum readability with proper logical paragraph flow.
-      8. DO NOT add your own commentary or wrap the fields in markdown code blocks inside the JSON.
-      9. Return a JSON object with two fields: "processedAbstract" and "processedChapter1".
+    // Helper to clean markdown fences if model outputs ```markdown ... ```
+    const cleanOutput = (text) => {
+      if (!text) return '';
+      return text
+        .replace(/^```(?:markdown)?\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+    };
 
-      Abstract to process:
-      ${abstract}
+    // Parallel processing tasks
+    const refineAbstractTask = async () => {
+      if (!abstract || abstract.trim().length < 10) return abstract;
+      try {
+        const prompt = `
+You are an expert technical and academic editor.
+Your task is to refine and restructure the following academic project ABSTRACT into clean, professional Markdown.
 
-      Chapter 1 to process:
-      ${chapter1}
-      
-      Respond only with a valid JSON object.
-    `;
+RULES:
+1. Remove any title or header like "Abstract", "Project Abstract", or "Abstract Preview".
+2. Present the abstract in 1 to 2 well-structured, cohesive paragraphs with proper academic flow.
+3. Clean up any weird line breaks, hyphenations, or double-spaces from PDF/Word extraction.
+4. Ensure double newlines between paragraphs.
+5. Do NOT include markdown code fences (\`\`\`).
+6. Do NOT add notes, explanations, or commentary. Output ONLY the refined abstract text.
 
-    const response = await callAI(prompt, {
-      provider: process.env.AI_PROVIDER || 'gemini',
-      temperature: 0.3,
-      maxTokens: 3000
-    });
+Abstract:
+${abstract}
+`;
+        const res = await callAI(prompt, {
+          provider: process.env.AI_PROVIDER || 'deepseek',
+          temperature: 0.3,
+          maxTokens: 2048,
+          fallback: true
+        });
+        return cleanOutput(res?.content) || abstract;
+      } catch (err) {
+        console.warn('AI abstract refining warning (using fallback):', err.message);
+        return abstract;
+      }
+    };
 
-    let processedData;
-    try {
-      // Find JSON if AI wraps it in code blocks
-      const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-      const jsonString = jsonMatch ? jsonMatch[0] : response.content;
-      processedData = JSON.parse(jsonString);
-    } catch (parseError) {
-      console.error("Failed to parse AI response as JSON:", response.content);
-      // Fallback: If JSON parsing fails, we try to split by a delimiter or just return original
-      // but the user wants restructuring, so we should try to be strict.
-      throw new Error("AI returned an invalid format");
-    }
+    const refineChapter1Task = async () => {
+      if (!chapter1 || chapter1.trim().length < 10) return chapter1;
+      try {
+        const prompt = `
+You are an expert technical and academic editor.
+Your task is to refine and format the following CHAPTER 1 text into clean, structured academic Markdown.
+
+RULES:
+1. Remove main title headers like "CHAPTER ONE", "CHAPTER 1", or "CHAPTER 1: INTRODUCTION".
+2. Format subsections cleanly with proper Markdown headings (e.g., ## 1.1 Background of the Study, ## 1.2 Statement of the Problem, ## 1.3 Objectives, etc.).
+3. Group sentences into well-structured, readable paragraphs. Break any large walls of text into readable paragraphs separated by double newlines (\\n\\n).
+4. Use clean bullet points (- ) or numbered lists for research questions, hypotheses, or objectives where appropriate.
+5. Fix broken hyphenations or irregular line breaks caused by copy-pasting from PDF/DOCX.
+6. Preserve all technical substance, references, and core ideas.
+7. Do NOT include markdown code fences (\`\`\`).
+8. Do NOT add introductory remarks or conversational commentary. Output ONLY the refined chapter 1 markdown content.
+
+Chapter 1:
+${chapter1}
+`;
+        const res = await callAI(prompt, {
+          provider: process.env.AI_PROVIDER || 'deepseek',
+          temperature: 0.3,
+          maxTokens: 8192,
+          fallback: true
+        });
+        return cleanOutput(res?.content) || chapter1;
+      } catch (err) {
+        console.warn('AI chapter 1 refining warning (using fallback):', err.message);
+        return chapter1;
+      }
+    };
+
+    const [refinedAbstract, refinedChapter1] = await Promise.all([
+      refineAbstractTask(),
+      refineChapter1Task()
+    ]);
 
     return NextResponse.json({
-      abstract: processedData.processedAbstract || abstract,
-      chapter1: processedData.processedChapter1 || chapter1
+      success: true,
+      abstract: refinedAbstract,
+      chapter1: refinedChapter1
     });
 
   } catch (error) {
     console.error('Content processing error:', error);
-    return NextResponse.json({ error: "Something went wrong, please try again later" }, { status: 500 });
+    return NextResponse.json({ 
+      error: error.message || "Failed to process content" 
+    }, { status: 500 });
   }
 }

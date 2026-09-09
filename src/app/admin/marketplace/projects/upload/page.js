@@ -139,29 +139,49 @@ export default function AdminUploadProjectPage() {
     setUploadStatus('Initializing Admin Secure Upload...');
 
     try {
+      // Helper function with automatic fallback to server-side upload if direct R2 PUT fails (e.g. ERR_SSL_BAD_RECORD_MAC_ALERT)
+      const uploadFileWithFallback = async (file, folder) => {
+        try {
+          const res = await fetch('/api/marketplace/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: file.name, contentType: file.type || 'application/octet-stream', userId: user.id, folder })
+          });
+          if (!res.ok) throw new Error('Failed to get upload URL');
+          const { uploadUrl, publicUrl } = await res.json();
+          const putRes = await fetch(uploadUrl, { 
+            method: 'PUT', 
+            headers: { 'Content-Type': file.type || 'application/octet-stream' }, 
+            body: file 
+          });
+          if (!putRes.ok) throw new Error(`Direct R2 PUT failed (${putRes.status})`);
+          return publicUrl;
+        } catch (directErr) {
+          console.warn('Direct R2 upload encountered an issue, seamlessly switching to server route:', directErr);
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('userId', user.id);
+          fd.append('folder', folder);
+
+          const fallbackRes = await fetch('/api/marketplace/upload-direct', {
+            method: 'POST',
+            body: fd
+          });
+          const data = await fallbackRes.json();
+          if (!fallbackRes.ok || !data.publicUrl) {
+            throw new Error(data.error || 'Server upload failed');
+          }
+          return data.publicUrl;
+        }
+      };
+
       // 1. Upload Main File
       setUploadStatus('Uploading Project Archive...');
-      const mainFileRes = await fetch('/api/marketplace/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: formData.mainFile.name, contentType: formData.mainFile.type, userId: user.id, folder: 'admin_projects' })
-      });
-      const { uploadUrl: mainUrl, publicUrl: mainFileUrl } = await mainFileRes.json();
-      await fetch(mainUrl, { method: 'PUT', headers: { 'Content-Type': formData.mainFile.type }, body: formData.mainFile });
+      const mainFileUrl = await uploadFileWithFallback(formData.mainFile, 'admin_projects');
 
       // 2. Image Uploads
       setUploadStatus('Syncing Visual Assets...');
-      const imageUploadPromises = formData.images.map(async (img) => {
-        const res = await fetch('/api/marketplace/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileName: img.name, contentType: img.type, userId: user.id, folder: 'admin_previews' })
-        });
-        const { uploadUrl, publicUrl } = await res.json();
-        await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': img.type }, body: img });
-        return publicUrl;
-      });
-
+      const imageUploadPromises = formData.images.map(img => uploadFileWithFallback(img, 'admin_previews'));
       const imageUrls = await Promise.all(imageUploadPromises);
 
       // 3. Save to DB (seller_id is null for W3 Hub admin projects)

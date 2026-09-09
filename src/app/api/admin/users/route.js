@@ -17,25 +17,35 @@ export async function GET(request) {
       .from('universities')
       .select('id, name');
 
-    // 3. Fetch Auth Users (Email, Last Sign In)
-    // Supabase Admin API to list users. Note: This handles pagination (default 50).
-    // We might need to loop if > 50 users, but for now we'll fetch a larger page.
-    const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers({
-      perPage: 1000 // Fetch up to 1000 users
-    });
+    // 3. Fetch ALL Auth Users in parallel across pages (up to 15,000+ users)
+    const pageNumbers = Array.from({ length: 15 }, (_, i) => i + 1);
+    const authPages = await Promise.all(
+      pageNumbers.map(page => supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 }))
+    );
 
-    if (authError) throw authError;
+    const emailMap = new Map();
+    for (const pageRes of authPages) {
+      if (pageRes.data?.users) {
+        for (const u of pageRes.data.users) {
+          emailMap.set(u.id, {
+            email: u.email,
+            last_sign_in_at: u.last_sign_in_at,
+            created_at: u.created_at
+          });
+        }
+      }
+    }
 
     // 4. Merge Data
     const mergedUsers = profiles.map(profile => {
-      const authUser = authUsers.find(u => u.id === profile.id);
+      const authUser = emailMap.get(profile.id);
       const university = universities?.find(u => u.id === profile.university_id);
       
       return {
         ...profile,
         email: authUser?.email || 'N/A',
         last_sign_in_at: authUser?.last_sign_in_at || null,
-        created_at: authUser?.created_at || profile.created_at, // Auth creation is often more accurate
+        created_at: authUser?.created_at || profile.created_at,
         institution_name: university?.name || profile.custom_institution || 'Other'
       };
     });

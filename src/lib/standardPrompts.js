@@ -8,9 +8,12 @@ function getReferenceInstructions(referenceStyle, faculty, chapterNumber, isLast
     'apa': { inText: '(Author, Year)', format: 'Author, A. B. (Year). Title. Journal/Publisher.' },
     'ieee': { inText: '[1]', format: '[1] A. B. Author, "Title," Journal, vol. X, no. Y, pp. Z-Z, Year.' },
     'harvard': { inText: '(Author Year)', format: 'Author, A.B. (Year) Title. City: Publisher.' },
-    'mla': { inText: '(Author Page)', format: "Author's Last Name, First Name. \"Title of Work.\" Publisher, Year, Pages." }
+    'mla': { inText: '(Author Page)', format: "Author's Last Name, First Name. \"Title of Work.\" Publisher, Year, Pages." },
+    'oscola': { inText: 'numbered markdown footnotes [^1], [^2] placed after punctuation (NO in-text author brackets)', format: 'Author, Title (Publisher Year) / Case Name [Year] Report Page / Act Name Year, s X' },
+    'chicago': { inText: 'numbered markdown footnotes [^1], [^2] placed after punctuation', format: 'Author, Title (City: Publisher, Year), Page.' }
   };
 
+  const isFootnoteStyle = referenceStyle === 'oscola' || referenceStyle === 'chicago';
   const style = styleInstructions[referenceStyle] || styleInstructions['apa'];
   
   // Dynamic Citation Count based on chapter requirements:
@@ -44,23 +47,28 @@ function getReferenceInstructions(referenceStyle, faculty, chapterNumber, isLast
 
   return `
 CITATION RULES (${referenceStyle.toUpperCase()}):
-1. In-Text Citations: Use ${style.inText}. Distribute citations naturally throughout the technical analysis.
+1. Citations Method: Use ${style.inText}. Distribute citations naturally throughout the technical analysis.
+${isFootnoteStyle ? `   - FOOTNOTE RULE: Whenever citing a source, place a superscript footnote [^1], [^2] immediately following the punctuation mark.
+   - At the end of the chapter, list each footnote definition as:
+     [^1]: Author, Title (Publisher Year) page. (Or Case citation / Statute citation)
+   - DO NOT put (Author, Year) in brackets inside the paragraphs.` : ''}
 2. Citation Count Requirement: Include ${countInstruction} in your technical analysis.
    ${chapterNumber === 1 ? '- CHAPTER 1 RULE: Maximum of 10 references allowed.' : ''}
    ${chapterNumber === 2 ? '- CHAPTER 2 RULE: Minimum of 15 references required for comprehensive literature review.' : ''}
 3. Sourcing: Combine the provided project references with other elite technical sources:
    - Real Academic/Technical Papers (2020-2026).
    - High-authority Online Articles (e.g., IEEE Spectrum, NASA, MIT Tech Review).
-   - Official Documentation and Datasheets (e.g., Arduino, STMicroelectronics, Academic Sites).
+   - Official Documentation, Statutes, Law Reports, and Datasheets.
 4. **STRICT NO DUPLICATES**: Do not list the same reference twice. Cross-check your final list against the "PROJECT-WIDE REFERENCES" provided above.
 ${existingRefsText}
-5. **MANDATORY**: At the end of THIS chapter, you MUST include a "## References" section. 
+5. **MANDATORY**: At the end of THIS chapter, you MUST include a "${referenceStyle === 'oscola' ? '## Bibliography' : '## References'}" section. 
    - **STRICT FORMAT**: Use a Markdown numbered list (1. [Reference]).
    - **CLEANLINESS**: Each reference must be its own list item. Ensure there is exactly one blank line between each numbered item to prevent text bunching.
    - **CONTENT**: List only the sources actually cited in this chapter.
    - **NO FORGING**: Do NOT hallucinate or "make up" references. Ensure all sources are real and verifiable.
    - If this is the FINAL chapter, ensure the list is comprehensive for the whole project.
    - Max 40 unique references for the entire project.
+   - RECENCY: All sources must be between 2020-2026.
    - RECENTCY: All sources must be between 2020-2026.
 `;
 }

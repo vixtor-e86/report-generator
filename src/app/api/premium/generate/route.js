@@ -124,12 +124,25 @@ export async function POST(request) {
     }
 
     // --- 3. Citation & Reference Logic ---
-    const citationStyleInst = referenceStyle.toUpperCase() === 'IEEE'
+    const refStyleUpper = (referenceStyle || 'apa').toUpperCase();
+    const citationStyleInst = refStyleUpper === 'IEEE'
       ? `### CITATION STYLE: STRICT IEEE\n1. IN-TEXT: [1], [2].\n2. BIBLIOGRAPHY: Numerical order.`
-      : referenceStyle.toUpperCase() === 'HARVARD'
+      : refStyleUpper === 'HARVARD'
       ? `### CITATION STYLE: STRICT HARVARD\n1. IN-TEXT: (Author Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A.A. (Year) Title. City: Publisher.`
-      : referenceStyle.toUpperCase() === 'MLA'
+      : refStyleUpper === 'MLA'
       ? `### CITATION STYLE: STRICT MLA\n1. IN-TEXT: (Author Page) e.g., (Okonkwo 45).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author's Last Name, First Name. "Title of Article." Journal or Book, Publisher, Year, Pages.`
+      : refStyleUpper === 'OSCOLA'
+      ? `### CITATION STYLE: STRICT OSCOLA (OXFORD STANDARD FOR CITATION OF LEGAL AUTHORITIES)
+1. CITATION METHOD: Numbered Markdown Footnotes [^1], [^2], [^3] placed immediately after punctuation. DO NOT use in-text bracketed author-year citations like (Author, 2022).
+2. FOOTNOTE DEFINITIONS: At the bottom of the chapter, define every footnote using:
+   [^1]: Author, *Title* (Publisher Year) page. (Or Case: *Party v Party* [Year] Volume Report Page, or Statute: Title of Act Year, s Section).
+3. BIBLIOGRAPHY / AUTHORITIES: Conclude the chapter with a structured "## Bibliography" listing all authorities.`
+      : refStyleUpper === 'CHICAGO'
+      ? `### CITATION STYLE: STRICT CHICAGO (NOTES & BIBLIOGRAPHY)
+1. CITATION METHOD: Numbered Markdown Footnotes [^1], [^2], [^3] placed immediately after punctuation.
+2. FOOTNOTE DEFINITIONS: Define each footnote at the bottom of the chapter using:
+   [^1]: Author, *Title* (City: Publisher, Year), Page.
+3. BIBLIOGRAPHY: Conclude the chapter with an alphabetical "## Bibliography".`
       : `### CITATION STYLE: STRICT APA\n1. IN-TEXT: (Author, Year).\n2. BIBLIOGRAPHY: Alphabetical order. Format: Author, A. A. (Year). Title. Publisher.`;
 
     // --- 4. Enhanced Reference Sourcing ---

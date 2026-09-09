@@ -66,6 +66,40 @@ export const REFERENCE_STYLES = {
     }
   },
 
+  oscola: {
+    id: 'oscola',
+    name: 'OSCOLA Style',
+    fullName: 'Oxford Standard for the Citation of Legal Authorities',
+    icon: '⚖️',
+    bestFor: 'Law, Legal Studies, Jurisprudence, Human Rights, Criminology',
+    description: 'Oxford standard for legal citations with numbered footnotes at bottom of page',
+    inTextFormat: 'Footnote [^1], [^2]',
+    referenceFormat: "Author, Title (Publisher Year) / Case Name [Year] Report Page / Act Name Year, s X",
+    examples: {
+      book: 'Timothy Adebayo, Nigerian Constitutional Law (2nd edn, Spectrum Books 2021) 45.',
+      journal: "Chukwuma Okafor, 'Corporate Governance in Nigerian Banking' (2022) 14(2) Nigerian Law Journal 89.",
+      case: 'Fawehinmi v Abacha [1996] 9 NWLR (Pt 475) 710.',
+      statute: 'Companies and Allied Matters Act 2020, s 18.',
+      inText: 'The legal precedent established statutory enforcement.[^1] Subsequent reforms strengthened compliance.[^2]'
+    }
+  },
+
+  chicago: {
+    id: 'chicago',
+    name: 'Chicago Style (Footnotes)',
+    fullName: 'Chicago Manual of Style (Notes & Bibliography)',
+    icon: '🏛️',
+    bestFor: 'History, Humanities, Arts, Theology, Social Sciences',
+    description: 'Numbered footnotes at page bottom with comprehensive bibliography',
+    inTextFormat: 'Footnote [^1], [^2]',
+    referenceFormat: "Author, Title (City: Publisher, Year), Page.",
+    examples: {
+      book: 'Temitope A. Adeyemi, Modern African Governance (Lagos: Tech Publishers, 2021), 58.',
+      journal: "Chukwuma N. Okafor, \"Trade Policies in Sub-Saharan Africa,\" Journal of Economic Studies 15, no. 3 (2022): 45-62.",
+      inText: 'Historical records confirm these institutional shifts.[^1] Cultural analyses corroborate this pattern.[^2]'
+    }
+  },
+
   none: {
     id: 'none',
     name: 'No References',
@@ -97,7 +131,9 @@ export function getAllReferenceStyles() {
 export function getReferenceStyleOptions() {
   return [
     { value: 'apa', label: 'APA Style (Social Sciences, Education)', icon: '📘' },
+    { value: 'oscola', label: 'OSCOLA Style (Law & Legal Studies - Footnotes)', icon: '⚖️' },
     { value: 'ieee', label: 'IEEE Style (Engineering, IT)', icon: '⚡' },
+    { value: 'chicago', label: 'Chicago Style (History, Humanities - Footnotes)', icon: '🏛️' },
     { value: 'harvard', label: 'Harvard Style (Sciences, Humanities)', icon: '🎓' },
     { value: 'mla', label: 'MLA Style (Humanities, Literature)', icon: '📚' },
     { value: 'none', label: 'No References (Add manually)', icon: '✏️' }

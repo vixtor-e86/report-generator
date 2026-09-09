@@ -181,6 +181,17 @@ function createFreePrompt(data) {
        - In-text: Use numbers in square brackets, e.g., "The algorithm uses BFS [1]." NOT (Author, Year).
        - References List: Numbered list [1], [2] ordered by appearance in the text.
        - Format: [1] A. B. Author, "Title," Publisher, Year.`
+    : referenceStyle.toLowerCase() === 'oscola'
+    ? `CITATION STYLE (OSCOLA - OXFORD LEGAL CITATIONS - STRICTLY ENFORCED):
+       - In-text: Use numbered markdown footnotes immediately after punctuation, e.g., "The rule in Rylands v Fletcher established strict liability.[^1]" NOT (Author, Year).
+       - Footnotes section at chapter bottom:
+         [^1]: Case Name [Year] Law Report Page, or Act Name Year, s X, or Author, Title (Publisher Year) page.
+       - References / Bibliography: End with "## Bibliography" or "## Table of Authorities".`
+    : referenceStyle.toLowerCase() === 'chicago'
+    ? `CITATION STYLE (CHICAGO NOTES & BIBLIOGRAPHY - STRICTLY ENFORCED):
+       - In-text: Use numbered markdown footnotes [^1], [^2] placed after punctuation.
+       - Footnotes section: [^1]: Author, Title (Publisher, Year), Page.
+       - References List: Alphabetical order under "## Bibliography".`
     : referenceStyle.toLowerCase() === 'harvard'
     ? `CITATION STYLE (HARVARD - STRICTLY ENFORCED):
        - In-text: Use author-year format, e.g., "The algorithm uses BFS (Okonkwo 2023)." NOT [1].

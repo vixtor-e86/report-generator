@@ -104,6 +104,30 @@ export default function ReferenceInfoModal({ isOpen, onClose, selectedStyle }) {
                     </p>
                   </div>
                 </div>
+
+                {/* Case Law Example (for Legal Styles) */}
+                {style.examples.case && (
+                  <div className="mb-4">
+                    <h5 className="text-sm font-bold text-gray-700 mb-2">⚖️ Law Report / Case Example</h5>
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <p className="text-xs sm:text-sm text-gray-800 break-words">
+                        {style.examples.case}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Statute Example (for Legal Styles) */}
+                {style.examples.statute && (
+                  <div className="mb-4">
+                    <h5 className="text-sm font-bold text-gray-700 mb-2">📜 Legislation / Statute Example</h5>
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <p className="text-xs sm:text-sm text-gray-800 break-words">
+                        {style.examples.statute}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Important Note */}

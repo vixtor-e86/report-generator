@@ -658,6 +658,11 @@ export default function ContentArea({
               .markdown-preview del { color: #9ca3af; }
               .markdown-preview hr { border: 0; border-top: 2px solid #f1f5f9; margin: 2rem 0; }
               .markdown-preview strong { font-weight: 700; color: #111827; }
+              .markdown-preview .footnotes { border-top: 2px solid #e5e7eb; margin-top: 3rem; padding-top: 1.5rem; font-size: 0.9em; color: #4b5563; }
+              .markdown-preview .footnotes ol { padding-left: 1.5rem; }
+              .markdown-preview sup { font-size: 0.75em; vertical-align: super; font-weight: 700; color: #4f46e5; }
+              .markdown-preview sup a { color: #4f46e5; text-decoration: none; padding: 0 2px; }
+              .markdown-preview sup a:hover { text-decoration: underline; }
             `}</style>
             {workspaceMode === 'editor' ? (
               <>
@@ -678,6 +683,7 @@ export default function ContentArea({
                     <span><strong>#</strong> Header</span>
                     <span><strong>**text**</strong> Bold</span>
                     <span><strong>-</strong> List</span>
+                    <span><strong>[^1]</strong> Footnote</span>
                   </div>
                   <button 
                     onClick={() => setShowMarkdownGuide(true)}
@@ -805,6 +811,7 @@ export default function ContentArea({
                     { markdown: '| Product | Price |\n| :--- | :--- |\n| Premium | ₦15,000 |\n| Standard | ₦5,000 |' },
                     { markdown: '> Important research finding or quote.\n\n`Inline code snippet`' },
                     { markdown: '![Alt text](https://w3writelab.com/logo.png)\n*Captions are added automatically*' },
+                    { markdown: 'According to Section 36 of the Constitution.[^1]\n\n[^1]: *Constitution of the Federal Republic of Nigeria* (1999) s 36.' },
                   ].map((ex, i) => (
                     <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', paddingBottom: '24px', borderBottom: '1px solid #f1f5f9' }}>
                        <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '13px', whiteSpace: 'pre-wrap', color: '#475569' }}>

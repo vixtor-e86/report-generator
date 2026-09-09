@@ -23,7 +23,8 @@ import {
   LevelFormat,
   PageBreak,
   VerticalAlign,
-  ShadingType
+  ShadingType,
+  FootnoteReferenceRun
 } from 'docx';
 
 const ABSTRACT_PROMPT = "You are an academic engineering researcher. Generate a professional Abstract. Project Content: ";
@@ -61,22 +62,45 @@ function parseTechnicalText(text) {
 
 function parseInlineFormatting(text, fontSize = 24, isBold = false) {
   const processedText = parseTechnicalText(text);
-  const textRuns = [];
+  const rawRuns = [];
   let currentIndex = 0;
   const formatRegex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)/g;
   let match;
   while ((match = formatRegex.exec(processedText)) !== null) {
     if (match.index > currentIndex) {
-      textRuns.push(new TextRun({ text: processedText.substring(currentIndex, match.index), font: 'Times New Roman', size: fontSize, bold: isBold }));
+      rawRuns.push(new TextRun({ text: processedText.substring(currentIndex, match.index), font: 'Times New Roman', size: fontSize, bold: isBold }));
     }
-    if (match[2]) textRuns.push(new TextRun({ text: match[2], bold: true, font: 'Times New Roman', size: fontSize }));
-    else if (match[4]) textRuns.push(new TextRun({ text: match[4], italics: true, font: 'Times New Roman', size: fontSize, bold: isBold }));
+    if (match[2]) rawRuns.push(new TextRun({ text: match[2], bold: true, font: 'Times New Roman', size: fontSize }));
+    else if (match[4]) rawRuns.push(new TextRun({ text: match[4], italics: true, font: 'Times New Roman', size: fontSize, bold: isBold }));
     currentIndex = match.index + match[0].length;
   }
   if (currentIndex < processedText.length) {
-    textRuns.push(new TextRun({ text: processedText.substring(currentIndex), font: 'Times New Roman', size: fontSize, bold: isBold }));
+    rawRuns.push(new TextRun({ text: processedText.substring(currentIndex), font: 'Times New Roman', size: fontSize, bold: isBold }));
   }
-  return textRuns.length > 0 ? textRuns : [new TextRun({ text: processedText, font: 'Times New Roman', size: fontSize, bold: isBold })];
+  if (rawRuns.length === 0) {
+    rawRuns.push(new TextRun({ text: processedText, font: 'Times New Roman', size: fontSize, bold: isBold }));
+  }
+
+  // Expand any Footnote references [^1] into native FootnoteReferenceRun
+  const finalRuns = [];
+  for (const run of rawRuns) {
+    const textStr = run.text || '';
+    if (textStr.includes('[^')) {
+      const parts = textStr.split(/(\[\^\d+\])/g);
+      for (const part of parts) {
+        const fnMatch = part.match(/^\[\^(\d+)\]$/);
+        if (fnMatch) {
+          finalRuns.push(new FootnoteReferenceRun(Number(fnMatch[1])));
+        } else if (part) {
+          finalRuns.push(new TextRun({ text: part, font: 'Times New Roman', size: fontSize, bold: run.bold, italics: run.italics }));
+        }
+      }
+    } else {
+      finalRuns.push(run);
+    }
+  }
+
+  return finalRuns;
 }
 
 // --- DOCX PRELIMINARY PAGES HELPERS ---
@@ -343,16 +367,38 @@ export async function POST(request) {
       }
 
       // 5. Chapters
+      const docFootnotes = {};
+
       for (const ch of chapters) {
         const chapterChildren = [
           new Paragraph({ children: [new TextRun({ text: `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`, font: 'Times New Roman', size: 32, bold: true })], alignment: AlignmentType.CENTER, spacing: { before: 400, after: 400 } })
         ];
 
-        const contentBody = (ch.content || "").split(/### References|## References/i)[0];
+        const contentBody = (ch.content || "").split(/### References|## References|### Bibliography|## Bibliography/i)[0];
         const rawLines = contentBody.split('\n');
+
+        // Pre-scan chapter for footnote definitions [^1]: Text
+        for (const rLine of rawLines) {
+          const fnMatch = rLine.trim().match(/^\[\^(\d+)\]:\s*(.+)$/);
+          if (fnMatch) {
+            const id = Number(fnMatch[1]);
+            const text = fnMatch[2].trim();
+            docFootnotes[id] = {
+              children: [
+                new Paragraph({
+                  children: [new TextRun({ text, font: 'Times New Roman', size: 20 })],
+                  spacing: { after: 100 }
+                })
+              ]
+            };
+          }
+        }
+
         const filteredLines = rawLines.filter((line, index) => {
           const t = line.trim().toUpperCase();
           if (!t) return true;
+          // Skip footnote definitions from body text since Word places them in the page footer
+          if (/^\[\^(\d+)\]:/.test(line.trim())) return false;
           const isTitle = t === `CHAPTER ${ch.chapter_number}` || t === ch.title.toUpperCase() || t === `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`;
           if (index < 5 && isTitle) return false;
           if (line.startsWith('#')) {
@@ -418,7 +464,11 @@ export async function POST(request) {
         ] });
       }
 
-      finalBuffer = await Packer.toBuffer(new Document({ sections: docSections, numbering }));
+      finalBuffer = await Packer.toBuffer(new Document({ 
+        sections: docSections, 
+        numbering,
+        footnotes: Object.keys(docFootnotes).length > 0 ? docFootnotes : undefined 
+      }));
       contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     } else {
       const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });

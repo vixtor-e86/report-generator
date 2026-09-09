@@ -47,3 +47,16 @@ export function getPublicUrl(key) {
   const base = publicDomain.replace(/\/$/, '');
   return `${base}/${key}`;
 }
+
+export async function uploadFileToR2(key, bodyBuffer, contentType) {
+  const command = new PutObjectCommand({
+    Bucket: R2_BUCKET_NAME,
+    Key: key,
+    Body: bodyBuffer,
+    ContentType: contentType,
+  });
+
+  await r2Client.send(command);
+  const publicUrl = getPublicUrl(key);
+  return { key, publicUrl };
+}
