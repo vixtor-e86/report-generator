@@ -20,7 +20,7 @@ export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showPremiumAnnouncement, setShowPremiumAnnouncement] = useState(false);
+  const [showTemplateAnnouncement, setShowTemplateAnnouncement] = useState(false);
   const [trendingItems, setTrendingItems] = useState([
     { title: "Design & Construction of a Smart Solar Irrigation System", category: "Engineering", price: "₦15,000", downloads: "128", type: "project" },
     { title: "Implementation of an AI-Based E-Commerce Recommendation Engine", category: "Computer Science", price: "₦12,500", downloads: "94", type: "project" },
@@ -47,52 +47,48 @@ export default function Home() {
           .limit(3);
 
         let combined = [];
+        
         if (dbProjects && dbProjects.length > 0) {
           combined = [...combined, ...dbProjects.map(p => ({
             title: p.title,
-            price: `₦${Number(p.price).toLocaleString()}`,
-            category: p.faculty || 'Engineering',
-            created_at: p.created_at,
-            downloads: Math.floor(Math.random() * 50) + 80,
-            type: 'project'
+            category: p.faculty,
+            price: `₦${p.price.toLocaleString()}`,
+            downloads: Math.floor(Math.random() * 200) + 50,
+            type: "project"
           }))];
         }
+        
         if (dbEbooks && dbEbooks.length > 0) {
           combined = [...combined, ...dbEbooks.map(e => ({
             title: e.title,
-            price: `₦${Number(e.price).toLocaleString()}`,
-            category: e.category || 'Ebook',
-            created_at: e.created_at,
-            downloads: Math.floor(Math.random() * 30) + 40,
-            type: 'ebook'
+            category: e.category,
+            price: `₦${e.price.toLocaleString()}`,
+            downloads: Math.floor(Math.random() * 300) + 100,
+            type: "ebook"
           }))];
         }
 
         if (combined.length > 0) {
-          combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           setTrendingItems(combined.slice(0, 3));
         }
       } catch (err) {
-        console.error("Failed to fetch trending items:", err);
+        console.error("Failed to load trending items:", err);
       }
     };
+
     fetchTrendingItems();
   }, []);
 
   useEffect(() => {
-    // Check if announcement was already seen in this session
-    const hasSeenAnnouncement = sessionStorage.getItem('has_seen_premium_announcement');
-    if (!hasSeenAnnouncement) {
-      const timer = setTimeout(() => {
-        setShowPremiumAnnouncement(true);
-      }, 1500); // Show after 1.5s
-      return () => clearTimeout(timer);
-    }
+    // Show on every page load (resets on refresh)
+    const timer = setTimeout(() => {
+      setShowTemplateAnnouncement(true);
+    }, 1500); // Show after 1.5s
+    return () => clearTimeout(timer);
   }, []);
 
   const closeAnnouncement = () => {
-    setShowPremiumAnnouncement(false);
-    sessionStorage.setItem('has_seen_premium_announcement', 'true');
+    setShowTemplateAnnouncement(false);
   };
 
   useEffect(() => {
@@ -736,42 +732,27 @@ export default function Home() {
         onClose={() => setShowAuthModal(false)} 
       />
 
-      {/* Premium Announcement Modal */}
-      {showPremiumAnnouncement && (
+      {/* Template Rewards Announcement Modal */}
+      {showTemplateAnnouncement && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center border border-slate-100 animate-in zoom-in-95 duration-300">
             <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden">
-              <img src="/favicon.ico" alt="W3 WriteLab" className="w-12 h-12" />
+              <span className="text-4xl">🎁</span>
             </div>
             
-            <h3 className="text-2xl font-extrabold text-slate-900 mb-2">Premium is Ready!</h3>
+            <h3 className="text-2xl font-extrabold text-slate-900 mb-2">Get Paid for Templates!</h3>
             <p className="text-slate-600 mb-6 leading-relaxed">
-              Our most powerful research engine is now live. Experience superior AI, custom templates, and priority processing.
+              We now receive templates from users and give rewards! Submit your school's project templates to us. If we add it to our advanced system, you earn a <strong className="text-indigo-600">10% bonus</strong> every time a student uses it for a premium project!
             </p>
 
-            {/* YouTube Walkthrough Section */}
-            <div className="mb-8 group">
-              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-3">Watch Walkthrough Guide</p>
-              <a 
-                href="https://youtube.com/watch?v=KIfsDZbiMDo"
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="relative block aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl border-4 border-white transition-transform hover:scale-[1.02] active:scale-95"
-              >
-                <img 
-                  src="https://img.youtube.com/vi/KIfsDZbiMDo/maxresdefault.jpg" 
-                  alt="Tutorial Preview" 
-                  className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl group-hover:bg-red-500 transition-colors">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                  </div>
-                </div>
-                <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                  <p className="text-white text-xs font-bold">Mastering the 3 Packages • 60 mins Guide</p>
-                </div>
-              </a>
+            <div className="mb-8 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 text-left">
+              <p className="text-sm font-semibold text-slate-800 mb-2">Submit via:</p>
+              <div className="flex items-center gap-2 mb-2 text-sm text-slate-700">
+                <span>📧</span> <span className="font-medium">w3writelab@gmail.com</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-slate-700">
+                <span>💬</span> <span className="font-medium">08081471730 (WhatsApp)</span>
+              </div>
             </div>
             
             <button 
