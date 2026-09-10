@@ -123,16 +123,18 @@ export default function AdminUploadProjectPage() {
       
       if (!aiRes.ok) throw new Error(aiData.error || "AI Processing failed");
       
+      if (aiData.warnings?.abstract || aiData.warnings?.chapter1) {
+          toast.warning("AI refinement fell back to original text due to an issue (e.g. timeout). Uploading unrefined content.");
+      }
+
       setAiStep('Restructuring Chapter 1...');
-      processedAbstract = aiData.abstract;
-      processedChapter1 = aiData.chapter1;
+      processedAbstract = aiData.abstract || formData.abstract;
+      processedChapter1 = aiData.chapter1 || formData.chapter1;
       
     } catch (err) {
       console.error("AI Error:", err);
-      toast.error(err.message || "Something went wrong during AI analysis. Please try again later.");
-      setAiProcessing(false);
-      setIsSubmitting(false);
-      return;
+      toast.warning(err.message || "Something went wrong during AI analysis. Proceeding with raw text.");
+      // We no longer stop the upload completely on an AI network error, we just proceed with raw text.
     }
 
     setAiProcessing(false);

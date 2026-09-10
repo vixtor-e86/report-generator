@@ -2,12 +2,14 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+export const maxDuration = 60; // 60 seconds
+
 export async function GET(request) {
   try {
     // 1. Fetch User Profiles (Database data)
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('user_profiles')
-      .select('*')
+      .select('id, full_name, username, role, university_id, custom_institution, department, created_at')
       .order('created_at', { ascending: false });
 
     if (profilesError) throw profilesError;
@@ -17,11 +19,19 @@ export async function GET(request) {
       .from('universities')
       .select('id, name');
 
-    // 3. Fetch ALL Auth Users in parallel across pages (up to 15,000+ users)
+    // 3. Fetch ALL Auth Users in chunks across pages (up to 15,000+ users)
     const pageNumbers = Array.from({ length: 15 }, (_, i) => i + 1);
-    const authPages = await Promise.all(
-      pageNumbers.map(page => supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 }))
-    );
+    const authPages = [];
+    
+    // Chunk array into sizes of 3 to avoid Supabase rate limits on listUsers
+    const chunkSize = 3;
+    for (let i = 0; i < pageNumbers.length; i += chunkSize) {
+      const chunk = pageNumbers.slice(i, i + chunkSize);
+      const chunkRes = await Promise.all(
+        chunk.map(page => supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 }))
+      );
+      authPages.push(...chunkRes);
+    }
 
     const emailMap = new Map();
     for (const pageRes of authPages) {

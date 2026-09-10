@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { callAI } from '@/lib/aiProvider';
 
+export const maxDuration = 60; // 60 seconds
+
 export async function POST(request) {
   try {
     const { abstract, chapter1 } = await request.json();
@@ -17,6 +19,9 @@ export async function POST(request) {
         .replace(/\s*```$/i, '')
         .trim();
     };
+
+    let abstractWarning = null;
+    let chapter1Warning = null;
 
     // Parallel processing tasks
     const refineAbstractTask = async () => {
@@ -46,6 +51,7 @@ ${abstract}
         return cleanOutput(res?.content) || abstract;
       } catch (err) {
         console.warn('AI abstract refining warning (using fallback):', err.message);
+        abstractWarning = err.message;
         return abstract;
       }
     };
@@ -60,7 +66,7 @@ Your task is to refine and format the following CHAPTER 1 text into clean, struc
 RULES:
 1. Remove main title headers like "CHAPTER ONE", "CHAPTER 1", or "CHAPTER 1: INTRODUCTION".
 2. Format subsections cleanly with proper Markdown headings (e.g., ## 1.1 Background of the Study, ## 1.2 Statement of the Problem, ## 1.3 Objectives, etc.).
-3. Group sentences into well-structured, readable paragraphs. Break any large walls of text into readable paragraphs separated by double newlines (\\n\\n).
+3. Group sentences into well-structured, readable paragraphs. Break any large walls of text into readable paragraphs separated by double newlines (\n\n).
 4. Use clean bullet points (- ) or numbered lists for research questions, hypotheses, or objectives where appropriate.
 5. Fix broken hyphenations or irregular line breaks caused by copy-pasting from PDF/DOCX.
 6. Preserve all technical substance, references, and core ideas.
@@ -79,6 +85,7 @@ ${chapter1}
         return cleanOutput(res?.content) || chapter1;
       } catch (err) {
         console.warn('AI chapter 1 refining warning (using fallback):', err.message);
+        chapter1Warning = err.message;
         return chapter1;
       }
     };
@@ -91,7 +98,11 @@ ${chapter1}
     return NextResponse.json({
       success: true,
       abstract: refinedAbstract,
-      chapter1: refinedChapter1
+      chapter1: refinedChapter1,
+      warnings: {
+        abstract: abstractWarning,
+        chapter1: chapter1Warning
+      }
     });
 
   } catch (error) {

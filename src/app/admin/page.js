@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import MonthlyRevenueSection from '@/components/admin/MonthlyRevenueSection';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -13,6 +14,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   const [userRole, setUserRole] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
     async function fetchStats() {
@@ -37,6 +39,7 @@ export default function AdminDashboard() {
         }
 
         setUserRole(profile?.role);
+        setCurrentUserId(user.id);
 
         // Now, fetch the protected stats from our API route
         const response = await fetch('/api/admin/stats');
@@ -140,6 +143,9 @@ export default function AdminDashboard() {
           <p className="text-xs text-indigo-200 mt-3 text-center">Switch to user view</p>
         </div>
       </div>
+
+      {/* Monthly Revenue & Net Profit Accounting Section */}
+      <MonthlyRevenueSection userRole={userRole} currentUserId={currentUserId} />
 
       {/* Recent Transactions */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
