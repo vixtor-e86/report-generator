@@ -35,6 +35,41 @@ export async function POST(request) {
       );
     }
 
+    // Process Template Referral Bonus
+    try {
+      const { data: projData } = await supabaseAdmin
+        .from('premium_projects')
+        .select('template_id, amount_paid')
+        .eq('id', projectId)
+        .single();
+        
+      if (projData && projData.template_id && projData.amount_paid > 0) {
+        const { data: customTemplate } = await supabaseAdmin
+          .from('custom_templates')
+          .select('source_template_id')
+          .eq('id', projData.template_id)
+          .single();
+          
+        if (customTemplate && customTemplate.source_template_id) {
+          const { data: sourceTpl } = await supabaseAdmin
+            .from('templates')
+            .select('referral_id')
+            .eq('id', customTemplate.source_template_id)
+            .single();
+            
+          if (sourceTpl && sourceTpl.referral_id) {
+            await supabaseAdmin.rpc('process_template_referral', {
+              p_referral_code: sourceTpl.referral_id,
+              p_amount: projData.amount_paid,
+              p_transaction_id: transactionId
+            });
+          }
+        }
+      }
+    } catch (refErr) {
+      console.error('Template referral processing error:', refErr);
+    }
+
     return NextResponse.json({
       success: true,
       transaction: updated

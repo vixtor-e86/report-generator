@@ -78,7 +78,7 @@ export async function POST(request) {
       placeholder: `{{figure${chapterNumber}.${index + 1}}}`
     }));
 
-    const { data: template } = await supabase.from('templates').select('structure, faculty').eq('id', project.template_id).single();
+    const { data: template } = await supabase.from('templates').select('structure, faculty, ai_instruction').eq('id', project.template_id).single();
     
     const { data: existingReferences } = await supabase
       .from('project_references')
@@ -124,7 +124,8 @@ export async function POST(request) {
       referenceStyle: project.reference_style || 'apa',
       existingReferences: finalReferencesList,
       useManualObjectives: project.use_manual_objectives,
-      manualObjectives: project.manual_objectives || []
+      manualObjectives: project.manual_objectives || [],
+      aiInstruction: template?.ai_instruction
     });
 
     const startTime = Date.now();

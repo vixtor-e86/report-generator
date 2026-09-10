@@ -123,7 +123,7 @@ export async function POST(request) {
     // 9. Fetch template structure
     const { data: template } = await supabase
       .from('templates')
-      .select('structure, faculty')
+      .select('structure, faculty, ai_instruction')
       .eq('id', project.template_id)
       .single();
 
@@ -152,7 +152,8 @@ export async function POST(request) {
       referenceStyle: project.reference_style || 'apa',
       existingReferences: existingReferences || [],
       useManualObjectives: project.use_manual_objectives,
-      manualObjectives: project.manual_objectives || []
+      manualObjectives: project.manual_objectives || [],
+      aiInstruction: template.ai_instruction
     });
 
     // 11. Store custom instruction if provided

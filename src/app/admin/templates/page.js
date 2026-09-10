@@ -34,6 +34,11 @@ export default function TemplatesPage() {
 
   const handleSave = async () => {
     try {
+      if (!editingTemplate.school || !editingTemplate.faculty || !editingTemplate.department) {
+        alert('School, Faculty, and Department are required for advanced templates.');
+        return;
+      }
+
       // Validate JSON
       let structure;
       try {
@@ -43,25 +48,45 @@ export default function TemplatesPage() {
         return;
       }
 
-      const response = await fetch('/api/admin/templates', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: editingTemplate.id,
+      const payload = {
           name: editingTemplate.name,
           description: editingTemplate.description,
           structure: structure,
           faculty: editingTemplate.faculty,
-          // Department field placeholder (requires DB column)
-          // department: editingTemplate.department 
-        })
-      });
+          is_advanced: editingTemplate.is_advanced,
+          school: editingTemplate.school,
+          department: editingTemplate.department,
+          ai_instruction: editingTemplate.ai_instruction,
+          referral_id: editingTemplate.referral_id
+      };
+
+      let response;
+      if (editingTemplate.id) {
+        response = await fetch('/api/admin/templates', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editingTemplate.id,
+            ...payload
+          })
+        });
+      } else {
+        response = await fetch('/api/admin/templates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
 
       // Update list
-      setTemplates(templates.map(t => t.id === data.id ? data : t));
+      if (editingTemplate.id) {
+        setTemplates(templates.map(t => t.id === data.id ? data : t));
+      } else {
+        setTemplates([...templates, data]);
+      }
       setEditingTemplate(null);
       alert('Template updated successfully!');
 
@@ -75,9 +100,29 @@ export default function TemplatesPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Template Management</h1>
-        <p className="text-slate-500 mt-1">Modify report structures and assign them to faculties.</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Template Management</h1>
+          <p className="text-slate-500 mt-1">Modify report structures and assign them to faculties.</p>
+        </div>
+        <button 
+          onClick={() => {
+            setEditingTemplate({
+              name: '',
+              description: '',
+              faculty: '',
+              school: '',
+              department: '',
+              is_advanced: true,
+              ai_instruction: '',
+              structureString: '{\n  "chapters": []\n}'
+            });
+            setJsonError(null);
+          }}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition"
+        >
+          + Add Advanced Template
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -135,15 +180,15 @@ export default function TemplatesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Faculty Assignment</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Faculty *</label>
                   <input
                     type="text"
                     value={editingTemplate.faculty || ''}
                     onChange={e => setEditingTemplate({...editingTemplate, faculty: e.target.value})}
                     className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900"
                     placeholder="e.g. Engineering"
+                    required
                   />
-                  <p className="text-xs text-slate-500 mt-1">Leave empty for all faculties</p>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
@@ -153,6 +198,52 @@ export default function TemplatesPage() {
                     className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900"
                     rows={2}
                   />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">School *</label>
+                  <input
+                    type="text"
+                    value={editingTemplate.school || ''}
+                    onChange={e => setEditingTemplate({...editingTemplate, school: e.target.value})}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900"
+                    placeholder="e.g. Eksu"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Department *</label>
+                  <input
+                    type="text"
+                    value={editingTemplate.department || ''}
+                    onChange={e => setEditingTemplate({...editingTemplate, department: e.target.value})}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900"
+                    placeholder="e.g. Computer Engineering"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">AI Instructions</label>
+                  <textarea
+                    value={editingTemplate.ai_instruction || ''}
+                    onChange={e => setEditingTemplate({...editingTemplate, ai_instruction: e.target.value})}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900"
+                    rows={3}
+                    placeholder="e.g. Literature review should be in tabular form..."
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Instructions to pass to the AI when generating content using this template.</p>
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Template Provider Referral ID (Optional)</label>
+                  <input
+                    type="text"
+                    value={editingTemplate.referral_id || ''}
+                    onChange={e => setEditingTemplate({...editingTemplate, referral_id: e.target.value})}
+                    className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900"
+                    placeholder="e.g. A1B2C3D4"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">If a student provided this template, enter their referral code here. They will earn 10% commission each time a premium project uses this template.</p>
                 </div>
               </div>
 

@@ -200,7 +200,7 @@ export default function ReferralFAB({ userId }) {
                      {stats.role === 'vip' ? 'VIP Affiliate' : 'Standard Affiliate'}
                    </span>
                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                     {stats.role === 'vip' ? '15% Commission' : '10% Commission'}
+                     {stats.role === 'vip' ? '15% Commission' : '5% Commission'}
                    </span>
                 </div>
               </div>
@@ -226,7 +226,10 @@ export default function ReferralFAB({ userId }) {
                       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                     </div>
                     <p className="text-sm text-slate-600 leading-relaxed">
-                      Share your link and earn <span className="font-bold text-slate-900">{stats.role === 'vip' ? '15%' : '10%'}</span> of every purchase your friends make.
+                      Share your link and earn <span className="font-bold text-slate-900">{stats.role === 'vip' ? '15%' : '5%'}</span> of every purchase your friends make.
+                    </p>
+                    <p className="text-sm text-indigo-600 font-medium leading-relaxed mt-2 bg-indigo-50 p-2 rounded">
+                      🚀 <strong>Template Bonus:</strong> Provide us with your school's templates! If we add it to the system, you get an extra <strong>10% bonus</strong> every time a student uses your template on a premium project!
                     </p>
                     <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-full">
                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Referrals:</span>

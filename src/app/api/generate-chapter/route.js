@@ -92,7 +92,8 @@ export async function POST(request) {
       description: project.description,
       context,
       referenceStyle: project.reference_style || 'apa',
-      images: projectImages || []
+      images: projectImages || [],
+      aiInstruction: template?.ai_instruction
     });
 
     // Generate using DeepSeek (via callAI which defaults to DeepSeek)
@@ -162,7 +163,8 @@ function createFreePrompt(data) {
     description,
     context,
     referenceStyle,
-    images = []
+    images = [],
+    aiInstruction = ''
   } = data;
 
   // ✅ Image Placeholder Instructions
@@ -222,6 +224,8 @@ function createFreePrompt(data) {
 - Description: ${description}
 
 ${imageInstructions}
+
+${aiInstruction && aiInstruction.trim() ? `**ADVANCED TEMPLATE INSTRUCTIONS (CRITICAL PRIORITY):**\n${aiInstruction.trim()}\n` : ''}
 
 ${context}
 

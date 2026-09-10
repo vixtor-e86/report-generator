@@ -18,6 +18,24 @@ export async function GET(request) {
   }
 }
 
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const { data, error } = await supabaseAdmin
+      .from('templates')
+      .insert([body])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Create template error:', error);
+    return NextResponse.json({ error: 'Failed to create template' }, { status: 500 });
+  }
+}
+
 export async function PUT(request) {
   try {
     const body = await request.json();

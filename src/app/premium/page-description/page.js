@@ -166,7 +166,11 @@ function ProjectDescriptionContent() {
         let sourceTemplate = null;
         let finalStructure = { chapters: [] };
 
-        if (formData.templateType === 'custom') {
+        if (searchParams.get('templateId')) {
+          const { data: specificTemplate } = await supabase.from('templates').select('*').eq('id', searchParams.get('templateId')).single();
+          if (specificTemplate) sourceTemplate = specificTemplate;
+          if (sourceTemplate) finalStructure = sourceTemplate.structure;
+        } else if (formData.templateType === 'custom') {
           const stored = sessionStorage.getItem('custom_template_structure');
           if (stored) finalStructure = JSON.parse(stored);
         } else {

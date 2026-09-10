@@ -115,7 +115,8 @@ function getFacultySpecificPrompt(chapterNumber, data) {
     referenceStyle = 'apa', 
     existingReferences = [], 
     manualObjectives = [],
-    customInstruction = ''
+    customInstruction = '',
+    aiInstruction = ''
   } = data;
 
   const chapterInfo = templateStructure?.chapters?.find(ch => ch.number === chapterNumber);
@@ -139,7 +140,11 @@ function getFacultySpecificPrompt(chapterNumber, data) {
 
   let customInstructionText = '';
   if (customInstruction && customInstruction.trim()) {
-    customInstructionText = `\n\n### USER MODIFICATIONS / SPECIAL INSTRUCTIONS (HIGH PRIORITY):\n${customInstruction.trim()}\n`;
+    customInstructionText += `\n\n### USER MODIFICATIONS / SPECIAL INSTRUCTIONS (HIGH PRIORITY):\n${customInstruction.trim()}\n`;
+  }
+  
+  if (aiInstruction && aiInstruction.trim()) {
+    customInstructionText += `\n\n### ADVANCED TEMPLATE INSTRUCTIONS (CRITICAL PRIORITY):\n${aiInstruction.trim()}\n`;
   }
 
   const totalChapters = templateStructure?.chapters?.length || 5;

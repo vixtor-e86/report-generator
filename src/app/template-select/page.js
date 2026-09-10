@@ -51,7 +51,8 @@ function TemplateSelectContent() {
         // Fetch templates
         const { data: templatesData } = await supabase
           .from('templates')
-          .select('*');
+          .select('*')
+          .or('is_advanced.eq.false,is_advanced.is.null');
         
         if (templatesData) {
           setTemplates(templatesData);
@@ -585,7 +586,7 @@ function TemplateSelectContent() {
             </div>
 
             {/* Faculty Info - Mobile Responsive */}
-            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 sm:p-5 lg:p-6 max-w-3xl mx-auto">
+            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 sm:p-5 lg:p-6 max-w-3xl mx-auto mb-8">
               <div className="flex items-start gap-3">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -599,6 +600,17 @@ function TemplateSelectContent() {
                   </p>
                 </div>
               </div>
+            </div>
+            
+            {/* Advanced Template Selection Link */}
+            <div className="text-center pb-8">
+              <p className="text-gray-600 mb-3">Didn't find your template?</p>
+              <Link 
+                href="/template-select/advanced" 
+                className="inline-block bg-white text-indigo-600 border border-indigo-200 px-6 py-3 rounded-lg font-semibold hover:bg-indigo-50 transition shadow-sm"
+              >
+                Go to Advanced Template Selection
+              </Link>
             </div>
           </>
         )}
