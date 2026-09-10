@@ -186,11 +186,30 @@ export async function POST(request) {
     // 13. Increment version number
     const newVersion = (chapter.version || 1) + 1;
 
+    let finalContent = aiResult.content;
+
+    // 13.5 Extract references if enabled
+    if (project.reference_style && project.reference_style !== 'none') {
+      try {
+        const { extractFullReferences, storeReferences } = await import('@/lib/referenceExtractor');
+        const extractedRefs = extractFullReferences(aiResult.content, project.reference_style, chapterNumber);
+        if (extractedRefs.length > 0) {
+          await storeReferences(supabase, projectId, extractedRefs, chapterNumber);
+        }
+      } catch (e) { console.error('Ref processing error:', e); }
+    }
+
+    // Strip REFERENCES from all but the last chapter
+    const totalChapters = template?.structure?.chapters?.length || 5;
+    if (chapterNumber < totalChapters) {
+       finalContent = finalContent.replace(/\n*##\s*(?:REFERENCES|BIBLIOGRAPHY|TABLE OF AUTHORITIES)[\s\S]*?(?=\n##|$)/i, '');
+    }
+
     // 14. Update chapter with regenerated content
     const { error: updateError } = await supabase
       .from('standard_chapters')
       .update({
-        content: aiResult.content,
+        content: finalContent,
         status: 'draft',
         version: newVersion,
         regeneration_count: (chapter.regeneration_count || 0) + 1,
@@ -210,17 +229,6 @@ export async function POST(request) {
         { error: 'Failed to save regenerated content' },
         { status: 500 }
       );
-    }
-
-    // 14.5 Extract references if enabled
-    if (project.reference_style && project.reference_style !== 'none') {
-      try {
-        const { extractFullReferences, storeReferences } = await import('@/lib/referenceExtractor');
-        const extractedRefs = extractFullReferences(aiResult.content, project.reference_style, chapterNumber);
-        if (extractedRefs.length > 0) {
-          await storeReferences(supabase, projectId, extractedRefs, chapterNumber);
-        }
-      } catch (e) { console.error('Ref processing error:', e); }
     }
 
     // 15. Update project tokens_used (only on valid output)

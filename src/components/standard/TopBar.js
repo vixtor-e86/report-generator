@@ -157,10 +157,17 @@ export default function TopBar({
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 </button>
 
-                <button onClick={handleExportDOCX} disabled={exporting} className="hidden sm:flex bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg items-center gap-2">
-                  {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white" /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
-                  Export
-                </button>
+                {project?.tier === 'free' ? (
+                  <button onClick={handlePrintFull} className="hidden sm:flex bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg items-center gap-2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Export PDF
+                  </button>
+                ) : (
+                  <button onClick={handleExportDOCX} disabled={exporting} className="hidden sm:flex bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg items-center gap-2">
+                    {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white" /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
+                    Export DOCX
+                  </button>
+                )}
 
                 {/* Mobile Menu Button */}
                 <div className="relative lg:hidden">
@@ -208,10 +215,17 @@ export default function TopBar({
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                           Full Report
                         </button>
-                        <button onClick={handleExportDOCX} disabled={exporting} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-900">
-                          {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-slate-200 border-t-slate-900" /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
-                          Export DOCX
-                        </button>
+                        {project?.tier === 'free' ? (
+                          <button onClick={handlePrintFull} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-900">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Export PDF
+                          </button>
+                        ) : (
+                          <button onClick={handleExportDOCX} disabled={exporting} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-900">
+                            {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-slate-200 border-t-slate-900" /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
+                            Export DOCX
+                          </button>
+                        )}
                       </div>
                     </>
                   )}

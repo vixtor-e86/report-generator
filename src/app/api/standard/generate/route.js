@@ -139,18 +139,7 @@ export async function POST(request) {
 
     const durationSeconds = Math.round((Date.now() - startTime) / 1000);
 
-    // Save generated chapter to database
-    await supabase.from('standard_chapters').update({
-      content: aiResult.content,
-      status: 'draft',
-      version: (chapter.version || 0) + 1,
-      ai_model_used: aiResult.model,
-      tokens_input: aiResult.tokensUsed?.input || 0,
-      tokens_output: aiResult.tokensUsed?.output || 0,
-      generation_time_seconds: durationSeconds,
-      generated_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }).eq('id', chapter.id);
+    let finalContent = aiResult.content;
 
     if (project.reference_style && project.reference_style !== 'none') {
       try {
@@ -161,6 +150,25 @@ export async function POST(request) {
         }
       } catch (e) { console.error('Ref processing error:', e); }
     }
+
+    // Strip REFERENCES from all but the last chapter so it doesn't bunch up at the end of each chapter
+    const totalChapters = template?.structure?.chapters?.length || 5;
+    if (chapterNumber < totalChapters) {
+       finalContent = finalContent.replace(/\n*##\s*(?:REFERENCES|BIBLIOGRAPHY|TABLE OF AUTHORITIES)[\s\S]*?(?=\n##|$)/i, '');
+    }
+
+    // Save generated chapter to database
+    await supabase.from('standard_chapters').update({
+      content: finalContent,
+      status: 'draft',
+      version: (chapter.version || 0) + 1,
+      ai_model_used: aiResult.model,
+      tokens_input: aiResult.tokensUsed?.input || 0,
+      tokens_output: aiResult.tokensUsed?.output || 0,
+      generation_time_seconds: durationSeconds,
+      generated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }).eq('id', chapter.id);
 
     // Only deduct tokens when content is successfully saved
     const tokensUsedToAdd = aiResult.tokensUsed?.total || 0;

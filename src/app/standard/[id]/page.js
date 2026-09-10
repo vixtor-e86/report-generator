@@ -222,18 +222,28 @@ export default function StandardWorkspace({ params }) {
     }
   };
 
-  // ✅ NEW: Handle print current chapter
+  const [isPrintingFull, setIsPrintingFull] = useState(false);
+
+  // ✅ Handle print current chapter
   const handlePrintCurrentChapter = () => {
-    // Hide sidebar temporarily
     const wasOpen = sidebarOpen;
     setSidebarOpen(false);
-    
-    // Small delay to let UI update
     setTimeout(() => {
       window.print();
-      // Restore sidebar state
       setSidebarOpen(wasOpen);
     }, 100);
+  };
+
+  // ✅ Handle print FULL report (Export PDF)
+  const handlePrintFullReport = () => {
+    const wasOpen = sidebarOpen;
+    setSidebarOpen(false);
+    setIsPrintingFull(true);
+    setTimeout(() => {
+      window.print();
+      setIsPrintingFull(false);
+      setSidebarOpen(wasOpen);
+    }, 300); // Wait for all chapters to render
   };
 
   // ✅ NEW: Handle preview before generate

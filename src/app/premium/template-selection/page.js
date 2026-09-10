@@ -34,7 +34,7 @@ export default function TemplateSelection() {
       id: '5-chapter',
       title: '5-Chapter Project',
       description: 'Standard undergraduate project structure',
-      icon: '📘',
+      icon: '??',
       color: 'blue',
       action: () => setActiveModal('faculty')
     },
@@ -42,15 +42,23 @@ export default function TemplateSelection() {
       id: 'thesis',
       title: 'Thesis (6 Chapters)',
       description: 'Postgraduate research thesis',
-      icon: '🎓',
+      icon: '??',
       color: 'purple',
       action: () => setActiveModal('department')
+    },
+    {
+      id: 'advanced',
+      title: 'Advanced Template',
+      description: 'Exclusive templates added by users and admins',
+      icon: '🚀',
+      color: 'indigo',
+      action: () => router.push('/template-select/advanced')
     },
     {
       id: 'custom',
       title: 'Custom Template',
       description: 'Build or upload your own structure',
-      icon: '⚡',
+      icon: '?',
       color: 'orange',
       action: () => setActiveModal('custom')
     },
@@ -189,3 +197,4 @@ export default function TemplateSelection() {
     </div>
   );
 }
+
