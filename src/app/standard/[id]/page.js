@@ -208,7 +208,8 @@ export default function StandardWorkspace({ params }) {
         .from('standard_projects')
         .update({
           title: updates.title,
-          description: updates.description
+          description: updates.description,
+          reference_style: updates.reference_style
         })
         .eq('id', project.id);
 

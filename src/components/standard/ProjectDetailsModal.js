@@ -1,9 +1,11 @@
 "use client";
 import { useState } from 'react';
+import { getReferenceStyleOptions } from '@/lib/referenceStyles';
 
 export default function ProjectDetailsModal({ isOpen, onClose, onSubmit, project }) {
   const [title, setTitle] = useState(project?.title || '');
   const [description, setDescription] = useState(project?.description || '');
+  const [referenceStyle, setReferenceStyle] = useState(project?.reference_style || 'apa');
   const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
@@ -13,7 +15,7 @@ export default function ProjectDetailsModal({ isOpen, onClose, onSubmit, project
     if (!title.trim() || !description.trim()) return;
     
     setSubmitting(true);
-    await onSubmit({ title, description });
+    await onSubmit({ title, description, reference_style: referenceStyle });
     setSubmitting(false);
     onClose();
   };
@@ -64,6 +66,23 @@ export default function ProjectDetailsModal({ isOpen, onClose, onSubmit, project
               className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 outline-none font-medium text-slate-700 leading-relaxed resize-none"
               required
             />
+          </div>
+
+          
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Reference / Citation Style</label>
+            <select
+              value={referenceStyle}
+              onChange={(e) => setReferenceStyle(e.target.value)}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 outline-none font-bold text-slate-900 appearance-none cursor-pointer"
+              required
+            >
+              {getReferenceStyleOptions().map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.icon} {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex gap-4 pt-4">

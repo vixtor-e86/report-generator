@@ -6,10 +6,23 @@ export default function TemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [jsonError, setJsonError] = useState(null);
+  const [universities, setUniversities] = useState([]);
 
   useEffect(() => {
     fetchTemplates();
+    fetchUniversities();
   }, []);
+
+    const fetchUniversities = async () => {
+    try {
+      const response = await fetch('/api/universities');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      setUniversities(data || []);
+    } catch (error) {
+      console.error('Error fetching universities:', error);
+    }
+  };
 
   const fetchTemplates = async () => {
     try {
@@ -228,13 +241,19 @@ export default function TemplatesPage() {
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1.5">School *</label>
                       <input
-                        type="text"
-                        value={editingTemplate.school || ''}
-                        onChange={e => setEditingTemplate({...editingTemplate, school: e.target.value})}
-                        className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900"
-                        placeholder="e.g. Eksu"
-                        required
-                      />
+                          type="text"
+                          list="school-options"
+                          value={editingTemplate.school || ''}
+                          onChange={e => setEditingTemplate({...editingTemplate, school: e.target.value})}
+                          className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900"
+                          placeholder="Search or type school name (e.g. Eksu)"
+                          required
+                        />
+                        <datalist id="school-options">
+                          {universities.map(uni => (
+                            <option key={uni.id || uni.name} value={uni.name} />
+                          ))}
+                        </datalist>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1.5">Faculty *</label>
