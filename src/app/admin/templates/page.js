@@ -27,7 +27,8 @@ export default function TemplatesPage() {
   const handleEdit = (template) => {
     setEditingTemplate({
       ...template,
-      structureString: JSON.stringify(template.structure, null, 2)
+      structureString: JSON.stringify(template.structure, null, 2),
+      advancedChapters: template.structure?.chapters || [{ title: '', sections: [''] }]
     });
     setJsonError(null);
   };
@@ -41,31 +42,44 @@ export default function TemplatesPage() {
         }
       }
 
-      // Validate JSON
+      // Validate JSON or build from visual UI
       let structure;
-      try {
-        structure = JSON.parse(editingTemplate.structureString);
-      } catch (e) {
-        setJsonError('Invalid JSON format');
-        return;
+      if (editingTemplate.is_advanced) {
+        structure = {
+          chapters: editingTemplate.advancedChapters.map((ch, idx) => ({
+            id: idx + 1,
+            number: idx + 1,
+            chapter: idx + 1,
+            title: ch.title.trim() || `Chapter ${idx + 1}`,
+            sections: ch.sections.filter(s => s && s.trim())
+          }))
+        };
+      } else {
+        try {
+          structure = JSON.parse(editingTemplate.structureString);
+        } catch (e) {
+          setJsonError('Invalid JSON format');
+          return;
+        }
       }
 
       const payload = {
-          name: editingTemplate.is_advanced ? editingTemplate.department : editingTemplate.name,
-          description: editingTemplate.is_advanced ? '' : (editingTemplate.description || ''),
-          template_type: editingTemplate.template_type,
-          structure: structure,
-          is_advanced: editingTemplate.is_advanced,
-          school: editingTemplate.school,
-          department: editingTemplate.department,
-          faculty: editingTemplate.faculty,
-          ai_instruction: editingTemplate.ai_instruction,
-          referral_id: editingTemplate.referral_id
+        id: editingTemplate.id,
+        name: editingTemplate.is_advanced ? editingTemplate.department : editingTemplate.name,
+        description: editingTemplate.is_advanced ? '' : (editingTemplate.description || ''),
+        template_type: editingTemplate.template_type,
+        structure: structure,
+        is_advanced: editingTemplate.is_advanced,
+        school: editingTemplate.school,
+        department: editingTemplate.department,
+        faculty: editingTemplate.faculty,
+        ai_instruction: editingTemplate.ai_instruction,
+        referral_id: editingTemplate.referral_id
       };
 
       let response;
       if (editingTemplate.id) {
-        response = await fetch(`/api/admin/templates/${editingTemplate.id}`, {
+        response = await fetch('/api/admin/templates', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -111,7 +125,8 @@ export default function TemplatesPage() {
               is_advanced: true,
               ai_instruction: '',
               referral_id: '',
-              structureString: '{\n  "chapters": []\n}'
+              structureString: '{\n  "chapters": []\n}',
+              advancedChapters: [{ title: '', sections: [''] }]
             });
             setJsonError(null);
           }}
@@ -275,22 +290,104 @@ export default function TemplatesPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Structure (JSON) 
-                  <span className="text-slate-400 font-normal ml-2 text-xs uppercase tracking-wide">Advanced Editor</span>
+                  Structure {editingTemplate.is_advanced ? '(Visual Builder)' : '(JSON)'}
+                  {!editingTemplate.is_advanced && <span className="text-slate-400 font-normal ml-2 text-xs uppercase tracking-wide">Advanced Editor</span>}
                 </label>
-                <div className="relative group">
-                  <textarea
-                    value={editingTemplate.structureString}
-                    onChange={e => setEditingTemplate({...editingTemplate, structureString: e.target.value})}
-                    className={`w-full border rounded-lg p-4 font-mono text-sm font-medium h-96 bg-slate-900 text-green-400 border-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none shadow-inner ${jsonError ? 'border-red-500 focus:ring-red-500' : ''}`}
-                    style={{ lineHeight: '1.6' }}
-                  />
-                  {jsonError && (
-                    <div className="absolute bottom-4 right-4 bg-red-100 text-red-700 px-3 py-1 rounded text-sm font-medium">
-                      {jsonError}
-                    </div>
-                  )}
-                </div>
+                
+                {!editingTemplate.is_advanced ? (
+                  <div className="relative group">
+                    <textarea
+                      value={editingTemplate.structureString}
+                      onChange={e => setEditingTemplate({...editingTemplate, structureString: e.target.value})}
+                      className={`w-full border rounded-lg p-4 font-mono text-sm font-medium h-96 bg-slate-900 text-green-400 border-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none shadow-inner ${jsonError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                      style={{ lineHeight: '1.6' }}
+                    />
+                    {jsonError && (
+                      <div className="absolute bottom-4 right-4 bg-red-100 text-red-700 px-3 py-1 rounded text-sm font-medium">
+                        {jsonError}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    {editingTemplate.advancedChapters?.map((chapter, chIndex) => (
+                      <div key={chIndex} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div className="flex justify-between items-center mb-3">
+                          <input
+                            type="text"
+                            placeholder={`Chapter ${chIndex + 1} Title`}
+                            value={chapter.title}
+                            onChange={(e) => {
+                              const newCh = [...editingTemplate.advancedChapters];
+                              newCh[chIndex].title = e.target.value;
+                              setEditingTemplate({...editingTemplate, advancedChapters: newCh});
+                            }}
+                            className="w-full font-bold text-slate-800 border-b border-transparent focus:border-indigo-500 focus:outline-none p-1 text-lg"
+                          />
+                          {editingTemplate.advancedChapters.length > 1 && (
+                            <button 
+                              onClick={() => {
+                                setEditingTemplate({...editingTemplate, advancedChapters: editingTemplate.advancedChapters.filter((_, i) => i !== chIndex)});
+                              }}
+                              className="text-red-500 hover:text-red-700 ml-4 p-1"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2 pl-4 border-l-2 border-indigo-100 mt-3">
+                          {chapter.sections.map((section, secIndex) => (
+                            <div key={secIndex} className="flex items-center gap-3">
+                              <span className="text-slate-400 font-mono text-sm w-8">{chIndex + 1}.{secIndex + 1}</span>
+                              <input
+                                type="text"
+                                placeholder="Section title"
+                                value={section}
+                                onChange={(e) => {
+                                  const newCh = [...editingTemplate.advancedChapters];
+                                  newCh[chIndex].sections[secIndex] = e.target.value;
+                                  setEditingTemplate({...editingTemplate, advancedChapters: newCh});
+                                }}
+                                className="flex-1 bg-slate-50 border border-slate-200 rounded p-1.5 focus:ring-1 focus:ring-indigo-500 outline-none text-sm"
+                              />
+                              {chapter.sections.length > 1 && (
+                                <button 
+                                  onClick={() => {
+                                    const newCh = [...editingTemplate.advancedChapters];
+                                    newCh[chIndex].sections = newCh[chIndex].sections.filter((_, i) => i !== secIndex);
+                                    setEditingTemplate({...editingTemplate, advancedChapters: newCh});
+                                  }}
+                                  className="text-slate-400 hover:text-red-500"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          <button 
+                            onClick={() => {
+                              const newCh = [...editingTemplate.advancedChapters];
+                              newCh[chIndex].sections.push('');
+                              setEditingTemplate({...editingTemplate, advancedChapters: newCh});
+                            }}
+                            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider mt-2 flex items-center gap-1"
+                          >
+                            + Add Section
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button 
+                      onClick={() => {
+                        setEditingTemplate({...editingTemplate, advancedChapters: [...editingTemplate.advancedChapters, { title: '', sections: [''] }]});
+                      }}
+                      className="w-full py-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 font-bold hover:border-indigo-500 hover:text-indigo-600 transition flex justify-center items-center gap-2"
+                    >
+                      + Add Chapter
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

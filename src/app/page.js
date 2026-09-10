@@ -20,7 +20,7 @@ export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showTemplateAnnouncement, setShowTemplateAnnouncement] = useState(false);
+  const [showPremiumAnnouncement, setShowPremiumAnnouncement] = useState(false);
   const [trendingItems, setTrendingItems] = useState([
     { title: "Design & Construction of a Smart Solar Irrigation System", category: "Engineering", price: "₦15,000", downloads: "128", type: "project" },
     { title: "Implementation of an AI-Based E-Commerce Recommendation Engine", category: "Computer Science", price: "₦12,500", downloads: "94", type: "project" },
@@ -684,7 +684,7 @@ export default function Home() {
               <div className="space-y-4 text-xs">
                 <div className="flex items-center gap-3">
                   <svg className="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                  <a href="mailto:w3writelab@gmail.com" className="hover:text-white transition-colors">w3writelab@gmail.com</a>
+                  <a href="mailto:w33writelab@gmail.com" className="hover:text-white transition-colors">w33writelab@gmail.com</a>
                 </div>
               </div>
             </div>
@@ -732,34 +732,46 @@ export default function Home() {
         onClose={() => setShowAuthModal(false)} 
       />
 
-      {/* Template Rewards Announcement Modal */}
-      {showTemplateAnnouncement && (
+      {/* Premium Announcement Modal */}
+      {showPremiumAnnouncement && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center border border-slate-100 animate-in zoom-in-95 duration-300">
             <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden">
-              <span className="text-4xl">🎁</span>
+              <img src="/favicon.ico" alt="W3 WriteLab" className="w-12 h-12" />
             </div>
             
-            <h3 className="text-2xl font-extrabold text-slate-900 mb-2">Get Paid for Templates!</h3>
+            <h3 className="text-2xl font-extrabold text-slate-900 mb-2">Premium is Ready!</h3>
             <p className="text-slate-600 mb-6 leading-relaxed">
-              We now receive templates from users and give rewards! Submit your school's project templates to us. If we add it to our advanced system, you earn a <strong className="text-indigo-600">10% bonus</strong> every time a student uses it for a premium project!
+              Our most powerful research engine is now live. Experience superior AI, custom templates, and priority processing.
             </p>
 
-            <div className="mb-8 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 text-left">
-              <p className="text-sm font-semibold text-slate-800 mb-2">Submit via:</p>
-              <div className="flex items-center gap-2 mb-2 text-sm text-slate-700">
-                <span>📧</span> <span className="font-medium">w3writelab@gmail.com</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-slate-700">
-                <span>💬</span> <span className="font-medium">08081471730 (WhatsApp)</span>
-              </div>
+            {/* YouTube Walkthrough Section */}
+            <div className="mb-8 group">
+              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-3">Watch Walkthrough Guide</p>
+              <a 
+                href="https://youtube.com/watch?v=KIfsDZbiMDo"
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="relative block aspect-video rounded-2xl overflow-hidden bg-slate-900 shadow-xl border-4 border-white transition-transform hover:scale-[1.02] active:scale-95"
+              >
+                <img 
+                  src="https://img.youtube.com/vi/KIfsDZbiMDo/maxresdefault.jpg" 
+                  alt="Tutorial Preview" 
+                  className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl group-hover:bg-red-500 transition-colors">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                </div>
+              </a>
             </div>
-            
+
             <button 
               onClick={closeAnnouncement}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
+              className="w-full bg-slate-900 text-white hover:bg-black rounded-xl py-4 font-bold transition-colors"
             >
-              Got it!
+              Enter Premium Area
             </button>
           </div>
         </div>

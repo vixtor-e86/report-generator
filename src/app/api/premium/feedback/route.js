@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -28,7 +28,7 @@ export async function POST(request) {
     try {
       const { data, error } = await resend.emails.send({
         from: 'W3 WriteLab Support <system@w3writelab.com>', 
-        to: ['w3writelab@gmail.com', 'ahlymarh37@gmail.com'],
+        to: ['w33writelab@gmail.com'],
         reply_to: contactEmail || userEmail,
         subject: `New Premium Feedback from ${username}`,
         html: `

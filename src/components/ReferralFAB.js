@@ -231,8 +231,8 @@ export default function ReferralFAB({ userId }) {
                     <p className="text-sm text-indigo-600 font-medium leading-relaxed mt-2 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
                        <strong>Template Bonus:</strong> Provide us with your school's templates! If we add it to the system, you get an extra <strong>10% bonus</strong> every time a student uses your template on a premium project! <br/><br/>
                       Submit your templates to us via: <br/>
-                      <strong>Email:</strong> w3writelab@gmail.com <br/>
-                      <strong>WhatsApp:</strong> 08081471730
+                      <strong>Email:</strong> w33writelab@gmail.com <br/>
+                      <strong>WhatsApp:</strong> 0803 169 6755
                     </p>
                     <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-full">
                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Referrals:</span>

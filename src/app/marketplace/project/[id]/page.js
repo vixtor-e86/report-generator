@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
@@ -496,13 +496,13 @@ export default function ProjectDetailPage({ params }) {
                         </a>
                     )}
 
-                    <a href={`mailto:${isAdminProject ? 'ahlymarh37@gmail.com' : project.marketplace_sellers?.email_updates}`} className="flex items-center gap-4 p-4 bg-blue-50 rounded-3xl border border-blue-100 hover:bg-blue-100 transition-colors group">
+                    <a href={`mailto:${isAdminProject ? 'w33writelab@gmail.com' : project.marketplace_sellers?.email_updates}`} className="flex items-center gap-4 p-4 bg-blue-50 rounded-3xl border border-blue-100 hover:bg-blue-100 transition-colors group">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600 group-hover:scale-110 transition-transform">
                         <Mail className="w-6 h-6" />
                       </div>
                       <div>
                         <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Email Address</p>
-                        <p className="text-zinc-900 font-black">{isAdminProject ? 'ahlymarh37@gmail.com' : project.marketplace_sellers?.email_updates}</p>
+                        <p className="text-zinc-900 font-black">{isAdminProject ? 'w33writelab@gmail.com' : project.marketplace_sellers?.email_updates}</p>
                       </div>
                     </a>
                   </>
@@ -529,7 +529,7 @@ export default function ProjectDetailPage({ params }) {
             </div>
             <div className="bg-zinc-50 p-6 text-center border-t border-zinc-100">
               <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                {isAdminProject ? 'Official W3 Hub Project • Verified & Trusted' : 'Always keep transactions within the platform for your protection.'}
+                {isAdminProject ? 'Official W3 Hub Project â€¢ Verified & Trusted' : 'Always keep transactions within the platform for your protection.'}
               </p>
             </div>
           </div>

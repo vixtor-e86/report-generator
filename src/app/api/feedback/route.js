@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -71,7 +71,7 @@ export async function POST(request) {
     const emailContent = `
       <h2>New Feedback from W3 WriteLab</h2>
       <hr />
-      <h3>Rating: ${'⭐'.repeat(rating)} (${rating}/5)</h3>
+      <h3>Rating: ${'â­'.repeat(rating)} (${rating}/5)</h3>
       
       <h4>User Details:</h4>
       <ul>
@@ -103,7 +103,7 @@ export async function POST(request) {
 
     // Send email using Resend
     const resendApiKey = process.env.RESEND_API_KEY;
-    const adminEmails = ['w3writelab@gmail.com', 'ahlymarh37@gmail.com'];
+    const adminEmails = ['w33writelab@gmail.com'];
 
     if (resendApiKey) {
       try {
@@ -116,8 +116,8 @@ export async function POST(request) {
           body: JSON.stringify({
             from: 'W3 WriteLab Support <system@w3writelab.com>',
             to: adminEmails,
-            reply_to: 'ahlymarh37@gmail.com',
-            subject: `⭐ New ${rating}-Star Feedback - W3 WriteLab`,
+            reply_to: 'w33writelab@gmail.com',
+            subject: `â­ New ${rating}-Star Feedback - W3 WriteLab`,
             html: emailContent
           })
         });

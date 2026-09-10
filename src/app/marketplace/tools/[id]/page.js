@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 
 // Import Modular Tool Components
 import ReferenceFinder from '@/components/marketplace/tools/ReferenceFinder';
+import VerifyAuditReference from '@/components/marketplace/tools/VerifyAuditReference';
 import SlideGenerator from '@/components/marketplace/tools/SlideGenerator';
 import AIHumanizer from '@/components/marketplace/tools/AIHumanizer';
 import VisualStudio from '@/components/marketplace/tools/VisualStudio';
@@ -141,6 +142,7 @@ export default function ToolInterfacePage() {
         {toolId === 'data-analysis' && <DataAnalysis {...toolProps} />}
         {toolId === 'plagiarism-checker' && <PlagiarismChecker {...toolProps} />}
         {toolId === 'reference-finder' && <ReferenceFinder {...toolProps} />}
+        {toolId === 'verify-audit-reference' && <VerifyAuditReference {...toolProps} />}
         {toolId === 'slide-generator' && <SlideGenerator {...toolProps} />}
         {toolId === 'ai-humanizer' && <AIHumanizer {...toolProps} />}
         {toolId === 'diagram-studio' && <VisualStudio {...toolProps} />}

@@ -482,7 +482,7 @@ export default function AdminUploadProjectPage() {
                             </div>
                             <div>
                                 <p className="text-[10px] font-black text-white uppercase tracking-widest">Official W3 Hub Project</p>
-                                <p className="text-[9px] text-zinc-500 font-bold">Contact: ahlymarh37@gmail.com</p>
+                                <p className="text-[9px] text-zinc-500 font-bold">Contact: w33writelab@gmail.com</p>
                             </div>
                         </div>
                     </div>
