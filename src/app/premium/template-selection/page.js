@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -58,7 +58,7 @@ export default function TemplateSelection() {
       id: 'custom',
       title: 'Custom Template',
       description: 'Build or upload your own structure',
-      icon: '?',
+      icon: '⚙️',
       color: 'orange',
       action: () => setActiveModal('custom')
     },
@@ -197,4 +197,5 @@ export default function TemplateSelection() {
     </div>
   );
 }
+
 
