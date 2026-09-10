@@ -10,7 +10,7 @@ const supabase = createClient(
 
 export async function POST(request) {
   try {
-    const { projectId, userId, format } = await request.json();
+    const { projectId, userId, format, chapterNumber } = await request.json();
 
     // Validate inputs
     if (!projectId || !userId || !format) {
@@ -73,12 +73,14 @@ export async function POST(request) {
       );
     }
 
-    // 3. Fetch all chapters
-    const { data: chapters, error: chaptersError } = await supabase
-      .from(chapterTable)
-      .select('*')
-      .eq('project_id', projectId)
-      .order('chapter_number', { ascending: true });
+    // 3. Fetch chapters
+    let query = supabase.from(chapterTable).select('*').eq('project_id', projectId);
+    
+    if (chapterNumber) {
+      query = query.eq('chapter_number', chapterNumber);
+    }
+    
+    const { data: chapters, error: chaptersError } = await query.order('chapter_number', { ascending: true });
 
     if (chaptersError) {
       console.error('Chapters fetch error:', chaptersError);
@@ -88,14 +90,14 @@ export async function POST(request) {
       );
     }
 
-    // 4. Check if all chapters are generated
+    // 4. Check if required chapters are generated
     const allGenerated = chapters.every(ch => 
       ch.status === 'draft' || ch.status === 'edited' || ch.status === 'approved'
     );
 
     if (!allGenerated) {
       return NextResponse.json(
-        { error: 'Please generate all chapters before exporting' },
+        { error: chapters.length === 1 ? 'Please generate this chapter before exporting' : 'Please generate all chapters before exporting' },
         { status: 400 }
       );
     }

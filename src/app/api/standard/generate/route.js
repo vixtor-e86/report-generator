@@ -151,11 +151,8 @@ export async function POST(request) {
       } catch (e) { console.error('Ref processing error:', e); }
     }
 
-    // Strip REFERENCES from all but the last chapter so it doesn't bunch up at the end of each chapter
-    const totalChapters = template?.structure?.chapters?.length || 5;
-    if (chapterNumber < totalChapters) {
-       finalContent = finalContent.replace(/\n*##\s*(?:REFERENCES|BIBLIOGRAPHY|TABLE OF AUTHORITIES)[\s\S]*?(?=\n##|$)/i, '');
-    }
+    // We keep the references in the finalContent so they are saved to the DB.
+    // docxExport.js will handle stripping them when generating the final combined DOCX.
 
     // Save generated chapter to database
     await supabase.from('standard_chapters').update({

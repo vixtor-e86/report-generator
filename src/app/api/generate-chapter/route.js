@@ -257,12 +257,10 @@ ${sections}
 **${styleGuide}**
 
 **REFERENCES INSTRUCTIONS:**
-${chapterNumber === 5 || chapterNumber === 6 ? 
-  `- Include 10-15 in-text citations throughout following the ${referenceStyle.toUpperCase()} style guide above exactly.
-   - Add a ## REFERENCES section at the END with 10-15 realistic Nigerian academic sources formatted in ${referenceStyle.toUpperCase()}.` :
-  `- Include 10-15 in-text citations throughout following the ${referenceStyle.toUpperCase()} style guide above exactly.
-   - Do NOT include a References section (only in final chapter).`
-}
+- Include 10-15 in-text citations throughout following the ${referenceStyle.toUpperCase()} style guide above exactly.
+- Combine references from Real Academic/Technical Papers (2020-2026), High-authority Online Articles (e.g., IEEE Spectrum, NASA, MIT Tech Review), and Official Documentation/Datasheets.
+- Add a ## REFERENCES section at the END of THIS chapter with 10-15 realistic Nigerian academic and technical sources formatted in ${referenceStyle.toUpperCase()}.
+- Do NOT hallucinate sources. Use a diverse mix, not just journals.
 
 **CRITICAL RULES:**
 1. NO meta-commentary

@@ -87,37 +87,35 @@ export function extractFullReferences(content, referenceStyle, chapterNumber) {
       line = line.trim();
       if (!line || line.length < 20) return; // Skip empty or too short
       
-      // Extract author (first word before comma or parenthesis)
-      const authorMatch = line.match(/^([A-Z][a-z]+(?:-[A-Z][a-z]+)?)/);
+      // More flexible extraction
+      // Look for a year to help segment, but don't strictly require a specific author format
+      const yearMatch = line.match(/\b(19\d{2}|20\d{2})\b/);
+      let author = "Unknown";
+      let year = null;
+      let key = "";
       
-      // Extract year - look for (YYYY) or just YYYY
-      const yearMatch = line.match(/\((\d{4})\)|,\s+(\d{4})/);
-      
-      if (authorMatch && yearMatch) {
-        const author = authorMatch[1];
-        const year = yearMatch[1] || yearMatch[2];
-        
-        // Improve key to avoid collisions: Author + Year + first 15 chars of title
-        // Extract title (text after the year/parenthesis)
-        let titlePart = "";
-        if (referenceStyle === 'mla') {
-          const parts = line.split('.');
-          titlePart = parts[1] || parts[0];
-        } else {
-          titlePart = line.split(yearMatch[0])[1] || "";
-        }
-        const titleSlug = titlePart.replace(/[^a-zA-Z0-9]/g, '').substring(0, 15).toLowerCase();
-        const key = `${author}${year}${titleSlug}`;
-        
-        references.push({
-          reference_key: key,
-          reference_text: line,
-          author: author,
-          year: year,
-          first_used_in_chapter: chapterNumber,
-          style: referenceStyle
-        });
+      if (yearMatch) {
+        year = yearMatch[1];
+        const parts = line.split(yearMatch[0]);
+        author = parts[0].trim().replace(/[^a-zA-Z\s.,-]/g, '').substring(0, 30).trim() || "Unknown";
+        const titlePart = parts[1] || "";
+        const titleSlug = titlePart.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20).toLowerCase();
+        key = `${author.substring(0,10).replace(/[^a-zA-Z]/g, '')}${year}${titleSlug}`;
+      } else {
+        // Fallback for lines without a clear year
+        author = line.substring(0, 20).trim();
+        const slug = line.replace(/[^a-zA-Z0-9]/g, '').substring(0, 40).toLowerCase();
+        key = `ref_${slug}`;
       }
+      
+      references.push({
+        reference_key: key,
+        reference_text: line,
+        author: author,
+        year: year,
+        first_used_in_chapter: chapterNumber,
+        style: referenceStyle
+      });
     });
   }
   

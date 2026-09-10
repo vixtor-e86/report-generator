@@ -39,19 +39,25 @@ export default function TopBar({
     setShowMobileMenu(false);
   };
 
-  const handleExportDOCX = async () => {
+  const handleExportDOCX = async (chapterNum = null) => {
     setExporting(true);
     setShowMobileMenu(false);
 
     try {
+      const payload = {
+        projectId: project.id,
+        userId: project.user_id,
+        format: 'docx'
+      };
+      
+      if (chapterNum) {
+        payload.chapterNumber = chapterNum;
+      }
+
       const response = await fetch('/api/standard/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectId: project.id,
-          userId: project.user_id,
-          format: 'docx'
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
@@ -163,10 +169,16 @@ export default function TopBar({
                     Export PDF
                   </button>
                 ) : (
-                  <button onClick={handleExportDOCX} disabled={exporting} className="hidden sm:flex bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg items-center gap-2">
-                    {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white" /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
-                    Export DOCX
-                  </button>
+                  <div className="hidden sm:flex gap-2">
+                    <button onClick={() => handleExportDOCX(chapter.chapter_number)} disabled={exporting} className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all items-center gap-2 flex">
+                      {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-slate-600 border-t-transparent" /> : null}
+                      Export Chapter
+                    </button>
+                    <button onClick={() => handleExportDOCX()} disabled={exporting} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg items-center gap-2 flex">
+                      {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white" /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
+                      Export All
+                    </button>
+                  </div>
                 )}
 
                 {/* Mobile Menu Button */}
@@ -221,10 +233,16 @@ export default function TopBar({
                             Export PDF
                           </button>
                         ) : (
-                          <button onClick={handleExportDOCX} disabled={exporting} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-900">
-                            {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-slate-200 border-t-slate-900" /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
-                            Export DOCX
-                          </button>
+                          <>
+                            <button onClick={() => handleExportDOCX(chapter.chapter_number)} disabled={exporting} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-900">
+                              {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-slate-200 border-t-slate-900" /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
+                              Export Chapter DOCX
+                            </button>
+                            <button onClick={() => handleExportDOCX()} disabled={exporting} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-900">
+                              {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-slate-200 border-t-slate-900" /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
+                              Export All DOCX
+                            </button>
+                          </>
                         )}
                       </div>
                     </>
@@ -248,7 +266,7 @@ export default function TopBar({
           <svg className="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
           <div>
             <p className="text-sm font-semibold text-red-900">Token limit reached</p>
-            <p className="text-xs text-red-700">You've used all {project?.tokens_limit?.toLocaleString()} tokens. Upgrade for unlimited access.</p>
+            <p className="text-xs text-red-700">You&apos;ve used all {project?.tokens_limit?.toLocaleString()} tokens. Upgrade for unlimited access.</p>
           </div>
         </div>
       )}
