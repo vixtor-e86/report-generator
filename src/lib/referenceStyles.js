@@ -147,12 +147,12 @@ export function getAllReferenceStyles() {
 export function getReferenceStyleOptions() {
   return [
     { value: 'apa', label: 'APA Style (Social Sciences, Education, Psychology)', icon: '📘' },
-    { value: 'harvard', label: 'Harvard Style (Sciences, Business, Management)', icon: '🎓' },
-    { value: 'chicago', label: 'Chicago Style (History, Humanities - Footnotes)', icon: '🏛️' },
+    { value: 'harvard', label: 'Harvard Style (Sciences, Business, Management)', icon: '📗' },
+    { value: 'chicago', label: 'Chicago Style (History, Humanities - Footnotes)', icon: '📓' },
     { value: 'oscola', label: 'OSCOLA Style (Law & Legal Studies - Footnotes)', icon: '⚖️' },
-    { value: 'vancouver', label: 'Vancouver Style (Medicine, Health & Life Sciences)', icon: '🩺' },
-    { value: 'ieee', label: 'IEEE Style (Engineering, Computer Science, IT)', icon: '⚡' },
-    { value: 'mla', label: 'MLA Style (Humanities, Literature, Languages)', icon: '📚' },
-    { value: 'none', label: 'No References (Add manually)', icon: '✏️' }
+    { value: 'vancouver', label: 'Vancouver Style (Medicine, Health & Life Sciences)', icon: '💊' },
+    { value: 'ieee', label: 'IEEE Style (Engineering, Computer Science, IT)', icon: '⚙️' },
+    { value: 'mla', label: 'MLA Style (Humanities, Literature, Languages)', icon: '📙' },
+    { value: 'none', label: 'No References (Add manually)', icon: '🚫' }
   ];
 }

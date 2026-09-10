@@ -18,7 +18,7 @@ import {
 } from 'docx';
 
 export async function generateDocx(data) {
-  const { project, chapters, images, abstract, references } = data;
+  const { project, chapters, images, abstract, references, keepChapterReferences = false } = data;
 
   const imagesData = await Promise.all(
     images.map(async (img) => {
@@ -51,7 +51,9 @@ export async function generateDocx(data) {
   // 3. Chapters
   for (let i = 0; i < chapters.length; i++) {
     const ch = chapters[i];
-    const contentBody = (ch.content || "").split(/## References|### References/i)[0];
+    const contentBody = keepChapterReferences 
+      ? (ch.content || "") 
+      : (ch.content || "").split(/## References|### References/i)[0];
     
     children.push(new Paragraph({ 
       children: [new TextRun({ text: `CHAPTER ${ch.chapter_number}: ${ch.title.toUpperCase()}`, font: 'Times New Roman', size: 32, bold: true })], 
