@@ -151,34 +151,28 @@ function AdvancedTemplateSelectContent() {
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 line-clamp-2">
-                      {item.name}
+                      {item.department || item.name}
                     </h3>
                   </div>
                   
                   <div className="space-y-2 mt-4 text-sm">
                     {item.school && (
                       <div className="flex items-start gap-2">
-                        <span className="text-indigo-500 font-semibold mt-0.5">🎓</span>
+                        <span className="text-indigo-500 font-semibold mt-0.5">🏫</span>
                         <span className="text-gray-700"><strong>School:</strong> {item.school}</span>
                       </div>
                     )}
                     {item.faculty && (
                       <div className="flex items-start gap-2">
-                        <span className="text-indigo-500 font-semibold mt-0.5">🏛️</span>
+                        <span className="text-indigo-500 font-semibold mt-0.5">📚</span>
                         <span className="text-gray-700"><strong>Faculty:</strong> {item.faculty}</span>
-                      </div>
-                    )}
-                    {item.department && (
-                      <div className="flex items-start gap-2">
-                        <span className="text-indigo-500 font-semibold mt-0.5">📖</span>
-                        <span className="text-gray-700"><strong>Department:</strong> {item.department}</span>
                       </div>
                     )}
                   </div>
                 </div>
                 
                 <div className="mt-6 pt-4 border-t border-gray-100 flex items-center text-indigo-600 text-sm font-semibold">
-                  <span>Select this template</span>
+                  <span>Select Template</span>
                   <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
