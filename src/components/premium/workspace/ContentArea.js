@@ -870,6 +870,91 @@ export default function ContentArea({
             <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '900', color: '#111827', margin: '0 0 12px 0', letterSpacing: '-0.03em' }}>Welcome to W3 Writelab</h1>
             <p style={{ fontSize: '18px', color: '#6b7280', fontWeight: '500' }}>Your High-End AI Academic Research Workspace</p>
             
+            {/* Active Project Overview: Faculty & Department */}
+            {projectData && (
+              <div style={{
+                marginTop: '32px',
+                background: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '24px',
+                padding: '24px 32px',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '20px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                textAlign: 'left'
+              }}>
+                <div style={{ flex: 1, minWidth: '240px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '4px 10px',
+                      background: '#f3e8ff',
+                      color: '#7e22ce',
+                      borderRadius: '9999px',
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}>
+                      ⭐ Premium Research Project
+                    </span>
+                    {projectData.status && (
+                      <span style={{
+                        padding: '4px 10px',
+                        background: projectData.status === 'completed' ? '#ecfdf5' : '#fef3c7',
+                        color: projectData.status === 'completed' ? '#047857' : '#b45309',
+                        borderRadius: '9999px',
+                        fontSize: '11px',
+                        fontWeight: '800',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        {projectData.status === 'completed' ? 'Finalized' : 'In Progress'}
+                      </span>
+                    )}
+                  </div>
+                  <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>
+                    {projectData.title || 'Untitled Project'}
+                  </h2>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+                  <div style={{
+                    padding: '12px 20px',
+                    background: '#f8fafc',
+                    borderRadius: '16px',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <span style={{ display: 'block', fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+                      Faculty
+                    </span>
+                    <span style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>
+                      {projectData.faculty || 'Not Specified'}
+                    </span>
+                  </div>
+
+                  <div style={{
+                    padding: '12px 20px',
+                    background: '#f8fafc',
+                    borderRadius: '16px',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <span style={{ display: 'block', fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+                      Department
+                    </span>
+                    <span style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>
+                      {projectData.department || 'Not Specified'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', marginTop: '40px' }}>
               <ActionCard icon={<Icons.Search />} title="Scholar Search" desc="Academic sources" />
               <ActionCard icon={<Icons.Edit3 />} title="Grammar Fix" desc="Native proofreading" />

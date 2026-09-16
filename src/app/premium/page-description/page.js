@@ -249,11 +249,52 @@ function ProjectDescriptionContent() {
           // Map UI 'thesis' to database '6-chapter-thesis'
           const dbTemplateType = formData.templateType === 'thesis' ? '6-chapter-thesis' : formData.templateType;
 
-          const { data: templates } = await supabase.from('templates').select('*').eq('template_type', dbTemplateType).ilike('faculty', `%${formData.faculty}%`).limit(1);
-          if (templates && templates.length > 0) sourceTemplate = templates[0];
-          else {
-            const { data: generic } = await supabase.from('templates').select('*').eq('template_type', dbTemplateType).limit(1);
-            if (generic) sourceTemplate = generic[0];
+          // Fetch all templates for this template type
+          const { data: allTypeTemplates } = await supabase
+            .from('templates')
+            .select('*')
+            .eq('template_type', dbTemplateType);
+
+          if (allTypeTemplates && allTypeTemplates.length > 0) {
+            const userFac = (formData.faculty || '').trim().toLowerCase();
+            
+            // Build keyword synonyms for matching
+            const keywords = [userFac];
+            if (userFac.includes('pharm')) {
+              keywords.push('pharmacy', 'pharmaceutical');
+            } else if (userFac.includes('med') || userFac.includes('health') || userFac.includes('nurs')) {
+              keywords.push('basic medical sciences', 'medicine', 'medical');
+            } else if (userFac.includes('manage') || userFac.includes('business') || userFac.includes('account')) {
+              keywords.push('management sciences', 'business');
+            } else if (userFac.includes('art') || userFac.includes('humanit')) {
+              keywords.push('arts & humanities', 'arts');
+            } else if (userFac.includes('agric')) {
+              keywords.push('agricultural sciences', 'agriculture');
+            } else if (userFac.includes('environ')) {
+              keywords.push('environmental science', 'environmental sciences', 'environmental');
+            } else if (userFac.includes('sci') && !userFac.includes('social')) {
+              keywords.push('sciences', 'science');
+            } else if (userFac.includes('social')) {
+              keywords.push('social sciences');
+            } else if (userFac.includes('law')) {
+              keywords.push('law');
+            } else if (userFac.includes('educat')) {
+              keywords.push('education');
+            }
+
+            // Find matching template based on faculty keywords
+            const matched = allTypeTemplates.find(t => {
+              if (!t.faculty) return false;
+              const tFac = t.faculty.toLowerCase();
+              return keywords.some(kw => tFac.includes(kw) || kw.includes(tFac));
+            });
+
+            if (matched) {
+              sourceTemplate = matched;
+            } else {
+              // Default fallback: engineering or first available
+              sourceTemplate = allTypeTemplates.find(t => t.faculty?.toLowerCase().includes('engineering')) || allTypeTemplates[0];
+            }
           }
           if (sourceTemplate) finalStructure = sourceTemplate.structure;
         }

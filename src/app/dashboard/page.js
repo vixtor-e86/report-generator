@@ -1034,7 +1034,22 @@ export default function Dashboard() {
                     </div>
                     
                     <h3 className="font-black text-slate-900 mb-2 text-xl group-hover:text-indigo-600 transition-colors line-clamp-1 uppercase tracking-tighter">{project.title}</h3>
-                    <p className="text-sm text-slate-500 mb-8 line-clamp-2 min-h-[40px] leading-relaxed font-medium">{project.description}</p>
+                    <p className="text-sm text-slate-500 mb-4 line-clamp-2 min-h-[40px] leading-relaxed font-medium">{project.description}</p>
+                    
+                    {(project.faculty || project.department) && (
+                      <div className="flex flex-wrap items-center gap-2 mb-6">
+                        {project.faculty && (
+                          <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-lg truncate max-w-[150px]">
+                            {project.faculty}
+                          </span>
+                        )}
+                        {project.department && (
+                          <span className="px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-bold rounded-lg truncate max-w-[180px]">
+                            {project.department}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     
                     <div className="flex items-center justify-between text-[10px] font-black text-slate-400 pt-6 border-t border-slate-100 uppercase tracking-widest">
                         <span>{new Date(project.created_at).toLocaleDateString()}</span>

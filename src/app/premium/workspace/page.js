@@ -20,6 +20,7 @@ import ModifyModal from '@/components/premium/modals/ModifyModal';
 import LoadingModal from '@/components/premium/modals/LoadingModal';
 import PresentationModal from '@/components/premium/modals/PresentationModal';
 import HumanizerModal from '@/components/premium/modals/HumanizerModal';
+import PlagiarismModal from '@/components/premium/modals/PlagiarismModal';
 import ExportModal from '@/components/premium/modals/ExportModal';
 import CustomModal from '@/components/premium/modals/CustomModal';
 import StructureConfirmationModal from '@/components/premium/modals/StructureConfirmationModal';
@@ -61,6 +62,7 @@ function WorkspaceContent() {
   const [isVisualToolsModalOpen, setIsVisualToolsModalOpen] = useState(false);
   const [isPresentationModalOpen, setIsPresentationModalOpen] = useState(false);
   const [isHumanizerModalOpen, setIsHumanizerModalOpen] = useState(false);
+  const [isPlagiarismModalOpen, setIsPlagiarismModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isStructureModalOpen, setIsStructureModalOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -350,6 +352,7 @@ function WorkspaceContent() {
                 uploading={uploading} onDelete={handleDelete} deleting={deleting} onFileClick={handleFileClick}
                 onSearchClick={() => setIsSearchModalOpen(true)} onVisualToolsClick={() => setIsVisualToolsModalOpen(true)}
                 onPresentationClick={() => setIsPresentationModalOpen(true)} onHumanizerClick={() => setIsHumanizerModalOpen(true)}
+                onPlagiarismClick={() => setIsPlagiarismModalOpen(true)}
               />
             )}
           </AnimatePresence>
@@ -379,6 +382,14 @@ function WorkspaceContent() {
         onSaved={loadWorkspaceData} showNotification={showNotification}
         humanizerLimit={humanizerLimit}
         onUpdateProjectData={(updates) => setProjectData(prev => ({ ...prev, ...updates }))}
+      />
+
+      <PlagiarismModal
+        isOpen={isPlagiarismModalOpen}
+        onClose={() => setIsPlagiarismModalOpen(false)}
+        chapters={chapters}
+        projectData={projectData}
+        showNotification={showNotification}
       />
 
       <ExportModal

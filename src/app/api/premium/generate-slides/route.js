@@ -5,7 +5,15 @@ import { callAI } from '@/lib/aiProvider';
 
 export async function POST(request) {
   try {
-    const { projectId, selectedChapterNumbers, userId } = await request.json();
+    const { 
+      projectId, 
+      selectedChapterNumbers, 
+      userId,
+      slideCountRange = '10-15',
+      includeQA = false,
+      customPrompt = '',
+      images = []
+    } = await request.json();
 
     if (!projectId || !selectedChapterNumbers || selectedChapterNumbers.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -46,25 +54,45 @@ export async function POST(request) {
       `### CHAPTER ${ch.chapter_number}: ${ch.title}\n${ch.content || ''}`
     ).join('\n\n');
 
+    const imageInstruction = images && images.length > 0
+      ? `The user selected the following images from their project assets: ${images.map(img => `"${img.caption || img.name || 'Diagram'}" (ID: ${img.id})`).join(', ')}. In the slides where a diagram or visual is helpful, set "imageDbId" to the exact matching image ID.`
+      : '';
+
+    const lengthInstruction = `SLIDE COUNT REQUIREMENT: The user requested a total presentation length of ${slideCountRange} slides. Ensure the total number of content slides strictly respects this range (target roughly ${slideCountRange.split('-')[0] || 10} to ${slideCountRange.split('-')[1] || 15} total slides including title and conclusion).`;
+
+    const qaInstruction = includeQA
+      ? `CRITICAL REQUIREMENT: The user requested Defense Q&A. You MUST include a "defenseQA" array at the root of the JSON object containing 3 to 5 anticipated defense/examiner questions with thorough model answers derived from the project.`
+      : '';
+
     const systemPrompt = `You are an academic presentation expert. 
-    Transform the following engineering project content into DETAILED technical slides for a professional PowerPoint presentation.
+    Transform the following engineering/academic project content into DETAILED technical slides for a professional PowerPoint presentation.
+    
+    ${lengthInstruction}
+    ${imageInstruction}
+    ${qaInstruction}
+    ${customPrompt ? `User Specific Request: ${customPrompt}` : ''}
     
     Structure the response as a valid JSON object with this EXACT structure:
     {
       "title": "Full Project Title",
       "subtitle": "A Comprehensive Technical Subtitle",
       "author": "${profile?.full_name || profile?.username || 'Student'}",
-      "institution": "Department of ${project.department}",
+      "institution": "Faculty of ${project.faculty || 'Engineering'}, Department of ${project.department || 'General Studies'}",
       "sections": [
         { 
-          "title": "Section Title (e.g. Methodology, Design Logic)", 
-          "bullets": [
-            "Detailed technical explanation of the first major point...",
-            "Comprehensive breakdown of the second major point with specifics...",
-            "Elaborate analysis of results or methodology...",
-            "Substantial technical detail about the systems used...",
-            "Critical academic insight or data finding..."
-          ] 
+          "title": "Section Title (e.g. Methodology, System Design, Results)", 
+          "slides": [
+            {
+              "title": "Slide Title",
+              "bullets": [
+                "Detailed technical explanation of the first major point...",
+                "Comprehensive breakdown of the second major point with specifics...",
+                "Elaborate analysis of results or methodology...",
+                "Substantial technical detail about the systems used..."
+              ],
+              "imageDbId": "Image ID if one of the user images belongs on this slide, else null"
+            }
+          ]
         }
       ],
       "conclusion": {
@@ -72,16 +100,17 @@ export async function POST(request) {
         "bullets": [
           "Detailed summary of research achievements...",
           "Comprehensive overview of technical conclusions...",
-          "Specific recommendations for future engineering work..."
+          "Specific recommendations for future work..."
         ]
-      }
+      }${includeQA ? `,\n      "defenseQA": [\n        { "question": "Anticipated Question 1?", "answer": "Model Answer 1" },\n        { "question": "Anticipated Question 2?", "answer": "Model Answer 2" }\n      ]` : ''}
     }
     
     CRITICAL RULES:
-    - DO NOT use short keypoints. Use full, informative, technical sentences (approx 15-25 words per bullet).
+    - DO NOT use short fragmented keypoints. Use full, informative, technical sentences (approx 15-25 words per bullet).
     - Ensure EACH bullet point contains substantial technical data or logical explanation.
-    - Each section MUST have 4-6 detailed bullet points.
-    - Return ONLY the JSON object. No markdown formatting.
+    - Each content slide MUST have 3-5 detailed bullet points.
+    - Match the requested slide count (${slideCountRange} slides total).
+    - Return ONLY the JSON object. No markdown formatting or explanation.
     
     Content:
     ${contentToSummarize}`;
