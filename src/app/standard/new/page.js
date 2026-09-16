@@ -43,7 +43,9 @@ function NewProjectContent() {
   };
 
   const [faculty, setFaculty] = useState('');
+  const [customFaculty, setCustomFaculty] = useState('');
   const [department, setDepartment] = useState('');
+  const [customDepartment, setCustomDepartment] = useState('');
 
   const [universityData, setUniversityData] = useState({});
   const [facultiesList, setFacultiesList] = useState([]);
@@ -143,14 +145,26 @@ function NewProjectContent() {
       setFacultiesList(Object.keys(data));
 
       if (profile.faculty) {
-        setFaculty(profile.faculty);
-        if (Array.isArray(data[profile.faculty])) {
-          setDepartmentsList(data[profile.faculty]);
+        if (data[profile.faculty]) {
+          setFaculty(profile.faculty);
+          if (Array.isArray(data[profile.faculty])) {
+            setDepartmentsList(data[profile.faculty]);
+          }
+        } else {
+          setFaculty('Other');
+          setCustomFaculty(profile.faculty);
         }
       }
 
       if (profile.department) {
-        setDepartment(profile.department);
+        if (profile.faculty && data[profile.faculty] && data[profile.faculty].includes(profile.department)) {
+          setDepartment(profile.department);
+        } else if (profile.faculty && !data[profile.faculty]) {
+          setCustomDepartment(profile.department);
+        } else {
+          setDepartment('Other');
+          setCustomDepartment(profile.department);
+        }
       }
 
       setUser(user);
@@ -166,6 +180,10 @@ function NewProjectContent() {
     const selectedFaculty = e.target.value;
     setFaculty(selectedFaculty);
     setDepartment('');
+    setCustomDepartment('');
+    if (selectedFaculty !== 'Other') {
+      setCustomFaculty('');
+    }
     if (selectedFaculty && Array.isArray(universityData[selectedFaculty])) {
       setDepartmentsList(universityData[selectedFaculty]);
     } else {
@@ -184,39 +202,42 @@ function NewProjectContent() {
   const handleImageUpload = (result) => {
     setTempImageData({
       url: result.info.secure_url,
-      publicId: result.info.public_id,
+      publicId: result.info.public_id
     });
+    setImageCaption('');
+    setTargetChapter('');
     setShowCaptionModal(true);
   };
 
-  const saveImageWithCaption = () => {
+  const handleSaveImageWithCaption = () => {
     if (!imageCaption.trim()) {
-      showNotification('Caption Required', 'Please enter a caption for the image', 'warning');
+      showNotification('Incomplete Field', 'Please provide a caption for the image.', 'warning');
       return;
     }
 
-    setImages([
-      ...images,
-      {
-        url: tempImageData.url,
-        publicId: tempImageData.publicId,
-        caption: imageCaption.trim(),
-        chapterNumber: targetChapter ? parseInt(targetChapter) : null
-      },
-    ]);
+    setImages([...images, {
+      ...tempImageData,
+      caption: imageCaption,
+      chapterNumber: targetChapter ? parseInt(targetChapter) : null
+    }]);
 
     setShowCaptionModal(false);
+    setTempImageData(null);
     setImageCaption('');
     setTargetChapter('');
-    setTempImageData(null);
   };
 
-  const handleDeleteImage = (index) => {
-    showNotification(
-      'Confirm Delete',
-      'Are you sure you want to remove this image?',
-      'confirm',
-      () => setImages(images.filter((_, i) => i !== index))
+  const removeImage = (index) => {
+    setImages(images.filter((_, i) => i !== index));
+  };
+
+  const getReferenceStyleOptions = () => {
+    return (
+      [
+        { value: 'apa', label: 'APA 7th Edition (Author-Date)', icon: '📖' },
+        { value: 'ieee', label: 'IEEE (Numbered [1])', icon: '🔢' },
+        { value: 'harvard', label: 'Harvard (Author-Date)', icon: '📚' }
+      ]
     );
   };
 
@@ -235,14 +256,16 @@ function NewProjectContent() {
     if (creating) return; // Prevent multiple clicks
 
     const validObjectives = manualObjectives.filter(o => o.trim());
+    const finalFaculty = faculty === 'Other' ? customFaculty.trim() : faculty;
+    const finalDepartment = (faculty === 'Other' || department === 'Other') ? customDepartment.trim() : department;
     
     if (isSIWES) {
-      if (!companyName || !department || !duration || !description || validObjectives.length === 0) {
+      if (!companyName || !finalDepartment || !duration || !description || validObjectives.length === 0) {
         showNotification('Form Incomplete', 'Please fill in all required fields including at least one objective', 'warning');
         return;
       }
     } else {
-      if (!projectTitle || !department || !description || validObjectives.length === 0) {
+      if (!projectTitle || !finalDepartment || !description || validObjectives.length === 0) {
         showNotification('Form Incomplete', 'Please fill in all mandatory fields (Title, Objectives, and Description)', 'warning');
         return;
       }
@@ -308,12 +331,12 @@ function NewProjectContent() {
 
       if (isSIWES) {
         projectData.title = `${companyName} - Industrial Training Report`;
-        projectData.department = department;
+        projectData.department = finalDepartment;
         projectData.components = [companyName];
         projectData.description = `Duration: ${duration}\n\n${description}`;
       } else {
         projectData.title = projectTitle;
-        projectData.department = department;
+        projectData.department = finalDepartment;
         projectData.components = components;
         projectData.description = description;
       }
@@ -453,11 +476,22 @@ function NewProjectContent() {
                       className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 transition"
                     />
                   ) : (
-                    <select value={faculty} onChange={handleFacultyChange} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                      <option value="">Select Faculty</option>
-                      {facultiesList.map((fac, i) => (<option key={i} value={fac}>{fac}</option>))}
-                      <option value="Other">Other</option>
-                    </select>
+                    <>
+                      <select value={faculty} onChange={handleFacultyChange} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                        <option value="">Select Faculty</option>
+                        {facultiesList.map((fac, i) => (<option key={i} value={fac}>{fac}</option>))}
+                        <option value="Other">Other</option>
+                      </select>
+                      {faculty === 'Other' && (
+                        <input
+                          type="text"
+                          value={customFaculty}
+                          onChange={(e) => setCustomFaculty(e.target.value)}
+                          placeholder="Enter your faculty name"
+                          className="mt-2 w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                        />
+                      )}
+                    </>
                   )}
                 </div>
                 <div>
@@ -465,17 +499,37 @@ function NewProjectContent() {
                   {profile?.is_international || faculty === 'Other' ? (
                     <input 
                       type="text" 
-                      value={department} 
-                      onChange={(e) => setDepartment(e.target.value)} 
+                      value={faculty === 'Other' ? customDepartment : department} 
+                      onChange={(e) => faculty === 'Other' ? setCustomDepartment(e.target.value) : setDepartment(e.target.value)} 
                       placeholder="Enter your department name" 
                       className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" 
                     />
                   ) : (
-                    <select value={department} onChange={(e) => setDepartment(e.target.value)} disabled={!faculty} className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition disabled:bg-gray-50 disabled:text-gray-400 ${department ? 'text-gray-900' : 'text-gray-500'}`}>
-                      <option value="">Select Department</option>
-                      {Array.isArray(departmentsList) && departmentsList.map((dept, i) => (<option key={i} value={dept}>{dept}</option>))}
-                      <option value="Other">Other</option>
-                    </select>
+                    <>
+                      <select 
+                        value={department} 
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setDepartment(val);
+                          if (val !== 'Other') setCustomDepartment('');
+                        }} 
+                        disabled={!faculty} 
+                        className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition disabled:bg-gray-50 disabled:text-gray-400 ${department ? 'text-gray-900' : 'text-gray-500'}`}
+                      >
+                        <option value="">Select Department</option>
+                        {Array.isArray(departmentsList) && departmentsList.map((dept, i) => (<option key={i} value={dept}>{dept}</option>))}
+                        <option value="Other">Other</option>
+                      </select>
+                      {department === 'Other' && (
+                        <input
+                          type="text"
+                          value={customDepartment}
+                          onChange={(e) => setCustomDepartment(e.target.value)}
+                          placeholder="Enter your department name"
+                          className="mt-2 w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -502,11 +556,22 @@ function NewProjectContent() {
                       className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 transition"
                     />
                   ) : (
-                    <select value={faculty} onChange={handleFacultyChange} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                      <option value="">Select Faculty</option>
-                      {facultiesList.map((fac, i) => (<option key={i} value={fac}>{fac}</option>))}
-                      <option value="Other">Other</option>
-                    </select>
+                    <>
+                      <select value={faculty} onChange={handleFacultyChange} className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                        <option value="">Select Faculty</option>
+                        {facultiesList.map((fac, i) => (<option key={i} value={fac}>{fac}</option>))}
+                        <option value="Other">Other</option>
+                      </select>
+                      {faculty === 'Other' && (
+                        <input
+                          type="text"
+                          value={customFaculty}
+                          onChange={(e) => setCustomFaculty(e.target.value)}
+                          placeholder="Enter your faculty name"
+                          className="mt-2 w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                        />
+                      )}
+                    </>
                   )}
                 </div>
                 <div>
@@ -514,17 +579,37 @@ function NewProjectContent() {
                   {profile?.is_international || faculty === 'Other' ? (
                     <input 
                       type="text" 
-                      value={department} 
-                      onChange={(e) => setDepartment(e.target.value)} 
+                      value={faculty === 'Other' ? customDepartment : department} 
+                      onChange={(e) => faculty === 'Other' ? setCustomDepartment(e.target.value) : setDepartment(e.target.value)} 
                       placeholder="Enter your department name" 
                       className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" 
                     />
                   ) : (
-                    <select value={department} onChange={(e) => setDepartment(e.target.value)} disabled={!faculty} className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition disabled:bg-gray-50 disabled:text-gray-400 ${department ? 'text-gray-900' : 'text-gray-500'}`}>
-                      <option value="">Select Department</option>
-                      {Array.isArray(departmentsList) && departmentsList.map((dept, i) => (<option key={i} value={dept}>{dept}</option>))}
-                      <option value="Other">Other</option>
-                    </select>
+                    <>
+                      <select 
+                        value={department} 
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setDepartment(val);
+                          if (val !== 'Other') setCustomDepartment('');
+                        }} 
+                        disabled={!faculty} 
+                        className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition disabled:bg-gray-50 disabled:text-gray-400 ${department ? 'text-gray-900' : 'text-gray-500'}`}
+                      >
+                        <option value="">Select Department</option>
+                        {Array.isArray(departmentsList) && departmentsList.map((dept, i) => (<option key={i} value={dept}>{dept}</option>))}
+                        <option value="Other">Other</option>
+                      </select>
+                      {department === 'Other' && (
+                        <input
+                          type="text"
+                          value={customDepartment}
+                          onChange={(e) => setCustomDepartment(e.target.value)}
+                          placeholder="Enter your department name"
+                          className="mt-2 w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               </div>

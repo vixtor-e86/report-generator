@@ -38,6 +38,10 @@ function ProjectDescriptionContent() {
   const [universityData, setUniversityData] = useState({});
   const [facultiesList, setFacultiesList] = useState([]);
   const [departmentsList, setDepartmentsList] = useState([]);
+  const [isOtherFaculty, setIsOtherFaculty] = useState(false);
+  const [customFaculty, setCustomFaculty] = useState('');
+  const [isOtherDepartment, setIsOtherDepartment] = useState(false);
+  const [customDepartment, setCustomDepartment] = useState('');
 
   useEffect(() => {
     async function fetchData() {
@@ -75,21 +79,89 @@ function ProjectDescriptionContent() {
         const res = await fetch('/api/departments');
         const data = await res.json();
         setUniversityData(data);
-        setFacultiesList(Object.keys(data));
+        const keys = Object.keys(data);
+        setFacultiesList(keys);
+
+        const initialFaculty = searchParams.get('faculty');
+        const initialDept = searchParams.get('department');
+
+        if (initialFaculty) {
+          if (keys.includes(initialFaculty)) {
+            setFormData(prev => ({ ...prev, faculty: initialFaculty }));
+            setIsOtherFaculty(false);
+            if (data[initialFaculty]) {
+              setDepartmentsList(data[initialFaculty]);
+              if (initialDept) {
+                if (data[initialFaculty].includes(initialDept)) {
+                  setFormData(prev => ({ ...prev, department: initialDept }));
+                } else if (initialDept === 'Other') {
+                  setIsOtherDepartment(true);
+                  setCustomDepartment('');
+                  setFormData(prev => ({ ...prev, department: '' }));
+                } else {
+                  setIsOtherDepartment(true);
+                  setCustomDepartment(initialDept);
+                  setFormData(prev => ({ ...prev, department: initialDept }));
+                }
+              }
+            }
+          } else if (initialFaculty === 'Other' || initialFaculty === 'Others') {
+            setIsOtherFaculty(true);
+            setCustomFaculty('');
+            setIsOtherDepartment(true);
+            setCustomDepartment(initialDept || '');
+            setFormData(prev => ({ ...prev, faculty: '', department: initialDept || '' }));
+          } else {
+            setIsOtherFaculty(true);
+            setCustomFaculty(initialFaculty);
+            setIsOtherDepartment(true);
+            setCustomDepartment(initialDept || '');
+            setFormData(prev => ({ ...prev, faculty: initialFaculty, department: initialDept || '' }));
+          }
+        }
       } catch (error) { console.error('Failed to load data:', error); }
     }
     fetchData();
-  }, [router]);
+  }, [router, searchParams]);
 
   useEffect(() => {
-    if (formData.faculty && universityData[formData.faculty]) setDepartmentsList(universityData[formData.faculty]);
-    else setDepartmentsList([]);
-  }, [formData.faculty, universityData]);
+    if (!isOtherFaculty && formData.faculty && universityData[formData.faculty]) {
+      setDepartmentsList(universityData[formData.faculty]);
+    } else {
+      setDepartmentsList([]);
+    }
+  }, [formData.faculty, universityData, isOtherFaculty]);
 
   const handleFacultyChange = (e) => {
     const selectedFaculty = e.target.value;
-    setFormData(prev => ({ ...prev, faculty: selectedFaculty, department: '' }));
+    if (selectedFaculty === 'Other') {
+      setIsOtherFaculty(true);
+      setCustomFaculty('');
+      setIsOtherDepartment(true);
+      setCustomDepartment('');
+      setFormData(prev => ({ ...prev, faculty: '', department: '' }));
+    } else {
+      setIsOtherFaculty(false);
+      setCustomFaculty('');
+      setIsOtherDepartment(false);
+      setCustomDepartment('');
+      setFormData(prev => ({ ...prev, faculty: selectedFaculty, department: '' }));
+    }
     if (errors.faculty) setErrors(prev => ({ ...prev, faculty: '' }));
+  };
+
+  const handleDepartmentChange = (e) => {
+    const selectedDept = e.target.value;
+    if (selectedDept === 'Other') {
+      setIsOtherDepartment(true);
+      setCustomDepartment('');
+      setFormData(prev => ({ ...prev, department: '' }));
+    } else {
+      setIsOtherDepartment(false);
+      setCustomDepartment('');
+      setFormData(prev => ({ ...prev, department: selectedDept }));
+    }
+    if (errors.department) setErrors(prev => ({ ...prev, department: '' }));
   };
 
   const handleInputChange = (field, value) => {
@@ -110,8 +182,8 @@ function ProjectDescriptionContent() {
     const newErrors = {};
     if (!formData.projectTitle.trim()) newErrors.projectTitle = 'Project title is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (!formData.faculty) newErrors.faculty = 'Please select a faculty';
-    if (!formData.department) newErrors.department = 'Please select a department';
+    if (!formData.faculty || !formData.faculty.trim()) newErrors.faculty = 'Please specify your faculty';
+    if (!formData.department || !formData.department.trim()) newErrors.department = 'Please specify your department';
     
     const validObjectives = formData.manualObjectives.filter(o => o.trim());
     if (validObjectives.length === 0) {
@@ -323,17 +395,41 @@ function ProjectDescriptionContent() {
                   className={`form-input ${errors.faculty ? 'error' : ''}`} 
                 />
               ) : (
-                <select id="faculty" value={formData.faculty} onChange={handleFacultyChange} className={`form-select ${errors.faculty ? 'error' : ''}`}>
-                  <option value="">Select Faculty</option>
-                  {facultiesList.map((fac, index) => (<option key={index} value={fac}>{fac}</option>))}
-                </select>
+                <>
+                  <select 
+                    id="faculty" 
+                    value={isOtherFaculty ? 'Other' : formData.faculty} 
+                    onChange={handleFacultyChange} 
+                    className={`form-select ${errors.faculty ? 'error' : ''}`}
+                  >
+                    <option value="">Select Faculty</option>
+                    {facultiesList.map((fac, index) => (<option key={index} value={fac}>{fac}</option>))}
+                    <option value="Other">Other</option>
+                  </select>
+                  {isOtherFaculty && (
+                    <div style={{ marginTop: '8px' }}>
+                      <input
+                        type="text"
+                        value={customFaculty}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomFaculty(val);
+                          setFormData(prev => ({ ...prev, faculty: val }));
+                          if (errors.faculty) setErrors(prev => ({ ...prev, faculty: '' }));
+                        }}
+                        placeholder="Enter your faculty name"
+                        className={`form-input ${errors.faculty ? 'error' : ''}`}
+                      />
+                    </div>
+                  )}
+                </>
               )}
               {errors.faculty && <span className="error-message">{errors.faculty}</span>}
             </div>
 
             <div className="form-group">
               <label htmlFor="department" className="form-label">Department <span className="required">*</span></label>
-              {userProfile?.is_international || formData.faculty === 'Other' || formData.templateType === 'custom' ? (
+              {userProfile?.is_international || isOtherFaculty || formData.templateType === 'custom' ? (
                 <input 
                   type="text" 
                   value={formData.department} 
@@ -342,10 +438,35 @@ function ProjectDescriptionContent() {
                   className={`form-input ${errors.department ? 'error' : ''}`} 
                 />
               ) : (
-                <select id="department" value={formData.department} onChange={(e) => handleInputChange('department', e.target.value)} disabled={!formData.faculty} className={`form-select ${errors.department ? 'error' : ''} ${!formData.faculty ? 'disabled' : ''}`}>
-                  <option value="">Select Department</option>
-                  {departmentsList.map((dept, index) => (<option key={index} value={dept}>{dept}</option>))}
-                </select>
+                <>
+                  <select 
+                    id="department" 
+                    value={isOtherDepartment ? 'Other' : formData.department} 
+                    onChange={handleDepartmentChange} 
+                    disabled={!formData.faculty} 
+                    className={`form-select ${errors.department ? 'error' : ''} ${!formData.faculty ? 'disabled' : ''}`}
+                  >
+                    <option value="">Select Department</option>
+                    {departmentsList.map((dept, index) => (<option key={index} value={dept}>{dept}</option>))}
+                    <option value="Other">Other</option>
+                  </select>
+                  {isOtherDepartment && (
+                    <div style={{ marginTop: '8px' }}>
+                      <input
+                        type="text"
+                        value={customDepartment}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomDepartment(val);
+                          setFormData(prev => ({ ...prev, department: val }));
+                          if (errors.department) setErrors(prev => ({ ...prev, department: '' }));
+                        }}
+                        placeholder="Enter your department name"
+                        className={`form-input ${errors.department ? 'error' : ''}`}
+                      />
+                    </div>
+                  )}
+                </>
               )}
               {errors.department && <span className="error-message">{errors.department}</span>}
             </div>

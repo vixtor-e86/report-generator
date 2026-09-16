@@ -15,7 +15,6 @@ export default function FacultyModal({ isOpen, onClose, onSelect }) {
     { id: 9, name: 'Agriculture', description: 'Farming and food sciences', icon: '🌾' },
     { id: 10, name: 'Environmental', description: 'Ecology and sustainability', icon: '🌍' },
     { id: 11, name: 'Pharmacy', description: 'Pharmaceutical and clinical sciences', icon: '💊' },
-    { id: 12, name: 'Others', description: 'Other specialized faculties', icon: '🎓' },
   ];
 
   return (

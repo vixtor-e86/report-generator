@@ -32,7 +32,9 @@ function NewProjectContent() {
   };
 
   const [faculty, setFaculty] = useState('');
+  const [customFaculty, setCustomFaculty] = useState('');
   const [department, setDepartment] = useState('');
+  const [customDepartment, setCustomDepartment] = useState('');
   const [universityData, setUniversityData] = useState({});
   const [facultiesList, setFacultiesList] = useState([]);
   const [departmentsList, setDepartmentsList] = useState([]);
@@ -133,6 +135,10 @@ function NewProjectContent() {
     const selectedFaculty = e.target.value;
     setFaculty(selectedFaculty);
     setDepartment('');
+    setCustomDepartment('');
+    if (selectedFaculty !== 'Other') {
+      setCustomFaculty('');
+    }
 
     if (selectedFaculty && Array.isArray(universityData[selectedFaculty])) {
       setDepartmentsList(universityData[selectedFaculty]);
@@ -153,7 +159,9 @@ function NewProjectContent() {
   const handleCreateProject = async () => {
     if (creating) return; // Prevent multiple clicks
     
-    if (!projectTitle || !department || !description) {
+    const finalDepartment = (faculty === 'Other' || department === 'Other') ? customDepartment.trim() : department;
+
+    if (!projectTitle || !finalDepartment || !description) {
       showNotification('Form Incomplete', 'Please fill in all mandatory fields (Title, Department, and Description)', 'warning');
       return;
     }
@@ -184,7 +192,7 @@ function NewProjectContent() {
           user_id: user.id,
           template_id: templateId,
           title: projectTitle,
-          department,
+          department: finalDepartment,
           components,
           description,
           reference_style: referenceStyle, // ✅ Added reference style
@@ -293,19 +301,30 @@ function NewProjectContent() {
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition mb-4" 
               />
             ) : (
-              <select
-                value={faculty}
-                onChange={handleFacultyChange}
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition mb-4"
-              >
-                <option value="">Select Faculty</option>
-                {facultiesList.map((fac, i) => (
-                  <option key={i} value={fac}>
-                    {fac}
-                  </option>
-                ))}
-                <option value="Other">Other</option>
-              </select>
+              <>
+                <select
+                  value={faculty}
+                  onChange={handleFacultyChange}
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition mb-2"
+                >
+                  <option value="">Select Faculty</option>
+                  {facultiesList.map((fac, i) => (
+                    <option key={i} value={fac}>
+                      {fac}
+                    </option>
+                  ))}
+                  <option value="Other">Other</option>
+                </select>
+                {faculty === 'Other' && (
+                  <input
+                    type="text"
+                    value={customFaculty}
+                    onChange={(e) => setCustomFaculty(e.target.value)}
+                    placeholder="Enter your faculty name"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition mb-4"
+                  />
+                )}
+              </>
             )}
 
             <label className="block text-sm font-bold text-gray-900 mb-2">
@@ -314,26 +333,41 @@ function NewProjectContent() {
             {profile?.is_international || faculty === 'Other' ? (
               <input 
                 type="text" 
-                value={department} 
-                onChange={(e) => setDepartment(e.target.value)} 
+                value={faculty === 'Other' ? customDepartment : department} 
+                onChange={(e) => faculty === 'Other' ? setCustomDepartment(e.target.value) : setDepartment(e.target.value)} 
                 placeholder="Enter your department name" 
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" 
               />
             ) : (
-              <select
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                disabled={!faculty}
-                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition disabled:bg-gray-50 disabled:text-gray-400 ${department ? 'text-gray-900' : 'text-gray-500'}`}
-              >
-                <option value="">Select Department</option>
-                {Array.isArray(departmentsList) && departmentsList.map((dept, i) => (
-                  <option key={i} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-                <option value="Other">Other</option>
-              </select>
+              <>
+                <select
+                  value={department}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDepartment(val);
+                    if (val !== 'Other') setCustomDepartment('');
+                  }}
+                  disabled={!faculty}
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition disabled:bg-gray-50 disabled:text-gray-400 ${department ? 'text-gray-900' : 'text-gray-500'}`}
+                >
+                  <option value="">Select Department</option>
+                  {Array.isArray(departmentsList) && departmentsList.map((dept, i) => (
+                    <option key={i} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                  <option value="Other">Other</option>
+                </select>
+                {department === 'Other' && (
+                  <input
+                    type="text"
+                    value={customDepartment}
+                    onChange={(e) => setCustomDepartment(e.target.value)}
+                    placeholder="Enter your department name"
+                    className="mt-2 w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-900 text-sm sm:text-base placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                  />
+                )}
+              </>
             )}
             <p className="text-xs text-gray-500 mt-1">Pre-filled from your profile</p>
           </div>

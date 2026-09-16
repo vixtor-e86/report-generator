@@ -29,8 +29,10 @@ export default function Onboarding() {
   const [university, setUniversity] = useState(null);
   const [manualInstitution, setManualInstitution] = useState(''); // ✅ NEW
   const [faculty, setFaculty] = useState('');
+  const [customFaculty, setCustomFaculty] = useState('');
   const [manualFaculty, setManualFaculty] = useState(''); // ✅ NEW
   const [department, setDepartment] = useState('');
+  const [customDepartment, setCustomDepartment] = useState('');
   const [manualDepartment, setManualDepartment] = useState(''); // ✅ NEW
   const [referralCode, setReferralCode] = useState('');
   const [isRefLocked, setIsReferralLocked] = useState(false);
@@ -74,6 +76,10 @@ export default function Onboarding() {
     const selectedFaculty = e.target.value;
     setFaculty(selectedFaculty);
     setDepartment('');
+    setCustomDepartment('');
+    if (selectedFaculty !== 'Other') {
+      setCustomFaculty('');
+    }
     if (selectedFaculty && Array.isArray(universityData[selectedFaculty])) {
       setDepartmentsList(universityData[selectedFaculty]);
     } else {
@@ -85,8 +91,11 @@ export default function Onboarding() {
     e.preventDefault();
     
     // Validation
+    const finalFaculty = faculty === 'Other' ? customFaculty.trim() : faculty;
+    const finalDepartment = (faculty === 'Other' || department === 'Other') ? customDepartment.trim() : department;
+
     if (isNigeria) {
-      if (!username || !university || !faculty || !department) {
+      if (!username || !university || !finalFaculty || !finalDepartment) {
         showNotification('Incomplete Form', 'Please fill in all fields to continue.', 'warning');
         return;
       }
@@ -129,8 +138,8 @@ export default function Onboarding() {
       if (isNigeria) {
         profilePayload.university_id = university.id === 'other' ? null : university.id;
         profilePayload.custom_institution = university.id === 'other' ? university.name : null;
-        profilePayload.faculty = faculty;
-        profilePayload.department = department;
+        profilePayload.faculty = finalFaculty;
+        profilePayload.department = finalDepartment;
       } else {
         profilePayload.university_id = null;
         profilePayload.custom_institution = manualInstitution;
@@ -224,6 +233,18 @@ export default function Onboarding() {
                       <option value="Other">Other</option>
                     </select>
                   </div>
+                  {faculty === 'Other' && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        required
+                        value={customFaculty}
+                        onChange={(e) => setCustomFaculty(e.target.value)}
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
+                        placeholder="Enter Faculty Name"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -233,25 +254,45 @@ export default function Onboarding() {
                       <input
                         type="text"
                         required
-                        value={department}
-                        onChange={(e) => setDepartment(e.target.value)}
+                        value={customDepartment}
+                        onChange={(e) => setCustomDepartment(e.target.value)}
                         className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
                         placeholder="Enter Department Name"
                       />
                     ) : (
-                      <select
-                        required
-                        value={department}
-                        onChange={(e) => setDepartment(e.target.value)}
-                        disabled={!faculty}
-                        className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                      >
-                        <option value="">Select Department</option>
-                        {Array.isArray(departmentsList) && departmentsList.map((dept, index) => (
-                          <option key={index} value={dept}>{dept}</option>
-                        ))}
-                        <option value="Other">Other</option>
-                      </select>
+                      <>
+                        <select
+                          required
+                          value={department}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setDepartment(val);
+                            if (val !== 'Other') {
+                              setCustomDepartment('');
+                            }
+                          }}
+                          disabled={!faculty}
+                          className="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                        >
+                          <option value="">Select Department</option>
+                          {Array.isArray(departmentsList) && departmentsList.map((dept, index) => (
+                            <option key={index} value={dept}>{dept}</option>
+                          ))}
+                          <option value="Other">Other</option>
+                        </select>
+                        {department === 'Other' && (
+                          <div className="mt-2">
+                            <input
+                              type="text"
+                              required
+                              value={customDepartment}
+                              onChange={(e) => setCustomDepartment(e.target.value)}
+                              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-base sm:text-sm"
+                              placeholder="Enter Department Name"
+                            />
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

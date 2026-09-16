@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -34,7 +34,7 @@ export default function TemplateSelection() {
       id: '5-chapter',
       title: '5-Chapter Project',
       description: 'Standard undergraduate project structure',
-      icon: '??',
+      icon: '📚',
       color: 'blue',
       action: () => setActiveModal('faculty')
     },
@@ -42,7 +42,7 @@ export default function TemplateSelection() {
       id: 'thesis',
       title: 'Thesis (6 Chapters)',
       description: 'Postgraduate research thesis',
-      icon: '??',
+      icon: '🎓',
       color: 'purple',
       action: () => setActiveModal('department')
     },
