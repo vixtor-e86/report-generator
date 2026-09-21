@@ -114,7 +114,7 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
   if (!chapter) return null;
 
   return (
-    <div className="bg-white rounded-[40px] shadow-2xl border border-slate-100 min-h-[800px] flex flex-col overflow-hidden print:shadow-none print:border-none print:rounded-none">
+    <div className="bg-white rounded-[40px] shadow-2xl border border-slate-100 min-h-[800px] flex flex-col overflow-hidden print:shadow-none print:border-none print:rounded-none print:min-h-0 print:h-auto print:overflow-visible print:block">
       {/* View Header */}
       <div className="px-4 sm:px-10 py-4 sm:py-8 border-b border-slate-50 flex items-center justify-between shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10 print:hidden gap-4">
         <div className="min-w-0 flex-1">
@@ -142,9 +142,9 @@ export default function ChapterView({ chapter, images, project, onPrint }) {
       </div>
 
       {/* Chapter Content */}
-      <div className="flex-1 px-6 sm:px-12 py-10 sm:py-16 overflow-y-auto custom-scrollbar print:p-0 print:overflow-visible">
-        <div className="max-w-4xl mx-auto print:max-w-none print:mx-0">
-          <div className="prose prose-slate max-w-none 
+      <div className="flex-1 px-6 sm:px-12 py-10 sm:py-16 overflow-y-auto custom-scrollbar print:p-0 print:overflow-visible print:min-h-0 print:h-auto print:block">
+        <div className="max-w-4xl mx-auto print:max-w-none print:mx-0 print:w-full print:block">
+          <div className="prose prose-slate max-w-none print:max-w-none print:w-full print:block
             prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900
             prose-p:text-justify prose-p:text-slate-700 prose-p:leading-[1.8]
             prose-li:text-slate-700 prose-li:mb-4 prose-li:font-medium

@@ -216,7 +216,11 @@ export default function StandardWorkspace({ params }) {
       if (error) throw error;
       
       await refreshProject();
-      showNotification('Success', 'Project details updated and locked!', 'success');
+      showNotification(
+        'Details Updated',
+        'Project configuration saved! If you changed the citation style or title, click "Regen" or "Modify" on your chapter(s) to apply the changes to the text.',
+        'success'
+      );
     } catch (error) {
       console.error('Update error:', error);
       showNotification('Error', 'Failed to update project details', 'error');
@@ -244,7 +248,7 @@ export default function StandardWorkspace({ params }) {
       window.print();
       setIsPrintingFull(false);
       setSidebarOpen(wasOpen);
-    }, 300); // Wait for all chapters to render
+    }, 500); // Wait for all chapters to render
   };
 
   // ✅ NEW: Handle preview before generate
@@ -443,7 +447,7 @@ export default function StandardWorkspace({ params }) {
   const currentChapter = chapters.find(ch => ch.chapter_number === selectedChapter);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fc] flex flex-col lg:flex-row font-sans selection:bg-slate-900 selection:text-white">
+    <div className="min-h-screen bg-[#f8f9fc] flex flex-col lg:flex-row font-sans selection:bg-slate-900 selection:text-white print:block print:h-auto print:min-h-0 print:bg-white">
       {/* Sidebar */}
       <Sidebar
         project={project}
@@ -458,13 +462,14 @@ export default function StandardWorkspace({ params }) {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden print:h-auto print:overflow-visible print:block print:min-h-0">
         {/* Top Bar */}
         <TopBar
           chapter={currentChapter}
           isEditing={isEditing}
           generating={generating}
           project={project}
+          chapters={chapters}
           onEdit={() => setIsEditing(true)}
           onSave={() => {}} // Not used, save is in ChapterEdit
           onGenerate={handleGenerate}
@@ -472,6 +477,7 @@ export default function StandardWorkspace({ params }) {
           onModifyRegenerate={() => setShowModifyModal(true)}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           onPrintCurrentChapter={handlePrintCurrentChapter}
+          onPrintFullReport={handlePrintFullReport}
           onPreviewBeforeGenerate={handlePreviewBeforeGenerate}
           onSuggestImprovements={handleSuggestImprovements}
           showNotification={showNotification}
@@ -479,8 +485,30 @@ export default function StandardWorkspace({ params }) {
         />
 
         {/* Chapter Content */}
-        <div className="flex-1 overflow-y-auto p-2 sm:p-10 lg:p-12 custom-scrollbar print:p-0 print:overflow-visible">
-          {!currentChapter ? (
+        <div className="flex-1 overflow-y-auto p-2 sm:p-10 lg:p-12 custom-scrollbar print:p-0 print:overflow-visible print:h-auto print:block print:min-h-0">
+          {isPrintingFull ? (
+            <div className="space-y-12 print:space-y-0 print:block">
+              <div className="text-center py-12 print:py-16 print:block" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
+                <h1 className="text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-tight mb-4 font-serif print:text-[22pt]">{project.title}</h1>
+                <p className="text-lg text-slate-600 font-serif mb-2 print:text-[14pt]">{project.department}</p>
+                <p className="text-xs text-slate-400 uppercase tracking-widest font-mono print:text-[10pt] print:text-black">
+                  {project.reference_style ? `${project.reference_style.toUpperCase()} Reference Standard` : 'Academic Technical Report'}
+                </p>
+              </div>
+              {chapters
+                .filter(ch => ch.content && ch.content.trim())
+                .map((ch, idx) => (
+                  <div key={ch.id} className="print:block" style={{ pageBreakBefore: idx > 0 ? 'always' : 'auto', breakBefore: idx > 0 ? 'page' : 'auto' }}>
+                    <ChapterView
+                      chapter={ch}
+                      images={images}
+                      generating={false}
+                      onPrint={handlePrintCurrentChapter}
+                    />
+                  </div>
+                ))}
+            </div>
+          ) : !currentChapter ? (
             <div className="max-w-4xl mx-auto bg-white p-12 text-center rounded-[40px] border-2 border-dashed border-slate-200 print:hidden">
               <h3 className="text-2xl font-black text-slate-900 mb-3">Chapter Context Missing</h3>
               <p className="text-slate-500 font-medium leading-relaxed">Please select a valid chapter from the navigation sidebar to begin technical documentation.</p>

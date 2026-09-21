@@ -113,7 +113,20 @@ export default function ProjectDetailsModal({ isOpen, onClose, onSubmit, project
             )}
           </div>
 
-          <div className="flex gap-4 pt-4">
+          {/* Advisory Notice for Existing Chapters */}
+          <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl flex gap-3 text-left">
+            <span className="text-lg shrink-0">💡</span>
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-amber-900">
+                How Citation & Scope Changes Take Effect:
+              </p>
+              <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
+                Saving updates your master project configuration for all subsequent generations. <strong>Previously generated chapters keep their draft text safe</strong> — to apply your new citation style or updated title to an existing chapter, open that chapter and click <strong>&quot;Regenerate&quot;</strong> or <strong>&quot;Modify&quot;</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-2">
             <button
               type="button"
               onClick={onClose}

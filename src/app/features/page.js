@@ -71,6 +71,8 @@ export default function FeaturesPage() {
                   { name: "Presentation Gen", free: "✗", std: "✗", prem: "✓ (AI Slides)", premClass: "text-emerald-500 font-black" },
                   { name: "Project Limit", free: "1 Free Project ", std: "Scale with Usage", prem: "Scale with Usage", stdClass: "font-bold", premClass: "text-emerald-500 font-black" },
                   { name: "Token Limit", free: "30,000", std: "120,000", prem: "300,000 (Soft)", subPrem: "Top-up available" },
+                  { name: "Citation & Reference Styles", free: "APA, IEEE, MLA", std: "Full Suite (8+ Styles)", stdClass: "font-bold", prem: "Full Suite + Master Refs", premClass: "text-emerald-500 font-black", subPrem: "All Styles + Master Biblio" },
+                  { name: "Advanced Templates", free: "5-Chapter General", std: "5 & 6-Chapter Thesis", prem: "✓ Institution Templates", premClass: "text-emerald-500 font-black", subPrem: "Specific University & Dept" },
                   { name: "Affiliate Commission", free: "✗", std: "10% Reward", prem: "15% (VIP)", premClass: "text-emerald-500 font-black" },
                   { name: "Export Standards", free: "PDF", std: "DOCX + PDF", prem: "DOCX (Premium Build)", subPrem: "Custom Order + Master Refs" },
                 ].map((row, i) => (
@@ -129,6 +131,8 @@ export default function FeaturesPage() {
                 { name: "Presentation Gen", free: "✗", std: "✗", prem: "✓ (AI Slides)" },
                 { name: "Project Limit", free: "1 Project", std: "Scalable", prem: "Scalable" },
                 { name: "Token Limit", free: "30,000", std: "120,000", prem: "300,000" },
+                { name: "Citation & Reference Styles", free: "APA, IEEE, MLA", std: "Full Suite (8+ Styles)", prem: "Full Suite + Master Refs" },
+                { name: "Advanced Templates", free: "5-Chapter General", std: "5 & 6-Chapter Thesis", prem: "✓ Specific Uni & Dept" },
                 { name: "Affiliate Bonus", free: "✗", std: "10% Reward", prem: "15% (VIP)" },
                 { name: "Export Styles", free: "PDF", std: "DOCX + PDF", prem: "Premium DOCX" },
               ].map((row, i) => (
@@ -162,7 +166,7 @@ export default function FeaturesPage() {
           <p className="text-slate-500 font-bold text-xs uppercase tracking-[0.3em]">Exclusive Technical Capabilities</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             { 
               title: "Surgical Modification", 
@@ -178,6 +182,11 @@ export default function FeaturesPage() {
               title: "Research Data Analysis", 
               icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>, 
               desc: "Upload your experimental readings. The AI Architect performs real technical evaluations, data synthesis, and results analysis based on your files." 
+            },
+            { 
+              title: "Advanced Templates", 
+              icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>, 
+              desc: "Tailored to your specific university, faculty, and department requirements. Premium includes institutional blueprints and custom visual structure builders." 
             }
           ].map((feature, i) => (
             <div key={i} className="bg-white rounded-[32px] p-10 border border-slate-100 shadow-xl hover:shadow-2xl transition-all group">

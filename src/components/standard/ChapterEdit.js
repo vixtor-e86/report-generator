@@ -1,10 +1,13 @@
 "use client";
 import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ChapterEdit({ chapter, onSave, onCancel }) {
   const [content, setContent] = useState(chapter.content || '');
   const [saving, setSaving] = useState(false);
   const [showTablePrompt, setShowTablePrompt] = useState(false);
+  const [showMarkdownGuide, setShowMarkdownGuide] = useState(false);
   const [tableConfig, setTablePromptConfig] = useState({ rows: 3, cols: 2 });
   const [tableData, setTableData] = useState([]);
 
@@ -121,17 +124,27 @@ export default function ChapterEdit({ chapter, onSave, onCancel }) {
       </div>
 
       {/* Editor Guide - Sticky below main header */}
-      <div className="bg-slate-50 border-x border-b border-slate-200 px-8 sm:px-12 py-3 sticky top-[136px] z-20 flex flex-wrap gap-4 items-center">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Editor Guide:</span>
-        <div className="flex flex-wrap gap-3">
+      <div className="bg-slate-50 border-x border-b border-slate-200 px-6 sm:px-12 py-3 sticky top-[136px] z-20 flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex flex-wrap gap-3 items-center">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Markdown Guide:</span>
           <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold"># Header</code>
           <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">**Bold**</code>
           <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">- List</code>
+          <code className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-bold">| Table |</code>
+        </div>
+        <div className="flex items-center gap-2">
           <button 
             onClick={() => setShowTablePrompt(true)}
-            className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded font-black uppercase tracking-widest hover:bg-blue-700 transition-colors shadow-sm"
+            className="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-lg font-black uppercase tracking-widest hover:bg-blue-700 transition-colors shadow-sm"
           >
             + Insert Table
+          </button>
+          <button 
+            onClick={() => setShowMarkdownGuide(true)}
+            className="text-[10px] bg-white border border-slate-300 text-slate-700 hover:text-slate-900 hover:border-slate-900 px-3 py-1 rounded-lg font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-1.5"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            View Full Guide
           </button>
         </div>
       </div>
@@ -222,6 +235,111 @@ export default function ChapterEdit({ chapter, onSave, onCancel }) {
                 className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
               >
                 Insert Completed Table
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Markdown Comparison Guide Modal */}
+      {showMarkdownGuide && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 sm:p-6">
+          <div className="bg-white rounded-[32px] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-6 sm:px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div>
+                <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                  Markdown Comparison Guide
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  See how your markdown syntax translates into the rendered academic report.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowMarkdownGuide(false)}
+                className="p-2 rounded-full hover:bg-slate-200/60 text-slate-400 hover:text-slate-900 transition-colors"
+                title="Close Guide"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-2 border-b border-slate-100">
+                <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                  Markdown Syntax
+                </div>
+                <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider hidden md:block">
+                  Rendered Preview
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {[
+                  {
+                    title: "Headings & Section Hierarchy",
+                    markdown: "# Chapter 1: Introduction\n## 1.1 Technical Background\n### 1.1.1 Problem Scope"
+                  },
+                  {
+                    title: "Text Emphasis",
+                    markdown: "**Bold technical parameter**\n*Italicized publication or concept*\n~~Deprecated specification~~"
+                  },
+                  {
+                    title: "Bullet & Numbered Lists",
+                    markdown: "- Core system requirement\n- Environmental constraint\n  - Secondary tolerance spec\n\n1. Initial baseline audit\n2. Experimental synthesis\n3. Empirical evaluation"
+                  },
+                  {
+                    title: "Academic Tables & Data",
+                    markdown: "| Metric | Target Spec | Empirical Result |\n| :--- | :--- | :--- |\n| Voltage Supply | 5.0 V | 4.98 V |\n| Efficiency Rate | > 85% | 89.2% |"
+                  },
+                  {
+                    title: "Blockquotes & Key Findings",
+                    markdown: "> Core Engineering Insight: System impedance must remain matched to 50 ohms across all high-frequency traces."
+                  },
+                  {
+                    title: "Inline Code & Mathematical Snippets",
+                    markdown: "Execute build command `npm run build` or evaluate impedance: `Z = sqrt(R^2 + (wL - 1/wC)^2)`."
+                  },
+                  {
+                    title: "In-Text Citations & Academic References",
+                    markdown: "According to modern IEEE research standards [1], distributed microgrids enhance resilience.\n\n[1] J. Smith and R. Taylor, \"Low-latency protocols in modern grids,\" *IEEE Trans. Smart Grid*, 2024."
+                  }
+                ].map((ex, i) => (
+                  <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pb-6 border-b border-slate-100 last:border-b-0">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 block mb-2">
+                        {ex.title}
+                      </span>
+                      <pre className="bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                        {ex.markdown}
+                      </pre>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
+                      <div className="prose prose-slate prose-sm max-w-none prose-p:leading-relaxed prose-headings:font-black prose-headings:tracking-tight prose-table:text-xs">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {ex.markdown}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-5 sm:p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <p className="text-xs text-slate-400 font-medium">
+                Manual edits in this editor are free and do not consume your AI token limit.
+              </p>
+              <button
+                onClick={() => setShowMarkdownGuide(false)}
+                className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-md active:scale-95"
+              >
+                Got it, thanks!
               </button>
             </div>
           </div>

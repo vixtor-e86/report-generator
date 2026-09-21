@@ -129,7 +129,7 @@ export default function TopBar({
                 onClick={() => setShowEditDetailsModal(true)}
                 disabled={generating}
                 className="bg-white border border-slate-200 text-slate-600 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all flex items-center gap-2"
-                title="Edit Details"
+                title="Edit Scope & References"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                 <span className="hidden sm:inline">Edit Details</span>
@@ -147,6 +147,10 @@ export default function TopBar({
           ) : (
             <div className="flex items-center gap-2">
                 <div className="hidden lg:flex items-center gap-2">
+                    <button onClick={() => setShowEditDetailsModal(true)} className="bg-white border border-slate-200 text-slate-600 px-3 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all flex items-center gap-1.5" title="Edit Scope & Citation Format">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                      Scope
+                    </button>
                     <button onClick={onEdit} className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all">Manual Edit</button>
                     <button onClick={onSuggestImprovements} className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all">Analyze</button>
                     <button onClick={onRegenerate} disabled={!canRegenerate} className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 disabled:opacity-40">Regen</button>
@@ -193,7 +197,12 @@ export default function TopBar({
                   {showMobileMenu && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setShowMobileMenu(false)}></div>
-                      <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-20 overflow-hidden animate-in fade-in zoom-in duration-200">
+                      <div className="absolute right-0 mt-3 w-60 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-20 overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <button onClick={() => { setShowEditDetailsModal(true); setShowMobileMenu(false); }} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-slate-900">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                          Edit Scope &amp; Refs
+                        </button>
+                        <div className="h-px bg-slate-100 my-1"></div>
                         <button onClick={() => { onEdit(); setShowMobileMenu(false); }} className="w-full text-left px-5 py-3 hover:bg-slate-50 transition flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-slate-900">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                           Manual Edit

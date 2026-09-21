@@ -128,12 +128,56 @@ body {
     visibility: visible !important;
   }
   
-  html, body {
+  html, body, #__next {
     height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     overflow: visible !important;
     background: white !important;
     margin: 0 !important;
     padding: 0 !important;
+    position: static !important;
+  }
+
+  /* Reset all containers that could clip pages or references */
+  div, main, section, article {
+    overflow: visible !important;
+  }
+
+  .h-screen,
+  .min-h-screen,
+  .overflow-hidden,
+  .overflow-y-auto,
+  [class*="h-screen"],
+  [class*="overflow-hidden"],
+  [class*="overflow-y-auto"] {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  /* Prevent flex/grid containers from blocking page fragmentation */
+  .flex,
+  .flex-col,
+  .flex-row,
+  [class*="flex-col"],
+  [class*="flex-row"] {
+    display: block !important;
+  }
+
+  /* Page break utilities */
+  [class*="break-before-page"],
+  .print-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  [class*="break-after-page"],
+  .print-break-after {
+    page-break-after: always !important;
+    break-after: page !important;
   }
 
   /* Hide UI elements completely */
@@ -166,7 +210,7 @@ body {
     color: #000 !important;
   }
 
-  /* Ensure main content is visible */
+  /* Ensure main content is visible and does not clip */
   main,
   article,
   section,
@@ -175,6 +219,20 @@ body {
     display: block !important;
     visibility: visible !important;
     page-break-inside: auto !important;
+    break-inside: auto !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* References and lists never cut mid-entry */
+  ol, ul {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  li {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   /* Headings - Times New Roman */
