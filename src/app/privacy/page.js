@@ -88,18 +88,6 @@ export default function PrivacyPage() {
           <section className="space-y-6">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
               <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">04</span>
-              Artificial Intelligence-Based Products
-            </h2>
-            <div className="text-slate-600 leading-relaxed space-y-4 font-medium bg-blue-50/50 border border-blue-100 p-8 rounded-[32px]">
-              <p>As part of our Services, we offer products, features, or tools powered by artificial intelligence, machine learning, or similar technologies.</p>
-              <p><strong>Use of AI Technologies:</strong> We provide AI Products through third-party service providers ("AI Service Providers"), including <strong>DeepSeek and Anthropic</strong>. All personal information processed using our AI Products is handled in line with our Privacy Notice and our agreement with third parties.</p>
-              <p><strong>AI Products:</strong> Our AI Products are designed for <strong>AI document generation</strong>.</p>
-            </div>
-          </section>
-
-          <section className="space-y-6">
-            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">05</span>
               Social Logins
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
@@ -109,7 +97,7 @@ export default function PrivacyPage() {
 
           <section className="space-y-6">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">06</span>
+              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">05</span>
               How Long Do We Keep Your Information?
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
@@ -119,7 +107,7 @@ export default function PrivacyPage() {
 
           <section className="space-y-6">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">07</span>
+              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">06</span>
               How Do We Keep Your Information Safe?
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
@@ -129,7 +117,7 @@ export default function PrivacyPage() {
 
           <section className="space-y-6">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">08</span>
+              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">07</span>
               Do We Collect Information From Minors?
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
@@ -139,7 +127,7 @@ export default function PrivacyPage() {
 
           <section className="space-y-6">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">09</span>
+              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">08</span>
               What Are Your Privacy Rights?
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
@@ -149,7 +137,7 @@ export default function PrivacyPage() {
 
           <section className="space-y-6">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">10</span>
+              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">09</span>
               Controls for Do-Not-Track Features
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
@@ -159,7 +147,7 @@ export default function PrivacyPage() {
 
           <section className="space-y-6">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">11</span>
+              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">10</span>
               Do We Make Updates To This Notice?
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
@@ -169,7 +157,7 @@ export default function PrivacyPage() {
 
           <section className="space-y-6">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">12</span>
+              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">11</span>
               How Can You Contact Us About This Notice?
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
@@ -186,7 +174,7 @@ export default function PrivacyPage() {
 
           <section className="space-y-6">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">13</span>
+              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs">12</span>
               How Can You Review, Update, or Delete Your Data?
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">

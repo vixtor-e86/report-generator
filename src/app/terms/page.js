@@ -35,8 +35,8 @@ export default function TermsPage() {
               Acceptance of Terms
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
-              <p>By accessing and using W3 WriteLab, you agree to be bound by these Terms of Service. Our platform is designed as an AI-powered research assistant to help students and professionals structure academic blueprints and technical reports.</p>
-              <p>W3 WriteLab is a product of W3 Hub, and all intellectual property rights related to the software, branding, and proprietary AI models belong to W3 Hub.</p>
+              <p>By accessing and using W3 WriteLab, you agree to be bound by these Terms of Service. Our platform is designed as an advanced research platform to help students and professionals structure academic blueprints and technical reports.</p>
+              <p>W3 WriteLab is a product of W3 Hub, and all intellectual property rights related to the software, branding, and proprietary algorithms and models belong to W3 Hub.</p>
             </div>
           </section>
 
@@ -69,7 +69,7 @@ export default function TermsPage() {
               Limitation of Liability
             </h2>
             <div className="text-slate-600 leading-relaxed space-y-4 font-medium">
-              <p>W3 Hub and its engineers are not liable for any academic or professional consequences resulting from the use or misuse of our tools. The AI-generated content is provided "as is" and should be treated as a draft for professional review.</p>
+              <p>W3 Hub and its engineers are not liable for any academic or professional consequences resulting from the use or misuse of our tools. The generated content is provided &quot;as is&quot; and should be treated as a draft for professional review.</p>
             </div>
           </section>
         </div>

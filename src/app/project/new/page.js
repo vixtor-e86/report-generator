@@ -8,6 +8,8 @@ import { getReferenceStyleOptions } from '@/lib/referenceStyles';
 import ReferenceInfoModal from '@/components/ReferenceInfoModal';
 import CustomModal from '@/components/premium/modals/CustomModal';
 
+const FREE_ALLOWED_STYLES = ['apa', 'ieee', 'mla'];
+
 function NewProjectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,6 +47,19 @@ function NewProjectContent() {
   const [description, setDescription] = useState('');
   const [referenceStyle, setReferenceStyle] = useState('apa');
   const [showReferenceInfo, setShowReferenceInfo] = useState(false);
+
+  const handleReferenceStyleChange = (e) => {
+    const selected = e.target.value;
+    if (!FREE_ALLOWED_STYLES.includes(selected)) {
+      showNotification(
+        'Upgrade Required',
+        'This reference style is only available in Standard and Premium tiers. Free projects support APA, IEEE, and MLA citation formats. If you want other reference styles, please subscribe to a Standard or Premium project.',
+        'info'
+      );
+      return;
+    }
+    setReferenceStyle(selected);
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -426,36 +441,41 @@ function NewProjectContent() {
             <p className="text-xs text-gray-500 mt-1">Press Enter or click Add to include a component</p>
           </div>
 
-          {/* Reference Style Selection (Admin Only) */}
-          {profile?.role === 'admin' && (
-            <div className="border-t border-gray-200 pt-6">
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs sm:text-sm font-bold text-gray-900">
-                  Reference Style (Admin)
-                </label>
-                <button
-                  onClick={() => setShowReferenceInfo(true)}
-                  className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-1"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  View Examples
-                </button>
-              </div>
-              <select
-                value={referenceStyle}
-                onChange={(e) => setReferenceStyle(e.target.value)}
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+          {/* Reference Style Selection */}
+          <div className="border-t border-gray-200 pt-6">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs sm:text-sm font-bold text-gray-900">
+                Reference Style
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowReferenceInfo(true)}
+                className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-1"
               >
-                {getReferenceStyleOptions().map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.icon} {option.label}
-                  </option>
-                ))}
-              </select>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                View Examples
+              </button>
             </div>
-          )}
+            <select
+              value={referenceStyle}
+              onChange={handleReferenceStyleChange}
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            >
+              {getReferenceStyleOptions().map(option => {
+                const isAllowed = FREE_ALLOWED_STYLES.includes(option.value);
+                return (
+                  <option key={option.value} value={option.value}>
+                    {isAllowed ? `${option.icon} ${option.label}` : `🔒 ${option.label} (Standard & Premium)`}
+                  </option>
+                );
+              })}
+            </select>
+            <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200 mt-2">
+              💡 <strong>Free Tier:</strong> Includes <strong>APA, IEEE, and MLA</strong> styles. To use Harvard, Chicago, OSCOLA, or Vancouver, please subscribe to a <strong>Standard</strong> or <strong>Premium</strong> project.
+            </p>
+          </div>
 
           {/* Description */}
           <div>

@@ -583,6 +583,36 @@ function TemplateSelectContent() {
                   </div>
                 </div>
               ))}
+
+              {/* Advanced Template Card (beside Pharmacy) */}
+              <div
+                onClick={() => {
+                  showNotification(
+                    'Premium Workspace Required',
+                    'Advanced templates (for specific universities and specific departments) are exclusively available in the Premium tier. Please subscribe to a Premium workspace to access these templates.',
+                    'info'
+                  );
+                }}
+                className="bg-white rounded-xl shadow-md border-2 border-indigo-200 hover:border-indigo-600 hover:shadow-xl transition-all duration-300 cursor-pointer p-4 sm:p-5 lg:p-6 relative group"
+              >
+                <div className="absolute top-3 right-3 bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border border-indigo-200 flex items-center gap-1">
+                  <span>🔒</span> Premium
+                </div>
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="text-3xl sm:text-4xl lg:text-5xl flex-shrink-0">🚀</div>
+                  <div className="flex-1 min-w-0 pr-14 sm:pr-16">
+                    <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mb-1 line-clamp-1">
+                      Advanced Template
+                    </h3>
+                    <p className="text-xs sm:text-sm text-indigo-600 font-medium">
+                      (specific university and specific department)
+                    </p>
+                  </div>
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
             {/* Faculty Info - Mobile Responsive */}
@@ -600,17 +630,6 @@ function TemplateSelectContent() {
                   </p>
                 </div>
               </div>
-            </div>
-            
-            {/* Advanced Template Selection Link */}
-            <div className="text-center pb-8">
-              <p className="text-gray-600 mb-3">Didn't find your template?</p>
-              <Link 
-                href="/template-select/advanced" 
-                className="inline-block bg-white text-indigo-600 border border-indigo-200 px-6 py-3 rounded-lg font-semibold hover:bg-indigo-50 transition shadow-sm"
-              >
-                Go to Advanced Template Selection
-              </Link>
             </div>
           </>
         )}

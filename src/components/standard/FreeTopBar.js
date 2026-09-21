@@ -152,6 +152,7 @@ export default function FreeTopBar({
         onClose={() => setShowEditDetailsModal(false)}
         project={project}
         onSubmit={onUpdateProjectDetails}
+        canChangeReferenceStyle={false}
       />
     </div>
   );

@@ -2,11 +2,14 @@
 import { useState } from 'react';
 import { getReferenceStyleOptions } from '@/lib/referenceStyles';
 
-export default function ProjectDetailsModal({ isOpen, onClose, onSubmit, project }) {
+export default function ProjectDetailsModal({ isOpen, onClose, onSubmit, project, canChangeReferenceStyle = true }) {
   const [title, setTitle] = useState(project?.title || '');
   const [description, setDescription] = useState(project?.description || '');
   const [referenceStyle, setReferenceStyle] = useState(project?.reference_style || 'apa');
   const [submitting, setSubmitting] = useState(false);
+
+  const isFreeProject = project?.tier === 'free';
+  const allowStyleEdit = canChangeReferenceStyle && !isFreeProject;
 
   if (!isOpen) return null;
 
@@ -15,7 +18,11 @@ export default function ProjectDetailsModal({ isOpen, onClose, onSubmit, project
     if (!title.trim() || !description.trim()) return;
     
     setSubmitting(true);
-    await onSubmit({ title, description, reference_style: referenceStyle });
+    await onSubmit({ 
+      title, 
+      description, 
+      reference_style: allowStyleEdit ? referenceStyle : (project?.reference_style || 'apa') 
+    });
     setSubmitting(false);
     onClose();
   };
@@ -68,21 +75,42 @@ export default function ProjectDetailsModal({ isOpen, onClose, onSubmit, project
             />
           </div>
 
-          
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Reference / Citation Style</label>
-            <select
-              value={referenceStyle}
-              onChange={(e) => setReferenceStyle(e.target.value)}
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 outline-none font-bold text-slate-900 cursor-pointer bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%231e293b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-[right_1.5rem_center] bg-no-repeat appearance-none pr-12"
-              required
-            >
-              {getReferenceStyleOptions().map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.icon} {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Reference / Citation Style</label>
+              {!allowStyleEdit && (
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                  🔒 Locked in Free Workspace
+                </span>
+              )}
+            </div>
+            {allowStyleEdit ? (
+              <select
+                value={referenceStyle}
+                onChange={(e) => setReferenceStyle(e.target.value)}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 outline-none font-bold text-slate-900 cursor-pointer bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%231e293b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-[right_1.5rem_center] bg-no-repeat appearance-none pr-12"
+                required
+              >
+                {getReferenceStyleOptions().map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.icon} {option.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="space-y-2">
+                <div className="w-full px-6 py-4 bg-slate-100 border border-slate-200 rounded-2xl text-slate-600 font-bold text-sm flex items-center justify-between cursor-not-allowed">
+                  <span>
+                    {getReferenceStyleOptions().find(o => o.value === (project?.reference_style || 'apa'))?.icon || '📖'}{' '}
+                    {getReferenceStyleOptions().find(o => o.value === (project?.reference_style || 'apa'))?.label || project?.reference_style?.toUpperCase()}
+                  </span>
+                  <span className="text-slate-400 text-xs font-semibold">Immutable</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Changing citation format is only permitted in Standard and Premium workspaces.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-4 pt-4">

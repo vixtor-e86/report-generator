@@ -231,16 +231,6 @@ function NewProjectContent() {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  const getReferenceStyleOptions = () => {
-    return (
-      [
-        { value: 'apa', label: 'APA 7th Edition (Author-Date)', icon: '📖' },
-        { value: 'ieee', label: 'IEEE (Numbered [1])', icon: '🔢' },
-        { value: 'harvard', label: 'Harvard (Author-Date)', icon: '📚' }
-      ]
-    );
-  };
-
   const addComponent = () => {
     if (componentInput.trim() && !components.includes(componentInput.trim())) {
       setComponents([...components, componentInput.trim()]);
