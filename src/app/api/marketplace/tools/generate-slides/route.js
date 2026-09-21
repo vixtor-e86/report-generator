@@ -19,12 +19,19 @@ export async function POST(request) {
       ? `The user requires the presentation to follow this specific structure/outline: ${customOutline.join(' -> ')}. Ensure every point in this outline is represented as a section or slide.`
       : '';
 
-    const lengthContext = slideCountRange 
-      ? `The presentation should aim for a total length within the range of ${slideCountRange} slides.`
-      : 'Aim for a comprehensive technical length (approx 12-18 slides).';
+    const targetTotalSlides = parseInt(String(slideCountRange).split('-')[1] || String(slideCountRange).split('-')[0] || slideCountRange, 10) || 15;
+    const contentSlideBudget = Math.max(3, targetTotalSlides - 2 - (includeQA ? 1 : 0));
+
+    const lengthContext = `STRICT SLIDE COUNT SPECIFICATION:
+    - Total Target: EXACTLY ${targetTotalSlides} slides for the entire deck.
+    - Title Slide: 1 slide (root).
+    - Conclusion Slide: 1 slide (root).
+    ${includeQA ? '- Defense Q&A: 1 slide (root).' : ''}
+    - Content Slides: You MUST produce EXACTLY ${contentSlideBudget} content slides across the sections in the "sections" array.
+    - MANDATORY: The sum of all slides across all sections in the "sections" array MUST BE EXACTLY ${contentSlideBudget}. Do NOT generate extra slides.`;
 
     const qaContext = includeQA 
-      ? `CRITICAL REQUIREMENT: The user requested Defense Q&A. You MUST include a "defenseQA" array at the root of the JSON object containing 3 to 5 anticipated defense/examiner questions with thorough model answers derived from the content.`
+      ? `CRITICAL REQUIREMENT: The user requested Defense Q&A. You MUST include a "defenseQA" array at the root of the JSON object containing 3 to 4 anticipated defense/examiner questions with concise model answers derived from the content.`
       : '';
 
     const isRefinement = !!currentSlides;
@@ -58,7 +65,7 @@ export async function POST(request) {
             "slides": [
               {
                 "title": "Slide Heading",
-                "bullets": ["Point 1", "Point 2", "Point 3", "Point 4"],
+                "bullets": ["Concise technical point 1", "Concise technical point 2", "Concise technical point 3"],
                 "imageCaption": "Exact caption of provided image if it fits here, else null"
               }
             ]
@@ -66,15 +73,17 @@ export async function POST(request) {
         ],
         "conclusion": {
           "title": "Synthesis & Future Direction",
-          "bullets": ["Final point 1", "Final point 2"]
+          "bullets": ["Final synthesis point 1", "Final synthesis point 2", "Final synthesis point 3"]
         }${includeQA ? `,\n        "defenseQA": [\n          { "question": "Anticipated Question 1?", "answer": "Model Answer 1" },\n          { "question": "Anticipated Question 2?", "answer": "Model Answer 2" }\n        ]` : ''}
       }
       
       Specific Instructions: ${prompt || 'Make it professional and technically detailed.'}
       
-      CRITICAL RULES:
-      - Use full, informative, technical sentences (approx 15-25 words per bullet).
-      - Ensure the content is academic and technical.
+      CRITICAL SLIDE DESIGN & BULLET RULES (PREVENT BOTTOM OVERFLOW):
+      - STRICT LIMIT: Each content slide MUST have at most 3 to 4 concise bullet points (NEVER 5 or more).
+      - BULLET LENGTH: Keep each bullet point punchy, technical, and between 10 to 18 words maximum. DO NOT write full paragraphs or long rambling sentences that spill past the bottom edge.
+      - Conclusion Slide: Exactly 3 concise bullets.
+      - Match the exact requested content slide count (${contentSlideBudget} content slides total across all sections).
       - Return ONLY the JSON object. No markdown.
       
       Content:
@@ -95,9 +104,36 @@ export async function POST(request) {
       throw new Error('AI failed to generate structured slide data. Please try again.');
     }
 
+    // Programmatically enforce content slide budget to prevent AI generating extra slides
+    if (slidesData.sections && Array.isArray(slidesData.sections)) {
+      let currentContentCount = 0;
+      const prunedSections = [];
+      for (const section of slidesData.sections) {
+        const sectionSlides = [];
+        for (const slide of (section.slides || [])) {
+          if (currentContentCount < contentSlideBudget) {
+            if (slide.bullets && Array.isArray(slide.bullets)) {
+              slide.bullets = slide.bullets.slice(0, 4);
+            }
+            sectionSlides.push(slide);
+            currentContentCount++;
+          }
+        }
+        if (sectionSlides.length > 0) {
+          prunedSections.push({ ...section, slides: sectionSlides });
+        }
+      }
+      slidesData.sections = prunedSections;
+    }
+
+    if (slidesData.conclusion?.bullets && Array.isArray(slidesData.conclusion.bullets)) {
+      slidesData.conclusion.bullets = slidesData.conclusion.bullets.slice(0, 3);
+    }
+
     return NextResponse.json({ 
       success: true, 
-      data: slidesData
+      data: slidesData,
+      targetTotalSlides
     });
 
   } catch (error) {

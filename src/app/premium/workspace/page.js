@@ -390,6 +390,7 @@ function WorkspaceContent() {
         chapters={chapters}
         projectData={projectData}
         showNotification={showNotification}
+        onUpdateProjectData={(updates) => setProjectData(prev => ({ ...prev, ...updates }))}
       />
 
       <ExportModal

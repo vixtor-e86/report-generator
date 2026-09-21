@@ -59,20 +59,20 @@ const SlideRenderer = ({ slide, template }) => {
         );
       default:
         return (
-          <div style={{ ...commonStyles, backgroundColor: 'white', padding: '8%' }}>
-            <div style={{ width: '40px', height: '4px', background: template.accentColor, marginBottom: '1rem' }} />
-            <h2 style={{ fontSize: '1.5rem', fontWeight: '900', color: template.primaryColor, marginBottom: '1.5rem' }}>{slide.title}</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: slide.imageData ? '1fr 1fr' : '1fr', gap: '2rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                {slide.bullets?.slice(0, 5).map((b, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '12px', fontSize: '0.85rem', color: '#334155', lineHeight: '1.4', fontWeight: '500' }}>
-                    <span style={{ color: template.accentColor }}>•</span>
+          <div style={{ ...commonStyles, backgroundColor: 'white', padding: '6% 7%', overflow: 'hidden' }}>
+            <div style={{ width: '40px', height: '4px', background: template.accentColor, marginBottom: '0.8rem' }} />
+            <h2 style={{ fontSize: '1.45rem', fontWeight: '900', color: template.primaryColor, marginBottom: '1.2rem', lineHeight: 1.25 }}>{slide.title}</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: slide.imageData ? '1.1fr 0.9fr' : '1fr', gap: '1.5rem', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                {slide.bullets?.slice(0, 4).map((b, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '10px', fontSize: '0.85rem', color: '#334155', lineHeight: '1.38', fontWeight: '500' }}>
+                    <span style={{ color: template.accentColor, flexShrink: 0 }}>•</span>
                     <span>{b}</span>
                   </div>
                 ))}
               </div>
               {slide.imageData && (
-                <div style={{ borderRadius: '16px', overflow: 'hidden', height: '200px' }}>
+                <div style={{ borderRadius: '16px', overflow: 'hidden', height: '200px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
                   <img src={slide.imageData} className="w-full h-full object-cover" alt="" />
                 </div>
               )}
@@ -141,28 +141,54 @@ export default function SlideGenerator({
     setCustomOutline(customOutline.filter((_, i) => i !== index));
   };
 
-  const processSlidesWithImages = (data) => {
-    const slideList = [];
+  const processSlidesWithImages = (data, targetTotalSlides = 15) => {
+    let slideList = [];
     slideList.push({ type: 'title', title: data.title, subtitle: data.subtitle, author: data.author, institution: data.institution });
-    data.sections.forEach((sec) => {
-      slideList.push({ type: 'section', title: sec.title });
-      sec.slides.forEach((s) => {
-        const slide = { type: 'content', title: s.title, bullets: s.bullets };
-        if (s.imageCaption) {
-          const img = uploadedImages.find(i => i.caption && i.caption.trim().toLowerCase() === s.imageCaption.toLowerCase());
-          if (img) slide.imageData = img.data;
+    
+    if (data.sections && Array.isArray(data.sections)) {
+      data.sections.forEach((sec) => {
+        if (targetTotalSlides >= 18) {
+          slideList.push({ type: 'section', title: sec.title });
         }
-        slideList.push(slide);
+        (sec.slides || []).forEach((s) => {
+          const slide = { type: 'content', title: s.title, bullets: (s.bullets || []).slice(0, 4) };
+          if (s.imageCaption) {
+            const img = uploadedImages.find(i => i.caption && i.caption.trim().toLowerCase() === s.imageCaption.toLowerCase());
+            if (img) slide.imageData = img.data;
+          }
+          slideList.push(slide);
+        });
       });
-    });
-    if (data.conclusion) slideList.push({ type: 'conclusion', title: data.conclusion.title, bullets: data.conclusion.bullets });
+    }
+
+    if (data.conclusion) {
+      slideList.push({ type: 'conclusion', title: data.conclusion.title, bullets: (data.conclusion.bullets || []).slice(0, 3) });
+    }
     
     if (data.defenseQA && Array.isArray(data.defenseQA) && data.defenseQA.length > 0) {
       slideList.push({
         type: 'qa',
         title: 'ANTICIPATED DEFENSE QUESTIONS & ANSWERS',
-        qaList: data.defenseQA
+        qaList: data.defenseQA.slice(0, 4)
       });
+    }
+
+    // Programmatically enforce target slide count
+    if (targetTotalSlides && slideList.length > targetTotalSlides) {
+      const titleSlide = slideList.find(s => s.type === 'title');
+      const conclusionSlide = slideList.find(s => s.type === 'conclusion');
+      const qaSlide = slideList.find(s => s.type === 'qa');
+      
+      const middleSlides = slideList.filter(s => s !== titleSlide && s !== conclusionSlide && s !== qaSlide);
+      const specialCount = (titleSlide ? 1 : 0) + (conclusionSlide ? 1 : 0) + (qaSlide ? 1 : 0);
+      const maxMiddle = Math.max(1, targetTotalSlides - specialCount);
+
+      slideList = [
+        ...(titleSlide ? [titleSlide] : []),
+        ...middleSlides.slice(0, maxMiddle),
+        ...(conclusionSlide ? [conclusionSlide] : []),
+        ...(qaSlide ? [qaSlide] : [])
+      ];
     }
 
     return slideList;
@@ -204,7 +230,8 @@ export default function SlideGenerator({
       const data = await response.json();
       if (data.error) throw new Error(data.error);
       
-      const processed = processSlidesWithImages(data.data);
+      const targetTotal = data.targetTotalSlides || parseInt(String(slideCountRange).split('-')[1] || String(slideCountRange).split('-')[0], 10) || 15;
+      const processed = processSlidesWithImages(data.data, targetTotal);
       setSlides(processed);
       setCurrentIndex(0);
       setRefinementPrompt('');
@@ -302,14 +329,15 @@ export default function SlideGenerator({
           pptSlide.background = { color: slide.type === 'conclusion' ? primaryColor : 'FFFFFF' };
           const textColor = slide.type === 'conclusion' ? 'FFFFFF' : '334155';
           const headingColor = slide.type === 'conclusion' ? 'FFFFFF' : primaryColor;
-          pptSlide.addText(slide.title, { x: '8%', y: '8%', w: '84%', h: '12%', fontSize: 24, bold: true, color: headingColor });
+          pptSlide.addText(slide.title, { x: '8%', y: '8%', w: '84%', h: '12%', fontSize: 22, bold: true, color: headingColor });
           if (slide.bullets) {
-            const bulletObjs = slide.bullets.map(text => ({ text, options: { bullet: true, paraSpaceBefore: 8, indent: 20 } }));
+            const maxB = slide.type === 'conclusion' ? 3 : 4;
+            const bulletObjs = slide.bullets.slice(0, maxB).map(text => ({ text, options: { bullet: true, paraSpaceBefore: 6, indent: 18 } }));
             if (slide.imageData) {
-              pptSlide.addText(bulletObjs, { x: '8%', y: '22%', w: '42%', h: '65%', fontSize: 13, color: textColor, valign: 'top' });
-              pptSlide.addImage({ data: slide.imageData, x: '55%', y: '22%', w: '38%', h: '60%' });
+              pptSlide.addText(bulletObjs, { x: '8%', y: '22%', w: '44%', h: '66%', fontSize: 12, color: textColor, valign: 'top', lineSpacing: 18 });
+              pptSlide.addImage({ data: slide.imageData, x: '55%', y: '22%', w: '38%', h: '62%' });
             } else {
-              pptSlide.addText(bulletObjs, { x: '8%', y: '22%', w: '84%', h: '65%', fontSize: 14, color: textColor, valign: 'top' });
+              pptSlide.addText(bulletObjs, { x: '8%', y: '22%', w: '84%', h: '66%', fontSize: 13, color: textColor, valign: 'top', lineSpacing: 20 });
             }
           }
           break;
@@ -400,7 +428,7 @@ export default function SlideGenerator({
         <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center gap-3">
             <Badge className="bg-emerald-100 text-emerald-800 font-bold text-xs uppercase px-3 py-1">Saved to History</Badge>
-            <span className="text-xs text-slate-500 font-medium">You can switch tabs or access this anytime in "Saved Presentations"</span>
+            <span className="text-xs text-slate-500 font-medium">You can switch tabs or access this anytime in &quot;Saved Presentations&quot;</span>
           </div>
           <button 
             onClick={() => { setSlides([]); setActiveTab('create'); }}

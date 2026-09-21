@@ -124,17 +124,17 @@ async function exportSlidesToPPTX(slides, template, filename) {
       case 'conclusion':
         pptSlide.background = { color: primaryColor };
         pptSlide.addText(slide.title, { 
-          x: '8%', y: '12%', w: '84%', h: '12%', 
-          fontSize: 28, bold: true, color: 'FFFFFF' 
+          x: '8%', y: '10%', w: '84%', h: '12%', 
+          fontSize: 26, bold: true, color: 'FFFFFF' 
         });
         if (slide.bullets && slide.bullets.length > 0) {
-          const concBullets = slide.bullets.map(text => ({
+          const concBullets = slide.bullets.slice(0, 3).map(text => ({
             text,
-            options: { bullet: { type: 'star' }, paraSpaceBefore: 10, indent: 25 }
+            options: { bullet: { type: 'star' }, paraSpaceBefore: 8, indent: 20 }
           }));
           pptSlide.addText(concBullets, { 
-            x: '10%', y: '28%', w: '80%', h: '60%', 
-            fontSize: 14, color: 'EEEEEE', valign: 'top', lineSpacing: 22 
+            x: '10%', y: '26%', w: '80%', h: '62%', 
+            fontSize: 13, color: 'EEEEEE', valign: 'top', lineSpacing: 20 
           });
         }
         pptSlide.addShape('rect', { x: 0, y: '96%', w: '100%', h: '4%', fill: { color: accentColor } });
@@ -145,20 +145,20 @@ async function exportSlidesToPPTX(slides, template, filename) {
         pptSlide.background = { color: 'FFFFFF' };
         pptSlide.addText(slide.title, { 
           x: '8%', y: '8%', w: '84%', h: '12%', 
-          fontSize: 24, bold: true, color: primaryColor 
+          fontSize: 22, bold: true, color: primaryColor 
         });
         
         if (slide.bullets && slide.bullets.length > 0) {
-          const bulletObjects = slide.bullets.map(text => ({
+          const bulletObjects = slide.bullets.slice(0, 4).map(text => ({
             text,
-            options: { bullet: true, paraSpaceBefore: 8, indent: 20 }
+            options: { bullet: true, paraSpaceBefore: 6, indent: 18 }
           }));
 
           if (slide.imageData) {
             // Split layout with Real Image
-            pptSlide.addText(bulletObjects.slice(0, 5), { 
-              x: '8%', y: '22%', w: '44%', h: '65%', 
-              fontSize: 13, color: '334155', valign: 'top', lineSpacing: 18 
+            pptSlide.addText(bulletObjects, { 
+              x: '8%', y: '22%', w: '44%', h: '66%', 
+              fontSize: 12, color: '334155', valign: 'top', lineSpacing: 18 
             });
             try {
               pptSlide.addImage({ data: slide.imageData, x: '55%', y: '22%', w: '38%', h: '62%' });
@@ -167,9 +167,9 @@ async function exportSlidesToPPTX(slides, template, filename) {
             }
           } else {
             // Full width layout
-            pptSlide.addText(bulletObjects.slice(0, 6), { 
-              x: '8%', y: '22%', w: '84%', h: '65%', 
-              fontSize: 14, color: '334155', valign: 'top', lineSpacing: 22 
+            pptSlide.addText(bulletObjects, { 
+              x: '8%', y: '22%', w: '84%', h: '66%', 
+              fontSize: 13, color: '334155', valign: 'top', lineSpacing: 20 
             });
           }
         }
@@ -231,13 +231,13 @@ const SlideRenderer = ({ slide, template }) => {
       );
     case 'conclusion':
       return (
-        <div style={{ ...commonStyles, backgroundColor: template.primaryColor, padding: '8%', color: 'white' }}>
-          <div style={{ width: '40px', height: '4px', background: template.accentColor, marginBottom: '1rem' }} />
-          <h2 style={{ fontSize: '1.8rem', fontWeight: '900', color: 'white', marginBottom: '1.5rem' }}>{slide.title}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {slide.bullets?.slice(0, 5).map((b, i) => (
-              <div key={i} style={{ display: 'flex', gap: '12px', fontSize: '0.95rem', color: '#e2e8f0', lineHeight: '1.5', fontWeight: '500' }}>
-                <span style={{ color: template.accentColor }}>★</span>
+        <div style={{ ...commonStyles, backgroundColor: template.primaryColor, padding: '6% 8%', color: 'white', overflow: 'hidden' }}>
+          <div style={{ width: '40px', height: '4px', background: template.accentColor, marginBottom: '0.8rem' }} />
+          <h2 style={{ fontSize: '1.6rem', fontWeight: '900', color: 'white', marginBottom: '1.2rem', lineHeight: 1.25 }}>{slide.title}</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {slide.bullets?.slice(0, 3).map((b, i) => (
+              <div key={i} style={{ display: 'flex', gap: '12px', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: '1.4', fontWeight: '500' }}>
+                <span style={{ color: template.accentColor, flexShrink: 0 }}>★</span>
                 <span>{b}</span>
               </div>
             ))}
@@ -247,20 +247,20 @@ const SlideRenderer = ({ slide, template }) => {
       );
     default:
       return (
-        <div style={{ ...commonStyles, backgroundColor: 'white', padding: '7%' }}>
-          <div style={{ width: '40px', height: '4px', background: template.accentColor, marginBottom: '0.8rem' }} />
-          <h2 style={{ fontSize: '1.6rem', fontWeight: '900', color: template.primaryColor, marginBottom: '1.5rem' }}>{slide.title}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: slide.imageData ? '1.1fr 0.9fr' : '1fr', gap: '1.5rem', alignItems: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              {slide.bullets?.slice(0, 5).map((b, i) => (
-                <div key={i} style={{ display: 'flex', gap: '10px', fontSize: '0.9rem', color: '#334155', lineHeight: '1.45', fontWeight: '500' }}>
-                  <span style={{ color: template.accentColor }}>•</span>
+        <div style={{ ...commonStyles, backgroundColor: 'white', padding: '6% 7%', overflow: 'hidden' }}>
+          <div style={{ width: '40px', height: '4px', background: template.accentColor, marginBottom: '0.6rem' }} />
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '900', color: template.primaryColor, marginBottom: '1.2rem', lineHeight: 1.25 }}>{slide.title}</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: slide.imageData ? '1.1fr 0.9fr' : '1fr', gap: '1.5rem', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              {slide.bullets?.slice(0, 4).map((b, i) => (
+                <div key={i} style={{ display: 'flex', gap: '10px', fontSize: '0.85rem', color: '#334155', lineHeight: '1.38', fontWeight: '500' }}>
+                  <span style={{ color: template.accentColor, flexShrink: 0 }}>•</span>
                   <span>{b}</span>
                 </div>
               ))}
             </div>
             {slide.imageData && (
-              <div style={{ borderRadius: '16px', overflow: 'hidden', height: '220px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+              <div style={{ borderRadius: '16px', overflow: 'hidden', height: '210px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
                 <img src={slide.imageData} className="w-full h-full object-cover" alt="Slide Visual" />
               </div>
             )}
@@ -362,8 +362,9 @@ export default function PresentationModal({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Slide generation failed');
 
-      // 3. Process returned slide data and assign real images
-      const processed = processSlideData(data.data, selectedImageIds, imageMap);
+      // 3. Process returned slide data and assign real images with strict count enforcement
+      const targetCount = data.targetTotalSlides || parseInt(String(slideCountRange).split('-')[1] || String(slideCountRange).split('-')[0], 10) || 15;
+      const processed = processSlideData(data.data, selectedImageIds, imageMap, targetCount);
       setSlides(processed);
       setStep('preview');
       setCurrentIndex(0);
@@ -376,8 +377,8 @@ export default function PresentationModal({
     }
   };
 
-  const processSlideData = (data, imageIds, imageMap) => {
-    const slideList = [];
+  const processSlideData = (data, imageIds, imageMap, targetTotalSlides = 15) => {
+    let slideList = [];
     let counter = 1;
     let imagePointer = 0;
 
@@ -394,12 +395,14 @@ export default function PresentationModal({
     // Content Sections
     if (data.sections && Array.isArray(data.sections)) {
       data.sections.forEach((sec) => {
-        // Section Break Slide
-        slideList.push({
-          id: String(counter++),
-          type: 'section',
-          title: sec.title || 'Section Overview'
-        });
+        // Include separate section break slide ONLY if large presentation budget (>= 18 slides)
+        if (targetTotalSlides >= 18) {
+          slideList.push({
+            id: String(counter++),
+            type: 'section',
+            title: sec.title || 'Section Overview'
+          });
+        }
 
         // If backend returned modern 'slides' array
         if (sec.slides && Array.isArray(sec.slides) && sec.slides.length > 0) {
@@ -408,7 +411,7 @@ export default function PresentationModal({
               id: String(counter++),
               type: 'content',
               title: s.title || sec.title,
-              bullets: s.bullets || []
+              bullets: (s.bullets || []).slice(0, 4)
             };
             
             // Assign image if matched by backend or fallback to next available selected image
@@ -430,7 +433,7 @@ export default function PresentationModal({
               id: String(counter++),
               type: 'content',
               title: sec.title,
-              bullets: chunk
+              bullets: chunk.slice(0, 4)
             };
             if (imagePointer < imageIds.length) {
               const targetImgId = imageIds[imagePointer++];
@@ -448,7 +451,7 @@ export default function PresentationModal({
         id: String(counter++),
         type: 'conclusion',
         title: data.conclusion.title || 'Synthesis & Next Steps',
-        bullets: data.conclusion.bullets || []
+        bullets: (data.conclusion.bullets || []).slice(0, 3)
       });
     }
 
@@ -458,11 +461,29 @@ export default function PresentationModal({
         id: String(counter++),
         type: 'qa',
         title: 'ANTICIPATED DEFENSE QUESTIONS & ANSWERS',
-        qaList: data.defenseQA
+        qaList: data.defenseQA.slice(0, 4)
       });
     }
 
-    return slideList;
+    // Programmatic Clamping: Ensure total slides strictly never exceed targetTotalSlides
+    if (targetTotalSlides && slideList.length > targetTotalSlides) {
+      const titleSlide = slideList.find(s => s.type === 'title');
+      const conclusionSlide = slideList.find(s => s.type === 'conclusion');
+      const qaSlide = slideList.find(s => s.type === 'qa');
+      
+      const middleSlides = slideList.filter(s => s !== titleSlide && s !== conclusionSlide && s !== qaSlide);
+      const specialCount = (titleSlide ? 1 : 0) + (conclusionSlide ? 1 : 0) + (qaSlide ? 1 : 0);
+      const maxMiddle = Math.max(1, targetTotalSlides - specialCount);
+
+      slideList = [
+        ...(titleSlide ? [titleSlide] : []),
+        ...middleSlides.slice(0, maxMiddle),
+        ...(conclusionSlide ? [conclusionSlide] : []),
+        ...(qaSlide ? [qaSlide] : [])
+      ];
+    }
+
+    return slideList.map((s, idx) => ({ ...s, id: String(idx + 1) }));
   };
 
   const handleDownload = async () => {

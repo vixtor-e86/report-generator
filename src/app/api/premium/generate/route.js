@@ -240,8 +240,18 @@ export async function POST(request) {
     - NO FORGING: Do NOT hallucinate or "make up" references. If you supplement the provided list, ensure they are real, verifiable sources. 
     - CONSISTENCY: Ensure in-text citations match the final reference list perfectly.` : '';
 
-    const systemPrompt = `You are a high-end academic system architect and senior engineering researcher. 
-    TASK: Author a detailed Chapter ${chapterNumber} titled "${chapterTitle}" for the project "${project.title}".
+    let templateAiInstruction = project.custom_templates?.ai_instruction || "";
+    if (!templateAiInstruction && project.custom_templates?.source_template_id) {
+      try {
+        const { data: st } = await supabaseAdmin.from('templates').select('ai_instruction').eq('id', project.custom_templates.source_template_id).single();
+        if (st?.ai_instruction) {
+          templateAiInstruction = st.ai_instruction;
+        }
+      } catch (err) {}
+    }
+
+    const systemPrompt = `You are a senior academic researcher and system architect. 
+    TASK: Author Chapter ${chapterNumber}: ${chapterTitle} for the project "${project.title}".
 
     ## ACADEMIC FIELD FOCUS
     - FACULTY: ${project.faculty}
@@ -255,23 +265,28 @@ export async function POST(request) {
     ${objectiveInstruction}
 
     ${mandatorySections}
+    ${templateAiInstruction ? `\n\n### ADVANCED TEMPLATE INSTRUCTIONS (CRITICAL PRIORITY):\n${templateAiInstruction}` : ''}
     ${technicalTableInstruction}
     ${contextualSourceData ? `## MANDATORY EXPERIMENTAL DATA ANALYSIS\n${contextualSourceData}` : ''}
     ${imageInstruction}
     ${referencesMapping}
     ${referenceRequirements}
 
-    ## WRITING REQUIREMENTS
-    - FORMAT: Markdown.
-    - TARGET: ${targetWordCount} words.
-    - NO REPETITION: Do NOT include the project title at the start of your response.
-    - NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.
+    ## WRITING RULES (STRICT ACADEMIC STANDARDS)
+    1. TARGET LENGTH: 2,500 - 3,500 words. Make the content comprehensive, detailed, and technically rigorous. STRICT LIMIT: DO NOT exceed 3,500 words. Avoid repetitive fluff, excessive elaboration, or padded rambling.
+    2. TONE: Formal, Technical, Academic (Nigerian university and postgraduate thesis standard).
+    3. FORMAT: Markdown (## for Chapter Title & Main Headings, ### for Subsections, #### for Sub-subsections).
+    4. CURRENCY: ₦ (NGN) for any financial/cost analysis.
+    5. RECENCY: Citations must be 2020-2026.
+    6. NO CONVERSATIONAL FILLER: Start directly with the ## Chapter heading. Do NOT include conversational introductions (e.g., "Certainly, here is...", "In this chapter, we explore...").
+    7. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.
+    8. THESIS STRUCTURE PRESERVATION: You MUST strictly adhere to the designated chapter title and mandatory sub-sections defined above. Do NOT alter, omit, merge, or rename the designated thesis sections.
     - USER INSTRUCTIONS: ${userPrompt || 'Deliver elite technical content.'}
 
     ${skipReferences ? '--- STRICT: NO REFERENCES OR CITATIONS. ---' : '--- MANDATORY: Include "## References" at the end. ---'}`;
 
-    // --- 7. Call AI & Save ---
-    const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 8192, temperature: 0.6 });
+    // --- 7. Call AI & Save (Capped at 4800 tokens to ensure 2,500-3,500 words and prevent token waste) ---
+    const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 4800, temperature: 0.5 });
 
     let { data: chapter } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
     if (!chapter) {
