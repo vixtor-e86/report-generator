@@ -4,7 +4,8 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(request) {
   try {
-    const { userId, email, tier, amount, projectId } = await request.json();
+    const { userId, email, tier, amount, projectId, currency = 'NGN' } = await request.json();
+    const selectedCurrency = currency === 'USD' ? 'USD' : 'NGN';
 
     // Validate inputs
     if (!userId || !email || !tier || !amount) {
@@ -38,8 +39,8 @@ export async function POST(request) {
       transaction_ref = `W3WL_${tier.toUpperCase()}_${Date.now()}_${userId.slice(0, 8)}`;
     }
 
-    // Squad expects amount in Kobo (Naira * 100)
-    const amountInKobo = Math.round(Number(amount) * 100);
+    // Squad expects amount in the lowest subunit (Kobo for NGN * 100, Cents for USD * 100)
+    const amountInSubunits = Math.round(Number(amount) * 100);
 
     // Set callback URL to the template-select page where verification is handled
     const callback_url = projectId 
@@ -54,9 +55,9 @@ export async function POST(request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        amount: amountInKobo,
+        amount: amountInSubunits,
         email: email,
-        currency: 'NGN',
+        currency: selectedCurrency,
         initiate_type: 'inline',
         transaction_ref,
         callback_url,
@@ -64,7 +65,8 @@ export async function POST(request) {
         metadata: {
           userId,
           tier: finalTier,
-          projectId: projectId || null
+          projectId: projectId || null,
+          currency: selectedCurrency
         }
       })
     });
@@ -89,7 +91,7 @@ export async function POST(request) {
         user_id: userId,
         project_id: null, // Avoid FK constraint (standard_projects), we store projectId in reference
         amount,
-        currency: 'NGN',
+        currency: selectedCurrency,
         tier: finalTier,
         status: 'pending',
         paystack_reference: transaction_ref, // Storing transaction_ref here

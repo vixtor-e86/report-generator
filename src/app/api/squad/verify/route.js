@@ -42,8 +42,8 @@ export async function GET(request) {
       return NextResponse.json({ verified: false, message: `Transaction status is ${transaction_status}` });
     }
 
-    // Squad returns amount in Kobo, convert to Naira
-    const paidAmountNaira = transaction_amount / 100;
+    // Squad returns amount in lowest subunits (kobo for NGN, cents for USD), convert to main currency unit
+    const paidAmount = transaction_amount / 100;
 
     // ✅ FLOW 1: Handle Wallet Funding (reference contains W3WL_FUND_)
     if (transaction_ref && transaction_ref.includes('W3WL_FUND_')) {
@@ -78,8 +78,8 @@ export async function GET(request) {
       }
 
       // Verify amount matches
-      if (paidAmountNaira < walletTx.amount) {
-        console.error(`Amount mismatch: Paid ${paidAmountNaira}, Expected ${walletTx.amount}`);
+      if (paidAmount < walletTx.amount) {
+        console.error(`Amount mismatch: Paid ${paidAmount}, Expected ${walletTx.amount}`);
         return NextResponse.json({ verified: false, message: 'Payment amount mismatch' });
       }
 
@@ -166,8 +166,8 @@ export async function GET(request) {
     }
 
     // Verify amount matches (with small buffer if any conversion rounding occurs)
-    if (paidAmountNaira < existingTx.amount) {
-      console.error(`Amount mismatch: Paid ${paidAmountNaira}, Expected ${existingTx.amount}`);
+    if (paidAmount < existingTx.amount) {
+      console.error(`Amount mismatch: Paid ${paidAmount}, Expected ${existingTx.amount}`);
       return NextResponse.json({ verified: false, message: 'Payment amount mismatch' });
     }
 
