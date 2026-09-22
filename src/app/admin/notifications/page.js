@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { 
   Bell, Send, Globe, Users, UserCheck, AlertTriangle, 
   CheckCircle2, Info, AlertCircle, Trash2, Search, 
-  Sparkles, RefreshCw, X, Eye, Clock, Check
+  RefreshCw, X, Eye, Clock, Mail, Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -15,12 +15,11 @@ export default function AdminNotificationsPage() {
   const [notificationType, setNotificationType] = useState('info'); // 'info' | 'success' | 'warning' | 'error'
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]); // [{ id, email }]
 
-  // User Search State (for specific target)
-  const [userQuery, setUserQuery] = useState('');
-  const [userSearchResults, setUserSearchResults] = useState([]);
-  const [searchingUsers, setSearchingUsers] = useState(false);
+  // Email Input State for Specific Target
+  const [emailInput, setEmailInput] = useState('');
+  const [isAddingEmail, setIsAddingEmail] = useState(false);
 
   // Sending & History State
   const [isSending, setIsSending] = useState(false);
@@ -51,42 +50,42 @@ export default function AdminNotificationsPage() {
     fetchHistory();
   }, [fetchHistory]);
 
-  // Search users with debounce
-  useEffect(() => {
-    if (targetType !== 'specific') return;
-    if (!userQuery.trim()) {
-      setUserSearchResults([]);
-      return;
+  // Add recipient by email alone
+  const handleAddEmail = async () => {
+    const cleanEmail = emailInput.trim().toLowerCase();
+    if (!cleanEmail) {
+      return toast.error('Please enter an email address.');
     }
 
-    const timer = setTimeout(async () => {
-      setSearchingUsers(true);
-      try {
-        const res = await fetch(`/api/admin/notifications/users?q=${encodeURIComponent(userQuery.trim())}`);
-        const data = await res.json();
-        if (res.ok) {
-          setUserSearchResults(data.users || []);
-        }
-      } catch (err) {
-        console.error('User search error:', err);
-      } finally {
-        setSearchingUsers(false);
+    if (!cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      return toast.error('Please enter a valid email address.');
+    }
+
+    if (selectedUsers.some(u => u.email?.toLowerCase() === cleanEmail)) {
+      return toast.error(`Email ${cleanEmail} has already been added.`);
+    }
+
+    setIsAddingEmail(true);
+    try {
+      const res = await fetch(`/api/admin/notifications/users?email=${encodeURIComponent(cleanEmail)}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || `No registered account found with email "${cleanEmail}".`);
       }
-    }, 300);
 
-    return () => clearTimeout(timer);
-  }, [userQuery, targetType]);
-
-  const handleAddUser = (user) => {
-    if (!selectedUsers.some(u => u.id === user.id)) {
-      setSelectedUsers(prev => [...prev, user]);
+      setSelectedUsers(prev => [...prev, { id: data.user.id, email: data.user.email }]);
+      setEmailInput('');
+      toast.success(`Recipient ${data.user.email} added!`);
+    } catch (err) {
+      toast.error(err.message || 'Failed to verify email');
+    } finally {
+      setIsAddingEmail(false);
     }
-    setUserQuery('');
-    setUserSearchResults([]);
   };
 
-  const handleRemoveUser = (userId) => {
-    setSelectedUsers(prev => prev.filter(u => u.id !== userId));
+  const handleRemoveUser = (identifier) => {
+    setSelectedUsers(prev => prev.filter(u => u.id !== identifier && u.email !== identifier));
   };
 
   // Quick Preset Handlers
@@ -107,7 +106,7 @@ export default function AdminNotificationsPage() {
       return toast.error('Please enter a notification message.');
     }
     if (targetType === 'specific' && selectedUsers.length === 0) {
-      return toast.error('Please select at least one recipient user.');
+      return toast.error('Please add at least one recipient user email.');
     }
 
     setIsSending(true);
@@ -121,7 +120,8 @@ export default function AdminNotificationsPage() {
           message: message.trim(),
           type: notificationType,
           targetType,
-          targetUserIds: targetType === 'specific' ? selectedUsers.map(u => u.id) : []
+          targetUserIds: targetType === 'specific' ? selectedUsers.map(u => u.id).filter(Boolean) : [],
+          targetEmails: targetType === 'specific' ? selectedUsers.map(u => u.email).filter(Boolean) : []
         })
       });
 
@@ -134,7 +134,7 @@ export default function AdminNotificationsPage() {
       setTitle('');
       setMessage('');
       setSelectedUsers([]);
-      setUserQuery('');
+      setEmailInput('');
 
       // Refresh history & switch tab
       fetchHistory();
@@ -333,7 +333,7 @@ export default function AdminNotificationsPage() {
                   {/* Option A: All Users */}
                   <button
                     type="button"
-                    onClick={() => { setTargetType('all'); setSelectedUsers([]); }}
+                    onClick={() => { setTargetType('all'); setSelectedUsers([]); setEmailInput(''); }}
                     className={`p-4 rounded-2xl border text-left transition-all ${
                       targetType === 'all'
                         ? 'border-indigo-600 bg-indigo-50/50 shadow-sm ring-2 ring-indigo-600/20'
@@ -350,7 +350,7 @@ export default function AdminNotificationsPage() {
                   {/* Option B: Verified Sellers */}
                   <button
                     type="button"
-                    onClick={() => { setTargetType('sellers'); setSelectedUsers([]); }}
+                    onClick={() => { setTargetType('sellers'); setSelectedUsers([]); setEmailInput(''); }}
                     className={`p-4 rounded-2xl border text-left transition-all ${
                       targetType === 'sellers'
                         ? 'border-indigo-600 bg-indigo-50/50 shadow-sm ring-2 ring-indigo-600/20'
@@ -364,7 +364,7 @@ export default function AdminNotificationsPage() {
                     <p className="text-[11px] text-slate-500 font-medium">Marketplace blueprint & ebook sellers</p>
                   </button>
 
-                  {/* Option C: Specific Users */}
+                  {/* Option C: Specific Users (By Email Alone) */}
                   <button
                     type="button"
                     onClick={() => setTargetType('specific')}
@@ -375,78 +375,99 @@ export default function AdminNotificationsPage() {
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1.5">
-                      <Users className={`w-4 h-4 ${targetType === 'specific' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                      <Mail className={`w-4 h-4 ${targetType === 'specific' ? 'text-indigo-600' : 'text-slate-400'}`} />
                       <span className="font-black text-xs text-slate-900">Specific Users</span>
                     </div>
-                    <p className="text-[11px] text-slate-500 font-medium">Search & select specific accounts</p>
+                    <p className="text-[11px] text-slate-500 font-medium">Add recipient users by email alone</p>
                   </button>
                 </div>
               </div>
 
-              {/* Specific Users Search Box */}
+              {/* Specific Users Email Input & Add Button */}
               {targetType === 'specific' && (
                 <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 animate-in fade-in duration-200">
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">
-                      Search User by Name, Username or Department
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-600 block mb-1.5">
+                      Add User by Email Alone
                     </label>
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
-                      <input
-                        type="text"
-                        placeholder="Type username or name..."
-                        value={userQuery}
-                        onChange={(e) => setUserQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-600"
-                      />
-                      {searchingUsers && (
-                        <div className="absolute right-3.5 top-3.5 text-slate-400 text-[10px] font-bold">
-                          Searching...
-                        </div>
+                    
+                    <div className="flex gap-2.5">
+                      <div className="relative flex-1">
+                        <Mail className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+                        <input
+                          type="email"
+                          placeholder="Enter user email (e.g. user@gmail.com)..."
+                          value={emailInput}
+                          onChange={(e) => setEmailInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddEmail();
+                            }
+                          }}
+                          disabled={isAddingEmail}
+                          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleAddEmail}
+                        disabled={isAddingEmail || !emailInput.trim()}
+                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 shrink-0 active:scale-95"
+                      >
+                        {isAddingEmail ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Adding...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Selected Recipients Chips */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Selected Recipients ({selectedUsers.length})
+                      </label>
+                      {selectedUsers.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedUsers([])}
+                          className="text-[10px] font-bold text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          Clear All
+                        </button>
                       )}
                     </div>
 
-                    {/* Search Results Dropdown */}
-                    {userSearchResults.length > 0 && (
-                      <div className="mt-2 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg divide-y divide-slate-100 z-10 relative">
-                        {userSearchResults.map((u) => (
-                          <button
-                            key={u.id}
-                            type="button"
-                            onClick={() => handleAddUser(u)}
-                            className="w-full p-2.5 text-left hover:bg-slate-50 flex items-center justify-between text-xs transition-colors"
-                          >
-                            <div>
-                              <span className="font-bold text-slate-900">{u.name}</span>
-                              <span className="text-slate-400 ml-2">(@{u.username})</span>
-                              <p className="text-[10px] text-slate-500">{u.department} • {u.email}</p>
-                            </div>
-                            <span className="text-[10px] font-black uppercase text-indigo-600">Select +</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Selected Users Chips */}
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
-                      Selected Recipients ({selectedUsers.length})
-                    </label>
                     {selectedUsers.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">No recipients selected yet. Search above to add.</p>
+                      <div className="p-4 rounded-xl border border-dashed border-slate-200 bg-white text-center">
+                        <p className="text-xs text-slate-400 font-medium">
+                          No recipients added yet. Enter an email above and click &quot;Add&quot;.
+                        </p>
+                      </div>
                     ) : (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
                         {selectedUsers.map((u) => (
                           <span
-                            key={u.id}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-100 text-indigo-900 text-xs font-bold"
+                            key={u.id || u.email}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-950 text-xs font-bold shadow-sm"
                           >
-                            <span>{u.name}</span>
+                            <Mail className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                            <span>{u.email}</span>
                             <button
                               type="button"
-                              onClick={() => handleRemoveUser(u.id)}
-                              className="text-indigo-400 hover:text-indigo-900 transition-colors"
+                              onClick={() => handleRemoveUser(u.id || u.email)}
+                              className="text-slate-400 hover:text-red-600 transition-colors ml-0.5"
+                              title="Remove"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -537,7 +558,7 @@ export default function AdminNotificationsPage() {
                     ? 'Broadcasting to all platform users' 
                     : targetType === 'sellers' 
                     ? 'Dispatching to verified sellers' 
-                    : `Sending to ${selectedUsers.length} user(s)`}
+                    : `Sending to ${selectedUsers.length} email recipient(s)`}
                 </span>
 
                 <button
@@ -633,13 +654,13 @@ export default function AdminNotificationsPage() {
                 Broadcasting Guidelines
               </span>
               <p className="leading-relaxed font-medium">
-                • <strong>Global Broadcast:</strong> Stored efficiently and instantaneously delivered to all 10,700+ student accounts in real-time.
+                • <strong>Global Broadcast:</strong> Stored efficiently and instantaneously delivered to all student accounts in real-time.
               </p>
               <p className="leading-relaxed font-medium">
                 • <strong>All Sellers:</strong> Targeted updates about marketplace policy, payout schedules, or uploads.
               </p>
               <p className="leading-relaxed font-medium">
-                • <strong>Specific Users:</strong> For personalized notices, manual reviews, or account alerts.
+                • <strong>Specific Users:</strong> Add individual accounts by email alone using the &quot;Add&quot; button to send personalized alerts.
               </p>
             </div>
           </div>

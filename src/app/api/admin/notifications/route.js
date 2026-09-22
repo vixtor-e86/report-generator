@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { supabaseAdmin, getAuthUsersMap, getAuthUserByEmail } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,26 +18,24 @@ export async function GET(request) {
 
     if (error) throw error;
 
-    // Fetch user details for non-null user_id rows
+    // Fetch user emails for non-null user_id rows
     const userIds = Array.from(new Set(notifications.filter(n => n.user_id).map(n => n.user_id)));
-    let userMap = {};
+    let userEmailMap = {};
 
     if (userIds.length > 0) {
-      const { data: profiles } = await supabaseAdmin
-        .from('user_profiles')
-        .select('id, username, full_name')
-        .in('id', userIds);
-
-      if (profiles) {
-        profiles.forEach(p => {
-          userMap[p.id] = p.full_name || p.username || 'User';
-        });
+      try {
+        const authMap = await getAuthUsersMap();
+        for (const [email, user] of authMap.entries()) {
+          userEmailMap[user.id] = user.email || email;
+        }
+      } catch (err) {
+        console.warn('Error loading auth user emails for notification history:', err.message);
       }
     }
 
     const formattedNotifications = (notifications || []).map(n => ({
       ...n,
-      recipientName: n.user_id ? (userMap[n.user_id] || 'Specific User') : 'All Users (Global Broadcast)',
+      recipientName: n.user_id ? (userEmailMap[n.user_id] || 'Specific User') : 'All Users (Global Broadcast)',
       isGlobal: !n.user_id
     }));
 
@@ -68,7 +66,8 @@ export async function POST(request) {
       message, 
       type = 'info', 
       targetType = 'all', 
-      targetUserIds = [] 
+      targetUserIds = [],
+      targetEmails = []
     } = body;
 
     if (!title?.trim()) {
@@ -133,12 +132,29 @@ export async function POST(request) {
       }
 
     } else if (targetType === 'specific') {
-      // 3. SPECIFIC USERS
-      if (!Array.isArray(targetUserIds) || targetUserIds.length === 0) {
-        return NextResponse.json({ error: 'Please select at least one recipient user.' }, { status: 400 });
+      // 3. SPECIFIC USERS (Added by Email)
+      let finalUserIds = Array.isArray(targetUserIds) ? [...targetUserIds] : [];
+
+      if (Array.isArray(targetEmails) && targetEmails.length > 0) {
+        const authMap = await getAuthUsersMap();
+        for (const email of targetEmails) {
+          if (!email) continue;
+          const cleanEmail = email.toLowerCase().trim();
+          let user = authMap.get(cleanEmail);
+          if (!user) {
+            user = await getAuthUserByEmail(cleanEmail);
+          }
+          if (user?.id && !finalUserIds.includes(user.id)) {
+            finalUserIds.push(user.id);
+          }
+        }
       }
 
-      const uniqueIds = Array.from(new Set(targetUserIds.filter(Boolean)));
+      if (finalUserIds.length === 0) {
+        return NextResponse.json({ error: 'Please enter at least one valid recipient user email.' }, { status: 400 });
+      }
+
+      const uniqueIds = Array.from(new Set(finalUserIds.filter(Boolean)));
       const chunkSize = 50;
       for (let i = 0; i < uniqueIds.length; i += chunkSize) {
         const chunk = uniqueIds.slice(i, i + chunkSize);

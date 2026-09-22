@@ -875,6 +875,8 @@ export default function Workspace({ params }) {
         initialTier="unlock"
         initialAmount={2000}
       />
+
+      <ReferralFAB userId={user?.id} />
     </div>
   );
 }
