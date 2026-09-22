@@ -33,7 +33,7 @@ import {
   BookOpen, Presentation, BarChart3, Code2, Lightbulb, RefreshCw, 
   SpellCheck, Quote, Image as ImageIcon, Zap, Check, Wallet, Bell, AlertCircle,
   UserCheck, Landmark, Clock, Phone, Mail, Book, TrendingUp, Plus, Eye, Trash2, Activity, Palette, ClipboardList, X, Briefcase,
-  GraduationCap
+  GraduationCap, Menu, LogOut
 } from 'lucide-react';
 import { Input } from '@/components/marketplace/ui/input';
 import { Badge } from '@/components/marketplace/ui/badge';
@@ -590,31 +590,31 @@ export default function Dashboard() {
       
       {/* Navigation */}
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
             <Link href="/dashboard" className="flex items-center gap-2 group shrink-0">
-              <img src="/favicon.ico" alt="W3 WriteLab" className="w-8 h-8" />
+              <img src="/favicon.ico" alt="W3 WriteLab" className="w-7 h-7 sm:w-8 sm:h-8" />
               <span className="hidden lg:inline-block text-xl font-bold text-slate-900 tracking-tight">W3 WriteLab</span>
             </Link>
             
             <div className="flex-1 flex items-center justify-center min-w-0">
-               <div className="flex items-center gap-1 sm:gap-4 md:gap-8 overflow-x-auto no-scrollbar scroll-smooth px-6 max-w-full">
+               <div className="flex items-center gap-1 sm:gap-4 md:gap-8 overflow-x-auto no-scrollbar scroll-smooth px-1 sm:px-6 max-w-full">
 
                 <button 
                   onClick={() => setActiveTab('projects')}
-                  className={`whitespace-nowrap text-[10px] sm:text-sm font-black uppercase tracking-widest transition-colors py-4 ${activeTab === 'projects' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
+                  className={`whitespace-nowrap text-[11px] sm:text-sm font-black uppercase tracking-wider sm:tracking-widest transition-all py-2.5 sm:py-4 px-2 sm:px-1 border-b-2 ${activeTab === 'projects' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 hover:text-slate-900 border-transparent'}`}
                 >
                   Blueprints
                 </button>
                 <button 
                   onClick={() => setActiveTab('market')}
-                  className={`whitespace-nowrap text-[10px] sm:text-sm font-black uppercase tracking-widest transition-colors py-4 ${activeTab === 'market' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
+                  className={`whitespace-nowrap text-[11px] sm:text-sm font-black uppercase tracking-wider sm:tracking-widest transition-all py-2.5 sm:py-4 px-2 sm:px-1 border-b-2 ${activeTab === 'market' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 hover:text-slate-900 border-transparent'}`}
                 >
                   Market
                 </button>
                 <button 
                   onClick={() => setActiveTab('tools')}
-                  className={`whitespace-nowrap text-[10px] sm:text-sm font-black uppercase tracking-widest transition-colors py-4 ${activeTab === 'tools' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
+                  className={`whitespace-nowrap text-[11px] sm:text-sm font-black uppercase tracking-wider sm:tracking-widest transition-all py-2.5 sm:py-4 px-2 sm:px-1 border-b-2 ${activeTab === 'tools' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 hover:text-slate-900 border-transparent'}`}
                 >
                   Tools
                 </button>
@@ -622,7 +622,7 @@ export default function Dashboard() {
                 {authUser?.isSeller && (
                   <button 
                     onClick={() => setActiveTab('seller')}
-                    className={`whitespace-nowrap text-[10px] sm:text-sm font-black uppercase tracking-widest transition-colors py-4 ${activeTab === 'seller' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
+                    className={`whitespace-nowrap text-[11px] sm:text-sm font-black uppercase tracking-wider sm:tracking-widest transition-all py-2.5 sm:py-4 px-2 sm:px-1 border-b-2 ${activeTab === 'seller' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 hover:text-slate-900 border-transparent'}`}
                   >
                     Seller Hub
                   </button>
@@ -630,31 +630,31 @@ export default function Dashboard() {
                </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
               {/* Notifications */}
               <DropdownMenu onOpenChange={(open) => open && markNotificationsAsRead()}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="relative text-[#6b7280] hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all shrink-0"
+                    className="relative text-[#6b7280] hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all shrink-0 w-8 h-8 sm:w-10 sm:h-10"
                   >
-                    <Bell className="w-5 h-5" />
+                    <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-600 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-white">
-                        {unreadCount}
+                      <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-red-600 text-white text-[9px] font-black flex items-center justify-center rounded-full border border-white">
+                        {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80 bg-white border-slate-200 rounded-2xl shadow-2xl p-0 overflow-hidden z-[100]">
-                  <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <DropdownMenuContent align="end" className="w-[88vw] sm:w-80 bg-white border-slate-200 rounded-2xl shadow-2xl p-0 overflow-hidden z-[100]">
+                  <div className="p-3 sm:p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <h3 className="font-black text-xs uppercase tracking-widest text-slate-900">Notifications</h3>
                     {unreadCount > 0 && <span className="text-[10px] font-bold text-indigo-600">New Alerts</span>}
                   </div>
-                  <div className="max-h-[400px] overflow-y-auto">
+                  <div className="max-h-[350px] sm:max-h-[400px] overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <div className="p-10 text-center">
+                      <div className="p-8 sm:p-10 text-center">
                         <Bell className="w-8 h-8 text-slate-200 mx-auto mb-3" />
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">No notifications yet</p>
                       </div>
@@ -662,25 +662,25 @@ export default function Dashboard() {
                       notifications.map((notif) => (
                         <div 
                           key={notif.id} 
-                          className={`p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors ${!notif.is_read ? 'bg-indigo-50/40' : ''}`}
+                          className={`p-3 sm:p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors ${!notif.is_read ? 'bg-indigo-50/40' : ''}`}
                         >
-                          <div className="flex gap-3">
-                            <div className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${
+                          <div className="flex gap-2.5 sm:gap-3">
+                            <div className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full mt-1.5 shrink-0 ${
                               notif.type === 'success' ? 'bg-emerald-500' :
                               notif.type === 'error' ? 'bg-red-500' : 
                               notif.type === 'warning' ? 'bg-amber-500' : 'bg-indigo-500'
                             }`} />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2 mb-1">
+                              <div className="flex items-center justify-between gap-1.5 mb-1">
                                 <p className="text-xs sm:text-sm font-black text-slate-900 leading-tight truncate">{notif.title}</p>
                                 {!notif.user_id && (
-                                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0">
+                                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0">
                                     Global
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs font-medium text-slate-600 leading-relaxed break-words">{notif.message}</p>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase mt-2">{new Date(notif.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                              <p className="text-[11px] sm:text-xs font-medium text-slate-600 leading-relaxed break-words">{notif.message}</p>
+                              <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase mt-1.5">{new Date(notif.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                             </div>
                           </div>
                         </div>
@@ -731,8 +731,16 @@ export default function Dashboard() {
               </div>
 
               <div className="md:hidden">
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-slate-600 hover:text-indigo-600">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                <button 
+                  onClick={() => setIsMenuOpen(!isMenuOpen)} 
+                  className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors"
+                  aria-label="Toggle navigation menu"
+                >
+                  {isMenuOpen ? (
+                    <X className="w-5 h-5" />
+                  ) : (
+                    <Menu className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -741,34 +749,40 @@ export default function Dashboard() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-4 animate-in slide-in-from-top-2 duration-300">
-            <div className="flex bg-zinc-50 p-2 rounded-2xl flex-col gap-2">
-                <button onClick={() => { setActiveTab('projects'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'projects' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Academic Blueprints</button>
-                <button onClick={() => { setActiveTab('market'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'market' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Live Market</button>
-                <button onClick={() => { setActiveTab('tools'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'tools' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Academic Tools</button>
+          <div className="md:hidden border-t border-slate-200 bg-white px-3 py-3 space-y-3 animate-in slide-in-from-top-2 duration-300 shadow-xl">
+            <div className="flex bg-slate-100/80 p-1.5 rounded-2xl flex-col gap-1">
+                <button onClick={() => { setActiveTab('projects'); setIsMenuOpen(false); }} className={`w-full text-left px-3.5 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'projects' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/60'}`}>Academic Blueprints</button>
+                <button onClick={() => { setActiveTab('market'); setIsMenuOpen(false); }} className={`w-full text-left px-3.5 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'market' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/60'}`}>Live Market</button>
+                <button onClick={() => { setActiveTab('tools'); setIsMenuOpen(false); }} className={`w-full text-left px-3.5 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'tools' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/60'}`}>Academic Tools</button>
                 {authUser?.isSeller && (
-                  <button onClick={() => { setActiveTab('seller'); setIsMenuOpen(false); }} className={`w-full text-left px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'seller' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500'}`}>Seller Hub</button>
+                  <button onClick={() => { setActiveTab('seller'); setIsMenuOpen(false); }} className={`w-full text-left px-3.5 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${activeTab === 'seller' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/60'}`}>Seller Hub</button>
                 )}
             </div>
             
-            <div className="flex items-center gap-3 pb-4 border-b border-slate-100 px-2">
-              <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">
+            <div className="flex items-center gap-3 py-2 px-1 border-b border-slate-100">
+              <div className="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-sm shrink-0">
                 {(globalProfile?.username || authUser?.email || 'U')[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-black text-slate-900 truncate uppercase text-sm tracking-tight">{globalProfile?.username || 'Student'}</p>
-                <p className="text-xs text-slate-500 font-medium truncate">{authUser?.email}</p>
+                <p className="font-black text-slate-900 truncate uppercase text-xs tracking-tight">{globalProfile?.username || 'Student'}</p>
+                <p className="text-[11px] text-slate-400 font-medium truncate">{authUser?.email}</p>
               </div>
+              <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                {isAdmin ? 'Admin' : isSupport ? 'Support' : globalProfile?.is_seller || authUser?.isSeller ? 'Seller' : 'Scholar'}
+              </span>
             </div>
             
             {isAdmin && (
               <Link 
                 href="/admin" 
                 onClick={() => setIsMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 font-black uppercase text-[10px] tracking-[0.2em] shadow-sm active:scale-95 transition-all"
+                className="flex items-center justify-between px-3.5 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-100 font-black uppercase text-[10px] tracking-wider shadow-sm active:scale-95 transition-all"
               >
-                <ShieldCheck className="w-4 h-4" />
-                Admin Console
+                <span className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                  Admin Console
+                </span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             )}
 
@@ -776,24 +790,28 @@ export default function Dashboard() {
               <Link 
                 href="/admin" 
                 onClick={() => setIsMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 font-black uppercase text-[10px] tracking-[0.2em] shadow-sm active:scale-95 transition-all"
+                className="flex items-center justify-between px-3.5 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 font-black uppercase text-[10px] tracking-wider shadow-sm active:scale-95 transition-all"
               >
-                <ShieldCheck className="w-4 h-4" />
-                Support Console
+                <span className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  Support Console
+                </span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             )}
             
             <button 
               onClick={handleLogout} 
-              className="w-full text-center py-3 text-red-600 font-black uppercase text-[10px] tracking-widest hover:bg-red-50 rounded-xl transition-all"
+              className="w-full flex items-center justify-center gap-2 py-2.5 text-red-600 font-black uppercase text-[10px] tracking-widest hover:bg-red-50 rounded-xl transition-all border border-red-100"
             >
-              Sign Out Account
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out Account</span>
             </button>
           </div>
         )}
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8">
         
         {showAccreditation ? (
             <SellerAccreditationForm 
@@ -825,12 +843,12 @@ export default function Dashboard() {
         ) : (
             <>
                 {/* Header */}
-                <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div className="mb-6 sm:mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase">
+            <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase">
                 {activeTab === 'projects' ? 'Academic Blueprint Hub' : activeTab === 'market' ? 'Live Market' : activeTab === 'seller' ? 'Seller Management' : 'Academic Tools'}
             </h1>
-            <p className="text-slate-500 font-medium mt-1">
+            <p className="text-xs sm:text-base text-slate-500 font-medium mt-1">
                 {activeTab === 'projects' ? 'Manage your architectural research and generate new blueprints.' : 
                  activeTab === 'market' ? 'Explore vetted academic blueprints and digital ebooks.' : 
                  activeTab === 'seller' ? 'Control your marketplace library and settlement requests.' :
