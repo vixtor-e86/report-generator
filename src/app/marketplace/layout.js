@@ -1,7 +1,6 @@
 "use client";
 import { useUser } from '@/contexts/marketplace/UserContext';
 import Navigation from '@/components/marketplace/Navigation';
-import HireExpertFab from '@/components/marketplace/HireExpertFab';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -128,12 +127,11 @@ function MarketplaceProtection({ children }) {
 export default function MarketplaceLayout({ children }) {
   return (
     <MarketplaceProtection>
-      <div className="min-h-screen bg-[#f8f9fc] relative">
+      <div className="min-h-screen bg-[#f8f9fc]">
         <Navigation />
         <main className="pt-[70px]">
           {children}
         </main>
-        <HireExpertFab />
       </div>
     </MarketplaceProtection>
   );

@@ -47,6 +47,7 @@ import SellerAccreditationForm from '@/components/marketplace/SellerAccreditatio
 import ProjectUploadForm from '@/components/marketplace/ProjectUploadForm';
 import EbookUploadForm from '@/components/marketplace/EbookUploadForm';
 import MarketItemDetail from '@/components/marketplace/MarketItemDetail';
+import HireExpertFab from '@/components/marketplace/HireExpertFab';
 import ManualPaymentModal from '@/components/ManualPaymentModal';
 import ReactMarkdown from 'react-markdown';
 import { getToolById } from '@/data/marketplace/tools';
@@ -1149,6 +1150,7 @@ export default function Dashboard() {
                         )}
                     </>
                 )}
+                <HireExpertFab />
             </div>
         )}
 
