@@ -121,15 +121,17 @@ function NewProjectContent() {
       setFacultiesList(Object.keys(data));
 
       // Pre-fill faculty and department from template/profile
-      if (templateData.faculty) {
-        setFaculty(templateData.faculty);
-        if (Array.isArray(data[templateData.faculty])) {
-          setDepartmentsList(data[templateData.faculty]);
-        }
-      } else if (profile.faculty) {
-        setFaculty(profile.faculty);
-        if (Array.isArray(data[profile.faculty])) {
-          setDepartmentsList(data[profile.faculty]);
+      const targetFac = templateData.faculty || profile.faculty;
+      if (targetFac) {
+        const matchedFac = Object.keys(data).find(k => k.toLowerCase() === targetFac.toLowerCase()) || (data[targetFac] ? targetFac : null);
+        if (matchedFac) {
+          setFaculty(matchedFac);
+          if (Array.isArray(data[matchedFac])) {
+            setDepartmentsList(data[matchedFac]);
+          }
+        } else {
+          setFaculty('Other');
+          setCustomFaculty(targetFac);
         }
       }
 
@@ -502,7 +504,7 @@ function NewProjectContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div className="text-sm text-gray-700">
-                <p className="font-semibold text-gray-900 mb-1">What's included in Free Tier:</p>
+                <p className="font-semibold text-gray-900 mb-1">What&apos;s included in Free Tier:</p>
                 <ul className="space-y-1 text-xs sm:text-sm">
                   <li>✓ Complete {template.structure?.chapters?.length || 5}-chapter report</li>
                   <li>✓ 2 images with captions (added in workspace)</li>

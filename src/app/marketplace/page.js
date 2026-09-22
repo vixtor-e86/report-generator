@@ -7,7 +7,8 @@ import {
   ArrowRight, Sparkles, ShoppingBag, Wrench, 
   ShieldCheck, BookOpen, Presentation, BarChart3,
   Code2, Zap, GraduationCap, CheckCircle2, Star,
-  Clock, LayoutDashboard, Landmark, UserCheck, Code2 as CodeIcon
+  Clock, LayoutDashboard, Landmark, UserCheck, Code2 as CodeIcon,
+  Facebook, Instagram
 } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { academicTools } from '@/data/marketplace/tools';
@@ -353,7 +354,7 @@ export default function MarketplaceHomePage() {
             </div>
             <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight uppercase tracking-tighter">Accreditation Pending</h3>
             <p className="text-sm text-slate-500 font-medium mb-8 leading-relaxed">
-              Your seller accreditation request is currently being reviewed by our admin panel. You'll be notified once you're cleared to publish.
+              Your seller accreditation request is currently being reviewed by our admin panel. You&apos;ll be notified once you&apos;re cleared to publish.
             </p>
             <Button 
               onClick={() => setShowPendingModal(false)}
@@ -379,6 +380,37 @@ export default function MarketplaceHomePage() {
               <p className="text-zinc-500 text-sm md:text-base max-w-md leading-relaxed font-medium">
                 The leading platform for verified academic work. Connecting student researchers with premium blueprints and technical documentation.
               </p>
+              <div className="flex items-center gap-3 mt-6">
+                <a 
+                  href="https://www.facebook.com/share/19QqjSjeEt/?mibextid=wwXIfr" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 flex items-center justify-center text-zinc-700 hover:text-black transition-colors"
+                  aria-label="Facebook"
+                >
+                  <Facebook className="w-4 h-4" />
+                </a>
+                <a 
+                  href="https://www.tiktok.com/@w3.writelab" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 flex items-center justify-center text-zinc-700 hover:text-black transition-colors"
+                  aria-label="TikTok"
+                >
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 3 15.68a6.34 6.34 0 0 0 6.34 6.34 6.3 6.3 0 0 0 6.3-6.09V8.6a8.28 8.28 0 0 0 4.84 1.55V6.69z"/>
+                  </svg>
+                </a>
+                <a 
+                  href="https://www.instagram.com/w3_writelab?stkn=MXIwZjQ2d3EzeWZ0Nw%3D%3D&utm_source=qr" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 flex items-center justify-center text-zinc-700 hover:text-black transition-colors"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="w-4 h-4" />
+                </a>
+              </div>
             </div>
             <div>
               <h4 className="text-xs font-black text-zinc-900 uppercase tracking-[0.2em] mb-6">Platform</h4>
@@ -401,6 +433,13 @@ export default function MarketplaceHomePage() {
             <p className="text-zinc-400 text-[11px] md:text-[13px] font-bold uppercase tracking-widest">
               © 2026 W3write Lab Marketplace. Independent Platform.
             </p>
+            <div className="flex items-center gap-4 text-xs font-semibold text-zinc-500">
+              <a href="https://www.facebook.com/share/19QqjSjeEt/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors">Facebook</a>
+              <span>•</span>
+              <a href="https://www.tiktok.com/@w3.writelab" target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors">TikTok</a>
+              <span>•</span>
+              <a href="https://www.instagram.com/w3_writelab?stkn=MXIwZjQ2d3EzeWZ0Nw%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors">Instagram</a>
+            </div>
           </div>
         </div>
       </footer>

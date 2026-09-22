@@ -86,14 +86,19 @@ function ProjectDescriptionContent() {
         const initialDept = searchParams.get('department');
 
         if (initialFaculty) {
-          if (keys.includes(initialFaculty)) {
-            setFormData(prev => ({ ...prev, faculty: initialFaculty }));
+          const matchedFac = keys.find(k => k.toLowerCase() === initialFaculty.toLowerCase()) ||
+            keys.find(k => k.toLowerCase().includes(initialFaculty.toLowerCase()) || initialFaculty.toLowerCase().includes(k.toLowerCase()));
+
+          if (matchedFac) {
+            setFormData(prev => ({ ...prev, faculty: matchedFac }));
             setIsOtherFaculty(false);
-            if (data[initialFaculty]) {
-              setDepartmentsList(data[initialFaculty]);
+            if (data[matchedFac]) {
+              setDepartmentsList(data[matchedFac]);
               if (initialDept) {
-                if (data[initialFaculty].includes(initialDept)) {
-                  setFormData(prev => ({ ...prev, department: initialDept }));
+                const matchedDept = data[matchedFac].find(d => d.toLowerCase() === initialDept.toLowerCase()) ||
+                  data[matchedFac].find(d => d.toLowerCase().includes(initialDept.toLowerCase()) || initialDept.toLowerCase().includes(d.toLowerCase()));
+                if (matchedDept) {
+                  setFormData(prev => ({ ...prev, department: matchedDept }));
                 } else if (initialDept === 'Other') {
                   setIsOtherDepartment(true);
                   setCustomDepartment('');

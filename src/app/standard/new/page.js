@@ -145,10 +145,11 @@ function NewProjectContent() {
       setFacultiesList(Object.keys(data));
 
       if (profile.faculty) {
-        if (data[profile.faculty]) {
-          setFaculty(profile.faculty);
-          if (Array.isArray(data[profile.faculty])) {
-            setDepartmentsList(data[profile.faculty]);
+        const matchedFac = Object.keys(data).find(k => k.toLowerCase() === profile.faculty.toLowerCase()) || (data[profile.faculty] ? profile.faculty : null);
+        if (matchedFac) {
+          setFaculty(matchedFac);
+          if (Array.isArray(data[matchedFac])) {
+            setDepartmentsList(data[matchedFac]);
           }
         } else {
           setFaculty('Other');

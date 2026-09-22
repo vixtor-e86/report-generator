@@ -10,7 +10,8 @@ import bgImage from './bg.jpg';
 import { 
   ShoppingBag, Sparkles, BookOpen, Wrench, 
   ArrowRight, BarChart3, Code2, Presentation,
-  Image as ImageIcon, UserCheck, Search, Languages, ShieldCheck
+  Image as ImageIcon, UserCheck, Search, Languages, ShieldCheck,
+  Facebook, Instagram
 } from 'lucide-react';
 
 import { useRouter } from 'next/navigation';
@@ -681,11 +682,42 @@ export default function Home() {
               <p className="text-sm leading-relaxed mb-6">
                 Empowering students with AI tools to structure their research efficiently and professionally.
               </p>
-              <div className="space-y-4 text-xs">
+              <div className="space-y-4 text-xs mb-6">
                 <div className="flex items-center gap-3">
                   <svg className="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                   <a href="mailto:w33writelab@gmail.com" className="hover:text-white transition-colors">w33writelab@gmail.com</a>
                 </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <a 
+                  href="https://www.facebook.com/share/19QqjSjeEt/?mibextid=wwXIfr" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-500 transition-colors"
+                  aria-label="Facebook"
+                >
+                  <Facebook className="w-4 h-4" />
+                </a>
+                <a 
+                  href="https://www.tiktok.com/@w3.writelab" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-500 transition-colors"
+                  aria-label="TikTok"
+                >
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 3 15.68a6.34 6.34 0 0 0 6.34 6.34 6.3 6.3 0 0 0 6.3-6.09V8.6a8.28 8.28 0 0 0 4.84 1.55V6.69z"/>
+                  </svg>
+                </a>
+                <a 
+                  href="https://www.instagram.com/w3_writelab?stkn=MXIwZjQ2d3EzeWZ0Nw%3D%3D&utm_source=qr" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-500 transition-colors"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="w-4 h-4" />
+                </a>
               </div>
             </div>
             
@@ -722,6 +754,13 @@ export default function Home() {
           
           <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
             <p>&copy; {new Date().getFullYear()} W3 WriteLab. All rights reserved.</p>
+            <div className="flex items-center gap-4 text-xs text-slate-400">
+              <a href="https://www.facebook.com/share/19QqjSjeEt/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Facebook</a>
+              <span>•</span>
+              <a href="https://www.tiktok.com/@w3.writelab" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">TikTok</a>
+              <span>•</span>
+              <a href="https://www.instagram.com/w3_writelab?stkn=MXIwZjQ2d3EzeWZ0Nw%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Instagram</a>
+            </div>
             <p className="flex items-center gap-1">Developed by <span className="text-white font-semibold">W3 Hub</span></p>
           </div>
         </div>
