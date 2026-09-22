@@ -46,13 +46,45 @@ export function UserProvider({ children }) {
         .eq('user_id', authUser.id)
         .maybeSingle();
 
-      // 3. Fetch Notifications
-      const { data: notifs } = await supabase
-        .from('marketplace_notifications')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // 3. Fetch Notifications (Personal + Global Broadcast Announcements)
+      let notifs = [];
+      try {
+        const notifRes = await fetch(`/api/notifications?userId=${authUser.id}`);
+        if (notifRes.ok) {
+          const notifData = await notifRes.json();
+          notifs = notifData.notifications || [];
+        } else {
+          // Fallback direct query
+          const { data } = await supabase
+            .from('marketplace_notifications')
+            .select('*')
+            .or(`user_id.eq.${authUser.id},user_id.is.null`)
+            .order('created_at', { ascending: false })
+            .limit(20);
+          notifs = data || [];
+        }
+      } catch (notifErr) {
+        console.warn('Failed to load notifications from API, falling back:', notifErr);
+      }
+
+      // Check localStorage for read global notifications
+      let readGlobalIds = [];
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem(`w3_read_global_notifs_${authUser.id}`);
+          if (stored) readGlobalIds = JSON.parse(stored);
+        } catch (e) {
+          console.warn('Error reading global notifications localStorage:', e);
+        }
+      }
+
+      const processedNotifs = (notifs || []).map(n => {
+        if (!n.user_id) {
+          // Global broadcast: read state determined per user by localStorage
+          return { ...n, is_read: readGlobalIds.includes(n.id) };
+        }
+        return n;
+      });
 
       const isApproved = sellerApp?.status === 'approved' || profileData?.is_seller;
       const currentStatus = sellerApp?.status || 'none';
@@ -74,8 +106,8 @@ export function UserProvider({ children }) {
         statusRef.current = currentStatus;
       }
 
-      setNotifications(notifs || []);
-      setUnreadCount(notifs?.filter(n => !n.is_read).length || 0);
+      setNotifications(processedNotifs);
+      setUnreadCount(processedNotifs.filter(n => !n.is_read).length);
 
     } catch (err) {
       console.error('User context fetch error:', err);
@@ -95,15 +127,34 @@ export function UserProvider({ children }) {
 
   const markNotificationsAsRead = useCallback(async () => {
     if (!user) return;
-    await supabase
-        .from('marketplace_notifications')
-        .update({ is_read: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false);
+
+    // 1. Mark personal notifications in DB via API
+    try {
+      fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      });
+    } catch (e) {
+      console.error('Failed to mark notifications read on server:', e);
+    }
+
+    // 2. Mark all global notifications as read in localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(`w3_read_global_notifs_${user.id}`);
+        const currentRead = stored ? JSON.parse(stored) : [];
+        const globalIds = notifications.filter(n => !n.user_id).map(n => n.id);
+        const updated = Array.from(new Set([...currentRead, ...globalIds]));
+        localStorage.setItem(`w3_read_global_notifs_${user.id}`, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to persist global notifications read state:', e);
+      }
+    }
     
     setUnreadCount(0);
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-  }, [user]);
+  }, [user, notifications]);
 
   useEffect(() => {
     refreshUser();
@@ -146,13 +197,12 @@ export function UserProvider({ children }) {
         table: 'marketplace_notifications' 
       }, (payload) => {
         if (payload.new) {
+          const isTargeted = !payload.new.user_id || (userRef.current && payload.new.user_id === userRef.current.id);
+          if (isTargeted) {
             toast(payload.new.title, {
-                description: payload.new.message,
-                action: {
-                    label: 'View',
-                    onClick: () => console.log('Notification clicked')
-                },
+              description: payload.new.message,
             });
+          }
         }
         refreshUser();
       })

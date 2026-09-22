@@ -3,8 +3,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import CustomModal from '@/components/premium/modals/CustomModal';
 
-export default function ReferralFAB({ userId }) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function ReferralFAB({ userId, isOpen: externalIsOpen, onOpenChange }) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = (val) => {
+    if (onOpenChange) onOpenChange(val);
+    setInternalIsOpen(val);
+  };
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
@@ -228,12 +233,14 @@ export default function ReferralFAB({ userId }) {
                     <p className="text-sm text-slate-600 leading-relaxed">
                       Share your link and earn <span className="font-bold text-slate-900">{stats.role === 'vip' ? '15%' : '5%'}</span> of every purchase your friends make.
                     </p>
-                    <p className="text-sm text-indigo-600 font-medium leading-relaxed mt-2 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                       <strong>Template Bonus:</strong> Provide us with your school's templates! If we add it to the system, you get an extra <strong>10% bonus</strong> every time a student uses your template on a premium project! <br/><br/>
-                      Submit your templates to us via: <br/>
-                      <strong>Email:</strong> w33writelab@gmail.com <br/>
-                      <strong>WhatsApp:</strong> 0803 169 6755
-                    </p>
+                    <div className="text-sm text-indigo-700 font-medium leading-relaxed mt-3 bg-indigo-50/80 p-3.5 rounded-xl border border-indigo-100 text-left">
+                       <strong className="text-indigo-900 block mb-1">🎓 Template Lead Bonus (10% Royalty):</strong> 
+                        Provide us with your school&apos;s project or thesis templates! If added to our generator, you get an extra <strong>10% bonus</strong> credited to this wallet every time a student uses your template on a project!
+                       <div className="mt-2.5 pt-2 border-t border-indigo-100/80 text-xs flex flex-col gap-1">
+                         <div><strong>Email:</strong> <a href="mailto:w33writelab@gmail.com?subject=Student%20Lead%20Template%20Submission" className="underline hover:text-indigo-900">w33writelab@gmail.com</a></div>
+                         <div><strong>WhatsApp:</strong> <a href="https://wa.me/2348031797655?text=Hello%20W3%20WriteLab%2C%20I%20would%20like%20to%20submit%20templates%20for%20my%20school%20to%20earn%2010%25%20per%20use" target="_blank" rel="noopener noreferrer" className="underline hover:text-indigo-900">08031797655</a></div>
+                       </div>
+                    </div>
                     <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-full">
                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Referrals:</span>
                        <span className="text-sm font-black text-emerald-600">{stats.referralCount}</span>

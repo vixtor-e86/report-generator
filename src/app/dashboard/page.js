@@ -33,7 +33,8 @@ import {
   ArrowRight, ArrowLeft, Sparkles, Layers, CheckCircle2, Wrench, ShieldCheck, 
   BookOpen, Presentation, BarChart3, Code2, Lightbulb, RefreshCw, 
   SpellCheck, Quote, Image as ImageIcon, Zap, Check, Wallet, Bell, AlertCircle,
-  UserCheck, Landmark, Clock, Phone, Mail, Book, TrendingUp, Plus, Eye, Trash2, Activity, Palette, ClipboardList, X, Briefcase
+  UserCheck, Landmark, Clock, Phone, Mail, Book, TrendingUp, Plus, Eye, Trash2, Activity, Palette, ClipboardList, X, Briefcase,
+  GraduationCap
 } from 'lucide-react';
 import { Input } from '@/components/marketplace/ui/input';
 import { Badge } from '@/components/marketplace/ui/badge';
@@ -49,6 +50,7 @@ import EbookUploadForm from '@/components/marketplace/EbookUploadForm';
 import MarketItemDetail from '@/components/marketplace/MarketItemDetail';
 import HireExpertFab from '@/components/marketplace/HireExpertFab';
 import ManualPaymentModal from '@/components/ManualPaymentModal';
+import StudentLeadModal from '@/components/StudentLeadModal';
 import ReactMarkdown from 'react-markdown';
 import { getToolById } from '@/data/marketplace/tools';
 
@@ -250,6 +252,9 @@ export default function Dashboard() {
   const [showAccreditation, setShowAccreditation] = useState(false);
   const [showUploadProject, setShowUploadProject] = useState(false);
   const [showUploadEbook, setShowUploadEbook] = useState(false);
+  // Student Lead & Referral state
+  const [showStudentLeadModal, setShowStudentLeadModal] = useState(false);
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   // DERIVED ROLE ACCESS
   const isAdmin = globalProfile?.role === 'admin';
@@ -658,17 +663,25 @@ export default function Dashboard() {
                       notifications.map((notif) => (
                         <div 
                           key={notif.id} 
-                          className={`p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors ${!notif.is_read ? 'bg-indigo-50/30' : ''}`}
+                          className={`p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors ${!notif.is_read ? 'bg-indigo-50/40' : ''}`}
                         >
                           <div className="flex gap-3">
-                            <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                            <div className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${
                               notif.type === 'success' ? 'bg-emerald-500' :
-                              notif.type === 'error' ? 'bg-red-500' : 'bg-indigo-500'
+                              notif.type === 'error' ? 'bg-red-500' : 
+                              notif.type === 'warning' ? 'bg-amber-500' : 'bg-indigo-500'
                             }`} />
-                            <div>
-                              <p className="text-sm font-black text-slate-900 leading-tight mb-1">{notif.title}</p>
-                              <p className="text-xs font-medium text-slate-500 leading-relaxed">{notif.message}</p>
-                              <p className="text-[9px] font-black text-slate-300 uppercase mt-2">{new Date(notif.created_at).toLocaleDateString()}</p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <p className="text-xs sm:text-sm font-black text-slate-900 leading-tight truncate">{notif.title}</p>
+                                {!notif.user_id && (
+                                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0">
+                                    Global
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs font-medium text-slate-600 leading-relaxed break-words">{notif.message}</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase mt-2">{new Date(notif.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                             </div>
                           </div>
                         </div>
@@ -698,6 +711,14 @@ export default function Dashboard() {
                     Support Console
                   </Link>
                 )}
+
+                <button
+                  onClick={() => setShowStudentLeadModal(true)}
+                  className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider px-3.5 py-2 bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-indigo-500/10 hover:from-amber-500/20 hover:to-indigo-500/20 text-amber-900 border border-amber-300/70 rounded-xl transition-all shadow-sm active:scale-95"
+                >
+                  <GraduationCap className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Student Lead (Earn 10%)</span>
+                </button>
                 
                 <div className="h-6 w-px bg-slate-200"></div>
 
@@ -748,6 +769,14 @@ export default function Dashboard() {
                 <p className="text-xs text-slate-500 font-medium truncate">{authUser?.email}</p>
               </div>
             </div>
+            
+            <button 
+              onClick={() => { setShowStudentLeadModal(true); setIsMenuOpen(false); }}
+              className="flex items-center gap-2.5 w-full text-left px-4 py-3 bg-amber-50 text-amber-900 rounded-xl border border-amber-200 font-black uppercase text-[10px] tracking-wider shadow-sm transition-all"
+            >
+              <GraduationCap className="w-4 h-4 text-amber-600" />
+              <span>Become a Student Lead (Earn 10%)</span>
+            </button>
             
             {isAdmin && (
               <Link 
@@ -886,6 +915,44 @@ export default function Dashboard() {
                 </button>
             </div>
             )}
+
+            {/* Student Lead Ambassador Callout Banner */}
+            <div className="mb-10 bg-gradient-to-r from-amber-500/10 via-indigo-500/5 to-purple-500/10 border border-amber-200/90 rounded-[32px] p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 shadow-sm relative overflow-hidden">
+              <div className="flex items-start gap-4 sm:gap-5">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-200">
+                  <GraduationCap className="w-6 h-6 sm:w-7 sm:h-7" />
+                </div>
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black uppercase tracking-wider mb-2 border border-amber-200">
+                    <Sparkles className="w-3 h-3 text-amber-600" />
+                    Student Lead & Template Royalties
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                    Become a Campus Student Lead & Earn 10% on Every Template Use
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1 max-w-2xl leading-relaxed">
+                    Provide us with your institution&apos;s project or thesis templates. Earn an automated 10% commission credited directly to your Referral Wallet every time a student uses your template on W3 WriteLab!
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full lg:w-auto">
+                <button
+                  onClick={() => setShowStudentLeadModal(true)}
+                  className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 hover:bg-black text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <span>Learn More & Apply</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setShowReferralModal(true)}
+                  className="w-full sm:w-auto px-5 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-black text-xs uppercase tracking-wider rounded-2xl border border-slate-200 transition-all flex items-center justify-center gap-2"
+                >
+                  <Wallet className="w-4 h-4 text-emerald-600" />
+                  <span>Referral Wallet</span>
+                </button>
+              </div>
+            </div>
 
             {/* Project Creation Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -1445,8 +1512,19 @@ export default function Dashboard() {
             userEmail={authUser?.email}
             initialTier={paymentTier}
         />
+        <StudentLeadModal
+            isOpen={showStudentLeadModal}
+            onClose={() => setShowStudentLeadModal(false)}
+            referralCode={globalProfile?.referral_code || ''}
+            onOpenReferral={() => setShowReferralModal(true)}
+        />
       </div>
 
+      <ReferralFAB 
+          userId={authUser?.id} 
+          isOpen={showReferralModal}
+          onOpenChange={setShowReferralModal}
+      />
       <FeedbackWidget userId={authUser?.id} />
 
       {/* Tool Payment Dialog */}

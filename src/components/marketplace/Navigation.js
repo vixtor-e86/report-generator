@@ -111,17 +111,25 @@ export default function Navigation() {
                         notifications.map((notif) => (
                           <div 
                             key={notif.id} 
-                            className={`p-4 border-b border-[#f3f4f6] last:border-0 hover:bg-zinc-50 transition-colors ${!notif.is_read ? 'bg-blue-50/30' : ''}`}
+                            className={`p-4 border-b border-[#f3f4f6] last:border-0 hover:bg-zinc-50 transition-colors ${!notif.is_read ? 'bg-indigo-50/40' : ''}`}
                           >
                             <div className="flex gap-3">
-                              <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                              <div className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${
                                 notif.type === 'success' ? 'bg-emerald-500' :
-                                notif.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                                notif.type === 'error' ? 'bg-red-500' : 
+                                notif.type === 'warning' ? 'bg-amber-500' : 'bg-indigo-500'
                               }`} />
-                              <div>
-                                <p className="text-sm font-black text-zinc-900 leading-tight mb-1">{notif.title}</p>
-                                <p className="text-xs font-medium text-zinc-500 leading-relaxed">{notif.message}</p>
-                                <p className="text-[9px] font-black text-zinc-300 uppercase mt-2">{new Date(notif.created_at).toLocaleDateString()}</p>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <p className="text-xs sm:text-sm font-black text-zinc-900 leading-tight truncate">{notif.title}</p>
+                                  {!notif.user_id && (
+                                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0">
+                                      Global
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs font-medium text-zinc-600 leading-relaxed break-words">{notif.message}</p>
+                                <p className="text-[9px] font-bold text-zinc-400 uppercase mt-2">{new Date(notif.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                               </div>
                             </div>
                           </div>
