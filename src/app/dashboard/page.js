@@ -1010,8 +1010,10 @@ export default function Dashboard() {
                     <p className="text-indigo-600 text-[10px] font-bold uppercase tracking-widest">Chapter Continuation</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xl font-black text-slate-900 tracking-tighter">₦1,500</span>
-                  <p className="text-[9px] font-bold text-slate-400">/ chapter</p>
+                  <span className="text-xl font-black text-slate-900 tracking-tighter">
+                    {hasFreeAccess ? 'Free' : '₦1,500'}
+                  </span>
+                  <p className="text-[9px] font-bold text-slate-400">{hasFreeAccess ? 'Admin Access' : '/ chapter'}</p>
                 </div>
                 </div>
                 <ul className="space-y-3 mb-10">
@@ -1024,7 +1026,7 @@ export default function Dashboard() {
                     onClick={() => setShowCustomModal(true)}
                     className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95"
                 >
-                    Configure Chapters →
+                    {hasFreeAccess ? 'Launch Custom Blueprint' : 'Configure Chapters →'}
                 </button>
                 </div>
             </div>
@@ -1518,8 +1520,31 @@ export default function Dashboard() {
         <CustomProjectModal
             isOpen={showCustomModal}
             onClose={() => setShowCustomModal(false)}
-            onProceedToPayment={(config) => {
+            isAdmin={hasFreeAccess}
+            onProceedToPayment={async (config) => {
               setShowCustomModal(false);
+              if (config.isFreeAdmin) {
+                try {
+                  toast.loading('Initializing free custom workspace...', { id: 'admin-custom-init' });
+                  const res = await fetch('/api/custom/create-admin-project', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: authUser?.id,
+                      workspaceType: config.workspaceType,
+                      selectedChapters: config.selectedChapters
+                    })
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || 'Failed to create admin custom project');
+                  toast.success('Custom project created successfully!', { id: 'admin-custom-init' });
+                  router.push(data.redirectUrl);
+                } catch (err) {
+                  console.error('Admin custom creation error:', err);
+                  toast.error(err.message || 'Failed to create custom project', { id: 'admin-custom-init' });
+                }
+                return;
+              }
               setCustomPaymentDetails(config.customDetails);
               setPaymentTier('custom');
               setShowManualPayment(true);

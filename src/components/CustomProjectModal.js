@@ -18,7 +18,8 @@ export default function CustomProjectModal({
   isOpen,
   onClose,
   onProceedToPayment,
-  isInternational = false
+  isInternational = false,
+  isAdmin = false
 }) {
   // Selected chapters that the AI will GENERATE (default: chapters 4 and 5)
   const [selectedChapters, setSelectedChapters] = useState([4, 5]);
@@ -66,15 +67,16 @@ export default function CustomProjectModal({
       tier: 'custom',
       workspaceType,
       selectedChapters,
-      amountNgn: totalNgn,
-      amountUsd: totalUsd,
-      customRatePerChapter: rateNgn,
+      amountNgn: isAdmin ? 0 : totalNgn,
+      amountUsd: isAdmin ? 0 : totalUsd,
+      customRatePerChapter: isAdmin ? 0 : rateNgn,
+      isFreeAdmin: isAdmin,
       customDetails: {
         workspaceType,
         selectedChapters,
-        ngnAmount: totalNgn,
-        usdAmount: totalUsd,
-        customRatePerChapter: rateNgn
+        ngnAmount: isAdmin ? 0 : totalNgn,
+        usdAmount: isAdmin ? 0 : totalUsd,
+        customRatePerChapter: isAdmin ? 0 : rateNgn
       }
     });
   };
@@ -258,8 +260,8 @@ export default function CustomProjectModal({
                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block">
                   Total Payable
                 </span>
-                <span className="text-2xl font-black text-white">
-                  {isInternational ? `$${totalUsd.toFixed(2)}` : `₦${totalNgn.toLocaleString()}`}
+                <span className={`text-2xl font-black ${isAdmin ? 'text-emerald-400' : 'text-white'}`}>
+                  {isAdmin ? 'Free' : (isInternational ? `$${totalUsd.toFixed(2)}` : `₦${totalNgn.toLocaleString()}`)}
                 </span>
               </div>
             </div>
@@ -294,7 +296,11 @@ export default function CustomProjectModal({
         {/* Modal Footer */}
         <div className="p-4 sm:p-6 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-xs text-slate-500 font-medium text-center sm:text-left">
-            <span>Charged per selected chapter ({isInternational ? `$${rateUsd}/ch` : `₦${rateNgn.toLocaleString()}/ch`})</span>
+            <span>
+              {isAdmin 
+                ? 'Admin Access: Free unlimited custom project creation' 
+                : `Charged per selected chapter (${isInternational ? `$${rateUsd}/ch` : `₦${rateNgn.toLocaleString()}/ch`})`}
+            </span>
           </div>
 
           <button
@@ -302,7 +308,7 @@ export default function CustomProjectModal({
             onClick={handleContinue}
             className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 active:scale-95"
           >
-            <span>Continue to Payment</span>
+            <span>{isAdmin ? 'Launch Custom Workspace (Free)' : 'Continue to Payment'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
