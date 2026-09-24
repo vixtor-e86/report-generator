@@ -14,7 +14,7 @@ export async function POST(request) {
     // Verify user is admin or support
     const { data: userProfile, error: profileErr } = await supabaseAdmin
       .from('user_profiles')
-      .select('role, is_admin, department, faculty')
+      .select('role, department, faculty')
       .eq('id', userId)
       .single();
 
@@ -22,7 +22,7 @@ export async function POST(request) {
       console.error('Profile fetch error:', profileErr);
     }
 
-    const isAdmin = userProfile?.is_admin || userProfile?.role === 'admin' || userProfile?.role === 'support';
+    const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'support';
     if (!isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized: Admin or Support access required for free custom project creation' },
