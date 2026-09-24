@@ -19,6 +19,7 @@ import { PRICING } from '@/lib/pricing';
 import { ShoppingBag } from 'lucide-react';
 import FeedbackWidget from '@/components/FeedbackWidget';
 import CustomModal from '@/components/premium/modals/CustomModal';
+import CustomProjectModal from '@/components/CustomProjectModal';
 import { academicTools, toolCategories } from '@/data/marketplace/tools';
 import { 
   DropdownMenu,
@@ -191,6 +192,8 @@ export default function Dashboard() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showManualPayment, setShowManualPayment] = useState(false);
   const [paymentTier, setPaymentTier] = useState(null);
+  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [customPaymentDetails, setCustomPaymentDetails] = useState(null);
   // Navigation State
   const [activeTab, setActiveTab] = useState('projects'); // projects, market, tools, seller
   const { wallet, deductFunds, refreshWallet, setShowFundingModal } = useWallet();
@@ -918,10 +921,10 @@ export default function Dashboard() {
             )}
 
             {/* Project Creation Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             
             {/* FREE TIER */}
-            <div className="group relative bg-white rounded-[32px] border border-slate-200 p-8 hover:shadow-lg hover:border-slate-300 transition-all duration-200">
+            <div className="group relative bg-white rounded-[32px] border border-slate-200 p-8 hover:shadow-lg hover:border-slate-300 transition-all duration-200 flex flex-col">
                 <div className="flex justify-between items-start mb-6">
                 <div>
                     <h3 className="font-black text-slate-900 text-lg uppercase tracking-tight">Starter</h3>
@@ -946,7 +949,7 @@ export default function Dashboard() {
             </div>
 
             {/* STANDARD TIER */}
-            <div className="relative bg-slate-900 rounded-[32px] border border-indigo-500 p-8 shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 transform hover:-translate-y-1">
+            <div className="relative bg-slate-900 rounded-[32px] border border-indigo-500 p-8 shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
                 <div className="absolute top-0 right-8 -translate-y-1/2 px-4 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl">RECOMMENDED</div>
                 <div className="flex justify-between items-start mb-6">
                 <div>
@@ -972,7 +975,7 @@ export default function Dashboard() {
             </div>
 
             {/* PREMIUM TIER */}
-            <div className="bg-white rounded-[32px] border border-slate-200 p-8 hover:shadow-lg hover:border-slate-300 transition-all duration-200">
+            <div className="bg-white rounded-[32px] border border-slate-200 p-8 hover:shadow-lg hover:border-slate-300 transition-all duration-200 flex flex-col">
                 <div className="flex justify-between items-start mb-6">
                 <div>
                     <h3 className="font-black text-slate-900 text-lg uppercase tracking-tight">Premium</h3>
@@ -992,6 +995,36 @@ export default function Dashboard() {
                     className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-slate-900 text-white hover:bg-black shadow-xl disabled:opacity-70"
                 >
                     {creatingPayment ? 'Processing...' : (hasFreeAccess ? 'Launch Premium Blueprint' : 'Select Premium Blueprint')}
+                </button>
+                </div>
+            </div>
+
+            {/* CUSTOM TIER */}
+            <div className="bg-white rounded-[32px] border-2 border-indigo-200/80 p-8 hover:shadow-xl hover:border-indigo-400 transition-all duration-200 relative flex flex-col group bg-gradient-to-b from-indigo-50/20 to-white">
+                <div className="absolute top-0 right-8 -translate-y-1/2 px-3.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg">
+                  CONTINUATION
+                </div>
+                <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h3 className="font-black text-slate-900 text-lg uppercase tracking-tight">Custom</h3>
+                    <p className="text-indigo-600 text-[10px] font-bold uppercase tracking-widest">Chapter Continuation</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-black text-slate-900 tracking-tighter">₦1,500</span>
+                  <p className="text-[9px] font-bold text-slate-400">/ chapter</p>
+                </div>
+                </div>
+                <ul className="space-y-3 mb-10">
+                <li className="flex gap-2 text-xs font-bold text-slate-600 uppercase tracking-tight"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Pick Chapters (1 to 5)</li>
+                <li className="flex gap-2 text-xs font-bold text-slate-600 uppercase tracking-tight"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Standard or Premium</li>
+                <li className="flex gap-2 text-xs font-bold text-slate-600 uppercase tracking-tight"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Integrates Past Text</li>
+                </ul>
+                <div className="mt-auto">
+                <button 
+                    onClick={() => setShowCustomModal(true)}
+                    className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95"
+                >
+                    Configure Chapters →
                 </button>
                 </div>
             </div>
@@ -1048,11 +1081,12 @@ export default function Dashboard() {
                     >
                     <div className="flex justify-between items-start mb-6">
                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm ${
+                        project.is_custom ? 'bg-amber-50 text-amber-700 border border-amber-200' :
                         project.tier === 'free' ? 'bg-slate-100 text-slate-600' : 
                         project.tier === 'unlocked' ? 'bg-emerald-50 text-emerald-600' :
                         project.tier === 'standard' ? 'bg-indigo-50 text-indigo-600' : 'bg-purple-50 text-purple-600'
                         }`}>
-                        {project.tier} Blueprint
+                        {project.is_custom ? 'Custom Continuation' : `${project.tier} Blueprint`}
                         </span>
                         <span className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${
                         project.status === 'completed' ? 'text-emerald-600' : 'text-amber-600'
@@ -1092,7 +1126,11 @@ export default function Dashboard() {
                         </span>
                         )}
 
-                        <span className="text-zinc-900">Ch. {project.current_chapter || 1}/5</span>
+                        <span className="text-zinc-900 font-bold">
+                          {project.is_custom && project.selected_chapters?.length 
+                            ? `Ch. [${project.selected_chapters.join(',')}]` 
+                            : `Ch. ${project.current_chapter || 1}/5`}
+                        </span>
                     </div>
                     </Link>
                 ))}
@@ -1470,10 +1508,22 @@ export default function Dashboard() {
             onClose={() => {
                 setShowManualPayment(false);
                 setPaymentTier(null);
+                setCustomPaymentDetails(null);
             }} 
             userId={authUser?.id}
             userEmail={authUser?.email}
             initialTier={paymentTier}
+            customDetails={customPaymentDetails}
+        />
+        <CustomProjectModal
+            isOpen={showCustomModal}
+            onClose={() => setShowCustomModal(false)}
+            onProceedToPayment={(config) => {
+              setShowCustomModal(false);
+              setCustomPaymentDetails(config.customDetails);
+              setPaymentTier('custom');
+              setShowManualPayment(true);
+            }}
         />
         <StudentLeadModal
             isOpen={showStudentLeadModal}

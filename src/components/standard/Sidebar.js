@@ -137,7 +137,9 @@ export default function Sidebar({
           </div>
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-black text-slate-900 truncate text-sm sm:text-base flex-1">{project.title}</h2>
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-black flex-shrink-0 ml-2 bg-slate-200 text-slate-700 uppercase tracking-widest">STANDARD</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black flex-shrink-0 ml-2 uppercase tracking-widest ${project.is_custom ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700'}`}>
+              {project.is_custom ? 'CUSTOM' : 'STANDARD'}
+            </span>
           </div>
           <p className="text-xs font-medium text-slate-400">{project.department}</p>
         </div>
@@ -171,10 +173,14 @@ export default function Sidebar({
                 <div className="flex items-center justify-between mb-1">
                   <span className={`font-bold text-xs sm:text-sm ${selectedChapter === chapter.chapter_number ? 'text-slate-900' : 'text-slate-600'}`}>{itemLabel} {chapter.chapter_number}</span>
                   <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter ${
+                      project.is_custom && project.selected_chapters && !project.selected_chapters.includes(chapter.chapter_number)
+                        ? 'bg-amber-50 text-amber-700 border border-amber-200' :
                       chapter.status === 'approved' || chapter.status === 'draft' || chapter.status === 'edited' ? 'bg-emerald-50 text-emerald-600' :
                       chapter.status === 'generating' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'
                     }`}>
-                    {chapter.status === 'not_generated' ? 'Not Started' : chapter.status === 'generating' ? 'Generating...' : chapter.status}
+                    {project.is_custom && project.selected_chapters && !project.selected_chapters.includes(chapter.chapter_number)
+                      ? 'Student Text'
+                      : chapter.status === 'not_generated' ? 'Not Started' : chapter.status === 'generating' ? 'Generating...' : chapter.status}
                   </span>
                 </div>
                 <div className={`text-[11px] font-medium truncate ${selectedChapter === chapter.chapter_number ? 'text-slate-500' : 'text-slate-400'}`}>{chapter.title}</div>

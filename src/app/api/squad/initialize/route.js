@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(request) {
   try {
-    const { userId, email, tier, amount, projectId, currency = 'NGN' } = await request.json();
+    const { userId, email, tier, amount, projectId, currency = 'NGN', customDetails } = await request.json();
     const selectedCurrency = currency === 'USD' ? 'USD' : 'NGN';
 
     // Validate inputs
@@ -24,17 +24,20 @@ export async function POST(request) {
     }
 
     // Determine Squad environment URL
-    // If key starts with sandbox_sk_ or SQUAD_ENV is set to sandbox, use sandbox url
     const isSandbox = squadKey.startsWith('sandbox_sk_') || process.env.NEXT_PUBLIC_SQUAD_ENV === 'sandbox';
     const baseUrl = isSandbox ? 'https://sandbox-api-d.squadco.com' : 'https://api-d.squadco.com';
 
     // Generate unique reference (transaction_ref)
-    // If unlocking a project, embed the projectId in the reference and set tier to unlock
     let transaction_ref;
     let finalTier = tier;
     if (projectId) {
       transaction_ref = `W3WL_UNLOCK_${projectId}_${Date.now()}`;
       finalTier = 'unlock'; // Special tier for project unlocks
+    } else if (tier === 'custom' && customDetails) {
+      const wsCode = customDetails.workspaceType === 'premium' ? 'PREMIUM' : 'STANDARD';
+      const chCode = (customDetails.selectedChapters || [4, 5]).join('-');
+      transaction_ref = `W3WL_CUSTOM_${wsCode}_${chCode}_${Date.now()}_${userId.slice(0, 8)}`;
+      finalTier = 'custom';
     } else {
       transaction_ref = `W3WL_${tier.toUpperCase()}_${Date.now()}_${userId.slice(0, 8)}`;
     }
@@ -66,7 +69,8 @@ export async function POST(request) {
           userId,
           tier: finalTier,
           projectId: projectId || null,
-          currency: selectedCurrency
+          currency: selectedCurrency,
+          customDetails: customDetails || null
         }
       })
     });
@@ -84,18 +88,17 @@ export async function POST(request) {
     const checkoutUrl = squadData.data.checkout_url;
 
     // Create payment transaction record (initially pending)
-    // We map Squad fields to existing Paystack/general columns to avoid DB schema changes
     const { data: transaction, error: dbError } = await supabaseAdmin
       .from('payment_transactions')
       .insert({
         user_id: userId,
-        project_id: null, // Avoid FK constraint (standard_projects), we store projectId in reference
+        project_id: null,
         amount,
         currency: selectedCurrency,
         tier: finalTier,
         status: 'pending',
-        paystack_reference: transaction_ref, // Storing transaction_ref here
-        paystack_authorization_url: checkoutUrl, // Storing payment link here
+        paystack_reference: transaction_ref,
+        paystack_authorization_url: checkoutUrl,
         ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '1.1.1.1',
         user_agent: request.headers.get('user-agent') || 'Squad Integration Agent'
       })
@@ -119,7 +122,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Payment initialization error:', error);
     return NextResponse.json(
-      { error: 'Internal server error during payment initialization' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }

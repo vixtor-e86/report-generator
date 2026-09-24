@@ -28,6 +28,14 @@ export async function POST(request) {
     const { data: project } = await supabaseAdmin.from('premium_projects').select('*, custom_templates(*)').eq('id', projectId).single();
     if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
+    // Custom Project verification
+    if (project.is_custom && Array.isArray(project.selected_chapters) && !project.selected_chapters.includes(chapterNumber)) {
+      return NextResponse.json(
+        { error: `Chapter ${chapterNumber} was provided by you as part of your Custom Continuation package and cannot be re-generated.` },
+        { status: 400 }
+      );
+    }
+
     const provider = process.env.PREMIUM_AI_PROVIDER || 'deepseek';
     const model = process.env.PREMIUM_AI_MODEL || 'deepseek-v4-pro';
 
@@ -123,6 +131,18 @@ export async function POST(request) {
       }
     }
 
+    // If Custom Project, inject student's existing chapter texts as high-priority research context
+    if (project.is_custom && project.uploaded_chapters) {
+      for (let ch = 1; ch <= 5; ch++) {
+        if (ch === chapterNumber) continue;
+        const chData = project.uploaded_chapters[`chapter_${ch}`];
+        const text = typeof chData === 'string' ? chData : chData?.content || '';
+        if (text && text.trim()) {
+          contextualSourceData += `\n--- EXISTING CHAPTER ${ch} (STUDENT WRITTEN CONTINUATION BASELINE) ---\n${text.split(/\s+/).slice(0, 600).join(" ")}\n`;
+        }
+      }
+    }
+
     // --- 3. Citation & Reference Logic ---
     const refStyleUpper = (referenceStyle || 'apa').toUpperCase();
     const citationStyleInst = refStyleUpper === 'IEEE'
@@ -154,6 +174,18 @@ export async function POST(request) {
     // --- 4. Enhanced Reference Sourcing ---
     const { data: existingPapers } = await supabaseAdmin.from('premium_research_papers').select('*').eq('project_id', projectId);
     let finalReferencesList = [...selectedPapers];
+
+    // If Custom Project, include student's existing references
+    if (project.is_custom && project.existing_references && project.existing_references.trim() && !skipReferences) {
+      const studentRefs = project.existing_references.split('\n').filter(r => r.trim()).map((r, idx) => ({
+        external_id: `student-ref-${idx}`,
+        title: r.trim(),
+        authors: 'Student Reference',
+        year: 'Context',
+        venue: 'Original Research'
+      }));
+      finalReferencesList = [...studentRefs, ...finalReferencesList];
+    }
     
     // Dynamic reference count: Chapter 2 needs more for deep literature review
     let totalNeeded = maxReferences || 10;

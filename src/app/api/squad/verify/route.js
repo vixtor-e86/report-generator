@@ -229,6 +229,139 @@ export async function GET(request) {
           .from('payment_transactions')
           .update({ project_id: projectIdToUnlock })
           .eq('id', updatedTx.id);
+    // ✅ Process Custom Chapter Project Creation if reference starts with W3WL_CUSTOM_
+    if (transaction_ref && transaction_ref.startsWith('W3WL_CUSTOM_')) {
+      const parts = transaction_ref.split('_');
+      // Format: W3WL_CUSTOM_<WORKSPACE>_<CHAPTERS>_<TIMESTAMP>_<USERID>
+      const wsType = (parts[2] || 'STANDARD').toUpperCase();
+      const chaptersStr = parts[3] || '4-5';
+      const selectedChapters = chaptersStr.split('-').map(Number).filter(n => !isNaN(n));
+
+      // Fetch user profile for department/faculty fallback
+      const { data: userProf } = await supabaseAdmin
+        .from('user_profiles')
+        .select('department, faculty')
+        .eq('id', updatedTx.user_id)
+        .single();
+
+      let createdProjectId = null;
+      let redirectUrl = null;
+
+      if (wsType === 'PREMIUM') {
+        const { data: newProject, error: projErr } = await supabaseAdmin
+          .from('premium_projects')
+          .insert({
+            user_id: updatedTx.user_id,
+            title: `Custom Research Suite (${selectedChapters.map(c => `Ch ${c}`).join(', ')})`,
+            department: userProf?.department || 'General Academic',
+            faculty: userProf?.faculty || 'General',
+            description: `Custom continuation project generating chapters: ${selectedChapters.join(', ')}`,
+            tier: 'custom',
+            payment_status: 'paid',
+            amount_paid: updatedTx.amount,
+            payment_verified_at: new Date().toISOString(),
+            tokens_used: 0,
+            tokens_limit: selectedChapters.length * 80000,
+            humanizer_words_used: 0,
+            humanizer_words_limit: selectedChapters.length * 2500,
+            plagiarism_words_used: 0,
+            plagiarism_words_limit: selectedChapters.length * 2500,
+            status: 'in_progress',
+            current_chapter: selectedChapters[0] || 1,
+            is_custom: true,
+            selected_chapters: selectedChapters,
+            uploaded_chapters: {},
+            existing_references: null,
+            custom_rate_per_chapter: 5000
+          })
+          .select()
+          .single();
+
+        if (projErr) {
+          console.error('Failed to create custom premium project:', projErr);
+        } else if (newProject) {
+          createdProjectId = newProject.id;
+          redirectUrl = `/premium/workspace?id=${newProject.id}`;
+
+          const premiumChapterTitles = [
+            'Introduction & Background',
+            'Literature Review',
+            'Research Methodology',
+            'Implementation & Results',
+            'Conclusion & Recommendations'
+          ];
+          const chaptersToInsert = premiumChapterTitles.map((title, idx) => ({
+            project_id: newProject.id,
+            chapter_number: idx + 1,
+            title,
+            content: '',
+            status: 'draft'
+          }));
+          await supabaseAdmin.from('premium_chapters').insert(chaptersToInsert);
+        }
+      } else {
+        // STANDARD WORKSPACE
+        const { data: newProject, error: projErr } = await supabaseAdmin
+          .from('standard_projects')
+          .insert({
+            user_id: updatedTx.user_id,
+            title: `Custom Blueprint (${selectedChapters.map(c => `Ch ${c}`).join(', ')})`,
+            department: userProf?.department || 'General Academic',
+            components: ['Custom Blueprint'],
+            description: `Custom continuation project generating chapters: ${selectedChapters.join(', ')}`,
+            tier: 'custom',
+            payment_status: 'paid',
+            amount_paid: updatedTx.amount,
+            payment_verified_at: new Date().toISOString(),
+            tokens_used: 0,
+            tokens_limit: selectedChapters.length * 24000,
+            status: 'in_progress',
+            current_chapter: selectedChapters[0] || 1,
+            is_custom: true,
+            selected_chapters: selectedChapters,
+            uploaded_chapters: {},
+            existing_references: null,
+            custom_rate_per_chapter: 1500,
+            access_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          })
+          .select()
+          .single();
+
+        if (projErr) {
+          console.error('Failed to create custom standard project:', projErr);
+        } else if (newProject) {
+          createdProjectId = newProject.id;
+          redirectUrl = `/standard/${newProject.id}`;
+
+          const standardChapterTitles = [
+            'Introduction & Background',
+            'Literature Review',
+            'Research Methodology',
+            'System Implementation & Results',
+            'Conclusion & Recommendations'
+          ];
+          const chaptersToInsert = standardChapterTitles.map((title, idx) => ({
+            project_id: newProject.id,
+            chapter_number: idx + 1,
+            title,
+            status: 'not_generated'
+          }));
+          await supabaseAdmin.from('standard_chapters').insert(chaptersToInsert);
+        }
+      }
+
+      if (createdProjectId) {
+        await supabaseAdmin
+          .from('payment_transactions')
+          .update({ project_id: createdProjectId })
+          .eq('id', updatedTx.id);
+        
+        return NextResponse.json({
+          verified: true,
+          transaction: updatedTx,
+          projectId: createdProjectId,
+          redirectUrl
+        });
       }
     }
 

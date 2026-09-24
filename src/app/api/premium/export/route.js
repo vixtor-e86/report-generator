@@ -508,7 +508,12 @@ export async function POST(request) {
     const referenceStyle = options?.referenceStyle || 'APA';
 
     const { data: project } = await supabaseAdmin.from('premium_projects').select('*, custom_templates(*)').eq('id', projectId).single();
-    const { data: chapters } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).order('chapter_number', { ascending: true });
+    let { data: chapters } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).order('chapter_number', { ascending: true });
+    
+    // Filter to only selected chapters for Custom Projects
+    if (project?.is_custom && Array.isArray(project.selected_chapters) && project.selected_chapters.length > 0) {
+      chapters = chapters.filter(c => project.selected_chapters.includes(c.chapter_number));
+    }
     
     const { data: dbReferences } = await supabaseAdmin.from('premium_research_papers').select('*').eq('project_id', projectId).order('created_at', { ascending: true });
 

@@ -80,7 +80,7 @@ export async function POST(request) {
       query = query.eq('chapter_number', chapterNumber);
     }
     
-    const { data: chapters, error: chaptersError } = await query.order('chapter_number', { ascending: true });
+    let { data: chapters, error: chaptersError } = await query.order('chapter_number', { ascending: true });
 
     if (chaptersError) {
       console.error('Chapters fetch error:', chaptersError);
@@ -88,6 +88,11 @@ export async function POST(request) {
         { error: 'Failed to fetch chapters' },
         { status: 500 }
       );
+    }
+
+    // Filter to only selected chapters for Custom Projects
+    if (project.is_custom && Array.isArray(project.selected_chapters) && project.selected_chapters.length > 0 && !chapterNumber) {
+      chapters = chapters.filter(ch => project.selected_chapters.includes(ch.chapter_number));
     }
 
     // 4. Check if required chapters are generated

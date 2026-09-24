@@ -29,6 +29,14 @@ export async function POST(request) {
     if (projectError || !project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     if (project.user_id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
 
+    // Custom Project verification
+    if (project.is_custom && Array.isArray(project.selected_chapters) && !project.selected_chapters.includes(chapterNumber)) {
+      return NextResponse.json(
+        { error: `Chapter ${chapterNumber} was provided by you as part of your Custom Continuation package and cannot be re-generated.` },
+        { status: 400 }
+      );
+    }
+
     const tokenCheck = checkTokenLimit(project.tokens_used, project.tokens_limit, 10000);
     if (!tokenCheck.allowed) {
       return NextResponse.json({ error: 'Token limit exceeded. You can still edit manually or upgrade to Premium.' }, { status: 429 });
@@ -64,6 +72,25 @@ export async function POST(request) {
       }).join('\n\n');
     }
 
+    // Inject custom uploaded chapters context if custom project
+    if (project.is_custom && project.uploaded_chapters) {
+      const customParts = [];
+      for (let ch = 1; ch <= 5; ch++) {
+        if (ch === chapterNumber) continue;
+        const chData = project.uploaded_chapters[`chapter_${ch}`];
+        const text = typeof chData === 'string' ? chData : chData?.content || '';
+        if (text && text.trim()) {
+          customParts.push(`Chapter ${ch} (Student Provided):\n${text.substring(0, 1000)}...`);
+        }
+      }
+      if (customParts.length > 0) {
+        context = (context ? context + '\n\n' : '') + 
+          '### STUDENT EXISTING CHAPTERS (CONTINUATION CONTEXT):\n' +
+          'Maintain complete continuity with the student\'s established terminology, methodology, and problem scope:\n\n' +
+          customParts.join('\n\n');
+      }
+    }
+
     const { data: allImages } = await supabase
       .from('standard_images')
       .select('*')
@@ -87,6 +114,14 @@ export async function POST(request) {
       .order('order_number', { ascending: true });
 
     let finalReferencesList = [...(existingReferences || [])];
+    if (project.is_custom && project.existing_references && project.existing_references.trim()) {
+      const studentRefs = project.existing_references.split('\n').filter(r => r.trim()).map(r => ({
+        title: r.trim(),
+        reference_text: r.trim(),
+        is_student_provided: true
+      }));
+      finalReferencesList = [...studentRefs, ...finalReferencesList];
+    }
     const totalMaxProjectRefs = 40;
 
     if (finalReferencesList.length < totalMaxProjectRefs && project.reference_style !== 'none') {

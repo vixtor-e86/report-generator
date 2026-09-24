@@ -1,8 +1,8 @@
 "use client";
 import { useState } from 'react';
 import { 
-  Shield, Loader2, Lock, Globe, CreditCard, 
-  ArrowRight, X 
+  Shield, Loader2, Globe, CreditCard, 
+  ArrowRight, X, Layers, CheckCircle2 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PRICING, INTERNATIONAL_PRICING } from '@/lib/pricing';
@@ -14,7 +14,8 @@ export default function ManualPaymentModal({
   userEmail, 
   projectId = null, 
   initialTier = null, 
-  initialAmount = null 
+  initialAmount = null,
+  customDetails = null
 }) {
   const [currencyMode, setCurrencyMode] = useState('NGN'); // 'NGN' or 'USD'
   const [isProcessing, setIsProcessing] = useState(false);
@@ -26,14 +27,16 @@ export default function ManualPaymentModal({
   const ngnPrices = {
     standard: initialAmount || PRICING.STANDARD,
     premium: initialAmount || PRICING.PREMIUM,
-    unlock: initialAmount || 2000
+    unlock: initialAmount || 2000,
+    custom: initialAmount || customDetails?.ngnAmount || 1500
   };
 
-  // USD Prices ($5 for standard, $20 for premium, $2 for unlock)
+  // USD Prices ($5 for standard, $20 for premium, $2 for unlock, dynamic for custom)
   const usdPrices = {
     standard: INTERNATIONAL_PRICING.STANDARD,
     premium: INTERNATIONAL_PRICING.PREMIUM,
-    unlock: 2
+    unlock: 2,
+    custom: customDetails?.usdAmount || (initialAmount ? initialAmount / 1000 : 1.5)
   };
 
   const currentNgnAmount = ngnPrices[currentTier] || 5000;
@@ -63,7 +66,8 @@ export default function ManualPaymentModal({
           tier: currentTier,
           amount: amountToPay,
           currency: selectedCurrency,
-          projectId
+          projectId,
+          customDetails
         })
       });
 
@@ -98,10 +102,14 @@ export default function ManualPaymentModal({
               Secure Checkout
             </div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
-              {currentTier.toUpperCase()} Project Access
+              {currentTier === 'custom' 
+                ? `Custom ${customDetails?.workspaceType === 'premium' ? 'Premium' : 'Standard'} Access` 
+                : `${currentTier.toUpperCase()} Project Access`}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Select your preferred currency and payment gateway.
+              {currentTier === 'custom' && customDetails?.selectedChapters
+                ? `Generating ${customDetails.selectedChapters.length} chapter(s): Chapters ${customDetails.selectedChapters.join(', ')}`
+                : 'Select your preferred currency and payment gateway.'}
             </p>
           </div>
 
@@ -150,89 +158,67 @@ export default function ManualPaymentModal({
             </div>
           )}
 
-          {/* ======================= MODE 1: NAIRA (NGN) ======================= */}
-          {currencyMode === 'NGN' && (
-            <div className="space-y-5">
-              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 text-center">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
-                  Amount Due (NGN)
+          {/* Amount Overview Card */}
+          <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-xl relative overflow-hidden flex items-center justify-between">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">
+                {currentTier === 'custom' ? 'Custom Package Total' : 'Order Total'}
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-black tracking-tight">
+                  {currencyMode === 'USD' ? `$${currentUsdAmount.toFixed(2)}` : `₦${currentNgnAmount.toLocaleString()}`}
                 </span>
-                <span className="text-3xl sm:text-4xl font-black text-slate-900">
-                  ₦{currentNgnAmount.toLocaleString()}
-                </span>
-                <p className="text-xs text-slate-500 font-medium mt-2">
-                  Debit Cards (Mastercard, Visa, Verve), Bank Transfer & USSD
-                </p>
+                <span className="text-xs text-slate-400 font-bold uppercase">{currencyMode}</span>
               </div>
-
-              <button
-                onClick={() => handleStartSquadCheckout('NGN')}
-                disabled={isProcessing}
-                className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-indigo-200 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Connecting to Squad...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Pay ₦{currentNgnAmount.toLocaleString()} via Squad</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
             </div>
-          )}
 
-          {/* ======================= MODE 2: INTERNATIONAL (USD) ======================= */}
-          {currencyMode === 'USD' && (
-            <div className="space-y-5">
-              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 text-center">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
-                  International Price (USD)
-                </span>
-                <span className="text-3xl sm:text-4xl font-black text-slate-900">
-                  ${currentUsdAmount}.00 USD
-                </span>
-                <p className="text-xs text-slate-500 font-medium mt-2">
-                  Foreign Visa, Mastercard & American Express Cards
-                </p>
+            <span className="px-3 py-1.5 rounded-full bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-[10px] font-black uppercase tracking-wider">
+              Instant Activation
+            </span>
+          </div>
+
+          {/* Payment Gateway: Squad */}
+          <div className="space-y-3">
+            <button
+              onClick={() => handleStartSquadCheckout(currencyMode)}
+              disabled={isProcessing}
+              className="w-full p-5 rounded-3xl border-2 border-indigo-600 bg-indigo-50/50 hover:bg-indigo-50 hover:shadow-lg transition-all flex items-center justify-between group active:scale-95 disabled:opacity-60 text-left"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black shadow-md shadow-indigo-200">
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-black text-sm text-slate-900">
+                      {currencyMode === 'USD' ? 'Pay with International Card (Squad)' : 'Pay with Debit Card / Bank Transfer (Squad)'}
+                    </h4>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    {currencyMode === 'USD'
+                      ? 'Secure international card checkout via HabariPay / GTCO.'
+                      : 'Cards, USSD, Bank Transfer, Apple Pay, & Virtual Accounts.'}
+                  </p>
+                </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 flex items-start gap-3">
-                <CreditCard className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                  Pay securely in USD using your foreign debit or credit card via our verified Squad gateway. Your project access will be granted automatically upon confirmation.
-                </p>
+              <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center group-hover:translate-x-1 transition-transform shrink-0">
+                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
               </div>
+            </button>
+          </div>
 
-              <button
-                onClick={() => handleStartSquadCheckout('USD')}
-                disabled={isProcessing}
-                className="w-full py-4 rounded-2xl bg-slate-900 hover:bg-black text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-slate-300 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Connecting to USD Gateway...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Pay ${currentUsdAmount} with Card</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
-          )}
+          {/* Security Guarantee Notice */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3 text-slate-500">
+            <Shield className="w-4 h-4 text-emerald-600 shrink-0" />
+            <p className="text-[11px] leading-relaxed font-medium">
+              Transactions are protected with 256-bit bank-grade encryption. Access to your project workspace is granted automatically upon payment confirmation.
+            </p>
+          </div>
         </div>
 
-        {/* Footer Guarantee */}
-        <div className="p-4 bg-slate-50 border-t border-slate-100 text-center flex items-center justify-center gap-2 text-[11px] font-bold text-slate-400">
-          <Lock className="w-3.5 h-3.5 text-emerald-500" />
-          <span>256-Bit SSL Encrypted Payment Protection</span>
-        </div>
       </div>
     </div>
   );

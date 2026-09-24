@@ -14,6 +14,7 @@ import LoadingModal from '@/components/premium/modals/LoadingModal'; // Reusing 
 import FeedbackWidget from '@/components/FeedbackWidget';// ✅ NEW
 import ReferralFAB from '@/components/ReferralFAB';
 import CustomModal from '@/components/premium/modals/CustomModal';
+import CustomProjectSetupModal from '@/components/workspace/CustomProjectSetupModal';
 
 export default function StandardWorkspace({ params }) {
   const resolvedParams = use(params);
@@ -34,6 +35,7 @@ export default function StandardWorkspace({ params }) {
   const [showPreviewModal, setShowPreviewModal] = useState(false); // ✅ NEW
   const [showSuggestionsModal, setShowSuggestionsModal] = useState(false); // ✅ NEW
   const [showRefillModal, setShowRefillModal] = useState(false); // ✅ Token refill modal
+  const [showCustomSetupModal, setShowCustomSetupModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const [globalLoadingText, setGlobalLoadingText] = useState('AI is writing your chapter...');
@@ -121,6 +123,24 @@ export default function StandardWorkspace({ params }) {
         setChapters(chaptersData || []);
         setImages(imagesData || []);
         setLoading(false);
+
+        // Check if custom continuation project requires mandatory chapter text
+        if (projectData.is_custom) {
+          const selectedChs = projectData.selected_chapters || [1, 2, 3, 4, 5];
+          const unselected = [1, 2, 3, 4, 5].filter(c => !selectedChs.includes(c));
+          if (unselected.length > 0) {
+            const uploaded = projectData.uploaded_chapters || {};
+            const isMissingAny = unselected.some(c => {
+              const text = typeof uploaded[`chapter_${c}`] === 'string'
+                ? uploaded[`chapter_${c}`]
+                : uploaded[`chapter_${c}`]?.content || '';
+              return !text || text.trim().split(/\s+/).length < 20;
+            });
+            if (isMissingAny) {
+              setShowCustomSetupModal(true);
+            }
+          }
+        }
 
       } catch (error) {
         console.error('Error loading workspace:', error);
@@ -589,7 +609,22 @@ export default function StandardWorkspace({ params }) {
         isOpen={isGlobalLoading} 
         loadingText={globalLoadingText} 
       />
-      <ReferralFAB userId={user?.id} />
+      {project.is_custom && (
+        <CustomProjectSetupModal
+          isOpen={showCustomSetupModal}
+          projectId={project.id}
+          workspaceType="standard"
+          selectedChapters={project.selected_chapters || [1, 2, 3, 4, 5]}
+          initialUploadedChapters={project.uploaded_chapters || {}}
+          initialReferences={project.existing_references || ''}
+          onSaveComplete={async () => {
+            setShowCustomSetupModal(false);
+            await refreshProject();
+            await refreshChapters();
+            showNotification('Context Saved', 'Your existing chapters and references were saved successfully!', 'success');
+          }}
+        />
+      )}
 
       <CustomModal 
         isOpen={notification.isOpen}

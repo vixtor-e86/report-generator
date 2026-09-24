@@ -25,6 +25,7 @@ import ExportModal from '@/components/premium/modals/ExportModal';
 import CustomModal from '@/components/premium/modals/CustomModal';
 import StructureConfirmationModal from '@/components/premium/modals/StructureConfirmationModal';
 import TourGuide from '@/components/premium/workspace/TourGuide';
+import CustomProjectSetupModal from '@/components/workspace/CustomProjectSetupModal';
 
 import '@/styles/workspace.css';
 
@@ -36,6 +37,7 @@ function WorkspaceContent() {
   const [activeView, setActiveView] = useState('dashboard');
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
+  const [showCustomSetupModal, setShowCustomSetupModal] = useState(false);
   
   // Data State
   const [projectData, setProjectData] = useState({
@@ -185,21 +187,48 @@ function WorkspaceContent() {
 
       const { data: chapterContent } = await supabase.from('premium_chapters').select('*').eq('project_id', projectId);
 
-      if (project.custom_templates?.structure?.chapters) {
-        const rawChapters = project.custom_templates.structure.chapters;
-        const rawNums = rawChapters.map(ch => ch.number || ch.chapter);
-        const hasDuplicates = rawNums.length > 1 && (new Set(rawNums.filter(Boolean)).size !== rawNums.length || rawNums.some(n => !n));
+      const defaultChapters = [
+        { number: 1, title: 'Introduction & Background' },
+        { number: 2, title: 'Literature Review' },
+        { number: 3, title: 'Research Methodology' },
+        { number: 4, title: 'Implementation & Results' },
+        { number: 5, title: 'Conclusion & Recommendations' }
+      ];
 
-        setChapters(rawChapters.map((ch, idx) => {
-          const chNum = hasDuplicates ? (idx + 1) : (ch.number || ch.chapter || (idx + 1));
-          const existing = chapterContent?.find(cc => cc.chapter_number === chNum);
-          return { 
-            id: existing?.id || chNum, 
-            number: chNum, 
-            title: (existing?.title && existing.title !== ch.title && hasDuplicates) ? existing.title : (ch.title || `Chapter ${chNum}`), 
-            content: existing?.content || '' 
-          };
-        }));
+      const rawChapters = project.custom_templates?.structure?.chapters || defaultChapters;
+      const rawNums = rawChapters.map(ch => ch.number || ch.chapter);
+      const hasDuplicates = rawNums.length > 1 && (new Set(rawNums.filter(Boolean)).size !== rawNums.length || rawNums.some(n => !n));
+
+      setChapters(rawChapters.map((ch, idx) => {
+        const chNum = hasDuplicates ? (idx + 1) : (ch.number || ch.chapter || (idx + 1));
+        const existing = chapterContent?.find(cc => cc.chapter_number === chNum);
+        const uploadedText = typeof project.uploaded_chapters?.[`chapter_${chNum}`] === 'string'
+          ? project.uploaded_chapters[`chapter_${chNum}`]
+          : project.uploaded_chapters?.[`chapter_${chNum}`]?.content || '';
+        return { 
+          id: existing?.id || chNum, 
+          number: chNum, 
+          title: (existing?.title && existing.title !== ch.title && hasDuplicates) ? existing.title : (ch.title || `Chapter ${chNum}`), 
+          content: existing?.content || uploadedText || '' 
+        };
+      }));
+
+      // Check if custom continuation project requires mandatory chapter text
+      if (project.is_custom) {
+        const selectedChs = project.selected_chapters || [1, 2, 3, 4, 5];
+        const unselected = [1, 2, 3, 4, 5].filter(c => !selectedChs.includes(c));
+        if (unselected.length > 0) {
+          const uploaded = project.uploaded_chapters || {};
+          const isMissingAny = unselected.some(c => {
+            const text = typeof uploaded[`chapter_${c}`] === 'string'
+              ? uploaded[`chapter_${c}`]
+              : uploaded[`chapter_${c}`]?.content || '';
+            return !text || text.trim().split(/\s+/).length < 20;
+          });
+          if (isMissingAny) {
+            setShowCustomSetupModal(true);
+          }
+        }
       }
     } catch (err) {
       console.error('Fatal workspace load error:', err);
@@ -429,6 +458,22 @@ function WorkspaceContent() {
         isOpen={notification.isOpen} onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
         title={notification.title} message={notification.message} type={notification.type} onConfirm={notification.onConfirm}
       />
+      {projectData?.is_custom && (
+        <CustomProjectSetupModal
+          isOpen={showCustomSetupModal}
+          projectId={projectId}
+          workspaceType="premium"
+          selectedChapters={projectData.selected_chapters || [1, 2, 3, 4, 5]}
+          initialUploadedChapters={projectData.uploaded_chapters || {}}
+          initialReferences={projectData.existing_references || ''}
+          onSaveComplete={async () => {
+            setShowCustomSetupModal(false);
+            await loadWorkspaceData();
+            showNotification('Context Saved', 'Your existing chapters and references were saved successfully!', 'success');
+          }}
+        />
+      )}
+
       <TourGuide projectId={projectId} onComplete={() => setShowTutorial(true)} />
 
       {/* Floating Tutorial Re-watch Button */}
