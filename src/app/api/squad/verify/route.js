@@ -229,6 +229,9 @@ export async function GET(request) {
           .from('payment_transactions')
           .update({ project_id: projectIdToUnlock })
           .eq('id', updatedTx.id);
+      }
+    }
+
     // ✅ Process Custom Chapter Project Creation if reference starts with W3WL_CUSTOM_
     if (transaction_ref && transaction_ref.startsWith('W3WL_CUSTOM_')) {
       const parts = transaction_ref.split('_');
