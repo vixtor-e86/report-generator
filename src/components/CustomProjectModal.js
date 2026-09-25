@@ -2,16 +2,16 @@
 import React, { useState } from 'react';
 import { 
   Layers, Check, Sparkles, Shield, ArrowRight, X, 
-  HelpCircle, Zap, FileText, CheckCircle2
+  HelpCircle, Zap, FileText, CheckCircle2, Lock
 } from 'lucide-react';
 import { PRICING, INTERNATIONAL_PRICING } from '@/lib/pricing';
 
 const CHAPTERS_LIST = [
-  { id: 1, number: 1, name: 'Chapter 1: Introduction & Background', defaultTitle: 'Introduction & Problem Statement' },
-  { id: 2, number: 2, name: 'Chapter 2: Literature Review', defaultTitle: 'Literature Review & Theoretical Framework' },
-  { id: 3, number: 3, name: 'Chapter 3: Research Methodology', defaultTitle: 'Methodology, Design & Analysis Architecture' },
-  { id: 4, number: 4, name: 'Chapter 4: Implementation & Results', defaultTitle: 'Implementation, Testing & Result Presentation' },
-  { id: 5, number: 5, name: 'Chapter 5: Conclusion & Summary', defaultTitle: 'Conclusion, Summary & Recommendations' }
+  { id: 1, number: 1, name: 'Chapter 1: Introduction & Background', defaultTitle: 'Introduction & Problem Statement', isLocked: true },
+  { id: 2, number: 2, name: 'Chapter 2: Literature Review', defaultTitle: 'Literature Review & Theoretical Framework', isLocked: false },
+  { id: 3, number: 3, name: 'Chapter 3: Research Methodology', defaultTitle: 'Methodology, Design & Analysis Architecture', isLocked: false },
+  { id: 4, number: 4, name: 'Chapter 4: Implementation & Results', defaultTitle: 'Implementation, Testing & Result Presentation', isLocked: false },
+  { id: 5, number: 5, name: 'Chapter 5: Conclusion & Summary', defaultTitle: 'Conclusion, Summary & Recommendations', isLocked: false }
 ];
 
 export default function CustomProjectModal({
@@ -21,7 +21,7 @@ export default function CustomProjectModal({
   isInternational = false,
   isAdmin = false
 }) {
-  // Selected chapters that the AI will GENERATE (default: chapters 4 and 5)
+  // Selected chapters that the AI will GENERATE (default: chapters 4 and 5; Chapter 1 is locked as 'I Have This')
   const [selectedChapters, setSelectedChapters] = useState([4, 5]);
   // Chosen workspace quality: 'standard' or 'premium'
   const [workspaceType, setWorkspaceType] = useState('standard');
@@ -29,6 +29,9 @@ export default function CustomProjectModal({
   if (!isOpen) return null;
 
   const toggleChapter = (chapterNum) => {
+    // Chapter 1 is permanently locked as student-provided baseline
+    if (chapterNum === 1) return;
+
     setSelectedChapters(prev => {
       if (prev.includes(chapterNum)) {
         // Prevent deselecting all chapters (minimum 1)
@@ -40,7 +43,7 @@ export default function CustomProjectModal({
     });
   };
 
-  const selectAll = () => setSelectedChapters([1, 2, 3, 4, 5]);
+  const selectAll = () => setSelectedChapters([2, 3, 4, 5]);
 
   const count = selectedChapters.length;
   const unselectedCount = 5 - count;
@@ -190,13 +193,45 @@ export default function CustomProjectModal({
                 onClick={selectAll}
                 className="text-[11px] font-black uppercase tracking-wider text-indigo-600 hover:text-indigo-800 transition-colors"
               >
-                Select All 5
+                Select Chapters 2–5
               </button>
             </div>
 
             <div className="space-y-2">
               {CHAPTERS_LIST.map((ch) => {
                 const isSelected = selectedChapters.includes(ch.number);
+                const isLocked = ch.isLocked || ch.number === 1;
+
+                if (isLocked) {
+                  return (
+                    <div
+                      key={ch.id}
+                      className="p-3 sm:p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-100/70 flex items-center justify-between cursor-not-allowed opacity-90"
+                      title="Chapter 1 is mandatory baseline provided by you"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-lg bg-slate-200 text-slate-500 flex items-center justify-center font-bold">
+                          <Lock className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <p className="text-xs sm:text-sm font-black text-slate-700 leading-tight flex items-center gap-1.5">
+                            {ch.name}
+                            <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">Baseline</span>
+                          </p>
+                          <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                            Mandatory student baseline (you will paste your existing Chapter 1)
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md bg-slate-300 text-slate-700 flex items-center gap-1">
+                        <Lock className="w-2.5 h-2.5" />
+                        I Have This
+                      </span>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={ch.id}
@@ -240,7 +275,7 @@ export default function CustomProjectModal({
             <div className="mt-2.5 p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-2">
               <HelpCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Mandatory Workspace Step:</strong> For any chapter tagged as <em>&quot;I Have This&quot;</em> ({unselectedCount} chapters), you will be prompted to paste its text as soon as you enter the workspace before generation begins.
+                <strong>Chapter 1 Requirement:</strong> All continuation projects assume you have completed Chapter 1. You will be able to paste it in the workspace so our AI matches your technical tone, citations, and research direction.
               </span>
             </div>
           </div>
@@ -308,7 +343,7 @@ export default function CustomProjectModal({
             onClick={handleContinue}
             className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 active:scale-95"
           >
-            <span>{isAdmin ? 'Launch Custom Workspace (Free)' : 'Continue to Payment'}</span>
+            <span>{isAdmin ? 'Proceed to Select Template' : 'Continue to Payment'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

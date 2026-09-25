@@ -124,24 +124,6 @@ export default function StandardWorkspace({ params }) {
         setImages(imagesData || []);
         setLoading(false);
 
-        // Check if custom continuation project requires mandatory chapter text
-        if (projectData.is_custom) {
-          const selectedChs = projectData.selected_chapters || [1, 2, 3, 4, 5];
-          const unselected = [1, 2, 3, 4, 5].filter(c => !selectedChs.includes(c));
-          if (unselected.length > 0) {
-            const uploaded = projectData.uploaded_chapters || {};
-            const isMissingAny = unselected.some(c => {
-              const text = typeof uploaded[`chapter_${c}`] === 'string'
-                ? uploaded[`chapter_${c}`]
-                : uploaded[`chapter_${c}`]?.content || '';
-              return !text || text.trim().split(/\s+/).length < 20;
-            });
-            if (isMissingAny) {
-              setShowCustomSetupModal(true);
-            }
-          }
-        }
-
       } catch (error) {
         console.error('Error loading workspace:', error);
         showNotification('Error', 'Failed to load workspace', 'error');
@@ -287,10 +269,84 @@ export default function StandardWorkspace({ params }) {
     await handleGenerate();
   };
 
+  // Handle saving pasted chapter for custom continuation projects
+  const handleSavePastedChapter = async (chapterNum, text) => {
+    try {
+      // 1. Update standard_chapters
+      const { error: chError } = await supabase
+        .from('standard_chapters')
+        .update({
+          content: text,
+          status: 'completed'
+        })
+        .eq('project_id', project.id)
+        .eq('chapter_number', chapterNum);
+
+      if (chError) throw chError;
+
+      // 2. Update standard_projects uploaded_chapters
+      const updatedUploaded = {
+        ...(project.uploaded_chapters || {}),
+        [`chapter_${chapterNum}`]: text
+      };
+
+      const { error: projError } = await supabase
+        .from('standard_projects')
+        .update({
+          uploaded_chapters: updatedUploaded
+        })
+        .eq('id', project.id);
+
+      if (projError) throw projError;
+
+      // 3. Update local state
+      setChapters(prev => prev.map(ch => 
+        ch.chapter_number === chapterNum 
+          ? { ...ch, content: text, status: 'completed' } 
+          : ch
+      ));
+      setProject(prev => ({
+        ...prev,
+        uploaded_chapters: updatedUploaded
+      }));
+
+      showNotification('Success', `Chapter ${chapterNum} content saved successfully!`, 'success');
+    } catch (err) {
+      console.error('Error saving pasted chapter:', err);
+      showNotification('Error', 'Failed to save chapter content.', 'error');
+    }
+  };
+
   // Handle chapter generation
   const handleGenerate = async () => {
     const currentChapter = chapters.find(ch => ch.chapter_number === selectedChapter);
     if (!currentChapter) return;
+
+    // Check if custom continuation project is missing baseline chapters
+    if (project?.is_custom) {
+      const selectedChs = project.selected_chapters || [1, 2, 3, 4, 5];
+      const unselected = [1, 2, 3, 4, 5].filter(c => !selectedChs.includes(c));
+      const uploaded = project.uploaded_chapters || {};
+      const missingChs = unselected.filter(c => {
+        const chInState = chapters.find(ch => ch.chapter_number === c);
+        const textFromUpload = typeof uploaded[`chapter_${c}`] === 'string'
+          ? uploaded[`chapter_${c}`]
+          : uploaded[`chapter_${c}`]?.content || '';
+        const textFromChapter = chInState?.content || '';
+        const combined = (textFromUpload || textFromChapter).trim();
+        return !combined || combined.split(/\s+/).length < 20;
+      });
+
+      if (missingChs.length > 0) {
+        showNotification(
+          'Baseline Chapter Content Required',
+          `Please paste your content for ${missingChs.map(c => `Chapter ${c}`).join(', ')} before generating new chapters.`,
+          'warning'
+        );
+        setShowCustomSetupModal(true);
+        return;
+      }
+    }
 
     setGenerating(true);
     setGlobalLoadingText(`AI is generating Chapter ${selectedChapter}...`);
@@ -522,8 +578,10 @@ export default function StandardWorkspace({ params }) {
                     <ChapterView
                       chapter={ch}
                       images={images}
+                      project={project}
                       generating={false}
                       onPrint={handlePrintCurrentChapter}
+                      onSavePastedChapter={handleSavePastedChapter}
                     />
                   </div>
                 ))}
@@ -543,8 +601,10 @@ export default function StandardWorkspace({ params }) {
             <ChapterView
               chapter={currentChapter}
               images={images}
+              project={project}
               generating={generating}
               onPrint={handlePrintCurrentChapter}
+              onSavePastedChapter={handleSavePastedChapter}
             />
           )}
         </div>

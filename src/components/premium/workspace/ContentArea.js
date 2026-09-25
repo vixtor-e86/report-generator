@@ -217,6 +217,16 @@ export default function ContentArea({
       });
       if (response.ok) {
         onUpdateChapter(activeChapter.id, localContent);
+        if (projectData?.is_custom) {
+          const chNum = activeChapter.number || activeChapter.chapter || activeChapter.id;
+          const updatedUploaded = {
+            ...(projectData.uploaded_chapters || {}),
+            [`chapter_${chNum}`]: localContent
+          };
+          await supabase.from('premium_projects').update({
+            uploaded_chapters: updatedUploaded
+          }).eq('id', projectData.id);
+        }
         showNotification('Saved', 'Your changes have been saved successfully.', 'success');
       }
     } catch (err) { 
@@ -706,19 +716,60 @@ export default function ContentArea({
                     <Icons.Eye /> View Full Guide
                   </button>
                 </div>
+                {projectData?.is_custom && projectData?.selected_chapters && !projectData.selected_chapters.includes(activeChapter?.number || activeChapter?.chapter || activeChapter?.id) && (
+                  <div style={{
+                    padding: '16px 40px',
+                    background: '#fef3c7',
+                    borderBottom: '1px solid #fde68a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ padding: '3px 8px', background: '#d97706', color: 'white', fontSize: '10px', fontWeight: '900', borderRadius: '6px', textTransform: 'uppercase' }}>
+                        I Have This (Student Baseline)
+                      </span>
+                      <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
+                        Paste your written {activeChapter.title} text below and click &quot;Save Changes&quot; so the AI can train on your research tone.
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <textarea
                   ref={textareaRef}
                   className="chapter-editor"
                   value={localContent}
                   onChange={(e) => { setLocalContent(e.target.value); updateCursorPosition(); }}
                   onSelect={updateCursorPosition} onClick={updateCursorPosition} onKeyUp={updateCursorPosition}
-                  placeholder={`Write your ${activeChapter.title} here...`}
+                  placeholder={`Write or paste your ${activeChapter.title} here...`}
                   style={{ width: '100%', minHeight: '700px', border: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.8', color: '#111827', padding: '40px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'vertical', flex: 1 }}
                 />
               </>
             ) : (
               <div className="markdown-preview premium-print-area" style={{ padding: '60px', minHeight: '700px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{localContent || '*No content yet.*'}</ReactMarkdown>
+                {projectData?.is_custom && projectData?.selected_chapters && !projectData.selected_chapters.includes(activeChapter?.number || activeChapter?.chapter || activeChapter?.id) && !localContent ? (
+                  <div style={{ textAlign: 'center', padding: '60px 20px', background: '#f8fafc', borderRadius: '24px', border: '2px dashed #cbd5e1' }}>
+                    <span style={{ padding: '4px 10px', background: '#fef3c7', color: '#b45309', fontSize: '11px', fontWeight: '900', borderRadius: '8px', textTransform: 'uppercase', display: 'inline-block', marginBottom: '12px' }}>
+                      I Have This (Student Provided)
+                    </span>
+                    <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#0f172a', margin: '0 0 8px 0' }}>
+                      Chapter Content Needed
+                    </h3>
+                    <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '460px', margin: '0 auto 20px auto', lineHeight: '1.6' }}>
+                      You marked this chapter as already written by you. Switch to Editor mode to paste your existing chapter content.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setWorkspaceMode('editor')}
+                      style={{ padding: '10px 24px', background: '#4f46e5', color: 'white', borderRadius: '12px', border: 'none', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', cursor: 'pointer' }}
+                    >
+                      Paste Chapter Text
+                    </button>
+                  </div>
+                ) : (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{localContent || '*No content yet.*'}</ReactMarkdown>
+                )}
               </div>
             )}
           </div>

@@ -80,8 +80,62 @@ function WorkspaceContent() {
     onConfirm: null
   });
 
+  const handleOpenGeneration = () => {
+    if (projectData?.is_custom) {
+      const selectedChs = projectData.selected_chapters || [1, 2, 3, 4, 5];
+      const unselected = [1, 2, 3, 4, 5].filter(c => !selectedChs.includes(c));
+      const uploaded = projectData.uploaded_chapters || {};
+      const missingChs = unselected.filter(c => {
+        const chInState = chapters.find(ch => (ch.number || ch.chapter) === c);
+        const textFromUpload = typeof uploaded[`chapter_${c}`] === 'string'
+          ? uploaded[`chapter_${c}`]
+          : uploaded[`chapter_${c}`]?.content || '';
+        const textFromChapter = chInState?.content || '';
+        const combined = (textFromUpload || textFromChapter).trim();
+        return !combined || combined.split(/\s+/).length < 20;
+      });
+
+      if (missingChs.length > 0) {
+        showNotification(
+          'Baseline Chapter Content Required',
+          `Please paste your content for ${missingChs.map(c => `Chapter ${c}`).join(', ')} before generating new chapters.`,
+          'warning'
+        );
+        setShowCustomSetupModal(true);
+        return;
+      }
+    }
+    setIsGenerationModalOpen(true);
+  };
+
   const handleFinalGenerate = async () => {
     if (!activeChapter || !pendingGenData) return;
+
+    if (projectData?.is_custom) {
+      const selectedChs = projectData.selected_chapters || [1, 2, 3, 4, 5];
+      const unselected = [1, 2, 3, 4, 5].filter(c => !selectedChs.includes(c));
+      const uploaded = projectData.uploaded_chapters || {};
+      const missingChs = unselected.filter(c => {
+        const chInState = chapters.find(ch => (ch.number || ch.chapter) === c);
+        const textFromUpload = typeof uploaded[`chapter_${c}`] === 'string'
+          ? uploaded[`chapter_${c}`]
+          : uploaded[`chapter_${c}`]?.content || '';
+        const textFromChapter = chInState?.content || '';
+        const combined = (textFromUpload || textFromChapter).trim();
+        return !combined || combined.split(/\s+/).length < 20;
+      });
+
+      if (missingChs.length > 0) {
+        showNotification(
+          'Baseline Chapter Content Required',
+          `Please paste your content for ${missingChs.map(c => `Chapter ${c}`).join(', ')} before generating new chapters.`,
+          'warning'
+        );
+        setShowCustomSetupModal(true);
+        return;
+      }
+    }
+
     setIsStructureModalOpen(false);
     setIsGenerationModalOpen(false);
     
@@ -212,24 +266,6 @@ function WorkspaceContent() {
           content: existing?.content || uploadedText || '' 
         };
       }));
-
-      // Check if custom continuation project requires mandatory chapter text
-      if (project.is_custom) {
-        const selectedChs = project.selected_chapters || [1, 2, 3, 4, 5];
-        const unselected = [1, 2, 3, 4, 5].filter(c => !selectedChs.includes(c));
-        if (unselected.length > 0) {
-          const uploaded = project.uploaded_chapters || {};
-          const isMissingAny = unselected.some(c => {
-            const text = typeof uploaded[`chapter_${c}`] === 'string'
-              ? uploaded[`chapter_${c}`]
-              : uploaded[`chapter_${c}`]?.content || '';
-            return !text || text.trim().split(/\s+/).length < 20;
-          });
-          if (isMissingAny) {
-            setShowCustomSetupModal(true);
-          }
-        }
-      }
     } catch (err) {
       console.error('Fatal workspace load error:', err);
       showNotification('Workspace Error', 'A fatal error occurred. Returning to dashboard.', 'error');
@@ -356,7 +392,7 @@ function WorkspaceContent() {
           onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)} 
           isRightSidebarOpen={isRightSidebarOpen}
           onToggleLeftSidebar={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)} 
-          onGenerate={() => setIsGenerationModalOpen(true)}
+          onGenerate={handleOpenGeneration}
           onModify={() => setIsModifyModalOpen(true)}
           onPrint={() => { setWorkspaceMode('preview'); setTimeout(() => window.print(), 500); }} 
           activeChapter={activeChapter}

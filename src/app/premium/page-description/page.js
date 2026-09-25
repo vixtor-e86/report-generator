@@ -55,20 +55,29 @@ function ProjectDescriptionContent() {
         const { data: profile } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
         setUserProfile(profile);
 
-        // Check for unused premium payment
+        const isCustom = searchParams.get('tier') === 'custom' || searchParams.get('is_custom') === 'true' || !!searchParams.get('chapters');
+
+        // Check for unused payment
         if (profile?.role !== 'admin' && profile?.role !== 'support') {
-          const { data: unusedPayments } = await supabase
+          let unusedQuery = supabase
             .from('payment_transactions')
             .select('*')
             .eq('user_id', user.id)
             .eq('status', 'paid')
-            .eq('tier', 'premium')
             .is('project_id', null)
             .order('paid_at', { ascending: false })
             .limit(1);
 
+          if (isCustom) {
+            unusedQuery = unusedQuery.eq('tier', 'custom');
+          } else {
+            unusedQuery = unusedQuery.eq('tier', 'premium');
+          }
+
+          const { data: unusedPayments } = await unusedQuery;
+
           if (!unusedPayments || unusedPayments.length === 0) {
-            showNotification('Payment Required', 'No valid Premium payment found. Please make a payment first.', 'warning');
+            showNotification('Payment Required', `No valid ${isCustom ? 'Custom' : 'Premium'} payment found. Please make a payment first.`, 'warning');
             setTimeout(() => router.push('/dashboard'), 3000);
             return;
           }
@@ -328,6 +337,12 @@ function ProjectDescriptionContent() {
 
         sessionStorage.removeItem('custom_template_structure');
 
+        const isCustom = searchParams.get('tier') === 'custom' || searchParams.get('is_custom') === 'true' || !!searchParams.get('chapters');
+        const chaptersParam = searchParams.get('chapters');
+        const selectedChapters = chaptersParam 
+          ? chaptersParam.split('-').map(Number).filter(n => !isNaN(n)) 
+          : [4, 5];
+
         const { data: newProject, error: projectError } = await supabase
           .from('premium_projects')
           .insert({
@@ -337,15 +352,25 @@ function ProjectDescriptionContent() {
             faculty: formData.faculty,
             department: formData.department,
             status: 'in_progress',
-            tier: 'premium',
-            current_chapter: 1,
-            tokens_limit: 300000,
+            tier: isCustom ? 'custom' : 'premium',
+            current_chapter: isCustom ? (selectedChapters[0] || 1) : 1,
+            tokens_limit: isCustom ? selectedChapters.length * 80000 : 300000,
             tokens_used: 0,
+            humanizer_words_used: 0,
+            humanizer_words_limit: isCustom ? selectedChapters.length * 2500 : 10000,
+            plagiarism_words_used: 0,
+            plagiarism_words_limit: isCustom ? selectedChapters.length * 2500 : 10000,
             payment_status: hasFreeAccess ? 'admin_bypass' : 'paid',
-            amount_paid: hasFreeAccess ? 0 : PRICING.PREMIUM,
+            amount_paid: hasFreeAccess ? 0 : (isCustom ? (pendingPayment?.amount || selectedChapters.length * 5000) : PRICING.PREMIUM),
             template_id: newCustomTemplate.id,
             use_manual_objectives: true,
-            manual_objectives: formData.manualObjectives.filter(o => o.trim())
+            manual_objectives: formData.manualObjectives.filter(o => o.trim()),
+            ...(isCustom ? {
+              is_custom: true,
+              selected_chapters: selectedChapters,
+              uploaded_chapters: {},
+              custom_rate_per_chapter: 5000
+            } : {})
           })
           .select()
           .single();

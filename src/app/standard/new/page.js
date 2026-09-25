@@ -108,19 +108,27 @@ function NewProjectContent() {
         return;
       }
 
+      const isCustom = searchParams.get('tier') === 'custom' || searchParams.get('is_custom') === 'true' || !!searchParams.get('chapters');
+
       if (!adminStatus) {
-        const { data: unusedPayments, error: paymentError } = await supabase
+        let unusedQuery = supabase
           .from('payment_transactions')
           .select('*')
           .eq('user_id', user.id)
           .eq('status', 'paid')
-          .eq('tier', 'standard') 
-          .eq('amount', PRICING.STANDARD) // Use constant
           .is('project_id', null)
           .not('paystack_reference', 'ilike', '%UNLOCK%')
           .not('paystack_reference', 'ilike', '%FUND%')
           .order('paid_at', { ascending: false })
           .limit(1);
+
+        if (isCustom) {
+          unusedQuery = unusedQuery.eq('tier', 'custom');
+        } else {
+          unusedQuery = unusedQuery.eq('tier', 'standard').eq('amount', PRICING.STANDARD);
+        }
+
+        const { data: unusedPayments, error: paymentError } = await unusedQuery;
 
         if (paymentError) {
           console.error('Payment check error:', paymentError);
@@ -303,21 +311,33 @@ function NewProjectContent() {
         return;
       }
 
+      const isCustom = searchParams.get('tier') === 'custom' || searchParams.get('is_custom') === 'true' || !!searchParams.get('chapters');
+      const chaptersParam = searchParams.get('chapters');
+      const selectedChapters = chaptersParam 
+        ? chaptersParam.split('-').map(Number).filter(n => !isNaN(n)) 
+        : [4, 5];
+
       const projectData = {
         user_id: user.id,
         template_id: templateId,
-        tier: 'standard',
+        tier: isCustom ? 'custom' : 'standard',
         payment_status: isAdmin ? 'admin_bypass' : 'paid',
-        payment_verified_at: isAdmin ? new Date().toISOString() : pendingPayment.verified_at,
-        amount_paid: isAdmin ? 0 : PRICING.STANDARD,
+        payment_verified_at: isAdmin ? new Date().toISOString() : (pendingPayment?.verified_at || new Date().toISOString()),
+        amount_paid: isAdmin ? 0 : (isCustom ? (pendingPayment?.amount || selectedChapters.length * 1500) : PRICING.STANDARD),
         tokens_used: 0,
-        tokens_limit: 120000,
+        tokens_limit: isCustom ? selectedChapters.length * 24000 : 120000,
         status: 'in_progress',
-        current_chapter: 1,
+        current_chapter: isCustom ? (selectedChapters[0] || 1) : 1,
         reference_style: isSIWES ? 'none' : referenceStyle,
         access_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         use_manual_objectives: true,
-        manual_objectives: validObjectives
+        manual_objectives: validObjectives,
+        ...(isCustom ? {
+          is_custom: true,
+          selected_chapters: selectedChapters,
+          uploaded_chapters: {},
+          custom_rate_per_chapter: 1500
+        } : {})
       };
 
       if (isSIWES) {

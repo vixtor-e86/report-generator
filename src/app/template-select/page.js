@@ -132,6 +132,11 @@ function TemplateSelectContent() {
             }
 
             // ✅ Direct redirect based on tier
+            if (data.redirectUrl) {
+              router.push(data.redirectUrl);
+              return;
+            }
+
             if (data.transaction.tier === 'premium') {
               router.push('/premium/template-selection');
               return;
@@ -186,18 +191,26 @@ function TemplateSelectContent() {
         }
       } else {
         // No payment reference in URL - check for existing unused payment
-        const { data: unusedPayments } = await supabase
+        const isCustomFlow = searchParams.get('tier') === 'custom' || !!searchParams.get('chapters');
+        
+        let unusedQuery = supabase
           .from('payment_transactions')
           .select('*')
           .eq('user_id', user.id)
           .eq('status', 'paid')
-          .eq('tier', 'standard') 
-          .eq('amount', PRICING.STANDARD) // Use constant
           .is('project_id', null)
           .not('paystack_reference', 'ilike', '%UNLOCK%') 
           .not('paystack_reference', 'ilike', '%FUND%') 
           .order('paid_at', { ascending: false })
           .limit(1);
+
+        if (isCustomFlow) {
+          unusedQuery = unusedQuery.eq('tier', 'custom');
+        } else {
+          unusedQuery = unusedQuery.eq('tier', 'standard').eq('amount', PRICING.STANDARD);
+        }
+
+        const { data: unusedPayments } = await unusedQuery;
 
         if (unusedPayments && unusedPayments.length > 0) {
           const payment = unusedPayments[0];
@@ -275,7 +288,13 @@ function TemplateSelectContent() {
   // Handle template selection
   const handleFacultySelect = (item) => {
     // Proceed to project creation with selected template ID
-    router.replace(`/standard/new?template=${item.id}`);
+    const isCustom = searchParams.get('tier') === 'custom' || !!searchParams.get('chapters');
+    const chapters = searchParams.get('chapters') || '';
+    if (isCustom) {
+      router.replace(`/standard/new?template=${item.id}&tier=custom&chapters=${chapters}`);
+    } else {
+      router.replace(`/standard/new?template=${item.id}`);
+    }
   };
 
   // Handle back button

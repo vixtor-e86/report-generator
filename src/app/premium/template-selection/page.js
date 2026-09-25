@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import FacultyModal from '@/components/premium/modals/FacultyModal';
 import DepartmentModal from '@/components/premium/modals/DepartmentModal';
@@ -11,8 +11,9 @@ import ManualBuilder from '@/components/premium/modals/ManualBuilder';
 import TemplateCard from '@/components/premium/TemplateCard';
 import '@/styles/template-selection.css';
 
-export default function TemplateSelection() {
+function TemplateSelectionContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeModal, setActiveModal] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Processing...');
@@ -105,6 +106,11 @@ export default function TemplateSelection() {
       if (additionalData.faculty) params.set('faculty', additionalData.faculty.name || additionalData.faculty);
       if (additionalData.department) params.set('department', additionalData.department.name || additionalData.department);
       
+      const tierParam = searchParams.get('tier');
+      const chaptersParam = searchParams.get('chapters');
+      if (tierParam) params.set('tier', tierParam);
+      if (chaptersParam) params.set('chapters', chaptersParam);
+
       // Navigate
       router.replace(`/premium/page-description?${params.toString()}`);
     } catch (err) {
@@ -195,6 +201,18 @@ export default function TemplateSelection() {
 
       <LoadingModal isOpen={isLoading} loadingText={loadingText} />
     </div>
+  );
+}
+
+export default function TemplateSelection() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <TemplateSelectionContent />
+    </Suspense>
   );
 }
 

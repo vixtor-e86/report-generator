@@ -1524,24 +1524,11 @@ export default function Dashboard() {
             onProceedToPayment={async (config) => {
               setShowCustomModal(false);
               if (config.isFreeAdmin) {
-                try {
-                  toast.loading('Initializing free custom workspace...', { id: 'admin-custom-init' });
-                  const res = await fetch('/api/custom/create-admin-project', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      userId: authUser?.id,
-                      workspaceType: config.workspaceType,
-                      selectedChapters: config.selectedChapters
-                    })
-                  });
-                  const data = await res.json();
-                  if (!res.ok) throw new Error(data.error || 'Failed to create admin custom project');
-                  toast.success('Custom project created successfully!', { id: 'admin-custom-init' });
-                  router.push(data.redirectUrl);
-                } catch (err) {
-                  console.error('Admin custom creation error:', err);
-                  toast.error(err.message || 'Failed to create custom project', { id: 'admin-custom-init' });
+                const chaptersParam = (config.selectedChapters || [4, 5]).join('-');
+                if (config.workspaceType === 'premium') {
+                  router.push(`/premium/template-selection?tier=custom&chapters=${chaptersParam}`);
+                } else {
+                  router.push(`/template-select?tier=custom&chapters=${chaptersParam}`);
                 }
                 return;
               }
