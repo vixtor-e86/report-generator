@@ -36,7 +36,7 @@ export default function PlagiarismModal({
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
 
-  const PROJECT_AUDIT_LIMIT = 10000;
+  const PROJECT_AUDIT_LIMIT = projectData?.plagiarism_words_limit || 10000;
   const storageKey = projectData?.id ? `w3_plagiarism_used_${projectData.id}` : null;
 
   // Initialize words used from projectData or localStorage

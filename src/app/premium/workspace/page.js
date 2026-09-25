@@ -233,7 +233,36 @@ function WorkspaceContent() {
         return;
       }
 
-      setProjectData({ ...project, template: project.custom_templates });
+      // Compute accurate limits for custom vs standard premium
+      let calculatedHumanizerLimit = 10000;
+      let calculatedPlagiarismLimit = 10000;
+      
+      if (project.is_custom) {
+        const customCount = (project.selected_chapters || [4, 5]).length;
+        calculatedHumanizerLimit = customCount * 2500;
+        calculatedPlagiarismLimit = customCount * 2500;
+      } else {
+        calculatedHumanizerLimit = project.humanizer_words_limit || 10000;
+        calculatedPlagiarismLimit = project.plagiarism_words_limit || 10000;
+      }
+
+      setHumanizerLimit(calculatedHumanizerLimit);
+
+      const resolvedProject = {
+        ...project,
+        template: project.custom_templates,
+        humanizer_words_limit: calculatedHumanizerLimit,
+        plagiarism_words_limit: calculatedPlagiarismLimit
+      };
+      setProjectData(resolvedProject);
+
+      // Silently sync database if custom project was saved with outdated/default 10,000 limit
+      if (project.is_custom && (project.humanizer_words_limit !== calculatedHumanizerLimit || project.plagiarism_words_limit !== calculatedPlagiarismLimit)) {
+        supabase.from('premium_projects').update({
+          humanizer_words_limit: calculatedHumanizerLimit,
+          plagiarism_words_limit: calculatedPlagiarismLimit
+        }).eq('id', project.id).then();
+      }
       
       const { data: profile } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
       if (profile) setUserProfile(profile);
@@ -397,6 +426,7 @@ function WorkspaceContent() {
           onPrint={() => { setWorkspaceMode('preview'); setTimeout(() => window.print(), 500); }} 
           activeChapter={activeChapter}
           onExportClick={handleExportClick}
+          projectData={projectData}
         />
 
         <div className="workspace-content">

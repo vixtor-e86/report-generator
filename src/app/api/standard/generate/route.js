@@ -80,7 +80,7 @@ export async function POST(request) {
         const chData = project.uploaded_chapters[`chapter_${ch}`];
         const text = typeof chData === 'string' ? chData : chData?.content || '';
         if (text && text.trim()) {
-          customParts.push(`Chapter ${ch} (Student Provided):\n${text.substring(0, 1000)}...`);
+          customParts.push(`Chapter ${ch} (Student Provided Baseline):\n${text.split(/\s+/).slice(0, 1500).join(' ')}...`);
         }
       }
       if (customParts.length > 0) {

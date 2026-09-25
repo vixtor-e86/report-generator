@@ -676,64 +676,72 @@ export default function ContentArea({
             `}</style>
             {workspaceMode === 'editor' ? (
               <>
-                <div style={{ 
-                  padding: '12px 40px', 
-                  background: '#f8fafc', 
-                  borderBottom: '1px solid #e5e7eb', 
-                  display: 'flex', 
-                  flexWrap: 'wrap', 
-                  gap: '16px', 
-                  alignItems: 'center',
-                  position: 'sticky',
-                  top: '65px', // Adjusted to align perfectly with the Premium sticky toolbar
-                  zIndex: 35
-                }}>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Markdown Guide:</span>
-                  <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#4b5563' }}>
-                    <span><strong>#</strong> Header</span>
-                    <span><strong>**text**</strong> Bold</span>
-                    <span><strong>-</strong> List</span>
-                    <span><strong>[^1]</strong> Footnote</span>
-                  </div>
-                  <button 
-                    onClick={() => setShowMarkdownGuide(true)}
-                    style={{ 
-                      marginLeft: 'auto', 
-                      padding: '6px 12px', 
-                      borderRadius: '8px', 
-                      border: '1px solid #e5e7eb', 
-                      background: 'white', 
-                      fontSize: '11px', 
-                      fontWeight: '700', 
-                      color: '#4338ca', 
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <Icons.Eye /> View Full Guide
-                  </button>
-                </div>
-                {projectData?.is_custom && projectData?.selected_chapters && !projectData.selected_chapters.includes(activeChapter?.number || activeChapter?.chapter || activeChapter?.id) && (
-                  <div style={{
-                    padding: '16px 40px',
-                    background: '#fef3c7',
-                    borderBottom: '1px solid #fde68a',
-                    display: 'flex',
+                {projectData?.is_custom && projectData?.selected_chapters && !projectData.selected_chapters.includes(activeChapter?.number || activeChapter?.chapter || activeChapter?.id) ? (
+                  <div style={{ 
+                    padding: '14px 40px', 
+                    background: '#fffbeb', 
+                    borderBottom: '1px solid #fef3c7', 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: '12px', 
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '12px'
+                    position: 'sticky',
+                    top: '65px',
+                    zIndex: 35
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ padding: '3px 8px', background: '#d97706', color: 'white', fontSize: '10px', fontWeight: '900', borderRadius: '6px', textTransform: 'uppercase' }}>
-                        I Have This (Student Baseline)
+                        Raw Project Text Area
                       </span>
                       <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
-                        Paste your written {activeChapter.title} text below and click &quot;Save Changes&quot; so the AI can train on your research tone.
+                        Paste your written {activeChapter.title} directly from Word, Docs, or PDF. No markdown formatting required.
                       </span>
                     </div>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#b45309' }}>
+                      {localContent ? localContent.trim().split(/\s+/).filter(Boolean).length : 0} words
+                    </span>
+                  </div>
+                ) : (
+                  <div style={{ 
+                    padding: '12px 40px', 
+                    background: '#f8fafc', 
+                    borderBottom: '1px solid #e5e7eb', 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: '16px', 
+                    alignItems: 'center',
+                    position: 'sticky',
+                    top: '65px', // Adjusted to align perfectly with the Premium sticky toolbar
+                    zIndex: 35
+                  }}>
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Markdown Guide:</span>
+                    <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#4b5563' }}>
+                      <span><strong>#</strong> Header</span>
+                      <span><strong>**text**</strong> Bold</span>
+                      <span><strong>-</strong> List</span>
+                      <span><strong>[^1]</strong> Footnote</span>
+                    </div>
+                    <button 
+                      onClick={() => setShowMarkdownGuide(true)}
+                      style={{ 
+                        marginLeft: 'auto', 
+                        padding: '6px 12px', 
+                        borderRadius: '8px', 
+                        border: '1px solid #e5e7eb', 
+                        background: 'white', 
+                        fontSize: '11px', 
+                        fontWeight: '700', 
+                        color: '#4338ca', 
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Icons.Eye /> View Full Guide
+                    </button>
                   </div>
                 )}
                 <textarea
@@ -742,31 +750,87 @@ export default function ContentArea({
                   value={localContent}
                   onChange={(e) => { setLocalContent(e.target.value); updateCursorPosition(); }}
                   onSelect={updateCursorPosition} onClick={updateCursorPosition} onKeyUp={updateCursorPosition}
-                  placeholder={`Write or paste your ${activeChapter.title} here...`}
+                  placeholder={projectData?.is_custom && projectData?.selected_chapters && !projectData.selected_chapters.includes(activeChapter?.number || activeChapter?.chapter || activeChapter?.id)
+                    ? `Paste your raw written ${activeChapter.title} text here directly from Word, Docs, or PDF...`
+                    : `Write or paste your ${activeChapter.title} here...`}
                   style={{ width: '100%', minHeight: '700px', border: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.8', color: '#111827', padding: '40px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'vertical', flex: 1 }}
                 />
               </>
             ) : (
               <div className="markdown-preview premium-print-area" style={{ padding: '60px', minHeight: '700px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-                {projectData?.is_custom && projectData?.selected_chapters && !projectData.selected_chapters.includes(activeChapter?.number || activeChapter?.chapter || activeChapter?.id) && !localContent ? (
-                  <div style={{ textAlign: 'center', padding: '60px 20px', background: '#f8fafc', borderRadius: '24px', border: '2px dashed #cbd5e1' }}>
-                    <span style={{ padding: '4px 10px', background: '#fef3c7', color: '#b45309', fontSize: '11px', fontWeight: '900', borderRadius: '8px', textTransform: 'uppercase', display: 'inline-block', marginBottom: '12px' }}>
-                      I Have This (Student Provided)
-                    </span>
-                    <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#0f172a', margin: '0 0 8px 0' }}>
-                      Chapter Content Needed
-                    </h3>
-                    <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '460px', margin: '0 auto 20px auto', lineHeight: '1.6' }}>
-                      You marked this chapter as already written by you. Switch to Editor mode to paste your existing chapter content.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setWorkspaceMode('editor')}
-                      style={{ padding: '10px 24px', background: '#4f46e5', color: 'white', borderRadius: '12px', border: 'none', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', cursor: 'pointer' }}
-                    >
-                      Paste Chapter Text
-                    </button>
-                  </div>
+                {projectData?.is_custom && projectData?.selected_chapters && !projectData.selected_chapters.includes(activeChapter?.number || activeChapter?.chapter || activeChapter?.id) ? (
+                  !localContent ? (
+                    <div style={{ textAlign: 'center', padding: '60px 20px', background: '#f8fafc', borderRadius: '24px', border: '2px dashed #cbd5e1' }}>
+                      <span style={{ padding: '4px 10px', background: '#fef3c7', color: '#b45309', fontSize: '11px', fontWeight: '900', borderRadius: '8px', textTransform: 'uppercase', display: 'inline-block', marginBottom: '12px' }}>
+                        I Have This (Student Provided)
+                      </span>
+                      <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#0f172a', margin: '0 0 8px 0' }}>
+                        Chapter Text Needed
+                      </h3>
+                      <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '460px', margin: '0 auto 20px auto', lineHeight: '1.6' }}>
+                        You marked this chapter as already written by you. Paste your raw text so our AI can analyze your technical methodology and citations.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setWorkspaceMode('editor')}
+                        style={{ padding: '10px 24px', background: '#4f46e5', color: 'white', borderRadius: '12px', border: 'none', fontWeight: '800', fontSize: '12px', textTransform: 'uppercase', cursor: 'pointer' }}
+                      >
+                        Paste Chapter Text (Raw Textarea)
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{
+                        marginBottom: '28px',
+                        padding: '14px 20px',
+                        background: '#fffbeb',
+                        border: '1px solid #fef3c7',
+                        borderRadius: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '12px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ padding: '3px 8px', background: '#d97706', color: 'white', fontSize: '10px', fontWeight: '900', borderRadius: '6px', textTransform: 'uppercase' }}>
+                            Student Baseline Document
+                          </span>
+                          <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
+                            Original text provided by you • {localContent.trim().split(/\s+/).filter(Boolean).length} words
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setWorkspaceMode('editor')}
+                          style={{
+                            padding: '6px 14px',
+                            background: '#4f46e5',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '11px',
+                            fontWeight: '800',
+                            textTransform: 'uppercase',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Edit / Re-paste Text
+                        </button>
+                      </div>
+
+                      <div style={{
+                        whiteSpace: 'pre-wrap',
+                        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                        fontSize: '15px',
+                        lineHeight: '1.85',
+                        color: '#1e293b',
+                        textAlign: 'justify'
+                      }}>
+                        {localContent}
+                      </div>
+                    </div>
+                  )
                 ) : (
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{localContent || '*No content yet.*'}</ReactMarkdown>
                 )}

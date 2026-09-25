@@ -26,7 +26,7 @@ export default function HumanizerModal({ isOpen, onClose, chapters, projectId, u
   const [isProcessing, setIsProcessing] = useState(false);
   
   const [localUsage, setLocalUsage] = useState(projectData?.humanizer_words_used || 0);
-  const limit = humanizerLimit || 10000;
+  const limit = projectData?.humanizer_words_limit || humanizerLimit || 10000;
 
   useEffect(() => {
     if (projectData?.humanizer_words_used !== undefined) setLocalUsage(projectData.humanizer_words_used);

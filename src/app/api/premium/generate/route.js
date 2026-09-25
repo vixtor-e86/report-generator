@@ -138,7 +138,7 @@ export async function POST(request) {
         const chData = project.uploaded_chapters[`chapter_${ch}`];
         const text = typeof chData === 'string' ? chData : chData?.content || '';
         if (text && text.trim()) {
-          contextualSourceData += `\n--- EXISTING CHAPTER ${ch} (STUDENT WRITTEN CONTINUATION BASELINE) ---\n${text.split(/\s+/).slice(0, 600).join(" ")}\n`;
+          contextualSourceData += `\n--- EXISTING CHAPTER ${ch} (STUDENT WRITTEN CONTINUATION BASELINE) ---\n${text.split(/\s+/).slice(0, 2000).join(" ")}\n`;
         }
       }
     }

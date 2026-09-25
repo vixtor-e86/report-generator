@@ -250,12 +250,18 @@ export default function ChapterView({ chapter, images, project, onPrint, onSaveP
                 print:prose-table:text-[11pt]">
                 
                 {processedContent ? (
-                  <ReactMarkdown 
-                    remarkPlugins={[remarkGfm]}
-                    components={components}
-                  >
-                    {processedContent}
-                  </ReactMarkdown>
+                  isStudentProvided ? (
+                    <div className="whitespace-pre-wrap font-serif text-slate-800 text-base leading-[1.8] text-justify select-text">
+                      {processedContent}
+                    </div>
+                  ) : (
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={components}
+                    >
+                      {processedContent}
+                    </ReactMarkdown>
+                  )
                 ) : (
                   <div className="text-gray-500 italic text-center py-12">
                     Chapter content is currently empty. Use the tools to generate or write content.

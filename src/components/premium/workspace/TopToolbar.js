@@ -62,13 +62,19 @@ export default function TopToolbar({
   onModify,
   onPrint,
   activeChapter,
-  onExportClick
+  onExportClick,
+  projectData
 }) {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const dropdownRef = useRef(null);
   
   const hasContent = !!activeChapter?.content;
   const canPrint = !!activeChapter && hasContent;
+
+  const chNum = Number(activeChapter?.number ?? activeChapter?.chapter ?? activeChapter?.id);
+  const isStudentProvided = projectData?.is_custom && 
+    projectData?.selected_chapters && 
+    !projectData.selected_chapters.includes(chNum);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -87,44 +93,55 @@ export default function TopToolbar({
       </button>
       
       <div className="toolbar-left">
-        <h1>Academic Research Workspace</h1>
-        <p>Draft, analyze, and refine your project with AI assistance.</p>
+        <h1>{projectData?.is_custom ? 'Custom Project Workspace' : 'Academic Research Workspace'}</h1>
+        <p>{isStudentProvided ? 'Student-provided baseline chapter' : 'Draft, analyze, and refine your project with AI assistance.'}</p>
       </div>
 
       <div className="toolbar-actions">
-        {hasContent && (
-          <button 
-            onClick={onModify}
-            className="btn-modify"
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px', 
-              padding: '8px 12px', 
-              borderRadius: '10px', 
-              border: '1px solid #e5e7eb', 
-              background: 'white', 
-              color: '#111827', 
-              fontSize: '13px', 
-              fontWeight: '600', 
-              cursor: 'pointer' 
-            }}
-          >
-            <Icons.Zap style={{ color: '#6366f1' }} />
-            <span className="hidden sm:inline">Modify</span>
-          </button>
-        )}
+        {isStudentProvided ? (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              Student Baseline (I Have This)
+            </span>
+          </div>
+        ) : (
+          <>
+            {hasContent && (
+              <button 
+                onClick={onModify}
+                className="btn-modify"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  padding: '8px 12px', 
+                  borderRadius: '10px', 
+                  border: '1px solid #e5e7eb', 
+                  background: 'white', 
+                  color: '#111827', 
+                  fontSize: '13px', 
+                  fontWeight: '600', 
+                  cursor: 'pointer' 
+                }}
+              >
+                <Icons.Zap style={{ color: '#6366f1' }} />
+                <span className="hidden sm:inline">Modify</span>
+              </button>
+            )}
 
-        <button 
-          id="step-generate"
-          className="btn-black"
-          onClick={onGenerate}
-          style={{ height: '36px', padding: '0 12px' }}
-        >
-          <Icons.Zap style={{ color: 'white' }} />
-          <span className="hidden md:inline">{hasContent ? 'Regenerate' : 'Generate'}</span>
-          <span className="inline md:hidden xs:inline">{hasContent ? 'Regen' : 'Gen'}</span>
-        </button>
+            <button 
+              id="step-generate"
+              className="btn-black"
+              onClick={onGenerate}
+              style={{ height: '36px', padding: '0 12px' }}
+            >
+              <Icons.Zap style={{ color: 'white' }} />
+              <span className="hidden md:inline">{hasContent ? 'Regenerate' : 'Generate'}</span>
+              <span className="inline md:hidden xs:inline">{hasContent ? 'Regen' : 'Gen'}</span>
+            </button>
+          </>
+        )}
         
         <button 
           className="btn-icon-only" 
