@@ -492,7 +492,7 @@ export default function Dashboard() {
         }
 
         setProjects((userProjects || []).map(p => ({ ...p, tier: p.tier || 'free' })));
-        setStandardProjects(userStandardProjects || []);
+        setStandardProjects((userStandardProjects || []).map(p => ({ ...p, workspaceType: 'standard' })));
         setPremiumProjects(userPremiumProjects || []);
       } catch (err) {
         console.error(err);
@@ -1075,7 +1075,8 @@ export default function Dashboard() {
                     <Link 
                     key={project.id} 
                     href={
-                        (project.tier === 'free' || project.tier === 'unlocked') ? `/project/${project.id}` : 
+                      project.workspaceType === 'standard' ? `/standard/${project.id}` :
+                      (project.tier === 'free' || project.tier === 'unlocked') ? `/project/${project.id}` : 
                         project.tier === 'standard' ? `/standard/${project.id}` :
                         `/premium/workspace?id=${project.id}`
                     }
