@@ -277,7 +277,8 @@ export default function StandardWorkspace({ params }) {
         .from('standard_chapters')
         .update({
           content: text,
-          status: 'completed'
+          status: 'draft',
+          updated_at: new Date().toISOString()
         })
         .eq('project_id', project.id)
         .eq('chapter_number', chapterNum);
@@ -302,7 +303,7 @@ export default function StandardWorkspace({ params }) {
       // 3. Update local state
       setChapters(prev => prev.map(ch => 
         ch.chapter_number === chapterNum 
-          ? { ...ch, content: text, status: 'completed' } 
+          ? { ...ch, content: text, status: 'draft' } 
           : ch
       ));
       setProject(prev => ({

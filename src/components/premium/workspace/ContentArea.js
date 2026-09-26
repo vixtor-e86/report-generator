@@ -204,19 +204,23 @@ export default function ContentArea({
   const handleSaveEdit = async () => {
     if (!activeChapter) return;
     setIsSaving(true);
+    const chNum = activeChapter.number || activeChapter.chapter || activeChapter.id;
     try {
       const response = await fetch('/api/premium/save-edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chapterId: activeChapter.id,
+          chapterNumber: chNum,
           content: localContent,
           projectId: projectData.id,
           userId: projectData.user_id
         })
       });
       if (response.ok) {
-        onUpdateChapter(activeChapter.id, localContent);
+        const resData = await response.json();
+        const savedId = resData.chapterId || activeChapter.id;
+        onUpdateChapter(savedId, localContent);
         if (projectData?.is_custom) {
           const chNum = activeChapter.number || activeChapter.chapter || activeChapter.id;
           const updatedUploaded = {

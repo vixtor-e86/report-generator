@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { getReferenceStyleOptions } from '@/lib/referenceStyles';
+import { getReferenceStyleOptions, STANDARD_ALLOWED_STYLES } from '@/lib/referenceStyles';
 
 export default function ProjectDetailsModal({ isOpen, onClose, onSubmit, project, canChangeReferenceStyle = true }) {
   const [title, setTitle] = useState(project?.title || '');
@@ -87,15 +87,23 @@ export default function ProjectDetailsModal({ isOpen, onClose, onSubmit, project
             {allowStyleEdit ? (
               <select
                 value={referenceStyle}
-                onChange={(e) => setReferenceStyle(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (STANDARD_ALLOWED_STYLES.includes(val)) {
+                    setReferenceStyle(val);
+                  }
+                }}
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 outline-none font-bold text-slate-900 cursor-pointer bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%231e293b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-[right_1.5rem_center] bg-no-repeat appearance-none pr-12"
                 required
               >
-                {getReferenceStyleOptions().map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.icon} {option.label}
-                  </option>
-                ))}
+                {getReferenceStyleOptions().map(option => {
+                  const isAllowed = STANDARD_ALLOWED_STYLES.includes(option.value);
+                  return (
+                    <option key={option.value} value={option.value} disabled={!isAllowed}>
+                      {isAllowed ? `${option.icon} ${option.label}` : `🔒 ${option.label} (Premium Exclusive)`}
+                    </option>
+                  );
+                })}
               </select>
             ) : (
               <div className="space-y-2">

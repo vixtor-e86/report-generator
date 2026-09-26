@@ -4,11 +4,9 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { getReferenceStyleOptions } from '@/lib/referenceStyles';
+import { getReferenceStyleOptions, FREE_ALLOWED_STYLES } from '@/lib/referenceStyles';
 import ReferenceInfoModal from '@/components/ReferenceInfoModal';
 import CustomModal from '@/components/premium/modals/CustomModal';
-
-const FREE_ALLOWED_STYLES = ['apa', 'ieee', 'mla'];
 
 function NewProjectContent() {
   const router = useRouter();
@@ -53,7 +51,7 @@ function NewProjectContent() {
     if (!FREE_ALLOWED_STYLES.includes(selected)) {
       showNotification(
         'Upgrade Required',
-        'This reference style is only available in Standard and Premium tiers. Free projects support APA, IEEE, and MLA citation formats. If you want other reference styles, please subscribe to a Standard or Premium project.',
+        'In the Free Tier, only APA Style is available. Standard Tier includes APA, IEEE, and MLA, and Premium Tier unlocks all reference styles (Harvard, Chicago, OSCOLA, Vancouver).',
         'info'
       );
       return;
@@ -475,7 +473,7 @@ function NewProjectContent() {
               })}
             </select>
             <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200 mt-2">
-              💡 <strong>Free Tier:</strong> Includes <strong>APA, IEEE, and MLA</strong> styles. To use Harvard, Chicago, OSCOLA, or Vancouver, please subscribe to a <strong>Standard</strong> or <strong>Premium</strong> project.
+              💡 <strong>Free Tier:</strong> Includes <strong>APA Style</strong>. To use IEEE and MLA, upgrade to <strong>Standard</strong>; or upgrade to <strong>Premium</strong> for all citation formats (Harvard, Chicago, OSCOLA, Vancouver).
             </p>
           </div>
 

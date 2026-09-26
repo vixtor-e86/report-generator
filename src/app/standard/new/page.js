@@ -1,6 +1,6 @@
 "use client";
 import ReferenceInfoModal from '@/components/ReferenceInfoModal';
-import { getReferenceStyleOptions } from '@/lib/referenceStyles';
+import { getReferenceStyleOptions, STANDARD_ALLOWED_STYLES } from '@/lib/referenceStyles';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -631,8 +631,38 @@ function NewProjectContent() {
               </div>
               {!isSIWES && (
                 <div className="border-t border-gray-100 pt-6">
-                  <div className="flex items-center justify-between mb-2"><label className="block text-xs sm:text-sm font-bold text-gray-900">Reference Style</label><button onClick={() => setShowReferenceInfo(true)} className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-1">View Examples</button></div>
-                  <select value={referenceStyle} onChange={(e) => setReferenceStyle(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none">{getReferenceStyleOptions().map(option => (<option key={option.value} value={option.value}>{option.icon} {option.label}</option>))}</select>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs sm:text-sm font-bold text-gray-900">Reference Style</label>
+                    <button onClick={() => setShowReferenceInfo(true)} className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-1">View Examples</button>
+                  </div>
+                  <select 
+                    value={referenceStyle} 
+                    onChange={(e) => {
+                      const selected = e.target.value;
+                      if (!STANDARD_ALLOWED_STYLES.includes(selected)) {
+                        showNotification(
+                          'Premium Required',
+                          'Harvard, Chicago, OSCOLA, and Vancouver styles are exclusively available on the Premium Workspace. Standard includes APA, IEEE, and MLA.',
+                          'info'
+                        );
+                        return;
+                      }
+                      setReferenceStyle(selected);
+                    }} 
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    {getReferenceStyleOptions().map(option => {
+                      const isAllowed = STANDARD_ALLOWED_STYLES.includes(option.value);
+                      return (
+                        <option key={option.value} value={option.value}>
+                          {isAllowed ? `${option.icon} ${option.label}` : `🔒 ${option.label} (Premium Exclusive)`}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <p className="text-xs text-indigo-700 bg-indigo-50/80 p-2.5 rounded-lg border border-indigo-100 mt-2">
+                    💡 <strong>Standard Tier:</strong> Supports <strong>APA, IEEE, and MLA</strong> styles. Harvard, Chicago, OSCOLA, and Vancouver are available on <strong>Premium</strong>.
+                  </p>
                 </div>
               )}
             </>

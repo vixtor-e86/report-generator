@@ -143,16 +143,28 @@ export function getAllReferenceStyles() {
   return Object.values(REFERENCE_STYLES);
 }
 
+export const FREE_ALLOWED_STYLES = ['apa'];
+export const STANDARD_ALLOWED_STYLES = ['apa', 'ieee', 'mla', 'none'];
+export const PREMIUM_ALLOWED_STYLES = ['apa', 'ieee', 'mla', 'harvard', 'chicago', 'oscola', 'vancouver', 'none'];
+
 // Get style options for dropdown
-export function getReferenceStyleOptions() {
-  return [
+export function getReferenceStyleOptions(tier = 'all') {
+  const all = [
     { value: 'apa', label: 'APA Style (Social Sciences, Education, Psychology)', icon: '📘' },
+    { value: 'ieee', label: 'IEEE Style (Engineering, Computer Science, IT)', icon: '⚙️' },
+    { value: 'mla', label: 'MLA Style (Humanities, Literature, Languages)', icon: '📙' },
     { value: 'harvard', label: 'Harvard Style (Sciences, Business, Management)', icon: '📗' },
     { value: 'chicago', label: 'Chicago Style (History, Humanities - Footnotes)', icon: '📓' },
     { value: 'oscola', label: 'OSCOLA Style (Law & Legal Studies - Footnotes)', icon: '⚖️' },
     { value: 'vancouver', label: 'Vancouver Style (Medicine, Health & Life Sciences)', icon: '💊' },
-    { value: 'ieee', label: 'IEEE Style (Engineering, Computer Science, IT)', icon: '⚙️' },
-    { value: 'mla', label: 'MLA Style (Humanities, Literature, Languages)', icon: '📙' },
     { value: 'none', label: 'No References (Add manually)', icon: '🚫' }
   ];
+
+  if (tier === 'free') {
+    return all.filter(o => FREE_ALLOWED_STYLES.includes(o.value));
+  }
+  if (tier === 'standard') {
+    return all.filter(o => STANDARD_ALLOWED_STYLES.includes(o.value));
+  }
+  return all;
 }
