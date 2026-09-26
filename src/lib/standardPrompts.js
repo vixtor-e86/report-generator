@@ -116,7 +116,8 @@ function getFacultySpecificPrompt(chapterNumber, data) {
     existingReferences = [], 
     manualObjectives = [],
     customInstruction = '',
-    aiInstruction = ''
+    aiInstruction = '',
+    isCustom = false
   } = data;
 
   const chapterInfo = templateStructure?.chapters?.find(ch => ch.number === chapterNumber);
@@ -161,12 +162,19 @@ function getFacultySpecificPrompt(chapterNumber, data) {
   ${customInstructionText}
   ${context ? `\nPREVIOUS CONTEXT:\n${context}` : ''}
 
+  ${isCustom ? `## CONTINUATION & REFERENCES REUSE DIRECTIVE (MANDATORY):
+  1. CONTINUATION PROJECT: This project is a continuation of an ongoing student report. The student has written earlier chapters (~3,000 words each).
+  2. TARGET LENGTH: Strictly author between 2,500 - 3,500 words (~3,000 words). DO NOT exceed 3,500 words.
+  3. REFERENCES AT BOTTOM: Re-use and cite any references provided in the continuation context where applicable.
+  4. CONTINUITY: Match the student's established terminology, tone, and methodology.
+  ` : ''}
+
   REQUIRED SECTIONS:
   ${chapterInfo.sections.join('\n')}
   ${getReferenceInstructions(referenceStyle, faculty, chapterNumber, isLastChapter, existingReferences)}
 
   WRITING RULES:
-  1. Target: 3000 - 5000 words. Make the content extremely comprehensive, detailed, and complete. Ensure it does not end prematurely or get cut off.
+  1. Target: 2,500 - 3,500 words (~3,000 words). Make the content comprehensive, detailed, and technically complete. STRICT LIMIT: Keep within ~3,000 words (do not exceed 3,500 words). Ensure it does not end prematurely or get cut off.
   2. Tone: Formal, Technical, Academic.
   3. Format: Markdown (## H1, ### H2).
   4. Currency: ₦ (NGN).

@@ -166,20 +166,84 @@ export default function CustomProjectSetupModal({
               </div>
             </div>
 
+            {/* Chapter Guidelines & Word Limit Card */}
+            <div className="p-4 bg-gradient-to-r from-slate-50 to-indigo-50/50 border border-indigo-100 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                  Standard Chapter Guidelines &amp; Word Limit
+                </span>
+                <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
+                  Target: ~3,000 words
+                </span>
+              </div>
+              <ul className="text-xs text-slate-600 font-medium space-y-1 list-disc list-inside leading-relaxed">
+                <li><strong>Word Count Target:</strong> Standard chapters aim for <strong>2,500 – 3,500 words (~3,000 words)</strong> with comprehensive technical depth.</li>
+                <li><strong>Tone &amp; Rigor:</strong> Formal, academic tone (Nigerian university thesis standard) with complete headings and subheadings.</li>
+                <li><strong>References:</strong> If you have citations, paste them directly at the bottom of your last written chapter.</li>
+              </ul>
+            </div>
+
             {/* Active Chapter Textarea */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1.5">
                 <span className="text-xs font-black text-slate-900 uppercase">
                   Paste Full Text for Chapter {activeTab}
                 </span>
-                <span className="text-[11px] font-bold text-slate-500">
-                  {getWordCount(chaptersData[activeTab]).toLocaleString()} Words
-                </span>
+
+                {/* Word Counter & Limit Status */}
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const currentWords = getWordCount(chaptersData[activeTab]);
+                    const pct = Math.min(Math.round((currentWords / 3000) * 100), 100);
+                    let badgeColor = "bg-amber-100 text-amber-800 border-amber-200";
+                    let badgeLabel = "Drafting";
+
+                    if (currentWords < 30) {
+                      badgeColor = "bg-slate-100 text-slate-600 border-slate-200";
+                      badgeLabel = "Required (Min 30 words)";
+                    } else if (currentWords >= 2000 && currentWords <= 3500) {
+                      badgeColor = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                      badgeLabel = "Optimal Length (~3k)";
+                    } else if (currentWords > 3500) {
+                      badgeColor = "bg-blue-100 text-blue-800 border-blue-200";
+                      badgeLabel = "Exceeds 3,000 words";
+                    }
+
+                    return (
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${badgeColor}`}>
+                          {badgeLabel}
+                        </span>
+                        <span className="text-xs font-black text-slate-800">
+                          {currentWords.toLocaleString()} <span className="text-slate-400 font-bold">/ ~3,000 words</span>
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
+
+              {/* Progress Bar towards 3k words */}
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-2 border border-slate-200">
+                <div 
+                  className={`h-full transition-all duration-300 ${
+                    getWordCount(chaptersData[activeTab]) >= 2000 && getWordCount(chaptersData[activeTab]) <= 3500
+                      ? 'bg-emerald-500'
+                      : getWordCount(chaptersData[activeTab]) > 3500
+                      ? 'bg-indigo-500'
+                      : getWordCount(chaptersData[activeTab]) >= 30
+                      ? 'bg-amber-500'
+                      : 'bg-slate-300'
+                  }`}
+                  style={{ width: `${Math.min(Math.round((getWordCount(chaptersData[activeTab]) / 3000) * 100), 100)}%` }}
+                />
+              </div>
+
               <textarea
                 required
                 rows={11}
-                placeholder={`Copy and paste the entire body text of your Chapter ${activeTab} here (sections, headings, content). If this is your last existing chapter, paste any existing references or bibliography at the very bottom...`}
+                placeholder={`Paste the entire body text of your Chapter ${activeTab} here. Target length: ~3,000 words (2,500 - 3,500 words). If this is your last existing chapter, paste any existing references or bibliography at the very bottom...`}
                 value={chaptersData[activeTab] || ''}
                 onChange={(e) => handleTextChange(activeTab, e.target.value)}
                 className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all leading-relaxed resize-none font-mono"

@@ -275,7 +275,7 @@ export default function CustomProjectModal({
             <div className="mt-2.5 p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-2">
               <HelpCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Chapter 1 Requirement:</strong> All continuation projects assume you have completed Chapter 1. You will be able to paste it in the workspace so our AI matches your technical tone, citations, and research direction.
+                <strong>Standard Word Limit &amp; Baseline Requirement:</strong> All chapters follow the university standard of <strong>~3,000 words</strong> (2,500–3,500 words per chapter). Custom continuation projects require you to paste your previously completed chapters in the workspace so our AI matches your citations, terminology, and research methodology.
               </span>
             </div>
           </div>
@@ -302,7 +302,11 @@ export default function CustomProjectModal({
             </div>
 
             {/* Quota Highlights */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px] sm:text-[11px] font-medium text-slate-300">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] sm:text-[11px] font-medium text-slate-300">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>~3k words / chapter</span>
+              </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span>{tokensLimit.toLocaleString()} Tokens</span>

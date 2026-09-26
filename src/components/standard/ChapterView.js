@@ -167,7 +167,7 @@ export default function ChapterView({ chapter, images, project, onPrint, onSaveP
                     Paste Your Written Chapter {chapter.chapter_number}
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
-                    Paste your existing {chapter.title} content below. The AI will analyze this baseline to match your exact citations, technical vocabulary, and structure in future generated chapters.
+                    Paste your existing {chapter.title} content below. Target standard length: <strong>~3,000 words (2,500 - 3,500 words)</strong>. The AI will analyze this baseline to match your citations, technical vocabulary, and structure in future generated chapters.
                   </p>
                 </div>
                 {isEditingPasted && chapter.content && (
@@ -181,18 +181,51 @@ export default function ChapterView({ chapter, images, project, onPrint, onSaveP
                 )}
               </div>
 
+              {/* Standard Instructions Notice */}
+              <div className="p-3.5 bg-indigo-50/70 border border-indigo-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-xs text-indigo-900 font-medium leading-relaxed">
+                  <strong>Standard University Guidelines:</strong> Maintain comprehensive technical sections, academic tone, and include references at the bottom of your last baseline chapter.
+                </span>
+                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 border border-indigo-200 shrink-0 self-start sm:self-auto">
+                  Target: ~3,000 words
+                </span>
+              </div>
+
               <textarea
                 value={pastedText}
                 onChange={(e) => setPastedText(e.target.value)}
                 rows={14}
-                placeholder={`Paste your complete Chapter ${chapter.chapter_number} text here...`}
-                className="w-full p-4 sm:p-5 text-sm sm:text-base border border-slate-300 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-slate-900 leading-relaxed font-sans placeholder-slate-400 shadow-inner"
+                placeholder={`Paste your complete Chapter ${chapter.chapter_number} text here. Standard chapter length: ~3,000 words (2,500 - 3,500 words). If this is your last written chapter, paste your bibliography/references at the bottom...`}
+                className="w-full p-4 sm:p-5 text-sm sm:text-base border border-slate-300 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-slate-900 leading-relaxed font-sans placeholder-slate-400 shadow-inner font-mono"
               />
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
-                <span className="text-xs font-bold text-slate-500">
-                  Word Count: {pastedText ? pastedText.trim().split(/\s+/).filter(Boolean).length : 0} words
-                </span>
+                {(() => {
+                  const currentWords = pastedText ? pastedText.trim().split(/\s+/).filter(Boolean).length : 0;
+                  let badge = "bg-amber-100 text-amber-800 border-amber-200";
+                  let label = "Drafting";
+                  if (currentWords < 30) {
+                    badge = "bg-slate-100 text-slate-600 border-slate-200";
+                    label = "Min 30 words";
+                  } else if (currentWords >= 2000 && currentWords <= 3500) {
+                    badge = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                    label = "Optimal (~3k words)";
+                  } else if (currentWords > 3500) {
+                    badge = "bg-blue-100 text-blue-800 border-blue-200";
+                    label = "Exceeds 3k words";
+                  }
+
+                  return (
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${badge}`}>
+                        {label}
+                      </span>
+                      <span className="text-xs font-black text-slate-800">
+                        {currentWords.toLocaleString()} <span className="text-slate-400 font-bold">/ ~3,000 words</span>
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 <button
                   type="button"
@@ -219,7 +252,7 @@ export default function ChapterView({ chapter, images, project, onPrint, onSaveP
                       Student Baseline
                     </span>
                     <span className="text-xs font-bold text-slate-700">
-                      Provided by you • {chapter.content.trim().split(/\s+/).filter(Boolean).length} words
+                      Provided by you • {chapter.content.trim().split(/\s+/).filter(Boolean).length.toLocaleString()} words (Standard Target: ~3,000)
                     </span>
                   </div>
                   <button

@@ -174,7 +174,8 @@ export async function POST(request) {
       existingReferences: finalReferencesList,
       useManualObjectives: project.use_manual_objectives,
       manualObjectives: project.manual_objectives || [],
-      aiInstruction: template?.ai_instruction
+      aiInstruction: template?.ai_instruction,
+      isCustom: !!project.is_custom
     });
 
     const startTime = Date.now();

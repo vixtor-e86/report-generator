@@ -699,12 +699,25 @@ export default function ContentArea({
                         Raw Project Text Area
                       </span>
                       <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e' }}>
-                        Paste your written {activeChapter.title} directly from Word, Docs, or PDF. No markdown formatting required.
+                        Paste your written {activeChapter.title} directly from Word, Docs, or PDF. Target length: ~3,000 words (2,500 - 3,500 words). References can be included at the bottom.
                       </span>
                     </div>
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#b45309' }}>
-                      {localContent ? localContent.trim().split(/\s+/).filter(Boolean).length : 0} words
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ 
+                        fontSize: '10px', 
+                        fontWeight: '900', 
+                        textTransform: 'uppercase', 
+                        padding: '2px 7px', 
+                        borderRadius: '6px',
+                        background: (localContent ? localContent.trim().split(/\s+/).filter(Boolean).length : 0) >= 2000 ? '#dcfce7' : '#fef3c7',
+                        color: (localContent ? localContent.trim().split(/\s+/).filter(Boolean).length : 0) >= 2000 ? '#166534' : '#92400e'
+                      }}>
+                        {(localContent ? localContent.trim().split(/\s+/).filter(Boolean).length : 0) >= 2000 ? 'Target Met' : 'Drafting'}
+                      </span>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#b45309' }}>
+                        {localContent ? localContent.trim().split(/\s+/).filter(Boolean).length.toLocaleString() : 0} / ~3,000 words
+                      </span>
+                    </div>
                   </div>
                 ) : (
                   <div style={{ 
@@ -755,7 +768,7 @@ export default function ContentArea({
                   onChange={(e) => { setLocalContent(e.target.value); updateCursorPosition(); }}
                   onSelect={updateCursorPosition} onClick={updateCursorPosition} onKeyUp={updateCursorPosition}
                   placeholder={projectData?.is_custom && projectData?.selected_chapters && !projectData.selected_chapters.includes(activeChapter?.number || activeChapter?.chapter || activeChapter?.id)
-                    ? `Paste your raw written ${activeChapter.title} text here directly from Word, Docs, or PDF...`
+                    ? `Paste your raw written ${activeChapter.title} text here directly from Word, Docs, or PDF. Target length: ~3,000 words (2,500 - 3,500 words). If this is your last written chapter, include your bibliography/references at the bottom...`
                     : `Write or paste your ${activeChapter.title} here...`}
                   style={{ width: '100%', minHeight: '700px', border: 'none', outline: 'none', fontSize: '16px', lineHeight: '1.8', color: '#111827', padding: '40px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'vertical', flex: 1 }}
                 />
@@ -772,7 +785,7 @@ export default function ContentArea({
                         Chapter Text Needed
                       </h3>
                       <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '460px', margin: '0 auto 20px auto', lineHeight: '1.6' }}>
-                        You marked this chapter as already written by you. Paste your raw text so our AI can analyze your technical methodology and citations.
+                        You marked this chapter as already written by you. Paste your raw text (~3,000 words standard target) so our AI can analyze your technical methodology and citations.
                       </p>
                       <button
                         type="button"
