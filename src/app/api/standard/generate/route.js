@@ -73,6 +73,7 @@ export async function POST(request) {
     }
 
     // Inject custom uploaded chapters context if custom project
+    const extractedStudentRefs = [];
     if (project.is_custom && project.uploaded_chapters) {
       const customParts = [];
       for (let ch = 1; ch <= 5; ch++) {
@@ -81,12 +82,19 @@ export async function POST(request) {
         const text = typeof chData === 'string' ? chData : chData?.content || '';
         if (text && text.trim()) {
           customParts.push(`Chapter ${ch} (Student Provided Baseline):\n${text.split(/\s+/).slice(0, 1500).join(' ')}...`);
+
+          // Detect references/bibliography section at the bottom of the chapter
+          const refMatch = text.match(/(?:##?\s*(?:references|bibliography|works cited)|references:)([\s\S]*)/i);
+          if (refMatch && refMatch[1]) {
+            const lines = refMatch[1].split('\n').map(l => l.trim()).filter(l => l.length > 10);
+            extractedStudentRefs.push(...lines);
+          }
         }
       }
       if (customParts.length > 0) {
         context = (context ? context + '\n\n' : '') + 
           '### STUDENT EXISTING CHAPTERS (CONTINUATION CONTEXT):\n' +
-          'Maintain complete continuity with the student\'s established terminology, methodology, and problem scope:\n\n' +
+          'Maintain complete continuity with the student\'s established terminology, methodology, and problem scope. Intelligently distinguish between chapter text and any references pasted at the bottom, reusing their citations where applicable:\n\n' +
           customParts.join('\n\n');
       }
     }
@@ -114,10 +122,16 @@ export async function POST(request) {
       .order('order_number', { ascending: true });
 
     let finalReferencesList = [...(existingReferences || [])];
-    if (project.is_custom && project.existing_references && project.existing_references.trim()) {
-      const studentRefs = project.existing_references.split('\n').filter(r => r.trim()).map(r => ({
-        title: r.trim(),
-        reference_text: r.trim(),
+    if (project.is_custom) {
+      const combinedStudentRefs = [
+        ...extractedStudentRefs,
+        ...(project.existing_references ? project.existing_references.split('\n') : [])
+      ].map(r => r.trim()).filter(r => r.length > 8);
+
+      const uniqueStudentRefs = [...new Set(combinedStudentRefs)];
+      const studentRefs = uniqueStudentRefs.map(r => ({
+        title: r,
+        reference_text: r,
         is_student_provided: true
       }));
       finalReferencesList = [...studentRefs, ...finalReferencesList];

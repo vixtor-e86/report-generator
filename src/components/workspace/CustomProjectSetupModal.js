@@ -28,7 +28,6 @@ export default function CustomProjectSetupModal({
   });
 
   const [activeTab, setActiveTab] = useState(chaptersToProvide[0] || 1);
-  const [referencesText, setReferencesText] = useState(initialReferences || '');
   const [isSaving, setIsSaving] = useState(false);
 
   if (!isOpen || chaptersToProvide.length === 0) return null;
@@ -85,7 +84,7 @@ export default function CustomProjectSetupModal({
           projectId,
           tableName,
           uploadedChapters: formattedChapters,
-          existingReferences: referencesText.trim() || null
+          existingReferences: null
         })
       });
 
@@ -96,7 +95,7 @@ export default function CustomProjectSetupModal({
       if (onSaveComplete) {
         onSaveComplete({
           uploadedChapters: formattedChapters,
-          existingReferences: referencesText.trim() || null
+          existingReferences: null
         });
       }
     } catch (err) {
@@ -179,42 +178,25 @@ export default function CustomProjectSetupModal({
               </div>
               <textarea
                 required
-                rows={9}
-                placeholder={`Copy and paste the entire body text of your Chapter ${activeTab} here (sections, headings, content)...`}
+                rows={11}
+                placeholder={`Copy and paste the entire body text of your Chapter ${activeTab} here (sections, headings, content). If this is your last existing chapter, paste any existing references or bibliography at the very bottom...`}
                 value={chaptersData[activeTab] || ''}
                 onChange={(e) => handleTextChange(activeTab, e.target.value)}
                 className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all leading-relaxed resize-none font-mono"
               />
-              <p className="text-[10px] text-slate-400 mt-1">
-                * Paste directly from your Word or Google doc. The AI extracts terminology, experimental setups, and scope from this chapter.
-              </p>
-            </div>
 
-            {/* Optional Existing References Section */}
-            <div className="pt-2 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
-                  <BookOpen className="w-4 h-4 text-purple-600" />
-                  <span className="text-xs font-black text-slate-900 uppercase">
-                    Existing Bibliography / References (Optional)
-                  </span>
+              {/* Instructions on pasting references with the last chapter */}
+              <div className="mt-3 p-3.5 bg-indigo-50/80 border border-indigo-200/80 rounded-2xl flex items-start gap-3">
+                <Sparkles className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="text-[11px] font-black text-indigo-950 uppercase tracking-wider">
+                    References &amp; Bibliography Instructions:
+                  </p>
+                  <p className="text-xs text-indigo-900 leading-relaxed font-medium">
+                    If you have existing references from your written chapters, simply paste them directly at the <strong>bottom of your last provided chapter</strong> (e.g., at the end of Chapter {chaptersToProvide[chaptersToProvide.length - 1] || activeTab}). The AI will intelligently distinguish between your chapter content and your references, and reuse them to maintain citation continuity in your newly generated chapters.
+                  </p>
                 </div>
-                <span className="text-[10px] font-black uppercase text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                  Optional
-                </span>
               </div>
-              <p className="text-xs text-slate-500 mb-2 leading-relaxed">
-                If you already have citations or a reference list from your completed chapters, paste them below. The AI will continue from these sources and match their exact citation style (APA, IEEE, etc.). If left blank, new references will be generated.
-              </p>
-              <textarea
-                rows={4}
-                placeholder="e.g. 
-[1] Adebayo, O. (2024). Autonomous Control Systems...
-[2] Johnson, M. et al. (2025). Neural Architecture..."
-                value={referencesText}
-                onChange={(e) => setReferencesText(e.target.value)}
-                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono text-slate-900 placeholder-slate-400 outline-none focus:bg-white focus:border-purple-600 transition-all leading-relaxed resize-none"
-              />
             </div>
 
           </div>

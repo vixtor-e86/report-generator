@@ -132,6 +132,7 @@ export async function POST(request) {
     }
 
     // If Custom Project, inject student's existing chapter texts as high-priority research context
+    const extractedStudentRefs = [];
     if (project.is_custom && project.uploaded_chapters) {
       for (let ch = 1; ch <= 5; ch++) {
         if (ch === chapterNumber) continue;
@@ -139,6 +140,13 @@ export async function POST(request) {
         const text = typeof chData === 'string' ? chData : chData?.content || '';
         if (text && text.trim()) {
           contextualSourceData += `\n--- EXISTING CHAPTER ${ch} (STUDENT WRITTEN CONTINUATION BASELINE) ---\n${text.split(/\s+/).slice(0, 2000).join(" ")}\n`;
+
+          // Detect references/bibliography section at the end of the chapter
+          const refMatch = text.match(/(?:##?\s*(?:references|bibliography|works cited)|references:)([\s\S]*)/i);
+          if (refMatch && refMatch[1]) {
+            const lines = refMatch[1].split('\n').map(l => l.trim()).filter(l => l.length > 10);
+            extractedStudentRefs.push(...lines);
+          }
         }
       }
     }
@@ -175,16 +183,22 @@ export async function POST(request) {
     const { data: existingPapers } = await supabaseAdmin.from('premium_research_papers').select('*').eq('project_id', projectId);
     let finalReferencesList = [...selectedPapers];
 
-    // If Custom Project, include student's existing references
-    if (project.is_custom && project.existing_references && project.existing_references.trim() && !skipReferences) {
-      const studentRefs = project.existing_references.split('\n').filter(r => r.trim()).map((r, idx) => ({
+    // If Custom Project, include student's existing references (from chapter bottom or project)
+    if (project.is_custom && !skipReferences) {
+      const combinedStudentRefs = [
+        ...extractedStudentRefs,
+        ...(project.existing_references ? project.existing_references.split('\n') : [])
+      ].map(r => r.trim()).filter(r => r.length > 8);
+
+      const uniqueStudentRefs = [...new Set(combinedStudentRefs)];
+      const studentPaperObjs = uniqueStudentRefs.map((r, idx) => ({
         external_id: `student-ref-${idx}`,
-        title: r.trim(),
-        authors: 'Student Reference',
-        year: 'Context',
-        venue: 'Original Research'
+        title: r,
+        authors: 'Student Baseline Citation',
+        year: 'Baseline',
+        venue: 'Original Student Bibliography'
       }));
-      finalReferencesList = [...studentRefs, ...finalReferencesList];
+      finalReferencesList = [...studentPaperObjs, ...finalReferencesList];
     }
     
     // Dynamic reference count: Chapter 2 needs more for deep literature review
@@ -303,6 +317,14 @@ export async function POST(request) {
     ${imageInstruction}
     ${referencesMapping}
     ${referenceRequirements}
+
+    ${project.is_custom ? `## CONTINUATION & REFERENCES REUSE DIRECTIVE (MANDATORY):
+    1. CONTINUATION PROJECT: This project is a continuation of an ongoing student report. The student has written earlier chapters and pasted them above.
+    2. REFERENCES AT BOTTOM OF CHAPTERS: The student may have pasted their existing bibliography or reference list at the bottom of their last provided chapter.
+    3. SEPARATION: Intelligently distinguish between the student's chapter body content and their bibliography list.
+    4. REUSE AND EXPAND: Seamlessly reuse, cite, and expand upon the student's existing references where relevant in Chapter ${chapterNumber}, matching the required citation style (${refStyleUpper}).
+    5. CONTINUITY: Match the exact technical vocabulary, tone, notations, and established methodology from the student's baseline chapters.
+    ` : ''}
 
     ## WRITING RULES (STRICT ACADEMIC STANDARDS)
     1. TARGET LENGTH: 2,500 - 3,500 words. Make the content comprehensive, detailed, and technically rigorous. STRICT LIMIT: DO NOT exceed 3,500 words. Avoid repetitive fluff, excessive elaboration, or padded rambling.

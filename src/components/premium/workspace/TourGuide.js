@@ -1,7 +1,7 @@
 // src/components/premium/workspace/TourGuide.js
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 const TOUR_STEPS = [
@@ -19,50 +19,80 @@ export default function TourGuide({ projectId, onComplete }) {
   const [currentStep, setCurrentStep] = useState(-1);
   const [targetRect, setTargetRect] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const retryTimerRef = useRef(null);
+
+  const handleComplete = (isSkip = false) => {
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+    }
+    setCurrentStep(-1);
+    setTargetRect(null);
+    try {
+      if (projectId) {
+        localStorage.setItem(`has_seen_tour_${projectId}`, 'true');
+      }
+      localStorage.setItem('has_seen_workspace_tour', 'true');
+    } catch (e) {
+      console.warn('Storage write error in TourGuide:', e);
+    }
+    if (!isSkip && onComplete) {
+      onComplete();
+    }
+  };
 
   const updatePosition = useCallback(() => {
     if (currentStep >= 0 && currentStep < TOUR_STEPS.length) {
       const el = document.querySelector(TOUR_STEPS[currentStep].target);
       if (el) {
-        setTargetRect(el.getBoundingClientRect());
-      } else if (retryCount < 5) {
-        // If element not found yet, wait and retry
-        setTimeout(() => setRetryCount(prev => prev + 1), 500);
+        const rect = el.getBoundingClientRect();
+        setTargetRect(prev => {
+          if (!prev || prev.top !== rect.top || prev.left !== rect.left || prev.width !== rect.width || prev.height !== rect.height) {
+            return rect;
+          }
+          return prev;
+        });
+      } else if (retryCount < 3) {
+        if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+        }, 500);
+      } else {
+        // If element doesn't exist (e.g. baseline chapter where generate button is hidden), skip to next step
+        setCurrentStep(prev => (prev < TOUR_STEPS.length - 1 ? prev + 1 : -1));
+        setRetryCount(0);
       }
     }
   }, [currentStep, retryCount]);
 
   useEffect(() => {
-    // Check if user has seen the tour FOR THIS SPECIFIC PROJECT
     if (!projectId) return;
-    const hasSeenTour = localStorage.getItem(`has_seen_tour_${projectId}`);
-    
-    if (!hasSeenTour) {
-      const timer = setTimeout(() => setCurrentStep(0), 3000); 
-      return () => clearTimeout(timer);
+    try {
+      const hasSeenTour = localStorage.getItem(`has_seen_tour_${projectId}`) || localStorage.getItem('has_seen_workspace_tour');
+      if (!hasSeenTour) {
+        const timer = setTimeout(() => setCurrentStep(0), 2000); 
+        return () => clearTimeout(timer);
+      }
+    } catch (e) {
+      console.warn('Storage read error in TourGuide:', e);
     }
   }, [projectId]);
 
   useEffect(() => {
     updatePosition();
     window.addEventListener('resize', updatePosition);
-    return () => window.removeEventListener('resize', updatePosition);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
   }, [currentStep, updatePosition]);
 
   const handleNext = () => {
-    if (currentStep === TOUR_STEPS.length - 1) handleComplete();
-    else {
+    if (currentStep === TOUR_STEPS.length - 1) {
+      handleComplete(false);
+    } else {
       setRetryCount(0);
       setCurrentStep(prev => prev + 1);
     }
-  };
-
-  const handleComplete = () => {
-    setCurrentStep(-1);
-    if (projectId) {
-      localStorage.setItem(`has_seen_tour_${projectId}`, 'true');
-    }
-    if (onComplete) onComplete();
   };
 
   if (currentStep < 0 || !targetRect) return null;
@@ -100,7 +130,7 @@ export default function TourGuide({ projectId, onComplete }) {
         <p className="text-xs text-slate-500 font-medium leading-relaxed mb-6">{step.content}</p>
         
         <div className="flex items-center justify-between">
-          <button onClick={handleComplete} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors">Skip</button>
+          <button onClick={() => handleComplete(true)} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors">Skip</button>
           <button onClick={handleNext} className="px-6 py-2.5 bg-slate-900 text-white rounded-full text-[10px] font-black shadow-lg hover:bg-black transition-all active:scale-95">
             {currentStep === TOUR_STEPS.length - 1 ? 'GET STARTED' : 'NEXT STEP'}
           </button>

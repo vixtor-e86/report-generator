@@ -540,7 +540,7 @@ function WorkspaceContent() {
         />
       )}
 
-      <TourGuide projectId={projectId} onComplete={() => setShowTutorial(true)} />
+      <TourGuide projectId={projectId} />
 
       {/* Floating Tutorial Re-watch Button */}
       <button 
