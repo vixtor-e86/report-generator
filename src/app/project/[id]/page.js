@@ -385,10 +385,40 @@ function processChapterFigures(rawContent, chapterNumber, projectImages = []) {
           print-color-adjust: exact !important;
         }
         @page { size: auto; margin: 20mm; }
+        .figure-container, figure, .page-break-inside-avoid {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          display: block !important;
+          clear: both !important;
+          margin: 18pt auto !important;
+          width: 100% !important;
+          max-width: 100% !important;
+        }
         img {
           max-width: 100% !important;
+          max-height: 380px !important;
           height: auto !important;
+          width: auto !important;
           display: block !important;
+          margin: 0 auto !important;
+          clear: both !important;
+        }
+        figcaption, .figure-caption {
+          display: block !important;
+          text-align: center !important;
+          font-style: italic !important;
+          font-weight: bold !important;
+          font-size: 10.5pt !important;
+          color: #000000 !important;
+          margin-top: 6pt !important;
+          margin-bottom: 14pt !important;
+          clear: both !important;
+        }
+        p {
+          clear: both !important;
+          margin-bottom: 12pt !important;
+          line-height: 1.65 !important;
+          text-align: justify !important;
         }
       }
     `,
@@ -427,14 +457,40 @@ function processChapterFigures(rawContent, chapterNumber, projectImages = []) {
           page-break-before: always !important; 
           break-before: page !important; 
         }
-        .page-break-inside-avoid {
+        .page-break-inside-avoid, figure, .figure-container {
           page-break-inside: avoid !important;
           break-inside: avoid !important;
+          display: block !important;
+          clear: both !important;
+          margin: 18pt auto !important;
+          width: 100% !important;
+          max-width: 100% !important;
         }
         img {
           max-width: 100% !important;
+          max-height: 380px !important;
           height: auto !important;
+          width: auto !important;
           display: block !important;
+          margin: 0 auto !important;
+          clear: both !important;
+        }
+        figcaption, .figure-caption {
+          display: block !important;
+          text-align: center !important;
+          font-style: italic !important;
+          font-weight: bold !important;
+          font-size: 10.5pt !important;
+          color: #000000 !important;
+          margin-top: 6pt !important;
+          margin-bottom: 14pt !important;
+          clear: both !important;
+        }
+        p {
+          clear: both !important;
+          margin-bottom: 12pt !important;
+          line-height: 1.65 !important;
+          text-align: justify !important;
         }
       }
     `,
@@ -683,23 +739,38 @@ function processChapterFigures(rawContent, chapterNumber, projectImages = []) {
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
                       components={{
+                        p: ({ node, children, ...props }) => {
+                          const hasImage = node?.children?.some(child => child.tagName === 'img');
+                          if (hasImage) {
+                            return (
+                              <div className="my-8 print:my-6 flex flex-col items-center justify-center figure-container break-inside-avoid page-break-inside-avoid clear-both">
+                                {children}
+                              </div>
+                            );
+                          }
+                          return (
+                            <p className="text-justify leading-relaxed mb-4 sm:mb-6 clear-both" {...props}>
+                              {children}
+                            </p>
+                          );
+                        },
                         img: ({ src, alt }) => (
-                          <div className="my-12 flex flex-col items-center justify-center figure-container">
-                            <div className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-slate-100">
+                          <figure className="w-full max-w-2xl flex flex-col items-center justify-center break-inside-avoid page-break-inside-avoid my-2 print:my-1 clear-both">
+                            <div className="w-full flex items-center justify-center rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-2 sm:p-3 print:border-none print:bg-transparent print:p-0 print:shadow-none">
                               <img
                                 src={src}
-                                alt={alt}
-                                className="object-contain w-full h-full bg-slate-50"
+                                alt={alt || "Report Figure"}
+                                className="max-w-full max-h-[420px] w-auto h-auto object-contain mx-auto block print:max-h-[380px]"
                                 crossOrigin="anonymous"
                                 loading="eager"
                               />
                             </div>
                             {alt && (
-                              <p className="mt-4 text-sm font-bold text-slate-500 italic text-center max-w-xl">
+                              <figcaption className="mt-3 text-sm font-bold text-slate-600 italic text-center max-w-xl print:text-black print:text-xs print:font-bold print:mt-2 print:mb-2 block clear-both">
                                 {alt}
-                              </p>
+                              </figcaption>
                             )}
-                          </div>
+                          </figure>
                         )
                       }}
                     >
@@ -796,23 +867,38 @@ function processChapterFigures(rawContent, chapterNumber, projectImages = []) {
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
                       components={{
+                        p: ({ node, children, ...props }) => {
+                          const hasImage = node?.children?.some(child => child.tagName === 'img');
+                          if (hasImage) {
+                            return (
+                              <div className="my-8 print:my-6 flex flex-col items-center justify-center figure-container break-inside-avoid page-break-inside-avoid clear-both">
+                                {children}
+                              </div>
+                            );
+                          }
+                          return (
+                            <p className="text-justify leading-relaxed mb-6 clear-both text-base" {...props}>
+                              {children}
+                            </p>
+                          );
+                        },
                         img: ({ src, alt }) => (
-                          <div className="my-8 flex flex-col items-center justify-center figure-container page-break-inside-avoid">
-                            <div className="w-full max-w-xl aspect-video rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
+                          <figure className="w-full max-w-xl flex flex-col items-center justify-center figure-container break-inside-avoid page-break-inside-avoid my-4 print:my-2 clear-both">
+                            <div className="w-full flex items-center justify-center rounded-xl overflow-hidden border border-gray-200 bg-gray-50 p-2 print:border-none print:bg-transparent print:p-0 print:shadow-none">
                               <img
                                 src={src}
                                 alt={alt || "Report figure"}
-                                className="object-contain max-h-[350px] w-full"
+                                className="max-w-full max-h-[350px] w-auto h-auto object-contain mx-auto block"
                                 crossOrigin="anonymous"
                                 loading="eager"
                               />
                             </div>
                             {alt && (
-                              <p className="mt-3 text-sm font-semibold text-gray-700 italic text-center max-w-lg">
+                              <figcaption className="mt-3 text-sm font-semibold text-gray-700 italic text-center max-w-lg print:text-black print:text-xs print:font-bold print:mt-2 block clear-both">
                                 {alt}
-                              </p>
+                              </figcaption>
                             )}
-                          </div>
+                          </figure>
                         )
                       }}
                     >

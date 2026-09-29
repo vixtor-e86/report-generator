@@ -306,13 +306,19 @@ body {
 
   /* Figure containers */
   .figure-container,
+  figure,
   [class*="figure"] {
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
     text-align: center !important;
-    margin: 18pt 0 !important;
+    margin: 18pt auto !important;
+    clear: both !important;
+    display: block !important;
+    width: 100% !important;
   }
 
   /* Figure captions */
+  figcaption,
   .figure-caption,
   [class*="caption"] {
     font-family: 'Times New Roman', Times, serif !important;
@@ -321,7 +327,10 @@ body {
     font-weight: bold !important;
     text-align: center !important;
     margin-top: 6pt !important;
+    margin-bottom: 14pt !important;
     color: #000 !important;
+    clear: both !important;
+    display: block !important;
   }
 
   /* Tables */

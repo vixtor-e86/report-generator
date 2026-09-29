@@ -39,7 +39,7 @@ export default function ChapterView({ chapter, images, project, onPrint, onSaveP
       const img = chapterImages?.[figureIndex - 1];
       
       if (img) {
-        return `\n\n![Figure ${chNum}.${figNum}: ${img.caption}](${img.cloudinary_url})\n*Figure ${chNum}.${figNum}: ${img.caption}*\n\n`;
+        return `\n\n![Figure ${chNum}.${figNum}: ${img.caption}](${img.cloudinary_url})\n\n`;
       }
       return `\n\n> **[Figure ${chNum}.${figNum} Placeholder]**\n\n`;
     });
@@ -48,21 +48,38 @@ export default function ChapterView({ chapter, images, project, onPrint, onSaveP
   }, [chapter, images]);
 
   const components = {
+    p: ({ node, children, ...props }) => {
+      const hasImage = node?.children?.some(child => child.tagName === 'img');
+      if (hasImage) {
+        return (
+          <div className="my-8 print:my-6 flex flex-col items-center justify-center figure-container break-inside-avoid page-break-inside-avoid clear-both">
+            {children}
+          </div>
+        );
+      }
+      return (
+        <p className="text-slate-700 leading-[1.8] mb-8 text-justify font-medium clear-both" {...props}>
+          {children}
+        </p>
+      );
+    },
     img: ({ src, alt }) => (
-      <div className="my-12 flex flex-col items-center justify-center figure-container print:my-8">
-        <div className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-slate-100 print:shadow-none print:border-none print:max-w-none">
+      <figure className="w-full max-w-2xl flex flex-col items-center justify-center figure-container print:my-4 break-inside-avoid page-break-inside-avoid clear-both">
+        <div className="w-full flex items-center justify-center rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 p-2 sm:p-3 print:shadow-none print:border-none print:bg-transparent print:p-0">
           <img
             src={src}
-            alt={alt}
-            className="object-contain w-full h-full bg-slate-50"
+            alt={alt || "Report figure"}
+            className="max-w-full max-h-[420px] w-auto h-auto object-contain mx-auto block print:max-h-[380px]"
+            crossOrigin="anonymous"
+            loading="eager"
           />
         </div>
         {alt && (
-          <p className="mt-4 text-sm font-bold text-slate-500 italic text-center max-w-xl">
+          <figcaption className="mt-4 text-sm font-bold text-slate-500 italic text-center max-w-xl print:text-black print:text-xs print:font-bold print:mt-2 block clear-both">
             {alt}
-          </p>
+          </figcaption>
         )}
-      </div>
+      </figure>
     ),
     h2: ({ children }) => (
       <h2 className="text-2xl font-black text-slate-900 mt-16 mb-8 border-b-2 border-slate-100 pb-4 flex items-center gap-3">
