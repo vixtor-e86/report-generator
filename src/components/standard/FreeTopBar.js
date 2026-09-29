@@ -14,11 +14,12 @@ export default function FreeTopBar({
   onUpdateProjectDetails,
   allChaptersGenerated,
   onPrintFullReport,
+  handlePrintFullReport: handlePrintFullReportProp,
   checkAccessAndPrint
 }) {
-  const [exporting, setExporting] = useState(false);
   const [showEditDetailsModal, setShowEditDetailsModal] = useState(false);
 
+  const printFullFn = onPrintFullReport || handlePrintFullReportProp;
   const isGenerated = chapter && (chapter.status === 'draft' || chapter.status === 'edited' || chapter.status === 'approved');
   
   // Rule: Export/Full Print is locked until all chapters are finished
@@ -35,51 +36,9 @@ export default function FreeTopBar({
   const handlePrintFull = () => {
     if (isExportRestricted) return;
     if (checkAccessAndPrint) {
-      checkAccessAndPrint(onPrintFullReport);
-    } else if (onPrintFullReport) {
-      onPrintFullReport();
-    }
-  };
-
-  const handleExportDOCX = async () => {
-    if (isExportRestricted) return;
-    setExporting(true);
-
-    try {
-      const response = await fetch('/api/standard/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectId: project.id,
-          userId: project.user_id,
-          format: 'docx'
-        })
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Export failed');
-
-      const byteCharacters = atob(data.data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: data.mimeType });
-
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = data.filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Export error:', error);
-      alert(error.message || 'Failed to export document');
-    } finally {
-      setExporting(false);
+      checkAccessAndPrint(printFullFn);
+    } else if (printFullFn) {
+      printFullFn();
     }
   };
 
@@ -116,33 +75,38 @@ export default function FreeTopBar({
             {/* Manual Edit */}
             <button
               onClick={onEdit}
-              className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all flex items-center gap-2"
+              className="bg-white border border-slate-200 text-slate-600 px-3.5 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-slate-900 hover:text-slate-900 transition-all flex items-center gap-2"
             >
               Edit
             </button>
 
             <div className="w-px h-6 bg-slate-200 mx-1"></div>
 
-            <button onClick={handlePrintCurrent} className="p-2 text-slate-400 hover:text-slate-900 transition-colors" title="Print Chapter">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            {/* Print Current Chapter */}
+            <button 
+              onClick={handlePrintCurrent} 
+              className="p-2 text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1.5 px-2.5 py-2 rounded-xl hover:bg-slate-100" 
+              title="Print Current Chapter as PDF"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+              <span className="hidden md:inline text-[10px] font-black uppercase tracking-wider">Print Ch.</span>
             </button>
 
+            {/* Primary Action: Export PDF */}
             <button
               onClick={handlePrintFull}
               disabled={isExportRestricted}
-              className={`p-2 transition-colors ${!isExportRestricted ? 'text-emerald-500 hover:text-emerald-700' : 'text-slate-200'}`}
-              title={!isExportRestricted ? "Print Full Report" : "Complete all chapters to unlock"}
+              className="bg-slate-900 text-white px-4 sm:px-5 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              title={isExportRestricted ? "Generate all chapters to export full PDF report" : "Export Full Report as PDF"}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            </button>
-
-            <button
-              onClick={handleExportDOCX}
-              disabled={exporting || isExportRestricted}
-              className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all shadow-lg flex items-center gap-2 disabled:opacity-30"
-            >
-              {exporting ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white" /> : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>}
-              <span className="hidden xs:inline">{isExportRestricted ? 'Incomplete' : 'Export'}</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              <span>{isExportRestricted ? 'Incomplete' : 'Export PDF'}</span>
             </button>
         </div>
       )}

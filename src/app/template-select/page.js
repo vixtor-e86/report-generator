@@ -299,7 +299,7 @@ function TemplateSelectContent() {
   const getTemplateTypes = () => [
     {
       id: '5-chapter',
-      name: '5-Chapter Report',
+      name: '5-Chapter Project',
       description: 'Standard undergraduate final year project report',
       icon: '📋',
       popular: true,
@@ -308,7 +308,7 @@ function TemplateSelectContent() {
     },
     {
       id: '6-chapter-thesis',
-      name: '6-Chapter Thesis',
+      name: 'Thesis (6 Chapters)',
       description: 'Comprehensive postgraduate thesis structure',
       icon: '📚',
       popular: false,
@@ -393,7 +393,7 @@ function TemplateSelectContent() {
 
           <h2 className="text-2xl font-bold text-gray-900 mb-3">Payment Required</h2>
           <p className="text-gray-600 mb-6">
-            You need to complete payment before accessing templates. Please return to the dashboard and click "Create Standard" to make a payment.
+            You need to complete payment before accessing templates. Please return to the dashboard and click &quot;Create Standard&quot; to make a payment.
           </p>
 
           <button
@@ -599,11 +599,11 @@ function TemplateSelectContent() {
                   <ul className="space-y-2 text-gray-700 text-sm sm:text-base">
                     <li className="flex items-start gap-2">
                       <span className="text-indigo-600 font-bold flex-shrink-0">•</span>
-                      <span><strong>5-Chapter Report:</strong> Perfect for undergraduate final year projects across all faculties</span>
+                      <span><strong>5-Chapter Project:</strong> Perfect for undergraduate final year projects across all faculties</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-indigo-600 font-bold flex-shrink-0">•</span>
-                      <span><strong>6-Chapter Thesis:</strong> Best for postgraduate research, masters thesis, and in-depth academic work</span>
+                      <span><strong>Thesis (6 Chapters):</strong> Best for postgraduate research, masters thesis, and in-depth academic work</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-indigo-600 font-bold flex-shrink-0">•</span>

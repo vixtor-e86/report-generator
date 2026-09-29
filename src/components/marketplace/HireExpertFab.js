@@ -89,7 +89,7 @@ const CONTACT_INFO = {
   whatsappBase: 'https://wa.me/2348031797655'
 };
 
-export default function HireExpertFab() {
+export default function HireExpertFab({ embedded = false }) {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedType, setCopiedType] = useState(null);
 
@@ -116,33 +116,43 @@ export default function HireExpertFab() {
     return `mailto:${CONTACT_INFO.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
+  const triggerButton = (
+    <button
+      onClick={() => setIsOpen(true)}
+      className="flex items-center gap-2 sm:gap-3 bg-slate-900 hover:bg-black text-white px-3 py-2 sm:px-5 sm:py-3.5 rounded-full shadow-xl hover:shadow-indigo-500/20 border border-slate-700/80 transition-all duration-300 transform hover:scale-105 active:scale-95"
+      aria-label="Hire an expert"
+    >
+      <span className="relative flex h-2 w-2 sm:h-3 sm:w-3">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 sm:h-3 sm:w-3 bg-emerald-500"></span>
+      </span>
+
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400 group-hover:rotate-12 transition-transform" />
+        <span className="font-extrabold text-[11px] sm:text-sm tracking-tight sm:tracking-wide">
+          <span className="sm:hidden">Hire Expert</span>
+          <span className="hidden sm:inline">Hire an Expert</span>
+        </span>
+      </div>
+      
+      <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white rounded-full">
+        Available
+      </span>
+    </button>
+  );
+
   return (
     <>
       {/* Floating Action Button */}
-      <div className="fixed bottom-4 left-3 sm:bottom-6 sm:left-6 z-50 flex items-center group">
-        <button
-          onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 sm:gap-3 bg-slate-900 hover:bg-black text-white px-3 py-2 sm:px-5 sm:py-3.5 rounded-full shadow-xl hover:shadow-indigo-500/20 border border-slate-700/80 transition-all duration-300 transform hover:scale-105 active:scale-95"
-          aria-label="Hire an expert"
-        >
-          <span className="relative flex h-2 w-2 sm:h-3 sm:w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 sm:h-3 sm:w-3 bg-emerald-500"></span>
-          </span>
-
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400 group-hover:rotate-12 transition-transform" />
-            <span className="font-extrabold text-[11px] sm:text-sm tracking-tight sm:tracking-wide">
-              <span className="sm:hidden">Hire Expert</span>
-              <span className="hidden sm:inline">Hire an Expert</span>
-            </span>
-          </div>
-          
-          <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white rounded-full">
-            Available
-          </span>
-        </button>
-      </div>
+      {embedded ? (
+        <div className="flex items-center group">
+          {triggerButton}
+        </div>
+      ) : (
+        <div className="fixed bottom-4 left-3 sm:bottom-6 sm:left-6 z-50 flex items-center group">
+          {triggerButton}
+        </div>
+      )}
 
       {/* Modal Backdrop & Dialog */}
       {isOpen && (

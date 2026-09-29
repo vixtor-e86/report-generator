@@ -57,12 +57,12 @@ export async function POST(request) {
       chapterTable = 'chapters';
     }
 
-    // 1.5 ✅ NEW: Check if Free project is unlocked
-    if (projectTable === 'projects' && !project.is_unlocked && project.tier !== 'premium') {
-        return NextResponse.json(
-          { error: 'This project is locked. Please unlock it to export.' },
-          { status: 402 }
-        );
+    // 1.5 Free projects strictly support PDF export only
+    if (projectTable === 'projects') {
+      return NextResponse.json(
+        { error: 'Free tier projects only support PDF export. Please use the Export PDF feature in your project workspace.' },
+        { status: 400 }
+      );
     }
 
     // 2. Verify ownership

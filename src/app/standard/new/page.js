@@ -668,31 +668,17 @@ function NewProjectContent() {
                   </div>
                   <select 
                     value={referenceStyle} 
-                    onChange={(e) => {
-                      const selected = e.target.value;
-                      if (!STANDARD_ALLOWED_STYLES.includes(selected)) {
-                        showNotification(
-                          'Premium Required',
-                          'Harvard, Chicago, OSCOLA, and Vancouver styles are exclusively available on the Premium Workspace. Standard includes APA, IEEE, and MLA.',
-                          'info'
-                        );
-                        return;
-                      }
-                      setReferenceStyle(selected);
-                    }} 
+                    onChange={(e) => setReferenceStyle(e.target.value)} 
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none"
                   >
-                    {getReferenceStyleOptions().map(option => {
-                      const isAllowed = STANDARD_ALLOWED_STYLES.includes(option.value);
-                      return (
-                        <option key={option.value} value={option.value}>
-                          {isAllowed ? `${option.icon} ${option.label}` : `🔒 ${option.label} (Premium Exclusive)`}
-                        </option>
-                      );
-                    })}
+                    {getReferenceStyleOptions('standard').map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.icon} {option.label}
+                      </option>
+                    ))}
                   </select>
                   <p className="text-xs text-indigo-700 bg-indigo-50/80 p-2.5 rounded-lg border border-indigo-100 mt-2">
-                    💡 <strong>Standard Tier:</strong> Supports <strong>APA, IEEE, and MLA</strong> styles. Harvard, Chicago, OSCOLA, and Vancouver are available on <strong>Premium</strong>.
+                    💡 <strong>Academic Citations:</strong> Supports <strong>APA, IEEE, Harvard, MLA, Chicago, OSCOLA, and Vancouver</strong> referencing standards with in-text citations.
                   </p>
                 </div>
               )}

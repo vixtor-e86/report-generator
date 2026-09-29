@@ -144,7 +144,7 @@ export function getAllReferenceStyles() {
 }
 
 export const FREE_ALLOWED_STYLES = ['apa'];
-export const STANDARD_ALLOWED_STYLES = ['apa', 'ieee', 'mla', 'none'];
+export const STANDARD_ALLOWED_STYLES = ['apa', 'ieee', 'mla', 'harvard', 'chicago', 'oscola', 'vancouver', 'none'];
 export const PREMIUM_ALLOWED_STYLES = ['apa', 'ieee', 'mla', 'harvard', 'chicago', 'oscola', 'vancouver', 'none'];
 
 // Get style options for dropdown

@@ -19,15 +19,15 @@ function getReferenceInstructions(referenceStyle, faculty, chapterNumber, isLast
   
   // Dynamic Citation Count based on chapter requirements:
   // Chapter 1: Maximum 10 references (6-10)
-  // Chapter 2: Minimum 15 references (15-20)
+  // Chapter 2: Minimum 20 references (20-30 mandatory)
   let countRange = "6-10";
   let countInstruction = "between 6 and 10 references";
   if (chapterNumber === 1) {
     countRange = "6-10";
     countInstruction = "between 6 and 10 references (STRICT MAXIMUM: 10 references, DO NOT exceed 10)";
   } else if (chapterNumber === 2) {
-    countRange = "15-20";
-    countInstruction = "between 15 and 20 references (STRICT MINIMUM: at least 15 references)";
+    countRange = "20-30";
+    countInstruction = "at least 20 references (MANDATORY STRICT MINIMUM: 20 references. Target: 20 to 30 distinct academic references. Under NO circumstances should you generate fewer than 20 references)";
   } else if (chapterNumber === 3) {
     countRange = "8-12";
     countInstruction = "between 8 and 12 references";
@@ -55,7 +55,11 @@ ${isFootnoteStyle ? `   - FOOTNOTE RULE: Whenever citing a source, place a super
    - DO NOT put (Author, Year) in brackets inside the paragraphs.` : ''}
 2. Citation Count Requirement: Include ${countInstruction} in your technical analysis.
    ${chapterNumber === 1 ? '- CHAPTER 1 RULE: Maximum of 10 references allowed.' : ''}
-   ${chapterNumber === 2 ? '- CHAPTER 2 RULE: Minimum of 15 references required for comprehensive literature review.' : ''}
+   ${chapterNumber === 2 ? `- CHAPTER 2 RULE (LITERATURE REVIEW - MANDATORY MINIMUM 20 REFERENCES):
+   * You MUST cite at least 20 separate, verifiable academic sources in this chapter.
+   * Distribute in-text citations thoroughly across ALL subsections of the literature review (at least 20 in-text citations throughout the text).
+   * At the end of Chapter 2, provide the complete numbered list of all 20+ sources cited (1 to 20+).
+   * Under NO circumstances should you output fewer than 20 references.` : ''}
 3. Sourcing: Combine the provided project references with other elite technical sources:
    - Real Academic/Technical Papers (2020-2026).
    - High-authority Online Articles (e.g., IEEE Spectrum, NASA, MIT Tech Review).
@@ -70,7 +74,6 @@ ${existingRefsText}
    - If this is the FINAL chapter, ensure the list is comprehensive for the whole project.
    - Max 40 unique references for the entire project.
    - RECENCY: All sources must be between 2020-2026.
-   - RECENTCY: All sources must be between 2020-2026.
 `;
 }
 
@@ -141,7 +144,17 @@ function getFacultySpecificPrompt(chapterNumber, data) {
 
   let customInstructionText = '';
   if (customInstruction && customInstruction.trim()) {
-    customInstructionText += `\n\n### USER MODIFICATIONS / SPECIAL INSTRUCTIONS (HIGH PRIORITY):\n${customInstruction.trim()}\n`;
+    customInstructionText += `\n\n======================================================
+### USER MODIFICATIONS / SPECIAL INSTRUCTIONS (CRITICAL OVERRIDE - HIGHEST PRIORITY):
+The user has provided the following specific instruction for this modification/regeneration:
+"${customInstruction.trim()}"
+
+STRICT COMPLIANCE MANDATE:
+1. You MUST prioritize and strictly execute the user's instruction above all default templates.
+2. If the user specifies adding, expanding, or increasing references or citations, ensure you include the requested number of references (and at least 20 references if this is Chapter 2) both as in-text citations and in the final ## References section.
+3. NEVER omit or drop the ## References section when modifying or regenerating content.
+4. Thoroughly incorporate any requested technical details, calculations, or stylistic adjustments.
+======================================================\n`;
   }
   
   if (aiInstruction && aiInstruction.trim()) {
@@ -178,9 +191,10 @@ function getFacultySpecificPrompt(chapterNumber, data) {
   2. Tone: Formal, Technical, Academic.
   3. Format: Markdown (## H1, ### H2).
   4. Currency: ₦ (NGN).
-  5. RECENTCY: Citations must be 2020-2026.
+  5. RECENCY: Citations must be 2020-2026.
   6. NO conversational filler. Start directly with ## heading.
-  7. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.`;
+  7. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.
+  ${customInstruction && customInstruction.trim() ? `8. USER MODIFICATION COMPLIANCE (STRICT): You MUST fulfill the user's specific modification request: "${customInstruction.trim()}".` : ''}`;
 
   return prompt;
 }

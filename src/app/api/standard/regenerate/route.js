@@ -138,6 +138,33 @@ export async function POST(request) {
       .eq('project_id', projectId)
       .order('order_number', { ascending: true });
 
+    let finalReferencesList = [...(existingReferences || [])];
+    const totalMaxProjectRefs = chapterNumber === 2 ? 50 : 40;
+    const refFetchLimit = chapterNumber === 2 ? '25' : '10';
+
+    if (finalReferencesList.length < totalMaxProjectRefs && project.reference_style !== 'none') {
+      try {
+        const query = (project.title + " " + project.description).substring(0, 200);
+        const searchUrl = new URL('https://api.semanticscholar.org/graph/v1/paper/search', 'https://api.semanticscholar.org');
+        searchUrl.searchParams.set('query', query);
+        searchUrl.searchParams.set('year', '2020-2026');
+        searchUrl.searchParams.set('limit', refFetchLimit);
+        searchUrl.searchParams.set('fields', 'title,authors,year,venue,url');
+        const searchRes = await fetch(searchUrl.toString());
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          if (searchData?.data) {
+            const existingTitles = new Set(finalReferencesList.map(p => p.title?.toLowerCase() || p.reference_text?.toLowerCase()));
+            for (const paper of searchData.data) {
+              if (!existingTitles.has(paper.title.toLowerCase()) && finalReferencesList.length < totalMaxProjectRefs) {
+                finalReferencesList.push(paper);
+              }
+            }
+          }
+        }
+      } catch (err) { console.error('Web search error in regenerate:', err); }
+    }
+
     // 10. Build AI prompt with custom instruction and full project context
     const prompt = getStandardPrompt(chapterNumber, {
       projectTitle: project.title,
@@ -150,7 +177,7 @@ export async function POST(request) {
       templateStructure: template.structure,
       faculty: project.faculty || template.faculty || 'Engineering',
       referenceStyle: project.reference_style || 'apa',
-      existingReferences: existingReferences || [],
+      existingReferences: finalReferencesList,
       useManualObjectives: project.use_manual_objectives,
       manualObjectives: project.manual_objectives || [],
       aiInstruction: template.ai_instruction
@@ -199,11 +226,8 @@ export async function POST(request) {
       } catch (e) { console.error('Ref processing error:', e); }
     }
 
-    // Strip REFERENCES from all but the last chapter
-    const totalChapters = template?.structure?.chapters?.length || 5;
-    if (chapterNumber < totalChapters) {
-       finalContent = finalContent.replace(/\n*##\s*(?:REFERENCES|BIBLIOGRAPHY|TABLE OF AUTHORITIES)[\s\S]*?(?=\n##|$)/i, '');
-    }
+    // We keep the references in the finalContent so they are saved to the DB.
+    // docxExport.js will handle compiling/formatting references when generating the final document.
 
     // 14. Update chapter with regenerated content
     const { error: updateError } = await supabase
@@ -264,7 +288,7 @@ export async function POST(request) {
     // 17. Return success response
     return NextResponse.json({
       success: true,
-      content: aiResult.content,
+      content: finalContent,
       tokensUsed: tokensUsedToAdd,
       tokensRemaining: Math.max(0, project.tokens_limit - newTokensUsed),
       version: newVersion,

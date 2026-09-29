@@ -202,29 +202,51 @@ export default function Workspace({ params }) {
     }
   };
 
-  // ✅ NEW: Process Figure Placeholders for the current chapter
+// Helper to replace figure placeholders with Markdown images
+function processChapterFigures(rawContent, chapterNumber, projectImages = []) {
+  if (!rawContent) return '';
+  let content = rawContent;
+  
+  // Matches {{figure1.1}}, {{figure 1.1}}, {{figure_1_1}}, {{figure1}}, {{Figure 1.1}}, etc.
+  const figureRegex = /\{\{\s*figure[_\s]*(\d+)(?:[._\s]+(\d+))?\s*\}\}/gi;
+  
+  content = content.replace(figureRegex, (match, chNum, figNum) => {
+    const figureIndex = figNum ? parseInt(figNum, 10) : 1;
+    let img = null;
+    if (projectImages && projectImages.length > 0) {
+      img = projectImages[figureIndex - 1] || projectImages[(figureIndex - 1) % projectImages.length] || projectImages[0];
+    }
+    
+    if (img) {
+      return `\n\n![Figure ${chNum || chapterNumber}.${figNum || 1}: ${img.caption}](${img.cloudinary_url})\n\n`;
+    }
+    return `\n\n> **[Figure ${chNum || chapterNumber}.${figNum || 1} Placeholder]**\n\n`;
+  });
+
+  return content;
+}
+
+  // Preload images into browser cache so printing includes them without delay
+  useEffect(() => {
+    if (images && images.length > 0) {
+      images.forEach(img => {
+        if (img?.cloudinary_url && typeof window !== 'undefined') {
+          const preImg = new window.Image();
+          preImg.crossOrigin = 'anonymous';
+          preImg.src = img.cloudinary_url;
+        }
+      });
+    }
+  }, [images]);
+
+  // Process Figure Placeholders for the current chapter
   useEffect(() => {
     if (!currentChapter?.content) {
       setProcessedContent('');
       return;
     }
-
-    let content = currentChapter.content;
-    const figureRegex = /\{\{figure(\d+)\.(\d+)\}\}/g;
-    
-    content = content.replace(figureRegex, (match, chNum, figNum) => {
-      const figureIndex = parseInt(figNum);
-      
-      // For free tier, images are global to project
-      const img = images?.[figureIndex - 1];
-      
-      if (img) {
-        return `\n\n![Figure ${chNum}.${figNum}: ${img.caption}](${img.cloudinary_url})\n*Figure ${chNum}.${figNum}: ${img.caption}*\n\n`;
-      }
-      return `\n\n> **[Figure ${chNum}.${figNum} Placeholder]**\n\n`;
-    });
-
-    setProcessedContent(content);
+    const processed = processChapterFigures(currentChapter.content, currentChapter.chapter_number, images);
+    setProcessedContent(processed);
   }, [currentChapter, images]);
 
   // Image Upload Logic
@@ -335,6 +357,7 @@ export default function Workspace({ params }) {
 
   // Check Access Wrapper
   const checkAccessAndPrint = (printFunction) => {
+    if (!printFunction) return;
     // Admin bypass
     if (userProfile?.role === 'admin') {
       printFunction();
@@ -351,50 +374,85 @@ export default function Workspace({ params }) {
   // Print Current Chapter
   const handlePrintCurrentChapter = useReactToPrint({
     contentRef: currentChapterRef,
-    documentTitle: `Chapter-${selectedChapter}-${project?.title || 'Report'}`,
+    documentTitle: `Chapter-${selectedChapter}-${project?.title ? project.title.replace(/[^a-zA-Z0-9]/g, '_') : 'Report'}`,
     pageStyle: `
       @page { size: auto; margin: 20mm; }
       @media print {
-        body { -webkit-print-color-adjust: exact; }
+        html, body {
+          background: #ffffff !important;
+          color: #000000 !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
         @page { size: auto; margin: 20mm; }
+        img {
+          max-width: 100% !important;
+          height: auto !important;
+          display: block !important;
+        }
       }
     `,
-    onBeforeGetContent: () => {
-      // Allow if admin or if unlocked
+    onBeforeGetContent: async () => {
       if (userProfile?.role !== 'admin' && project?.tier === 'free' && !project?.is_unlocked) return Promise.reject("Locked");
-      const fullReportDiv = fullReportRef.current?.parentElement;
-      if (fullReportDiv) fullReportDiv.style.display = 'none';
-    },
-    onAfterPrint: () => {
-      const fullReportDiv = fullReportRef.current?.parentElement;
-      if (fullReportDiv) fullReportDiv.style.display = '';
+      if (currentChapterRef.current) {
+        const imgs = currentChapterRef.current.querySelectorAll('img');
+        await Promise.all(
+          Array.from(imgs).map(img => {
+            if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+            return new Promise(resolve => {
+              img.onload = resolve;
+              img.onerror = resolve;
+              setTimeout(resolve, 2000);
+            });
+          })
+        );
+      }
     }
   });
 
-  // Print Full Report
+  // Print Full Report (Export PDF)
   const handlePrintFullReport = useReactToPrint({
     contentRef: fullReportRef,
-    documentTitle: `${project?.title || 'Full-Report'}`,
+    documentTitle: `${project?.title ? project.title.replace(/[^a-zA-Z0-9]/g, '_') : 'Full-Report'}`,
     pageStyle: `
-      @page { size: A4; margin: 25mm; }
+      @page { size: A4; margin: 20mm; }
       @media print {
-        body { -webkit-print-color-adjust: exact; }
-        .page-break { page-break-before: always; }
+        html, body {
+          background: #ffffff !important;
+          color: #000000 !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .page-break { 
+          page-break-before: always !important; 
+          break-before: page !important; 
+        }
+        .page-break-inside-avoid {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        img {
+          max-width: 100% !important;
+          height: auto !important;
+          display: block !important;
+        }
       }
     `,
-    onBeforeGetContent: () => {
-      // Allow if admin or if unlocked
+    onBeforeGetContent: async () => {
       if (userProfile?.role !== 'admin' && project?.tier === 'free' && !project?.is_unlocked) return Promise.reject("Locked");
-      const fullReportDiv = fullReportRef.current?.parentElement;
-      const currentChapterDiv = currentChapterRef.current;
-      if (fullReportDiv) fullReportDiv.style.display = 'block';
-      if (currentChapterDiv) currentChapterDiv.style.display = 'none';
-    },
-    onAfterPrint: () => {
-      const fullReportDiv = fullReportRef.current?.parentElement;
-      const currentChapterDiv = currentChapterRef.current;
-      if (fullReportDiv) fullReportDiv.style.display = '';
-      if (currentChapterDiv) currentChapterDiv.style.display = '';
+      if (fullReportRef.current) {
+        const imgs = fullReportRef.current.querySelectorAll('img');
+        await Promise.all(
+          Array.from(imgs).map(img => {
+            if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+            return new Promise(resolve => {
+              img.onload = resolve;
+              img.onerror = resolve;
+              setTimeout(resolve, 2000);
+            });
+          })
+        );
+      }
     }
   });
 
@@ -573,14 +631,16 @@ export default function Workspace({ params }) {
             <FreeTopBar
               chapter={currentChapter}
               project={project}
+              isEditing={isEditing}
               generating={generating}
               onEdit={() => setIsEditing(true)}
-              onSave={handleSaveEdit}
+              onSave={() => handleSaveEdit(currentChapter?.content)}
               onGenerate={handleGenerateChapter}
               onPrintCurrentChapter={handlePrintCurrentChapter}
               onUpdateProjectDetails={handleUpdateProjectDetails}
               allChaptersGenerated={allChaptersGenerated}
               checkAccessAndPrint={checkAccessAndPrint}
+              onPrintFullReport={handlePrintFullReport}
               handlePrintFullReport={handlePrintFullReport}
               onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             />
@@ -630,6 +690,8 @@ export default function Workspace({ params }) {
                                 src={src}
                                 alt={alt}
                                 className="object-contain w-full h-full bg-slate-50"
+                                crossOrigin="anonymous"
+                                loading="eager"
                               />
                             </div>
                             {alt && (
@@ -653,9 +715,20 @@ export default function Workspace({ params }) {
         </div>
       </div>
 
-      {/* HIDDEN FULL REPORT FOR PRINTING */}
-      <div className="hidden print:hidden">
-        <div ref={fullReportRef}>
+      {/* OFF-SCREEN FULL REPORT FOR PDF EXPORT / PRINTING */}
+      <div 
+        style={{ 
+          position: 'fixed', 
+          top: '-99999px', 
+          left: '-99999px', 
+          width: '210mm', 
+          opacity: 0, 
+          pointerEvents: 'none', 
+          zIndex: -100 
+        }} 
+        aria-hidden="true"
+      >
+        <div ref={fullReportRef} className="bg-white text-gray-900 font-sans print:p-0">
           {/* Cover Page */}
           <div className="min-h-screen flex flex-col items-center justify-center text-center p-12 page-break">
             <div className="mb-12">
@@ -705,45 +778,71 @@ export default function Workspace({ params }) {
           </div>
 
           {/* All Chapters */}
-          {chapters.map((chapter) => (
-            <div key={chapter.id} className="page-break p-12">
-              <div className="prose prose-lg max-w-none 
-                text-gray-900 text-base
-                prose-p:text-justify prose-p:leading-relaxed prose-p:mb-6 prose-p:text-base
-                prose-headings:font-bold prose-headings:text-gray-900 
-                prose-h2:text-3xl prose-h2:text-center prose-h2:uppercase prose-h2:tracking-wide prose-h2:mb-10 prose-h2:mt-0
-                prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-h3:border-b prose-h3:border-gray-200 prose-h3:pb-2
-                prose-li:text-gray-800 prose-li:mb-2 prose-li:text-base
-                prose-strong:text-black prose-strong:font-bold
-                prose-table:text-base prose-td:text-base prose-th:text-base">
-                
-                {chapter.content ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {chapter.content}
-                  </ReactMarkdown>
-                ) : (
-                  <div className="text-gray-400 italic">Chapter not generated yet</div>
-                )}
+          {chapters.map((chapter) => {
+            const processed = processChapterFigures(chapter.content, chapter.chapter_number, images);
+            return (
+              <div key={chapter.id} className="page-break p-12">
+                <div className="prose prose-lg max-w-none 
+                  text-gray-900 text-base
+                  prose-p:text-justify prose-p:leading-relaxed prose-p:mb-6 prose-p:text-base
+                  prose-headings:font-bold prose-headings:text-gray-900 
+                  prose-h2:text-3xl prose-h2:text-center prose-h2:uppercase prose-h2:tracking-wide prose-h2:mb-10 prose-h2:mt-0
+                  prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-h3:border-b prose-h3:border-gray-200 prose-h3:pb-2
+                  prose-li:text-gray-800 prose-li:mb-2 prose-li:text-base
+                  prose-strong:text-black prose-strong:font-bold
+                  prose-table:text-base prose-td:text-base prose-th:text-base">
+                  
+                  {processed ? (
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        img: ({ src, alt }) => (
+                          <div className="my-8 flex flex-col items-center justify-center figure-container page-break-inside-avoid">
+                            <div className="w-full max-w-xl aspect-video rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
+                              <img
+                                src={src}
+                                alt={alt || "Report figure"}
+                                className="object-contain max-h-[350px] w-full"
+                                crossOrigin="anonymous"
+                                loading="eager"
+                              />
+                            </div>
+                            {alt && (
+                              <p className="mt-3 text-sm font-semibold text-gray-700 italic text-center max-w-lg">
+                                {alt}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      }}
+                    >
+                      {processed}
+                    </ReactMarkdown>
+                  ) : (
+                    <div className="text-gray-400 italic">Chapter not generated yet</div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* List of Figures */}
           {images.length > 0 && (
             <div className="page-break p-12">
-              <h2 className="text-3xl font-bold text-center uppercase mb-12 text-gray-900">List of Figures</h2>
+              <h2 className="text-3xl font-bold text-center uppercase mb-12 text-gray-900 border-b pb-4">List of Figures</h2>
               <div className="space-y-12">
                 {images.map((img, index) => (
-                  <div key={img.id} className="flex flex-col items-center">
-                    <div className="relative w-full max-w-2xl h-[400px] mb-4">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <div key={img.id} className="flex flex-col items-center page-break-inside-avoid">
+                    <div className="w-full max-w-2xl h-[380px] mb-4 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center p-2">
                       <img 
                         src={img.cloudinary_url} 
-                        alt={img.caption}
-                        className="w-full h-full object-contain border border-gray-200 rounded-lg"
+                        alt={img.caption || `Figure ${index + 1}`}
+                        className="w-full h-full object-contain"
+                        crossOrigin="anonymous"
+                        loading="eager"
                       />
                     </div>
-                    <p className="text-gray-900 font-bold italic text-center">
+                    <p className="text-gray-900 font-bold italic text-center text-base">
                       Figure {index + 1}: {img.caption}
                     </p>
                   </div>

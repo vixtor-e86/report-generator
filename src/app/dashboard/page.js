@@ -1293,22 +1293,19 @@ export default function Dashboard() {
                                         <button onClick={() => setViewMode('grid')} className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-zinc-100 text-black' : 'text-slate-300'}`}><Grid3X3 className="w-4 h-4" /></button>
                                         <button onClick={() => setViewMode('list')} className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-zinc-100 text-black' : 'text-slate-300'}`}><List className="w-4 h-4" /></button>
                                     </div>
+
+                                    {!authUser?.isSeller && !showAccreditation && (
+                                        <button 
+                                            onClick={() => setShowSellerIntro(true)}
+                                            className="flex items-center gap-2 bg-zinc-900 hover:bg-black text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:shadow-md transition-all"
+                                        >
+                                            <Zap className="w-3.5 h-3.5 text-indigo-400" />
+                                            <span>Earn as a Seller</span>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
-
-                        {/* Floating Become a Seller FAB (Market Tab Only) */}
-                        {!authUser?.isSeller && !showAccreditation && (
-                            <button 
-                                onClick={() => setShowSellerIntro(true)}
-                                className="fixed bottom-24 left-6 z-[40] group flex items-center gap-3 bg-zinc-900 text-white pl-4 pr-6 py-4 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all animate-in slide-in-from-left-8 duration-500 border border-white/10"
-                            >
-                                <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform">
-                                    <Zap className="w-4 h-4" />
-                                </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest">Earn as a Seller</span>
-                            </button>
-                        )}
 
                         {marketLoading ? (
                             <div className="py-24 text-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto" /></div>
@@ -1327,7 +1324,6 @@ export default function Dashboard() {
                         )}
                     </>
                 )}
-                <HireExpertFab />
             </div>
         )}
 
@@ -1650,7 +1646,15 @@ export default function Dashboard() {
         />
       </div>
 
-      <StudentLeadFab onClick={() => setShowStudentLeadModal(true)} />
+      {/* Floating Action Buttons (Bottom Left Stack - Non-overlapping) */}
+      <div className="fixed bottom-4 left-3 sm:bottom-6 sm:left-6 z-40 flex flex-col items-start gap-2.5 sm:gap-3 pointer-events-none">
+        <div className="pointer-events-auto">
+          <StudentLeadFab embedded onClick={() => setShowStudentLeadModal(true)} />
+        </div>
+        <div className="pointer-events-auto">
+          <HireExpertFab embedded />
+        </div>
+      </div>
       <FeedbackWidget userId={authUser?.id} />
 
       {/* Tool Payment Dialog */}

@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DepartmentModal({ isOpen, onClose, onSelect }) {
   const departments = [
-    { id: 1, name: 'Science', description: 'Natural and physical sciences research', icon: '🔬' },
-    { id: 2, name: 'Engineering', description: 'Technical and applied research', icon: '⚙️' },
-    { id: 3, name: 'Arts', description: 'Humanities and creative research', icon: '🎨' },
+    { id: 1, name: 'Engineering', description: 'Technical and applied research', icon: '⚙️' },
+    { id: 2, name: 'Sciences', description: 'Natural and physical sciences research', icon: '🔬' },
+    { id: 3, name: 'Arts & Humanities', description: 'Humanities and creative research', icon: '🎨' },
   ];
 
   return (

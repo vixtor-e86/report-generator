@@ -136,15 +136,16 @@ export async function POST(request) {
       }));
       finalReferencesList = [...studentRefs, ...finalReferencesList];
     }
-    const totalMaxProjectRefs = 40;
+    const totalMaxProjectRefs = chapterNumber === 2 ? 50 : 40;
+    const refFetchLimit = chapterNumber === 2 ? '25' : '10';
 
     if (finalReferencesList.length < totalMaxProjectRefs && project.reference_style !== 'none') {
       try {
         const query = (project.title + " " + project.description).substring(0, 200);
         const searchUrl = new URL('https://api.semanticscholar.org/graph/v1/paper/search', 'https://api.semanticscholar.org');
         searchUrl.searchParams.set('query', query);
-        searchUrl.searchParams.set('year', '2022-2026');
-        searchUrl.searchParams.set('limit', '10');
+        searchUrl.searchParams.set('year', '2020-2026');
+        searchUrl.searchParams.set('limit', refFetchLimit);
         searchUrl.searchParams.set('fields', 'title,authors,year,venue,url');
         const searchRes = await fetch(searchUrl.toString());
         if (searchRes.ok) {

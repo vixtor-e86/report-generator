@@ -32,11 +32,11 @@ export default function ModifyModal({ isOpen, onClose, onSubmit, chapter }) {
 
   // Quick suggestions
   const suggestions = [
+    "Increase references to at least 20 detailed academic citations (2020-2026)",
+    "Expand literature review with more in-text citations and academic sources",
     "Make it more technical with equations and formulas",
     "Add more detail to the methodology section",
-    "Simplify the language for better readability",
-    "Include more practical examples",
-    "Expand the analysis with deeper insights",
+    "Include more practical Nigerian engineering examples",
     "Make it more concise and to the point"
   ];
 
@@ -74,7 +74,7 @@ export default function ModifyModal({ isOpen, onClose, onSubmit, chapter }) {
               <div>
                 <p className="text-[10px] sm:text-xs font-black text-slate-900 uppercase tracking-widest mb-1">Process Logic</p>
                 <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 leading-relaxed">
-                  Your requirements will be added to the AI architect's context. The chapter will be rewritten to match your specific instructions.
+                  Your requirements will be added to the AI architect&apos;s context. The chapter will be rewritten to match your specific instructions.
                 </p>
               </div>
             </div>

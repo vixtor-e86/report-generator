@@ -6,14 +6,14 @@ export default function FacultyModal({ isOpen, onClose, onSelect }) {
   const faculties = [
     { id: 1, name: 'Engineering', description: 'Technical and applied sciences', icon: '⚙️' },
     { id: 2, name: 'Sciences', description: 'Natural and physical sciences', icon: '🔬' },
-    { id: 3, name: 'Arts', description: 'Humanities and liberal arts', icon: '🎨' },
+    { id: 3, name: 'Arts & Humanities', description: 'Humanities and liberal arts', icon: '🎨' },
     { id: 4, name: 'Social Sciences', description: 'Society and human behavior', icon: '📊' },
-    { id: 5, name: 'Medicine', description: 'Health and medical sciences', icon: '⚕️' },
+    { id: 5, name: 'Basic Medical Sciences', description: 'Health and medical sciences', icon: '⚕️' },
     { id: 6, name: 'Law', description: 'Legal studies and jurisprudence', icon: '⚖️' },
     { id: 7, name: 'Education', description: 'Teaching and pedagogy', icon: '📚' },
-    { id: 8, name: 'Business', description: 'Commerce and management', icon: '💼' },
-    { id: 9, name: 'Agriculture', description: 'Farming and food sciences', icon: '🌾' },
-    { id: 10, name: 'Environmental', description: 'Ecology and sustainability', icon: '🌍' },
+    { id: 8, name: 'Management Sciences', description: 'Commerce and management', icon: '💼' },
+    { id: 9, name: 'Agricultural Sciences', description: 'Farming and food sciences', icon: '🌾' },
+    { id: 10, name: 'Environmental Science', description: 'Ecology and sustainability', icon: '🌍' },
     { id: 11, name: 'Pharmacy', description: 'Pharmaceutical and clinical sciences', icon: '💊' },
   ];
 
