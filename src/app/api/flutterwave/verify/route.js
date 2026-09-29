@@ -122,6 +122,23 @@ export async function GET(request) {
       }
     }
 
+    // ✅ Process Custom Chapter Project Verification if reference starts with W3WL_CUSTOM_
+    if (updatedTx.paystack_reference && updatedTx.paystack_reference.startsWith('W3WL_CUSTOM_')) {
+      const parts = updatedTx.paystack_reference.split('_');
+      const wsType = (parts[2] || 'STANDARD').toUpperCase();
+      const chaptersStr = parts[3] || '4-5';
+
+      const redirectUrl = wsType === 'PREMIUM'
+        ? `/premium/template-selection?tier=custom&chapters=${chaptersStr}`
+        : `/template-select?tier=custom&chapters=${chaptersStr}`;
+
+      return NextResponse.json({
+        verified: true,
+        transaction: updatedTx,
+        redirectUrl
+      });
+    }
+
     return NextResponse.json({
       verified: true,
       transaction: updatedTx

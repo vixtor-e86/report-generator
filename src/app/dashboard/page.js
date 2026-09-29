@@ -189,6 +189,7 @@ export default function Dashboard() {
   const [creatingPayment, setCreatingPayment] = useState(false);
   const [pendingStandardPayment, setPendingStandardPayment] = useState(null);
   const [pendingPremiumPayment, setPendingPremiumPayment] = useState(null);
+  const [pendingCustomPayment, setPendingCustomPayment] = useState(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showManualPayment, setShowManualPayment] = useState(false);
   const [paymentTier, setPaymentTier] = useState(null);
@@ -491,6 +492,23 @@ export default function Dashboard() {
           setPendingPremiumPayment(unusedPremium[0]);
         }
 
+        // Check for unused payments (Custom)
+        const { data: unusedCustom } = await supabase
+          .from('payment_transactions')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .eq('status', 'paid')
+          .or('tier.eq.custom,paystack_reference.ilike.W3WL_CUSTOM_%')
+          .is('project_id', null)
+          .not('paystack_reference', 'ilike', '%UNLOCK%')
+          .not('paystack_reference', 'ilike', '%FUND%')
+          .order('paid_at', { ascending: false })
+          .limit(1);
+
+        if (unusedCustom && unusedCustom.length > 0) {
+          setPendingCustomPayment(unusedCustom[0]);
+        }
+
         setProjects((userProjects || []).map(p => ({ ...p, tier: p.tier || 'free' })));
         setStandardProjects((userStandardProjects || []).map(p => ({ ...p, workspaceType: 'standard' })));
         setPremiumProjects(userPremiumProjects || []);
@@ -569,6 +587,65 @@ export default function Dashboard() {
 
     setPaymentTier('premium');
     setShowManualPayment(true);
+  };
+
+  const parseCustomPayment = (payment) => {
+    if (!payment) return { workspaceType: 'standard', chapters: [4, 5], chaptersParam: '4-5', chaptersDisplay: '4, 5', targetUrl: '/template-select?tier=custom&chapters=4-5' };
+    const ref = payment.paystack_reference || '';
+    const parts = ref.split('_');
+    const metaDetails = payment.verification_response?.Body?.meta?.customDetails 
+      || payment.verification_response?.data?.metadata?.customDetails 
+      || payment.verification_response?.customDetails;
+    
+    const rawWs = metaDetails?.workspaceType || parts[2] || 'standard';
+    const workspaceType = String(rawWs).toLowerCase() === 'premium' ? 'premium' : 'standard';
+
+    let chapters = metaDetails?.selectedChapters;
+    if (!chapters || !Array.isArray(chapters) || chapters.length === 0) {
+      if (parts[3]) {
+        chapters = parts[3].split('-').map(Number).filter(n => !isNaN(n));
+      }
+    }
+    if (!chapters || chapters.length === 0) {
+      chapters = [4, 5];
+    }
+
+    const chaptersParam = chapters.join('-');
+    const chaptersDisplay = chapters.join(', ');
+    const targetUrl = workspaceType === 'premium'
+      ? `/premium/template-selection?tier=custom&chapters=${chaptersParam}`
+      : `/template-select?tier=custom&chapters=${chaptersParam}`;
+
+    return {
+      workspaceType,
+      chapters,
+      chaptersParam,
+      chaptersDisplay,
+      targetUrl
+    };
+  };
+
+  const handleCreateCustom = () => {
+    if (hasFreeAccess) {
+      setShowCustomModal(true);
+      return;
+    }
+
+    if (pendingCustomPayment) {
+      const customInfo = parseCustomPayment(pendingCustomPayment);
+      showNotification(
+        'Existing Custom Payment Found',
+        `You have an active unused Custom payment of ₦${pendingCustomPayment.amount?.toLocaleString()} for Chapters ${customInfo.chaptersDisplay} (${customInfo.workspaceType === 'premium' ? 'Premium Suite' : 'Standard Blueprint'}). Would you like to continue setting up this project or pay for a new one?`,
+        'confirm',
+        () => router.push(customInfo.targetUrl),
+        () => setShowCustomModal(true),
+        'Use Existing',
+        'Configure New'
+      );
+      return;
+    }
+
+    setShowCustomModal(true);
   };
 
   const allProjects = [...projects, ...standardProjects, ...premiumProjects];
@@ -920,6 +997,35 @@ export default function Dashboard() {
             </div>
             )}
 
+            {/* Payment Success Alert (Custom) */}
+            {pendingCustomPayment && !hasFreeAccess && (() => {
+              const customInfo = parseCustomPayment(pendingCustomPayment);
+              return (
+                <div className="mb-8 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50/90 via-purple-50/50 to-white p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-2 shadow-sm">
+                  <div className="p-3 bg-indigo-100 rounded-full text-indigo-600 shrink-0">
+                    <Layers className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-indigo-950">Custom Payment Confirmed!</h3>
+                      <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-indigo-200 text-indigo-800">
+                        {customInfo.workspaceType === 'premium' ? 'Premium Suite' : 'Standard Blueprint'}
+                      </span>
+                    </div>
+                    <p className="text-indigo-800 text-sm mt-1">
+                      Your Custom continuation payment of <strong>₦{pendingCustomPayment.amount?.toLocaleString()}</strong> for <strong>Chapter{customInfo.chapters.length > 1 ? 's' : ''} {customInfo.chaptersDisplay}</strong> is active.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => router.push(customInfo.targetUrl)} 
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm shrink-0 flex items-center gap-1.5"
+                  >
+                    <span>Continue Setup →</span>
+                  </button>
+                </div>
+              );
+            })()}
+
             {/* Project Creation Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             
@@ -1011,9 +1117,9 @@ export default function Dashboard() {
                 </div>
                 <div className="text-right">
                   <span className="text-xl font-black text-slate-900 tracking-tighter">
-                    {hasFreeAccess ? 'Free' : '₦1,500'}
+                    {hasFreeAccess ? 'Free' : (pendingCustomPayment ? `₦${pendingCustomPayment.amount?.toLocaleString()}` : '₦1,500')}
                   </span>
-                  <p className="text-[9px] font-bold text-slate-400">{hasFreeAccess ? 'Admin Access' : '/ chapter'}</p>
+                  <p className="text-[9px] font-bold text-slate-400">{hasFreeAccess ? 'Admin Access' : (pendingCustomPayment ? 'Paid Active' : '/ chapter')}</p>
                 </div>
                 </div>
                 <ul className="space-y-3 mb-10">
@@ -1023,10 +1129,10 @@ export default function Dashboard() {
                 </ul>
                 <div className="mt-auto">
                 <button 
-                    onClick={() => setShowCustomModal(true)}
+                    onClick={handleCreateCustom}
                     className="w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95"
                 >
-                    {hasFreeAccess ? 'Launch Custom Blueprint' : 'Configure Chapters →'}
+                    {hasFreeAccess ? 'Launch Custom Blueprint' : (pendingCustomPayment ? 'Continue Custom Setup →' : 'Configure Chapters →')}
                 </button>
                 </div>
             </div>

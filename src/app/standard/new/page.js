@@ -123,12 +123,31 @@ function NewProjectContent() {
           .limit(1);
 
         if (isCustom) {
-          unusedQuery = unusedQuery.eq('tier', 'custom');
+          unusedQuery = unusedQuery.or('tier.eq.custom,paystack_reference.ilike.W3WL_CUSTOM_%');
         } else {
           unusedQuery = unusedQuery.eq('tier', 'standard').eq('amount', PRICING.STANDARD);
         }
 
-        const { data: unusedPayments, error: paymentError } = await unusedQuery;
+        let { data: unusedPayments, error: paymentError } = await unusedQuery;
+
+        // Fallback: If not explicitly custom query but no standard payment found, check for unused custom payment
+        if ((!unusedPayments || unusedPayments.length === 0) && !isCustom) {
+          const { data: customPayments } = await supabase
+            .from('payment_transactions')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('status', 'paid')
+            .or('tier.eq.custom,paystack_reference.ilike.W3WL_CUSTOM_%')
+            .is('project_id', null)
+            .not('paystack_reference', 'ilike', '%UNLOCK%')
+            .not('paystack_reference', 'ilike', '%FUND%')
+            .order('paid_at', { ascending: false })
+            .limit(1);
+
+          if (customPayments && customPayments.length > 0) {
+            unusedPayments = customPayments;
+          }
+        }
 
         if (paymentError) {
           console.error('Payment check error:', paymentError);
@@ -311,11 +330,23 @@ function NewProjectContent() {
         return;
       }
 
-      const isCustom = searchParams.get('tier') === 'custom' || searchParams.get('is_custom') === 'true' || !!searchParams.get('chapters');
+      const isCustom = searchParams.get('tier') === 'custom' || searchParams.get('is_custom') === 'true' || !!searchParams.get('chapters') || pendingPayment?.tier === 'custom' || pendingPayment?.paystack_reference?.startsWith('W3WL_CUSTOM_');
       const chaptersParam = searchParams.get('chapters');
-      const selectedChapters = chaptersParam 
+      let selectedChapters = chaptersParam 
         ? chaptersParam.split('-').map(Number).filter(n => !isNaN(n)) 
-        : [4, 5];
+        : null;
+
+      if (!selectedChapters || selectedChapters.length === 0) {
+        if (pendingPayment?.paystack_reference?.startsWith('W3WL_CUSTOM_')) {
+          const parts = pendingPayment.paystack_reference.split('_');
+          if (parts[3]) {
+            selectedChapters = parts[3].split('-').map(Number).filter(n => !isNaN(n));
+          }
+        }
+      }
+      if (!selectedChapters || selectedChapters.length === 0) {
+        selectedChapters = [4, 5];
+      }
 
       const projectData = {
         user_id: user.id,

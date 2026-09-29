@@ -89,7 +89,7 @@ function TemplateSelectContent() {
       const transactionId = searchParams.get('transaction_id');
       const txRef = searchParams.get('tx_ref');
       const paymentRef = searchParams.get('payment_ref'); // Keep for backward compatibility
-      const transactionRef = searchParams.get('transaction_ref'); // Squad reference
+      const transactionRef = searchParams.get('transaction_ref') || searchParams.get('reference'); // Squad or Paystack reference
       const status = searchParams.get('status');
       const returnTo = searchParams.get('return_to');
 
@@ -121,7 +121,6 @@ function TemplateSelectContent() {
           const data = await response.json();
 
           if (data.verified) {
-            // ... (successful verification logic)
             setPaymentVerified(true);
             setPendingPayment(data.transaction);
 
@@ -133,16 +132,34 @@ function TemplateSelectContent() {
 
             // ✅ Direct redirect based on tier
             if (data.redirectUrl) {
+              if (data.redirectUrl.startsWith('/template-select')) {
+                router.replace(data.redirectUrl);
+                return;
+              }
               router.push(data.redirectUrl);
               return;
             }
 
-            if (data.transaction.tier === 'premium') {
+            if (data.transaction?.tier === 'premium') {
               router.push('/premium/template-selection');
               return;
             }
 
-            if (data.transaction.tier === 'unlock') {
+            if (data.transaction?.tier === 'custom') {
+              const ref = data.transaction.paystack_reference || '';
+              const parts = ref.split('_');
+              const wsType = (parts[2] || 'STANDARD').toUpperCase();
+              const chaptersStr = parts[3] || '4-5';
+              if (wsType === 'PREMIUM') {
+                router.push(`/premium/template-selection?tier=custom&chapters=${chaptersStr}`);
+                return;
+              } else {
+                router.replace(`/template-select?tier=custom&chapters=${chaptersStr}`);
+                return;
+              }
+            }
+
+            if (data.transaction?.tier === 'unlock') {
               // Extract projectId from reference W3WL_UNLOCK_<ID>_<TIME>
               const ref = data.transaction.paystack_reference || '';
               const parts = ref.split('_');
@@ -161,6 +178,7 @@ function TemplateSelectContent() {
             newUrl.searchParams.delete('payment_ref');
             newUrl.searchParams.delete('return_to');
             newUrl.searchParams.delete('transaction_ref');
+            newUrl.searchParams.delete('reference');
             window.history.replaceState({}, '', newUrl);
           } else {
             // ✅ Verification failed or was cancelled
@@ -205,17 +223,48 @@ function TemplateSelectContent() {
           .limit(1);
 
         if (isCustomFlow) {
-          unusedQuery = unusedQuery.eq('tier', 'custom');
+          unusedQuery = unusedQuery.or('tier.eq.custom,paystack_reference.ilike.W3WL_CUSTOM_%');
         } else {
           unusedQuery = unusedQuery.eq('tier', 'standard').eq('amount', PRICING.STANDARD);
         }
 
         const { data: unusedPayments } = await unusedQuery;
 
-        if (unusedPayments && unusedPayments.length > 0) {
-          const payment = unusedPayments[0];
-          // Found valid existing payment - allow them to proceed
-          setPendingPayment(payment);
+        let validPayment = unusedPayments && unusedPayments.length > 0 ? unusedPayments[0] : null;
+
+        // Fallback: If not explicitly custom query but no standard payment found, check for unused custom payment
+        if (!validPayment && !isCustomFlow) {
+          const { data: customPayments } = await supabase
+            .from('payment_transactions')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('status', 'paid')
+            .or('tier.eq.custom,paystack_reference.ilike.W3WL_CUSTOM_%')
+            .is('project_id', null)
+            .not('paystack_reference', 'ilike', '%UNLOCK%')
+            .not('paystack_reference', 'ilike', '%FUND%')
+            .order('paid_at', { ascending: false })
+            .limit(1);
+
+          if (customPayments && customPayments.length > 0) {
+            const customTx = customPayments[0];
+            const ref = customTx.paystack_reference || '';
+            const parts = ref.split('_');
+            const wsType = (parts[2] || 'STANDARD').toUpperCase();
+            const chaptersStr = parts[3] || '4-5';
+
+            if (wsType === 'PREMIUM') {
+              router.replace(`/premium/template-selection?tier=custom&chapters=${chaptersStr}`);
+              return;
+            } else {
+              validPayment = customTx;
+              router.replace(`/template-select?tier=custom&chapters=${chaptersStr}`);
+            }
+          }
+        }
+
+        if (validPayment) {
+          setPendingPayment(validPayment);
           setPaymentVerified(true);
         } else {
           // ✅ NO PAYMENT - Show blocking screen
@@ -288,10 +337,14 @@ function TemplateSelectContent() {
   // Handle template selection
   const handleFacultySelect = (item) => {
     // Proceed to project creation with selected template ID
-    const isCustom = searchParams.get('tier') === 'custom' || !!searchParams.get('chapters');
-    const chapters = searchParams.get('chapters') || '';
+    const isCustom = searchParams.get('tier') === 'custom' || pendingPayment?.tier === 'custom' || pendingPayment?.paystack_reference?.startsWith('W3WL_CUSTOM_') || !!searchParams.get('chapters');
+    let chapters = searchParams.get('chapters');
+    if (!chapters && pendingPayment?.paystack_reference?.startsWith('W3WL_CUSTOM_')) {
+      const parts = pendingPayment.paystack_reference.split('_');
+      chapters = parts[3] || '4-5';
+    }
     if (isCustom) {
-      router.replace(`/standard/new?template=${item.id}&tier=custom&chapters=${chapters}`);
+      router.replace(`/standard/new?template=${item.id}&tier=custom&chapters=${chapters || '4-5'}`);
     } else {
       router.replace(`/standard/new?template=${item.id}`);
     }
@@ -404,7 +457,11 @@ function TemplateSelectContent() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="font-semibold">Payment Verified! ₦{pendingPayment.amount.toLocaleString()}</span>
+              <span className="font-semibold">
+                {pendingPayment?.tier === 'custom' || pendingPayment?.paystack_reference?.startsWith('W3WL_CUSTOM_') 
+                  ? 'Custom Payment Verified!' 
+                  : 'Payment Verified!'} ₦{pendingPayment.amount?.toLocaleString()}
+              </span>
               <span className="text-sm">- Now select your template</span>
             </div>
           </div>

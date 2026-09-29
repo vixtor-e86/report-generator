@@ -158,9 +158,20 @@ export async function GET(request) {
 
     // If transaction is already marked paid, avoid double-processing
     if (existingTx.status === 'paid') {
+      let redirectUrl = null;
+      if (transaction_ref && transaction_ref.startsWith('W3WL_CUSTOM_')) {
+        const parts = transaction_ref.split('_');
+        const wsType = (parts[2] || 'STANDARD').toUpperCase();
+        const chaptersStr = parts[3] || '4-5';
+        redirectUrl = wsType === 'PREMIUM'
+          ? `/premium/template-selection?tier=custom&chapters=${chaptersStr}`
+          : `/template-select?tier=custom&chapters=${chaptersStr}`;
+      }
+
       return NextResponse.json({
         verified: true,
         transaction: existingTx,
+        redirectUrl,
         message: 'Transaction already processed'
       });
     }
@@ -240,8 +251,8 @@ export async function GET(request) {
       const chaptersStr = parts[3] || '4-5';
 
       const redirectUrl = wsType === 'PREMIUM'
-        ? `/premium/template-selection?tier=custom&chapters=${chaptersStr}&transaction_ref=${transaction_ref}`
-        : `/template-select?tier=custom&chapters=${chaptersStr}&transaction_ref=${transaction_ref}`;
+        ? `/premium/template-selection?tier=custom&chapters=${chaptersStr}`
+        : `/template-select?tier=custom&chapters=${chaptersStr}`;
 
       return NextResponse.json({
         verified: true,

@@ -78,9 +78,22 @@ export async function GET(request) {
       console.error('Referral processing error:', refError);
     }
 
+    // Process Custom Chapter Project Verification if reference starts with W3WL_CUSTOM_
+    let redirectUrl = null;
+    if (transaction.paystack_reference && transaction.paystack_reference.startsWith('W3WL_CUSTOM_')) {
+      const parts = transaction.paystack_reference.split('_');
+      const wsType = (parts[2] || 'STANDARD').toUpperCase();
+      const chaptersStr = parts[3] || '4-5';
+
+      redirectUrl = wsType === 'PREMIUM'
+        ? `/premium/template-selection?tier=custom&chapters=${chaptersStr}`
+        : `/template-select?tier=custom&chapters=${chaptersStr}`;
+    }
+
     return NextResponse.json({
       verified: true,
       transaction,
+      redirectUrl,
       amount: paymentData.amount / 100, // Convert from kobo to naira
       currency: paymentData.currency
     });
