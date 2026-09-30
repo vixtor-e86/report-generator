@@ -80,6 +80,7 @@ export default function ToolInterfacePage() {
     const label = toolId === 'reference-finder' ? `DeepSearch: ${tool.name}` : 
                   toolId === 'diagram-studio' ? `Visual Studio Generation` :
                   toolId === 'plagiarism-checker' ? `Integrity Scan` :
+                  toolId === 'verify-audit-reference' ? `Audit: ${tool.name}` :
                   customPrice === 1000 ? `Proposal: ${tool.name}` :
                   `Tool: ${tool.name}`;
     const success = await deductFunds(activePrice, label);
@@ -150,7 +151,7 @@ export default function ToolInterfacePage() {
         {toolId === 'siwes-generator' && <SIWESGenerator {...toolProps} />}
         
         {/* Fallback for other tools */}
-        {!['project-finder', 'code-explainer', 'language-converter', 'data-analysis', 'plagiarism-checker', 'reference-finder', 'slide-generator', 'ai-humanizer', 'diagram-studio', 'questionnaire-generator', 'siwes-generator'].includes(toolId) && (
+        {!['project-finder', 'code-explainer', 'language-converter', 'data-analysis', 'plagiarism-checker', 'reference-finder', 'verify-audit-reference', 'slide-generator', 'ai-humanizer', 'diagram-studio', 'questionnaire-generator', 'siwes-generator'].includes(toolId) && (
             <div className="py-20 text-center">
                 <Wrench className="w-12 h-12 md:w-16 md:h-16 text-slate-200 mx-auto mb-4 md:mb-6" />
                 <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase">Tool Under Development</h2>

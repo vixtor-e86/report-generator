@@ -3,14 +3,13 @@ import { callAI } from '@/lib/aiProvider';
 
 export async function POST(request) {
   try {
-    const { query, mode, yearRange } = await request.json();
+    const { query, mode, yearRange, style = 'APA 7th' } = await request.json();
 
     if (!query) {
       return NextResponse.json({ error: 'Search query is required' }, { status: 400 });
     }
 
     if (mode === 'verify') {
-      const { style = 'APA 7th' } = await request.json().catch(() => ({}));
       
       const systemPrompt = `You are an expert academic citation verifier and scholarly bibliographer.
       The user has provided a list of references/citations to audit and verify for academic authenticity.

@@ -291,7 +291,16 @@ function TemplateSelectContent() {
       'Agricultural Sciences': '🌾',
       'Environmental Science': '🌍',
       'Basic Medical Sciences': '🩺',
-      'Pharmacy': '💊'
+      'Pharmacy': '💊',
+      'Medicine & Surgery': '🩺',
+      'Veterinary Medicine': '🐾',
+      'Public Health': '🏥',
+      'Computing & Information Technology': '💻',
+      'Renewable Natural Resources': '🌲',
+      'Islamic & Arabic Studies': '🕌',
+      'Dentistry': '🦷',
+      'Vocational & Technical Education': '🛠️',
+      'Petroleum Engineering & Energy Studies': '🛢️'
     };
     return icons[faculty] || '📖';
   };

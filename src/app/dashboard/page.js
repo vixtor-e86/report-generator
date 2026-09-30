@@ -57,6 +57,7 @@ import { getToolById } from '@/data/marketplace/tools';
 
 // Modular Tool Components
 import ReferenceFinder from '@/components/marketplace/tools/ReferenceFinder';
+import VerifyAuditReference from '@/components/marketplace/tools/VerifyAuditReference';
 import SlideGenerator from '@/components/marketplace/tools/SlideGenerator';
 import AIHumanizer from '@/components/marketplace/tools/AIHumanizer';
 import VisualStudio from '@/components/marketplace/tools/VisualStudio';
@@ -230,6 +231,7 @@ export default function Dashboard() {
     const label = selectedToolId === 'reference-finder' ? `DeepSearch: ${selectedTool.name}` : 
                   selectedToolId === 'diagram-studio' ? `Visual Studio Generation` :
                   selectedToolId === 'plagiarism-checker' ? `Integrity Scan` :
+                  selectedToolId === 'verify-audit-reference' ? `Audit: ${selectedTool.name}` :
                   `Tool: ${selectedTool.name}`;
     
     const success = await deductFunds(activeToolPrice, label);
@@ -1364,6 +1366,7 @@ export default function Dashboard() {
                             {selectedToolId === 'data-analysis' && <DataAnalysis {...toolProps} />}
                             {selectedToolId === 'plagiarism-checker' && <PlagiarismChecker {...toolProps} />}
                             {selectedToolId === 'reference-finder' && <ReferenceFinder {...toolProps} />}
+                            {selectedToolId === 'verify-audit-reference' && <VerifyAuditReference {...toolProps} />}
                             {selectedToolId === 'slide-generator' && <SlideGenerator {...toolProps} />}
                             {selectedToolId === 'ai-humanizer' && <AIHumanizer {...toolProps} />}
                             {selectedToolId === 'diagram-studio' && <VisualStudio {...toolProps} />}

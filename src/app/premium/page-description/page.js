@@ -291,7 +291,25 @@ function ProjectDescriptionContent() {
             
             // Build keyword synonyms for matching
             const keywords = [userFac];
-            if (userFac.includes('pharm')) {
+            if (userFac.includes('comput') || userFac.includes('software') || userFac.includes('information tech')) {
+              keywords.push('computing & information technology', 'computing');
+            } else if (userFac.includes('petroleum') || userFac.includes('energy')) {
+              keywords.push('petroleum engineering & energy studies', 'petroleum');
+            } else if (userFac.includes('vet')) {
+              keywords.push('veterinary medicine');
+            } else if (userFac.includes('dent')) {
+              keywords.push('dentistry');
+            } else if (userFac.includes('public health')) {
+              keywords.push('public health');
+            } else if (userFac.includes('surg') || userFac.includes('medicine & surgery')) {
+              keywords.push('medicine & surgery');
+            } else if (userFac.includes('renew') || (userFac.includes('natural') && userFac.includes('resourc')) || userFac.includes('wildlife') || userFac.includes('forestry')) {
+              keywords.push('renewable natural resources');
+            } else if (userFac.includes('islam') || userFac.includes('arabic')) {
+              keywords.push('islamic & arabic studies');
+            } else if (userFac.includes('vocat') || (userFac.includes('technic') && userFac.includes('educat'))) {
+              keywords.push('vocational & technical education');
+            } else if (userFac.includes('pharm')) {
               keywords.push('pharmacy', 'pharmaceutical');
             } else if (userFac.includes('med') || userFac.includes('health') || userFac.includes('nurs')) {
               keywords.push('basic medical sciences', 'medicine', 'medical');
@@ -303,14 +321,14 @@ function ProjectDescriptionContent() {
               keywords.push('agricultural sciences', 'agriculture');
             } else if (userFac.includes('environ')) {
               keywords.push('environmental science', 'environmental sciences', 'environmental');
-            } else if (userFac.includes('sci') && !userFac.includes('social')) {
-              keywords.push('sciences', 'science');
             } else if (userFac.includes('social')) {
               keywords.push('social sciences');
             } else if (userFac.includes('law')) {
               keywords.push('law');
             } else if (userFac.includes('educat')) {
               keywords.push('education');
+            } else if (userFac.includes('sci')) {
+              keywords.push('sciences', 'science');
             }
 
             // Find matching template based on faculty keywords

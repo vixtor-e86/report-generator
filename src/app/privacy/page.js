@@ -185,7 +185,7 @@ export default function PrivacyPage() {
 
         <div className="mt-32 pt-12 border-t border-slate-200 text-center">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-4">W3 WRITELAB PRIVACY DIVISION</p>
-          <p className="text-slate-500 font-medium">Secure technical exchange protocols active. This policy was generated via Termly.</p>
+          <p className="text-slate-500 font-medium">Secure technical exchange protocols active.</p>
         </div>
       </div>
     </div>

@@ -15,6 +15,15 @@ export default function FacultyModal({ isOpen, onClose, onSelect }) {
     { id: 9, name: 'Agricultural Sciences', description: 'Farming and food sciences', icon: '🌾' },
     { id: 10, name: 'Environmental Science', description: 'Ecology and sustainability', icon: '🌍' },
     { id: 11, name: 'Pharmacy', description: 'Pharmaceutical and clinical sciences', icon: '💊' },
+    { id: 12, name: 'Medicine & Surgery', description: 'Clinical medicine and surgical research', icon: '🩺' },
+    { id: 13, name: 'Veterinary Medicine', description: 'Animal health, surgery and pathology', icon: '🐾' },
+    { id: 14, name: 'Public Health', description: 'Epidemiology and community health', icon: '🏥' },
+    { id: 15, name: 'Computing & Information Technology', description: 'Computer science, software and cybersecurity', icon: '💻' },
+    { id: 16, name: 'Renewable Natural Resources', description: 'Forestry, wildlife and fisheries management', icon: '🌲' },
+    { id: 17, name: 'Islamic & Arabic Studies', description: 'Shariah, Islamic thought and Arabic linguistics', icon: '🕌' },
+    { id: 18, name: 'Dentistry', description: 'Oral health, periodontics and dental biomaterials', icon: '🦷' },
+    { id: 19, name: 'Vocational & Technical Education', description: 'Technical skills, TVET and industrial pedagogy', icon: '🛠️' },
+    { id: 20, name: 'Petroleum Engineering & Energy Studies', description: 'Reservoir, drilling and energy transition engineering', icon: '🛢️' },
   ];
 
   return (
