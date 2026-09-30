@@ -42,7 +42,7 @@ export default function AdminDashboard() {
         setCurrentUserId(user.id);
 
         // Now, fetch the protected stats from our API route
-        const response = await fetch('/api/admin/stats');
+        const response = await fetch('/api/admin/stats', { cache: 'no-store' });
         const statsData = await response.json();
 
         if (response.ok) {

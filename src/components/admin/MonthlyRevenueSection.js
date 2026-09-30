@@ -21,7 +21,7 @@ export default function MonthlyRevenueSection({ userRole, currentUserId }) {
   const fetchRevenueData = async (preferredMonth = null) => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/monthly-revenue');
+      const res = await fetch('/api/admin/monthly-revenue', { cache: 'no-store' });
       const json = await res.json();
 
       if (!res.ok) throw new Error(json.error || 'Failed to fetch revenue data');
