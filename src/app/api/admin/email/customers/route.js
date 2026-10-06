@@ -1,129 +1,195 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+export const maxDuration = 60; // 60 seconds
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
   try {
-    // 1. Fetch paid payment transactions
-    const { data: transactions, error: txError } = await supabaseAdmin
-      .from('payment_transactions')
-      .select('user_id, amount, tier, status, created_at')
-      .eq('status', 'paid');
+    // 1. Fetch paid payment transactions (paginated to ensure all transactions are retrieved)
+    const fetchTransactions = async () => {
+      const allTx = [];
+      let from = 0;
+      const step = 1000;
+      while (true) {
+        const { data, error } = await supabaseAdmin
+          .from('payment_transactions')
+          .select('user_id, amount, tier, status, created_at')
+          .eq('status', 'paid')
+          .range(from, from + step - 1);
 
-    if (txError) {
-      console.error('Failed to fetch transactions:', txError);
-      return NextResponse.json({ error: 'Failed to fetch transaction data' }, { status: 500 });
-    }
+        if (error) {
+          console.error('Failed to fetch transactions:', error);
+          break;
+        }
+        if (!data || data.length === 0) break;
+        allTx.push(...data);
+        if (data.length < step) break;
+        from += step;
+      }
+      return allTx;
+    };
 
-    // 2. Fetch user profiles
-    const { data: profiles, error: profileError } = await supabaseAdmin
-      .from('user_profiles')
-      .select('id, username, full_name, department, created_at');
+    // 2. Fetch all user profiles across ranges ordered by created_at descending
+    const fetchProfiles = async () => {
+      const { count } = await supabaseAdmin
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true });
 
-    if (profileError) {
-      console.error('Failed to fetch user profiles:', profileError);
-      return NextResponse.json({ error: 'Failed to fetch profile data' }, { status: 500 });
-    }
+      const totalProfiles = count || 12000;
+      const step = 1000;
+      const ranges = [];
+      for (let i = 0; i < Math.ceil(totalProfiles / step); i++) {
+        ranges.push([i * step, (i + 1) * step - 1]);
+      }
 
-    // 3. Fetch auth users for email details (fully paginated to retrieve all 10,000+ users)
-    let authUsers = [];
-    try {
-      let page = 1;
-      let keepFetching = true;
-      while (keepFetching) {
-        const { data, error: authError } = await supabaseAdmin.auth.admin.listUsers({
-          page,
-          perPage: 1000
-        });
-        if (authError || !data || !data.users || data.users.length === 0) {
-          keepFetching = false;
-        } else {
-          authUsers = authUsers.concat(data.users);
-          if (data.users.length < 1000) {
-            keepFetching = false;
-          } else {
-            page++;
-          }
+      const allProfiles = [];
+      const chunkSize = 5;
+      for (let i = 0; i < ranges.length; i += chunkSize) {
+        const chunk = ranges.slice(i, i + chunkSize);
+        const batchResults = await Promise.all(
+          chunk.map(([start, end]) =>
+            supabaseAdmin
+              .from('user_profiles')
+              .select('id, username, full_name, department, created_at')
+              .order('created_at', { ascending: false })
+              .range(start, end)
+          )
+        );
+        for (const res of batchResults) {
+          if (res.data) allProfiles.push(...res.data);
         }
       }
-    } catch (authErr) {
-      console.error('Auth user list failed in email customers:', authErr);
-    }
+      return allProfiles;
+    };
 
-    // 4. Map auth users and profiles in memory
-    const emailMap = {};
-    const authMetaMap = {};
-    authUsers.forEach(u => {
-      emailMap[u.id] = u.email;
-      authMetaMap[u.id] = {
-        lastSignIn: u.last_sign_in_at,
-        created: u.created_at
-      };
-    });
+    // 3. Fetch ALL Auth Users in parallel chunks of 4 pages
+    const fetchAuthUsers = async () => {
+      const allUsers = [];
+      let startPage = 1;
+      let hasMore = true;
+      const chunkSize = 4;
 
-    const profileMap = {};
-    profiles.forEach(p => {
-      profileMap[p.id] = p;
-    });
+      while (hasMore) {
+        const pageChunk = [];
+        for (let i = 0; i < chunkSize; i++) {
+          pageChunk.push(startPage + i);
+        }
 
-    // 5. Aggregate purchase stats per user
-    const statsMap = {};
+        const chunkResults = await Promise.all(
+          pageChunk.map(page =>
+            supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 })
+          )
+        );
 
+        for (const res of chunkResults) {
+          const users = res.data?.users || [];
+          allUsers.push(...users);
+          if (users.length < 1000) {
+            hasMore = false;
+            break;
+          }
+        }
+        startPage += chunkSize;
+      }
+      return allUsers;
+    };
+
+    // Run data fetching in parallel
+    const [transactions, profiles, authUsers] = await Promise.all([
+      fetchTransactions(),
+      fetchProfiles(),
+      fetchAuthUsers()
+    ]);
+
+    // 4. Map transactions by user_id
+    const statsMap = new Map();
     transactions.forEach(tx => {
       const uid = tx.user_id;
       if (!uid) return;
 
-      if (!statsMap[uid]) {
-        const profile = profileMap[uid];
-        statsMap[uid] = {
-          id: uid,
-          email: emailMap[uid] || 'Unknown',
-          username: profile?.username || profile?.full_name || 'User',
-          fullName: profile?.full_name || profile?.username || 'User',
-          department: profile?.department || 'N/A',
+      if (!statsMap.has(uid)) {
+        statsMap.set(uid, {
           totalSpent: 0,
           purchaseCount: 0,
           premiumCount: 0,
           standardCount: 0,
-          lastPurchaseDate: tx.created_at,
-          joinedAt: profile?.created_at || authMetaMap[uid]?.created || tx.created_at
-        };
+          lastPurchaseDate: tx.created_at
+        });
       }
 
-      statsMap[uid].totalSpent += tx.amount || 0;
-      statsMap[uid].purchaseCount += 1;
+      const stats = statsMap.get(uid);
+      stats.totalSpent += tx.amount || 0;
+      stats.purchaseCount += 1;
       if (tx.tier === 'premium') {
-        statsMap[uid].premiumCount += 1;
+        stats.premiumCount += 1;
       } else {
-        statsMap[uid].standardCount += 1;
+        stats.standardCount += 1;
       }
-      if (new Date(tx.created_at) > new Date(statsMap[uid].lastPurchaseDate)) {
-        statsMap[uid].lastPurchaseDate = tx.created_at;
+      if (new Date(tx.created_at) > new Date(stats.lastPurchaseDate)) {
+        stats.lastPurchaseDate = tx.created_at;
       }
     });
 
-    // 6. Include non-purchasing users to show full list if requested
-    const allCustomersList = Object.values(statsMap);
-    const payingUserIds = new Set(allCustomersList.map(c => c.id));
-
+    // 5. Map profiles by id
+    const profileMap = new Map();
     profiles.forEach(p => {
-      if (!payingUserIds.has(p.id)) {
+      profileMap.set(p.id, p);
+    });
+
+    // 6. Build customer list from all registered auth users & profiles
+    const allCustomersList = [];
+    const processedUserIds = new Set();
+
+    authUsers.forEach(u => {
+      const uid = u.id;
+      processedUserIds.add(uid);
+      const profile = profileMap.get(uid);
+      const txStats = statsMap.get(uid);
+
+      const email = u.email || 'Unknown';
+      const username = profile?.username || profile?.full_name || u.user_metadata?.username || u.user_metadata?.full_name || (email.includes('@') ? email.split('@')[0] : 'User');
+      const fullName = profile?.full_name || profile?.username || u.user_metadata?.full_name || u.user_metadata?.name || username;
+      const department = profile?.department || 'N/A';
+      const joinedAt = u.created_at || profile?.created_at || null;
+
+      allCustomersList.push({
+        id: uid,
+        email,
+        username,
+        fullName,
+        department,
+        totalSpent: txStats?.totalSpent || 0,
+        purchaseCount: txStats?.purchaseCount || 0,
+        premiumCount: txStats?.premiumCount || 0,
+        standardCount: txStats?.standardCount || 0,
+        lastPurchaseDate: txStats?.lastPurchaseDate || null,
+        joinedAt
+      });
+    });
+
+    // Safety fallback: any profile ID that might not have been returned in authUsers
+    profiles.forEach(p => {
+      if (!processedUserIds.has(p.id)) {
+        processedUserIds.add(p.id);
+        const txStats = statsMap.get(p.id);
         allCustomersList.push({
           id: p.id,
-          email: emailMap[p.id] || 'Unknown',
+          email: 'Unknown',
           username: p.username || p.full_name || 'User',
           fullName: p.full_name || p.username || 'User',
           department: p.department || 'N/A',
-          totalSpent: 0,
-          purchaseCount: 0,
-          premiumCount: 0,
-          standardCount: 0,
-          lastPurchaseDate: null,
-          joinedAt: p.created_at || authMetaMap[p.id]?.created || null
+          totalSpent: txStats?.totalSpent || 0,
+          purchaseCount: txStats?.purchaseCount || 0,
+          premiumCount: txStats?.premiumCount || 0,
+          standardCount: txStats?.standardCount || 0,
+          lastPurchaseDate: txStats?.lastPurchaseDate || null,
+          joinedAt: p.created_at || null
         });
       }
     });
 
-    // Sort by total spent, then purchase count, then join date
+    // 7. Sort: paying users first (by total spent, then purchase count), then non-paying users by registration date descending (most recent first!)
     allCustomersList.sort((a, b) => {
       if (b.totalSpent !== a.totalSpent) return b.totalSpent - a.totalSpent;
       if (b.purchaseCount !== a.purchaseCount) return b.purchaseCount - a.purchaseCount;

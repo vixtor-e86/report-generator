@@ -214,20 +214,27 @@ export default function EmailPage() {
         break;
 
       case 'paying':
-        sortedList = validCustomers.filter(c => c.purchaseCount > 0);
+        sortedList = [...validCustomers]
+          .filter(c => c.purchaseCount > 0)
+          .sort((a, b) => new Date(b.lastPurchaseDate || b.joinedAt || 0) - new Date(a.lastPurchaseDate || a.joinedAt || 0));
         break;
 
       case 'top_spenders':
-        sortedList = validCustomers.filter(c => c.totalSpent >= 20000);
+        sortedList = [...validCustomers]
+          .filter(c => c.totalSpent >= 20000)
+          .sort((a, b) => (b.totalSpent - a.totalSpent) || (new Date(b.lastPurchaseDate || b.joinedAt || 0) - new Date(a.lastPurchaseDate || a.joinedAt || 0)));
         break;
 
       case 'non_paying':
-        sortedList = validCustomers.filter(c => c.purchaseCount === 0);
+        sortedList = [...validCustomers]
+          .filter(c => c.purchaseCount === 0)
+          .sort((a, b) => new Date(b.joinedAt || 0) - new Date(a.joinedAt || 0));
         break;
 
       case 'all':
       default:
-        sortedList = [...validCustomers];
+        sortedList = [...validCustomers]
+          .sort((a, b) => new Date(b.joinedAt || 0) - new Date(a.joinedAt || 0));
     }
 
     let emails = sortedList.map(c => c.email);
@@ -559,16 +566,16 @@ export default function EmailPage() {
               </div>
             </div>
 
-            {/* Safety Limit Cap Selector */}
+            {/* Recipient Cap Selector */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
               <div className="flex justify-between items-center flex-wrap gap-2">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">2. Max Broadcast Recipient Cap (Sandbox Protection)</span>
-                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
-                  Current Limit: {recipientLimit === 'all' ? 'Unlimited' : `${recipientLimit} users`}
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">2. Broadcast Recipient Limit Cap</span>
+                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">
+                  Current Limit: {recipientLimit === 'all' ? 'Unlimited (All)' : `${recipientLimit} users`}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {['5', '10', '25', '50', '100', '200', 'all'].map((cap) => (
+                {['10', '25', '50', '100', '250', '500', '1000', 'all'].map((cap) => (
                   <button
                     key={cap}
                     onClick={() => handleLimitChange(cap)}
@@ -578,21 +585,11 @@ export default function EmailPage() {
                         : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    {cap === 'all' ? 'All (No Cap)' : cap === '200' ? '200 (Max Sandbox)' : `Last ${cap}`}
+                    {cap === 'all' ? 'All (No Cap)' : `Last ${cap}`}
                   </button>
                 ))}
               </div>
             </div>
-
-            {/* Sandbox Limit Alert */}
-            {recipients.length > 200 && (
-              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs font-medium flex items-center justify-between flex-wrap gap-2">
-                <span>⚠️ <strong>Sandbox Alert:</strong> You have selected {recipients.length} recipients. If your SES / Resend account is still in sandbox mode, broadcasts exceeding 200 emails will fail.</span>
-                <button onClick={() => handleLimitChange('10')} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black uppercase transition">
-                  Cap to 10 Users
-                </button>
-              </div>
-            )}
 
             {/* Recipients Add Manual Input */}
             <div className="flex gap-2">

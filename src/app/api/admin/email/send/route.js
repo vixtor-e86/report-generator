@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { SESClient, SendRawEmailCommand } from "@aws-sdk/client-ses";
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+export const maxDuration = 300; // 5 minutes max duration for large broadcasts
+export const dynamic = 'force-dynamic';
+
 // Initialize SES Client
 const sesClient = new SESClient({
   region: process.env.AWS_REGION || "us-east-1",
@@ -151,33 +154,41 @@ export async function POST(request) {
     // Format the email using our branded template
     const htmlEmail = getBrandedTemplate(subject, body, category);
 
-    // Send emails sequentially through AWS SES
-    for (const email of recipients) {
-      try {
-        const rawMime = createMimeMessage({
-          from: from || 'W3 WriteLab Support <support@support.w3writelab.com>',
-          to: email,
-          subject: subject,
-          html: htmlEmail,
-          attachments: attachments
-        });
+    // Send emails in concurrent batches through AWS SES
+    const batchSize = 5;
+    for (let i = 0; i < recipients.length; i += batchSize) {
+      const batch = recipients.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map(async (email) => {
+          try {
+            const rawMime = createMimeMessage({
+              from: from || 'W3 WriteLab Support <support@support.w3writelab.com>',
+              to: email,
+              subject: subject,
+              html: htmlEmail,
+              attachments: attachments
+            });
 
-        const command = new SendRawEmailCommand({
-          RawMessage: {
-            Data: new TextEncoder().encode(rawMime)
+            const command = new SendRawEmailCommand({
+              RawMessage: {
+                Data: new TextEncoder().encode(rawMime)
+              }
+            });
+
+            await sesClient.send(command);
+            results.success++;
+          } catch (err) {
+            console.error(`AWS SES send failure to ${email}:`, err);
+            results.failed++;
+            results.errors.push({ email, error: err.message });
           }
-        });
+        })
+      );
 
-        await sesClient.send(command);
-        results.success++;
-      } catch (err) {
-        console.error(`AWS SES send failure to ${email}:`, err);
-        results.failed++;
-        results.errors.push({ email, error: err.message });
+      // Brief delay between batches to respect SES rate limits
+      if (i + batchSize < recipients.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-
-      // Small delay to respect SES send limits
-      await new Promise(resolve => setTimeout(resolve, 150));
     }
 
     // Record sent email history in database
