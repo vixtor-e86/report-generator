@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import CustomModal from '@/components/premium/modals/CustomModal';
+import { trackTikTokPayment } from '@/lib/tiktok';
 
 function TemplateSelectContent() {
   const router = useRouter();
@@ -123,6 +124,25 @@ function TemplateSelectContent() {
           if (data.verified) {
             setPaymentVerified(true);
             setPendingPayment(data.transaction);
+
+            // Track TikTok CompletePayment
+            try {
+              const txRefKey = data.transaction?.paystack_reference || transactionRef || txRef || transactionId;
+              if (txRefKey && typeof window !== 'undefined') {
+                const dedupeKey = `tt_payment_${txRefKey}`;
+                if (!sessionStorage.getItem(dedupeKey)) {
+                  trackTikTokPayment({
+                    contentId: txRefKey,
+                    contentName: data.transaction?.tier || 'Blueprint Report Plan',
+                    value: data.transaction?.amount || 0,
+                    currency: data.transaction?.currency || 'NGN'
+                  });
+                  sessionStorage.setItem(dedupeKey, '1');
+                }
+              }
+            } catch (trackErr) {
+              console.warn('TikTok tracking error:', trackErr);
+            }
 
             // ✅ Redirect directly if return_to is present (unlock project)
             if (returnTo) {

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import FundingModal from '@/components/marketplace/FundingModal';
 import { toast } from 'sonner';
+import { trackTikTokPayment } from '@/lib/tiktok';
 
 const WalletContext = createContext(undefined);
 
@@ -70,6 +71,22 @@ export function WalletProvider({ children }) {
           if (data.verified) {
             toast.success("Wallet funded successfully!");
             fetchWalletData();
+
+            // Track TikTok Payment for Wallet Funding
+            try {
+              const dedupeKey = `tt_payment_${transactionRef}`;
+              if (!sessionStorage.getItem(dedupeKey)) {
+                trackTikTokPayment({
+                  contentId: transactionRef,
+                  contentName: 'Wallet Funding',
+                  value: data.transaction?.amount || 0,
+                  currency: data.transaction?.currency || 'NGN'
+                });
+                sessionStorage.setItem(dedupeKey, '1');
+              }
+            } catch (trackErr) {
+              console.warn('TikTok tracking error:', trackErr);
+            }
           } else {
             toast.error(data.message || "Failed to verify wallet funding");
           }

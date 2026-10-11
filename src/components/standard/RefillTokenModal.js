@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { trackTikTokInitiateCheckout } from '@/lib/tiktok';
 
 export default function RefillTokenModal({
   isOpen,
@@ -51,6 +52,17 @@ export default function RefillTokenModal({
 
       if (!response.ok || !data.authorization_url) {
         throw new Error(data.error || 'Failed to initialize payment');
+      }
+
+      // Track TikTok Checkout
+      try {
+        trackTikTokInitiateCheckout({
+          contentName: `${selectedOption.label} Refill`,
+          value: selectedOption.price,
+          currency: 'NGN'
+        });
+      } catch (trackErr) {
+        console.warn('TikTok tracking error:', trackErr);
       }
 
       // Redirect to Squad checkout

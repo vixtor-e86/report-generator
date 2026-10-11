@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from 'sonner';
 import { useUser } from '@/contexts/marketplace/UserContext';
 import { formatCurrency } from '@/lib/utils';
+import { trackTikTokInitiateCheckout } from '@/lib/tiktok';
 
 export default function FundingModal({ open, onOpenChange }) {
   const { user } = useUser();
@@ -31,6 +32,15 @@ export default function FundingModal({ open, onOpenChange }) {
       });
       const data = await response.json();
       if (data.authorization_url) {
+        try {
+          trackTikTokInitiateCheckout({
+            contentName: 'Wallet Funding',
+            value: fundingAmount,
+            currency: 'NGN'
+          });
+        } catch (trackErr) {
+          console.warn('TikTok tracking error:', trackErr);
+        }
         window.location.href = data.authorization_url;
       } else {
         toast.error(data.error || 'Failed to initialize payment');
