@@ -51,6 +51,7 @@ export async function sendTikTokServerEvent({
     content_type: properties.contentType || 'product',
     content_name: properties.contentName || undefined,
     content_id: properties.contentId ? String(properties.contentId) : undefined,
+    contents: properties.contents || undefined,
   };
 
   // Remove undefined properties
@@ -107,7 +108,7 @@ export async function sendTikTokServerEvent({
 }
 
 /**
- * Convenience helper to track CompletePayment on server
+ * Convenience helper to track Purchase on server
  */
 export async function sendTikTokServerPayment({
   eventId,
@@ -121,8 +122,9 @@ export async function sendTikTokServerPayment({
   userAgent,
   pageUrl,
 }) {
+  const numAmount = Number(amount) || 0;
   return sendTikTokServerEvent({
-    event: 'CompletePayment',
+    event: 'Purchase',
     eventId,
     user: {
       userId,
@@ -132,11 +134,20 @@ export async function sendTikTokServerPayment({
       userAgent,
     },
     properties: {
-      value: amount,
+      value: numAmount,
       currency,
       contentType: 'product',
       contentName: tier,
       contentId: eventId,
+      contents: [
+        {
+          content_id: eventId ? String(eventId) : undefined,
+          content_name: tier,
+          content_type: 'product',
+          quantity: 1,
+          price: numAmount,
+        }
+      ]
     },
     page: {
       url: pageUrl,

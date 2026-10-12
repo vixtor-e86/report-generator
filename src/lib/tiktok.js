@@ -20,43 +20,41 @@ export function trackTikTokEvent(event, params = {}, options = {}) {
 }
 
 /**
- * Tracks CompletePayment event when a payment is verified on the client
- * eventId matches the server-side event_id for deduplication
+ * Tracks Purchase event when a payment is verified on the client.
+ * Uses exact event name "Purchase" to match TikTok Events Manager standard event.
+ * eventId matches the server-side event_id for deduplication.
  */
 export function trackTikTokPayment({ contentId, contentName, value, currency = 'NGN', eventId } = {}) {
   const finalEventId = eventId || contentId;
+  const numValue = Number(value) || 0;
+  const curr = currency || 'NGN';
+  const name = contentName || 'Blueprint Plan';
+
   trackTikTokEvent(
-    'CompletePayment',
+    'Purchase',
     {
       content_id: contentId ? String(contentId) : undefined,
-      content_name: contentName || 'Payment',
+      content_name: name,
       content_type: 'product',
-      value: Number(value) || 0,
-      currency: currency || 'NGN',
+      value: numValue,
+      currency: curr,
+      contents: [
+        {
+          content_id: contentId ? String(contentId) : undefined,
+          content_name: name,
+          content_type: 'product',
+          quantity: 1,
+          price: numValue,
+        }
+      ]
     },
     { eventId: finalEventId }
   );
 }
 
 /**
- * Tracks InitiateCheckout event when a user starts checkout
- */
-export function trackTikTokInitiateCheckout({ contentId, contentName, value, currency = 'NGN', eventId } = {}) {
-  trackTikTokEvent(
-    'InitiateCheckout',
-    {
-      content_id: contentId ? String(contentId) : undefined,
-      content_name: contentName || 'Checkout',
-      content_type: 'product',
-      value: Number(value) || 0,
-      currency: currency || 'NGN',
-    },
-    { eventId }
-  );
-}
-
-/**
- * Tracks CompleteRegistration event when a user signs up
+ * Tracks CompleteRegistration event when a user signs up.
+ * Uses exact event name "CompleteRegistration" matching TikTok Events Manager.
  */
 export function trackTikTokRegistration({ eventId } = {}) {
   trackTikTokEvent(

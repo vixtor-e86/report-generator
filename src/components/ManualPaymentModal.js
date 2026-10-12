@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PRICING, INTERNATIONAL_PRICING } from '@/lib/pricing';
-import { trackTikTokInitiateCheckout } from '@/lib/tiktok';
 
 export default function ManualPaymentModal({ 
   isOpen, 
@@ -76,18 +75,6 @@ export default function ManualPaymentModal({
       if (!response.ok) throw new Error(data.error || "Failed to initialize payment");
 
       if (data.authorization_url) {
-        // Track TikTok Checkout initiation
-        try {
-          trackTikTokInitiateCheckout({
-            contentId: data.reference,
-            contentName: currentTier,
-            value: amountToPay,
-            currency: selectedCurrency
-          });
-        } catch (trackErr) {
-          console.warn('TikTok tracking error:', trackErr);
-        }
-
         // Redirect user to Squad payment checkout screen
         window.location.href = data.authorization_url;
       } else {
