@@ -1,6 +1,7 @@
 // src/app/api/paystack/verify/route.js
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin'; // ✅ Changed
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { sendTikTokServerPayment } from '@/lib/tiktokServer';
 
 export async function GET(request) {
   try {
@@ -64,6 +65,21 @@ export async function GET(request) {
         { error: 'Failed to update transaction', verified: false },
         { status: 500 }
       );
+    }
+
+    // Send TikTok Events API conversion (non-blocking)
+    try {
+      sendTikTokServerPayment({
+        eventId: reference,
+        userId: transaction.user_id,
+        amount: transaction.amount,
+        currency: transaction.currency || 'NGN',
+        tier: transaction.tier || 'Blueprint Plan',
+        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+        userAgent: request.headers.get('user-agent'),
+      }).catch(err => console.error('[TikTok Events API] Paystack error:', err));
+    } catch (ttErr) {
+      console.warn('[TikTok Events API] trigger error:', ttErr);
     }
 
     // ✅ NEW: Process Referral Logic

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { trackTikTokRegistration } from '@/lib/tiktok';
 
 export default function AuthModal({ isOpen, onClose }) {
   const [view, setView] = useState('sign_in'); // 'sign_in', 'sign_up', 'forgot_password'
@@ -49,6 +50,26 @@ export default function AuthModal({ isOpen, onClose }) {
         });
         
         if (error) throw error;
+
+        // Track TikTok CompleteRegistration (Hybrid: Pixel + Events API)
+        if (data.user) {
+          try {
+            const regEventId = `reg_${data.user.id}_${Date.now()}`;
+            trackTikTokRegistration({ eventId: regEventId });
+            fetch('/api/analytics/tiktok', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                event: 'CompleteRegistration',
+                eventId: regEventId,
+                user: { userId: data.user.id, email },
+              }),
+            }).catch(() => {});
+          } catch (ttErr) {
+            console.warn('TikTok registration track error:', ttErr);
+          }
+        }
+
         if (data.user && !data.session) {
           setMessage('Please check your email to verify your account.');
           setView('verify_message');

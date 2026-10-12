@@ -1,6 +1,7 @@
 // src/app/api/flutterwave/verify/route.js
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { sendTikTokServerPayment } from '@/lib/tiktokServer';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -71,6 +72,21 @@ export async function GET(request) {
     if (updateError) {
       console.error('Update error:', updateError);
       return NextResponse.json({ error: 'Failed to update transaction' }, { status: 500 });
+    }
+
+    // Send TikTok Events API conversion (non-blocking)
+    try {
+      sendTikTokServerPayment({
+        eventId: updatedTx.paystack_reference || tx_ref,
+        userId: updatedTx.user_id,
+        amount: updatedTx.amount,
+        currency: updatedTx.currency || 'NGN',
+        tier: updatedTx.tier || 'Blueprint Plan',
+        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+        userAgent: request.headers.get('user-agent'),
+      }).catch(err => console.error('[TikTok Events API] FLW error:', err));
+    } catch (ttErr) {
+      console.warn('[TikTok Events API] trigger error:', ttErr);
     }
 
     // ✅ NEW: Process Referral Logic

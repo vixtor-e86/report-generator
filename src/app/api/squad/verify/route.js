@@ -1,6 +1,7 @@
 // src/app/api/squad/verify/route.js
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { sendTikTokServerPayment } from '@/lib/tiktokServer';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -130,6 +131,21 @@ export async function GET(request) {
         console.warn('Best-effort payment_transactions update skipped/failed:', err);
       }
 
+      // Send TikTok Events API conversion (non-blocking)
+      try {
+        sendTikTokServerPayment({
+          eventId: transaction_ref,
+          userId: walletTx.user_id,
+          amount: walletTx.amount,
+          currency: 'NGN',
+          tier: 'Wallet Funding',
+          ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+          userAgent: request.headers.get('user-agent'),
+        }).catch(err => console.error('[TikTok Events API] Wallet error:', err));
+      } catch (ttErr) {
+        console.warn('[TikTok Events API] trigger error:', ttErr);
+      }
+
       return NextResponse.json({
         verified: true,
         transaction: {
@@ -209,6 +225,21 @@ export async function GET(request) {
       });
     } catch (refError) {
       console.error('Referral processing error:', refError);
+    }
+
+    // Send TikTok Events API conversion (non-blocking)
+    try {
+      sendTikTokServerPayment({
+        eventId: transaction_ref,
+        userId: updatedTx.user_id,
+        amount: updatedTx.amount,
+        currency: updatedTx.currency || 'NGN',
+        tier: updatedTx.tier || 'Blueprint Plan',
+        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+        userAgent: request.headers.get('user-agent'),
+      }).catch(err => console.error('[TikTok Events API] Payment error:', err));
+    } catch (ttErr) {
+      console.warn('[TikTok Events API] trigger error:', ttErr);
     }
 
     // ✅ Process Project Unlock if reference starts with W3WL_UNLOCK_
