@@ -7,13 +7,13 @@ import {
 export default function StudentLeadModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
-  const whatsappNumber = "08031797655";
+  const whatsappNumber = "08031696755";
   const emailAddress = "w33writelab@gmail.com";
 
   const whatsappMessage = encodeURIComponent(
     "Hello W3 WriteLab, I am interested in becoming a Campus Student Lead! I would like to submit project/thesis templates for my school/department so I can earn 10% on each project use."
   );
-  const whatsappUrl = `https://wa.me/2348031797655?text=${whatsappMessage}`;
+  const whatsappUrl = `https://wa.me/2348031696755?text=${whatsappMessage}`;
 
   const emailSubject = encodeURIComponent("Student Lead Application & Template Submission - W3 WriteLab");
   const emailBody = encodeURIComponent(

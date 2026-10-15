@@ -83,7 +83,7 @@ const ALL_MAINTENANCE_ITEMS = [
   {
     number: "15",
     title: "Dashboard Live Market Floating Action Button ('Hire an Expert')",
-    description: "Deployed a persistent floating action button and interactive modal inside the Dashboard's Live Market tab featuring 8 technical specializations (Journal publication, SPSS, Software dev, MATLAB, Proteus, Circuit design, AutoCAD, Hardware fabrication). Positioned at bottom-left to avoid obstructing the feedback modal, with clean top quick-contact cards for WhatsApp (08031797655) and Email (w33writelab@gmail.com)."
+    description: "Deployed a persistent floating action button and interactive modal inside the Dashboard's Live Market tab featuring 8 technical specializations (Journal publication, SPSS, Software dev, MATLAB, Proteus, Circuit design, AutoCAD, Hardware fabrication). Positioned at bottom-left to avoid obstructing the feedback modal, with clean top quick-contact cards for WhatsApp (08031696755) and Email (w33writelab@gmail.com)."
   },
   {
     number: "16",

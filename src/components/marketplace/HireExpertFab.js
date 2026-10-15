@@ -83,10 +83,10 @@ const HIRE_SERVICES = [
 ];
 
 const CONTACT_INFO = {
-  phone: '08031797655',
-  phoneFormatted: '+234 803 179 7655',
+  phone: '08031696755',
+  phoneFormatted: '+234 803 169 6755',
   email: 'w33writelab@gmail.com',
-  whatsappBase: 'https://wa.me/2348031797655'
+  whatsappBase: 'https://wa.me/2348031696755'
 };
 
 export default function HireExpertFab({ embedded = false }) {

@@ -238,7 +238,7 @@ export default function ReferralFAB({ userId, isOpen: externalIsOpen, onOpenChan
                         Provide us with your school&apos;s project or thesis templates! If added to our generator, you get an extra <strong>10% bonus</strong> credited to this wallet every time a student uses your template on a project!
                        <div className="mt-2.5 pt-2 border-t border-indigo-100/80 text-xs flex flex-col gap-1">
                          <div><strong>Email:</strong> <a href="mailto:w33writelab@gmail.com?subject=Student%20Lead%20Template%20Submission" className="underline hover:text-indigo-900">w33writelab@gmail.com</a></div>
-                         <div><strong>WhatsApp:</strong> <a href="https://wa.me/2348031797655?text=Hello%20W3%20WriteLab%2C%20I%20would%20like%20to%20submit%20templates%20for%20my%20school%20to%20earn%2010%25%20per%20use" target="_blank" rel="noopener noreferrer" className="underline hover:text-indigo-900">08031797655</a></div>
+                         <div><strong>WhatsApp:</strong> <a href="https://wa.me/2348031696755?text=Hello%20W3%20WriteLab%2C%20I%20would%20like%20to%20submit%20templates%20for%20my%20school%20to%20earn%2010%25%20per%20use" target="_blank" rel="noopener noreferrer" className="underline hover:text-indigo-900">08031696755</a></div>
                        </div>
                     </div>
                     <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-full">
