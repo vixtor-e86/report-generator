@@ -225,10 +225,10 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
       throw new Error('ANTHROPIC_API_KEY not found in environment variables');
     }
 
-    let modelName = modelOverride || process.env.CLAUDE_MODEL || (process.env.AI_MODEL?.includes('claude') ? process.env.AI_MODEL : null) || 'claude-3-5-sonnet-20241022';
+    let modelName = modelOverride || process.env.CLAUDE_MODEL || (process.env.AI_MODEL?.includes('claude') ? process.env.AI_MODEL : null) || 'claude-sonnet-4-6';
 
-    if (modelName === 'claude-sonnet-4-6') {
-      modelName = 'claude-3-5-sonnet-20241022';
+    if (modelName === 'claude-3-5-sonnet-20241022' || modelName === 'claude-3-5-sonnet-latest') {
+      modelName = 'claude-sonnet-4-6';
     }
 
     const safeMaxTokens = Math.min(maxTokens || 8192, 8192);
