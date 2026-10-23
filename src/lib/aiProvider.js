@@ -227,7 +227,7 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
 
     let modelName = modelOverride || process.env.CLAUDE_MODEL || (process.env.AI_MODEL?.includes('claude') ? process.env.AI_MODEL : null) || 'claude-sonnet-4-6';
 
-    if (modelName === 'claude-3-5-sonnet-20241022' || modelName === 'claude-3-5-sonnet-latest') {
+    if (modelName.startsWith('claude-3')) {
       modelName = 'claude-sonnet-4-6';
     }
 
