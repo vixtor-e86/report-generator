@@ -92,6 +92,7 @@ async function callDeepSeek(prompt, maxTokens, temperature, modelOverride = null
       modelName = 'deepseek-chat';
     }
 
+    // DeepSeek API strictly caps max completion tokens at 8192
     const safeMaxTokens = Math.min(maxTokens || 8192, 8192);
 
     const response = await fetch('https://api.deepseek.com/chat/completions', {
@@ -231,7 +232,8 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
       modelName = 'claude-sonnet-4-6';
     }
 
-    const safeMaxTokens = Math.min(maxTokens || 8192, 8192);
+    // Claude Sonnet 4.6 supports extensive output contexts up to 16k+ tokens
+    const safeMaxTokens = Math.min(maxTokens || 8192, 16384);
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -265,12 +267,57 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
       throw new Error('Claude returned empty content');
     }
 
+    let inputTokens = data.usage?.input_tokens || estimateTokens(prompt);
+    let outputTokens = data.usage?.output_tokens || estimateTokens(text);
+
+    // AUTO-CONTINUE IF CLAUDE HIT MAX_TOKENS BEFORE COMPLETING
+    if (data.stop_reason === 'max_tokens') {
+      console.warn('Claude output was truncated by max_tokens limit. Requesting auto-continuation...');
+      try {
+        const continueResponse = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: modelName,
+            max_tokens: safeMaxTokens,
+            temperature: temperature,
+            messages: [
+              { role: 'user', content: prompt },
+              { role: 'assistant', content: text },
+              { role: 'user', content: 'Continue writing immediately from the exact point where you stopped. Do not repeat any prior text. Complete all remaining sections and the bibliography/references.' }
+            ]
+          })
+        });
+
+        if (continueResponse.ok) {
+          const continueData = await continueResponse.json();
+          const continueText = continueData.content
+            ?.filter(block => block.type === 'text')
+            ?.map(block => block.text)
+            ?.join('\n') || '';
+
+          if (continueText && continueText.trim().length > 0) {
+            text += (text.endsWith('\n') ? '' : '\n\n') + continueText;
+            inputTokens += (continueData.usage?.input_tokens || 0);
+            outputTokens += (continueData.usage?.output_tokens || 0);
+            console.log('✅ Claude auto-continuation merged successfully');
+          }
+        }
+      } catch (contErr) {
+        console.warn('Claude auto-continuation error:', contErr.message);
+      }
+    }
+
     return {
       content: text,
       tokensUsed: {
-        input: data.usage?.input_tokens || estimateTokens(prompt),
-        output: data.usage?.output_tokens || estimateTokens(text),
-        total: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)
+        input: inputTokens,
+        output: outputTokens,
+        total: inputTokens + outputTokens
       },
       model: data.model || modelName,
       provider: 'claude'

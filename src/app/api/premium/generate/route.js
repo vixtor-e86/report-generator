@@ -8,6 +8,8 @@ import mammoth from 'mammoth';
 if (typeof global.DOMMatrix === 'undefined') { global.DOMMatrix = class DOMMatrix { constructor() { this.a = 1; this.d = 1; } }; }
 if (typeof global.ImageData === 'undefined') { global.ImageData = class ImageData { constructor(w, h) { this.width = w; this.height = h; this.data = new Uint8ClampedArray(w * h * 4); } }; }
 
+export const maxDuration = 120; // 2 minutes max duration for full comprehensive chapter generation
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -339,8 +341,8 @@ export async function POST(request) {
 
     ${skipReferences ? '--- STRICT: NO REFERENCES OR CITATIONS. ---' : '--- MANDATORY: Include "## References" at the end. ---'}`;
 
-    // --- 7. Call AI & Save (Capped at 4800 tokens to ensure 2,500-3,500 words and prevent token waste) ---
-    const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 4800, temperature: 0.5 });
+    // --- 7. Call AI & Save (8192 tokens ensure full 2,500-3,500 words are completed without cutoff) ---
+    const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 8192, temperature: 0.5 });
 
     let { data: chapter } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
     if (!chapter) {
