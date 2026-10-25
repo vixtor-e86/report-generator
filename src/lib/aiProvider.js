@@ -258,7 +258,7 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
 
     const data = await response.json();
     
-    const text = data.content
+    let text = data.content
       ?.filter(block => block.type === 'text')
       ?.map(block => block.text)
       ?.join('\n') || '';
