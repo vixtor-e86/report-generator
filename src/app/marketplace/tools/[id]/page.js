@@ -51,6 +51,7 @@ export default function ToolInterfacePage() {
   const { id: toolId } = useParams();
   const navigate = useRouter();
   const { wallet, deductFunds, setShowFundingModal } = useWallet();
+  const { user: authUser } = useUser();
 
   const [tool, setTool] = useState(undefined);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -96,6 +97,8 @@ export default function ToolInterfacePage() {
 
   // Shared props for tool components
   const toolProps = {
+    tool,
+    user: authUser,
     isProcessing,
     setIsProcessing,
     hasPaid,

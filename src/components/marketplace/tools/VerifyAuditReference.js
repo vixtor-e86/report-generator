@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, ShieldCheck, CheckCircle2, AlertTriangle, XCircle, Copy, Check, ExternalLink, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/marketplace/ui/button';
 import { Input } from '@/components/marketplace/ui/input';
@@ -15,10 +15,16 @@ export default function VerifyAuditReference({ tool, user, walletBalance, hasPai
   const [auditedResults, setAuditedResults] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
 
-  const handleAuditReferences = async () => {
+  useEffect(() => {
+    if (hasPaid && verifyText.trim()) {
+      handleAuditReferences(true);
+    }
+  }, [hasPaid]);
+
+  const handleAuditReferences = async (skipPaymentCheck = false) => {
     if (!verifyText.trim()) return toast.error("Paste your references to verify");
 
-    if (!hasPaid) {
+    if (!hasPaid && !skipPaymentCheck) {
         setShowPaymentDialog(true);
         return;
     }
@@ -91,7 +97,7 @@ export default function VerifyAuditReference({ tool, user, walletBalance, hasPai
         </div>
 
         <Button
-          onClick={handleAuditReferences}
+          onClick={() => handleAuditReferences(false)}
           disabled={isProcessing || !verifyText.trim()}
           className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl py-6 font-black uppercase text-xs tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 transition-all"
         >

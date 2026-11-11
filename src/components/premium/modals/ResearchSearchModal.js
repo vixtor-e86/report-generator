@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
 const Icons = {
@@ -17,18 +17,24 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState(null);
+  const [savedIds, setSavedIds] = useState([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
     if (!query.trim()) return;
 
     setLoading(true);
+    setHasSearched(true);
     try {
-      const res = await fetch(`/api/premium/search-papers?query=${encodeURIComponent(query)}&year=${yearStart}-${yearEnd}`);
+      const res = await fetch(`/api/premium/search-papers?query=${encodeURIComponent(query.trim())}&year=${yearStart}-${yearEnd}`);
       const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to fetch research papers');
+      }
       setResults(data.data || []);
     } catch (err) {
-      if (showNotification) showNotification('Search Error', 'Failed to fetch research papers. Please try again.', 'error');
+      if (showNotification) showNotification('Search Error', err.message || 'Failed to fetch research papers. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -45,7 +51,7 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
           project_id: projectId,
           external_id: paper.paperId,
           title: paper.title,
-          authors: paper.authors?.map(a => a.name) || [],
+          authors: paper.authors?.map(a => (typeof a === 'string' ? a : a.name)).filter(Boolean) || [],
           year: paper.year,
           venue: paper.venue,
           abstract: paper.abstract,
@@ -53,7 +59,8 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
         });
 
       if (error) throw error;
-      onPaperSaved(); // Refresh workspace list
+      setSavedIds(prev => [...prev, paper.paperId]);
+      if (onPaperSaved) onPaperSaved(); // Refresh workspace list
       if (showNotification) showNotification('Success', 'Paper saved to project context!', 'success');
     } catch (err) {
       if (showNotification) showNotification('Save Failed', err.message, 'error');
@@ -73,7 +80,7 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
       >
         <div className="p-6 border-b flex justify-between items-center bg-slate-50">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Semantic Scholar Search</h2>
+            <h2 className="text-xl font-bold text-slate-900">Academic Reference Finder</h2>
             <p className="text-sm text-slate-500">Find and save academic references for your project</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg transition"><Icons.X /></button>
@@ -95,36 +102,53 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
             <span className="text-slate-400">to</span>
             <input type="number" value={yearEnd} onChange={(e) => setYearEnd(e.target.value)} className="w-20 p-2 bg-slate-50 border rounded-lg text-sm" />
           </div>
-          <button disabled={loading} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition disabled:opacity-50">
+          <button type="submit" disabled={loading} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition disabled:opacity-50">
             {loading ? 'Searching...' : 'Search'}
           </button>
         </form>
 
         <div className="flex-1 overflow-auto p-6 space-y-4">
-          {results.length > 0 ? results.map((paper) => (
-            <div key={paper.paperId} className="p-4 border rounded-xl hover:border-purple-300 transition group bg-white shadow-sm">
-              <h3 className="font-bold text-slate-900 mb-1">{paper.title}</h3>
-              <p className="text-xs text-purple-600 font-medium mb-2">
-                {paper.year} • {paper.authors?.slice(0, 3).map(a => a.name).join(', ')}{paper.authors?.length > 3 ? ' et al.' : ''}
-              </p>
-              {paper.abstract && (
-                <p className="text-sm text-slate-500 line-clamp-2 mb-4 italic">"{paper.abstract}"</p>
-              )}
-              <div className="flex justify-between items-center">
-                <a href={paper.url} target="_blank" className="text-xs text-slate-400 hover:underline">See more</a>
-                <button 
-                  onClick={() => savePaper(paper)}
-                  disabled={savingId === paper.paperId}
-                  className="px-4 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-900 hover:text-white transition"
-                >
-                  {savingId === paper.paperId ? 'Saving...' : 'Save to Project'}
-                </button>
-              </div>
+          {loading ? (
+            <div className="text-center py-20">
+              <div className="text-4xl mb-4 animate-pulse">🔍</div>
+              <p className="text-slate-500 font-medium">Searching scholarly databases...</p>
             </div>
-          )) : (
+          ) : results.length > 0 ? results.map((paper, idx) => {
+            const isSaved = savedIds.includes(paper.paperId);
+            const authorList = paper.authors?.slice(0, 3).map(a => typeof a === 'string' ? a : a.name).filter(Boolean).join(', ');
+            return (
+              <div key={paper.paperId || idx} className="p-4 border rounded-xl hover:border-purple-300 transition group bg-white shadow-sm">
+                <h3 className="font-bold text-slate-900 mb-1">{paper.title}</h3>
+                <p className="text-xs text-purple-600 font-medium mb-2">
+                  {paper.year || 'N/A'} • {authorList || 'Unknown Author'}{paper.authors?.length > 3 ? ' et al.' : ''}{paper.venue ? ` • ${paper.venue}` : ''}
+                </p>
+                {paper.abstract && (
+                  <p className="text-sm text-slate-500 line-clamp-2 mb-4 italic">"{paper.abstract}"</p>
+                )}
+                <div className="flex justify-between items-center">
+                  {paper.url ? (
+                    <a href={paper.url} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-400 hover:underline">See more</a>
+                  ) : <span />}
+                  <button 
+                    onClick={() => !isSaved && savePaper(paper)}
+                    disabled={savingId === paper.paperId || isSaved}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                      isSaved
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-900 hover:text-white'
+                    }`}
+                  >
+                    {savingId === paper.paperId ? 'Saving...' : isSaved ? (<><Icons.Check /> Saved</>) : 'Save to Project'}
+                  </button>
+                </div>
+              </div>
+            );
+          }) : (
             <div className="text-center py-20">
               <div className="text-4xl mb-4 opacity-20">📚</div>
-              <p className="text-slate-400">Search results will appear here</p>
+              <p className="text-slate-400">
+                {hasSearched ? 'No academic papers found for this query. Try broader keywords.' : 'Search results will appear here'}
+              </p>
             </div>
           )}
         </div>
