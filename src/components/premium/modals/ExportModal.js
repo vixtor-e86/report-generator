@@ -190,25 +190,25 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-4">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={onClose} />
       <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} 
-        className="relative bg-white md:rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col h-full md:h-[90vh]">
+        className="relative bg-white md:rounded-[40px] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col h-[100dvh] md:h-[90vh]">
         
         {/* Header */}
-        <div className="p-6 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl"><Icons.Download /></div>
+        <div className="p-4 md:p-8 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-900 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-xl"><Icons.Download /></div>
             <div>
-              <h2 className="text-xl font-black text-slate-900 leading-tight uppercase tracking-tight">Export {type.toUpperCase()}</h2>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Step {activeStep + 1}: {activeStep === 0 ? 'Cover Configuration' : activeStep === 1 && !isDocx ? 'Attachments' : 'Final Review'}</p>
+              <h2 className="text-base md:text-xl font-black text-slate-900 leading-tight uppercase tracking-tight">Export {type.toUpperCase()}</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Step {activeStep + 1} of {isDocx ? 2 : 3}: {activeStep === 0 ? 'Cover Configuration' : activeStep === 1 && !isDocx ? 'Attachments' : 'Final Review'}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"><Icons.X /></button>
         </div>
 
         {/* Multi-Step Content */}
-        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row">
           
           {/* LEFT SIDE: CONFIGURATION */}
-          <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-slate-50/50 border-r border-slate-100 custom-scrollbar">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-10 bg-slate-50/50 md:border-r border-slate-100 custom-scrollbar">
             <AnimatePresence mode="wait">
               {activeStep === 0 && (
                 <motion.div key="step-cover" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-8 pb-10">
@@ -402,9 +402,9 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
             </AnimatePresence>
           </div>
 
-          {/* RIGHT SIDE: NAVIGATION/SUMMARY */}
-          <div className="w-full md:w-80 bg-white p-8 flex flex-col shrink-0 border-t md:border-t-0 border-slate-100">
-            <div className="flex-1 space-y-10">
+          {/* RIGHT SIDE: NAVIGATION/SUMMARY (Compact bottom bar on mobile, full sidebar on desktop) */}
+          <div className="w-full md:w-80 bg-white px-4 py-3 md:p-8 flex flex-col shrink-0 border-t md:border-t-0 border-slate-200 md:border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.04)] md:shadow-none">
+            <div className="hidden md:block flex-1 space-y-10">
               <section>
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Build Progress</h4>
                 <div className="space-y-4">
@@ -424,18 +424,18 @@ export default function ExportModal({ isOpen, onClose, type, projectDocs, chapte
               </section>
             </div>
 
-            <div className="mt-auto pt-6 flex flex-col gap-3">
+            <div className="mt-auto md:pt-6 flex flex-col gap-2 md:gap-3">
                <div className="flex gap-3">
                     {activeStep > 0 && (
-                        <button onClick={() => setActiveStep(p => p - 1)} className="flex-1 py-4 border border-slate-200 text-slate-900 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-colors">Back</button>
+                        <button onClick={() => setActiveStep(p => p - 1)} className="flex-1 py-3.5 md:py-4 border border-slate-200 text-slate-900 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-colors">Back</button>
                     )}
                     {activeStep < (isDocx ? 1 : 2) && (
-                        <button onClick={() => setActiveStep(p => p + 1)} className="flex-[2] py-4 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg flex items-center justify-center gap-2">
+                        <button onClick={() => setActiveStep(p => p + 1)} className="flex-[2] py-3.5 md:py-4 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg flex items-center justify-center gap-2">
                             Next Step <Icons.ChevronRight />
                         </button>
                     )}
                </div>
-               <button onClick={onClose} className="w-full py-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-red-500 transition-colors mt-2">Close Modal</button>
+               <button onClick={onClose} className="hidden md:block w-full py-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-red-500 transition-colors mt-2">Close Modal</button>
             </div>
           </div>
         </div>

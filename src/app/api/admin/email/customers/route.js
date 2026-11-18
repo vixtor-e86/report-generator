@@ -51,7 +51,7 @@ export async function GET(request) {
           chunk.map(([start, end]) =>
             supabaseAdmin
               .from('user_profiles')
-              .select('id, username, full_name, department, created_at')
+              .select('*')
               .order('created_at', { ascending: false })
               .range(start, end)
           )
@@ -63,34 +63,40 @@ export async function GET(request) {
       return allProfiles;
     };
 
-    // 3. Fetch ALL Auth Users in parallel chunks of 4 pages
+    // 3. Fetch ALL Auth Users reliably with retry on transient rate limits
     const fetchAuthUsers = async () => {
       const allUsers = [];
-      let startPage = 1;
-      let hasMore = true;
-      const chunkSize = 4;
+      let page = 1;
+      const maxPages = 30; // Up to 30,000 users
+      const chunkSize = 2;
 
-      while (hasMore) {
-        const pageChunk = [];
-        for (let i = 0; i < chunkSize; i++) {
-          pageChunk.push(startPage + i);
+      const fetchPageWithRetry = async (p) => {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const res = await supabaseAdmin.auth.admin.listUsers({ page: p, perPage: 1000 });
+          if (!res.error && res.data?.users) return res;
+        }
+        return { data: { users: [] }, error: true };
+      };
+
+      while (page <= maxPages) {
+        const pagesToFetch = [];
+        for (let i = 0; i < chunkSize && (page + i) <= maxPages; i++) {
+          pagesToFetch.push(page + i);
         }
 
-        const chunkResults = await Promise.all(
-          pageChunk.map(page =>
-            supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 })
-          )
-        );
+        const chunkResults = await Promise.all(pagesToFetch.map(fetchPageWithRetry));
+        let reachedEnd = false;
 
         for (const res of chunkResults) {
           const users = res.data?.users || [];
           allUsers.push(...users);
-          if (users.length < 1000) {
-            hasMore = false;
-            break;
+          if (!res.error && users.length < 1000) {
+            reachedEnd = true;
           }
         }
-        startPage += chunkSize;
+
+        if (reachedEnd) break;
+        page += chunkSize;
       }
       return allUsers;
     };
@@ -147,10 +153,10 @@ export async function GET(request) {
       const profile = profileMap.get(uid);
       const txStats = statsMap.get(uid);
 
-      const email = u.email || 'Unknown';
+      const email = u.email || profile?.email || 'Unknown';
       const username = profile?.username || profile?.full_name || u.user_metadata?.username || u.user_metadata?.full_name || (email.includes('@') ? email.split('@')[0] : 'User');
       const fullName = profile?.full_name || profile?.username || u.user_metadata?.full_name || u.user_metadata?.name || username;
-      const department = profile?.department || 'N/A';
+      const department = profile?.department || profile?.custom_institution || 'N/A';
       const joinedAt = u.created_at || profile?.created_at || null;
 
       allCustomersList.push({
@@ -175,10 +181,10 @@ export async function GET(request) {
         const txStats = statsMap.get(p.id);
         allCustomersList.push({
           id: p.id,
-          email: 'Unknown',
+          email: p.email || 'Unknown',
           username: p.username || p.full_name || 'User',
           fullName: p.full_name || p.username || 'User',
-          department: p.department || 'N/A',
+          department: p.department || p.custom_institution || 'N/A',
           totalSpent: txStats?.totalSpent || 0,
           purchaseCount: txStats?.purchaseCount || 0,
           premiumCount: txStats?.premiumCount || 0,

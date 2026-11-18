@@ -1,7 +1,7 @@
 // src/app/api/premium/generate-slides/route.js
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { callAI } from '@/lib/aiProvider';
+import { callAI, sanitizeAIError } from '@/lib/aiProvider';
 
 export async function POST(request) {
   try {
@@ -173,6 +173,6 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Slide Generation API Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeAIError(error, 'Presentation generation encountered a temporary issue. Please try again.') }, { status: 500 });
   }
 }

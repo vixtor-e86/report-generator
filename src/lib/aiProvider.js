@@ -4,6 +4,58 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
+ * Sanitize any AI or network error so provider names, model IDs, and internal details never leak to the UI
+ */
+export function sanitizeAIError(error, defaultMessage = 'The System Architect encountered a temporary processing issue. Please try again.') {
+  const rawMsg = (error?.message || String(error || '')).trim();
+  const lower = rawMsg.toLowerCase();
+
+  if (
+    lower.includes('credit balance') ||
+    lower.includes('insufficient_credits') ||
+    lower.includes('billing') ||
+    lower.includes('insufficient credits') ||
+    lower.includes('credit_balance_too_low') ||
+    lower.includes('quota')
+  ) {
+    return 'The System Architect is temporarily under maintenance. Please try again shortly.';
+  }
+
+  if (
+    lower.includes('rate_limit') ||
+    lower.includes('rate limit') ||
+    lower.includes('429') ||
+    lower.includes('529') ||
+    lower.includes('overloaded') ||
+    lower.includes('too many requests')
+  ) {
+    return 'The System Architect is currently experiencing high demand. Please wait a few seconds and try again.';
+  }
+
+  if (
+    lower.includes('could not process image') ||
+    lower.includes('invalid base64') ||
+    lower.includes('media_type') ||
+    lower.includes('image exceeds') ||
+    lower.includes('document') && lower.includes('invalid')
+  ) {
+    return 'One of the selected images or documents could not be analyzed. Please ensure images are valid PNG/JPEG under 3.5 MB and documents are under 5 MB.';
+  }
+
+  if (lower.includes('exhausted tokens') || lower.includes('max_tokens')) {
+    return 'The generated content reached maximum length capacity. Please try again.';
+  }
+
+  // Never allow any provider/model/API terms to leak to the UI
+  const forbiddenPattern = /claude|anthropic|deepseek|gemini|google|together|flux|sonnet|haiku|opus|gpt|openai|api[_\s-]?key|environment variable|status\s*\d{3}|\(\d{3}\)|provider|fallback|model/i;
+  if (forbiddenPattern.test(rawMsg)) {
+    return defaultMessage;
+  }
+
+  return defaultMessage;
+}
+
+/**
  * Main function to call AI models with automatic fallback
  * @param {string|array} prompt - The prompt string or array of parts (for multimodal)
  * @param {object} options - Configuration options
@@ -17,6 +69,7 @@ export async function callAI(prompt, options = {}) {
     temperature = 0.7,
     stopSequences = null,
     fileParts = null, // Support for Gemini multimodal
+    claudeAttachments = null, // STRICT: Native multimodal blocks ONLY used when provider === 'claude'
     fallback = true // Automatically try alternate provider if primary fails
   } = options;
 
@@ -24,11 +77,13 @@ export async function callAI(prompt, options = {}) {
     if (p === 'gemini') {
       return await callGemini(prompt, maxTokens, temperature, fileParts, m);
     } else if (p === 'claude') {
-      return await callClaude(prompt, maxTokens, temperature, stopSequences, m);
+      // Only Claude receives claudeAttachments (images / PDF blocks)
+      return await callClaude(prompt, maxTokens, temperature, stopSequences, m, claudeAttachments);
     } else if (p === 'deepseek') {
+      // DeepSeek strictly ignores image/document attachments and processes text only
       return await callDeepSeek(prompt, maxTokens, temperature, m);
     } else {
-      throw new Error(`Invalid AI provider: ${p}. Use 'gemini', 'claude', or 'deepseek'`);
+      throw new Error(`Invalid AI provider: ${p}`);
     }
   };
 
@@ -58,16 +113,7 @@ export async function callAI(prompt, options = {}) {
       }
     }
 
-    let errMsg = primaryError.message;
-    const lower = errMsg.toLowerCase();
-    if (lower.includes('credit balance') || 
-        lower.includes('insufficient_credits') || 
-        lower.includes('billing') || 
-        lower.includes('insufficient credits') || 
-        lower.includes('credit_balance_too_low')) {
-      throw new Error('AI service credits are low or under maintenance. Please try again later.');
-    }
-    throw primaryError;
+    throw new Error(sanitizeAIError(primaryError));
   }
 }
 
@@ -218,9 +264,9 @@ async function callGemini(prompt, maxTokens, temperature, fileParts = null, mode
 }
 
 /**
- * Call Anthropic Claude API
+ * Call Anthropic Claude API (Supports multimodal image & PDF attachments strictly on Claude)
  */
-async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOverride = null) {
+async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOverride = null, claudeAttachments = null) {
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new Error('ANTHROPIC_API_KEY not found in environment variables');
@@ -235,7 +281,18 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
     // Claude Sonnet 4.6 supports extensive output contexts up to 16k+ tokens
     const safeMaxTokens = Math.min(maxTokens || 8192, 16384);
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const textPrompt = typeof prompt === 'string'
+      ? prompt
+      : Array.isArray(prompt)
+      ? prompt.filter(p => typeof p === 'string').join('\n')
+      : String(prompt || '');
+
+    const hasAttachments = Array.isArray(claudeAttachments) && claudeAttachments.length > 0;
+    let userContent = hasAttachments
+      ? [...claudeAttachments, { type: 'text', text: textPrompt }]
+      : textPrompt;
+
+    let response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -246,10 +303,32 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
         model: modelName,
         max_tokens: safeMaxTokens,
         temperature: temperature,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content: userContent }],
         ...(stopSequences && { stop_sequences: stopSequences })
       })
     });
+
+    // If a corrupted or unsupported attachment caused a 400 error, retry once with text-only on Claude before failing over
+    if (!response.ok && hasAttachments && response.status === 400) {
+      const attachErr = await response.json().catch(() => ({}));
+      console.warn('Claude attachment validation warning, retrying on Claude without binary blocks:', attachErr.error?.message);
+      userContent = textPrompt;
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: modelName,
+          max_tokens: safeMaxTokens,
+          temperature: temperature,
+          messages: [{ role: 'user', content: userContent }],
+          ...(stopSequences && { stop_sequences: stopSequences })
+        })
+      });
+    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -267,7 +346,7 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
       throw new Error('Claude returned empty content');
     }
 
-    let inputTokens = data.usage?.input_tokens || estimateTokens(prompt);
+    let inputTokens = data.usage?.input_tokens || estimateTokens(textPrompt);
     let outputTokens = data.usage?.output_tokens || estimateTokens(text);
 
     // AUTO-CONTINUE IF CLAUDE HIT MAX_TOKENS BEFORE COMPLETING
@@ -286,7 +365,7 @@ async function callClaude(prompt, maxTokens, temperature, stopSequences, modelOv
             max_tokens: safeMaxTokens,
             temperature: temperature,
             messages: [
-              { role: 'user', content: prompt },
+              { role: 'user', content: userContent },
               { role: 'assistant', content: text },
               { role: 'user', content: 'Continue writing immediately from the exact point where you stopped. Do not repeat any prior text. Complete all remaining sections and the bibliography/references.' }
             ]

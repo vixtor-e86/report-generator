@@ -38,39 +38,46 @@ function getReferenceInstructions(referenceStyle, faculty, chapterNumber, isLast
 
   let existingRefsText = '';
   if (existingReferences && existingReferences.length > 0) {
-    existingRefsText = `\n\n=== PROJECT-WIDE REFERENCES (REUSE THESE TO AVOID DUPLICATES) ===\n`;
+    existingRefsText = `\n\n=== SCRAPED WEB & PROJECT-WIDE REFERENCES (REUSE THESE TO AVOID DUPLICATES) ===\n`;
     existingReferences.forEach((ref, i) => {
-      const text = ref.reference_text || `${ref.authors?.map(a => typeof a === 'object' ? a.name : a).join(', ')} (${ref.year}). "${ref.title}". ${ref.venue}.`;
+      const auths = Array.isArray(ref.authors) ? ref.authors.map(a => typeof a === 'object' ? a.name : a).join(', ') : (ref.authors || '');
+      const urlSuffix = ref.url ? ` Available at: ${ref.url}` : '';
+      const text = ref.reference_text || `${auths} (${ref.year || 2023}). "${ref.title}". ${ref.venue || 'Technical Publication'}.${urlSuffix}`;
       existingRefsText += `SOURCE [${i + 1}]: ${text}\n`;
     });
-    existingRefsText += `\nSTRICT RULE: You MUST prioritize citing the sources listed above. ONLY generate new sources if you have exhausted the provided list or need specific technical validation not covered above.\n`;
+    existingRefsText += `\nSTRICT RULE: You MUST prioritize citing the sources listed above. ONLY supplement with additional verifiable sources when covering specific technical claims not already addressed above.\n`;
   }
 
   return `
-CITATION RULES (${referenceStyle.toUpperCase()}):
+CITATION & REFERENCING RULES (${referenceStyle.toUpperCase()}):
 1. Citations Method: Use ${style.inText}. Distribute citations naturally throughout the technical analysis.
 ${isFootnoteStyle ? `   - FOOTNOTE RULE: Whenever citing a source, place a superscript footnote [^1], [^2] immediately following the punctuation mark.
    - At the end of the chapter, list each footnote definition as:
      [^1]: Author, Title (Publisher Year) page. (Or Case citation / Statute citation)
    - DO NOT put (Author, Year) in brackets inside the paragraphs.` : ''}
-2. Citation Count Requirement: Include ${countInstruction} in your technical analysis.
+2. **CITE EXACTLY WHAT THE USER WROTE (CRITICAL FIDELITY RULE)**:
+   - If the user wrote or specified any authors, books, articles, websites, journals, standards, components, or specific technical claims in their project description, objectives, continuation baseline, or custom instructions, you MUST cite **EXACTLY what the user wrote**.
+   - Every single in-text citation MUST directly correspond to the exact statement, component, methodology, or topic written in that sentence—NEVER insert random, generic, or unrelated citations that do not match the exact topic written.
+   - Every in-text citation MUST have an exact 1-to-1 matching entry in the final reference list, and every reference in the final list MUST be cited in the text.
+3. Citation Count Requirement: Include ${countInstruction} in your technical analysis.
    ${chapterNumber === 1 ? '- CHAPTER 1 RULE: Maximum of 10 references allowed.' : ''}
    ${chapterNumber === 2 ? `- CHAPTER 2 RULE (LITERATURE REVIEW - MANDATORY MINIMUM 20 REFERENCES):
-   * You MUST cite at least 20 separate, verifiable academic sources in this chapter.
+   * You MUST cite at least 20 separate, verifiable sources in this chapter.
    * Distribute in-text citations thoroughly across ALL subsections of the literature review (at least 20 in-text citations throughout the text).
    * At the end of Chapter 2, provide the complete numbered list of all 20+ sources cited (1 to 20+).
    * Under NO circumstances should you output fewer than 20 references.` : ''}
-3. Sourcing: Combine the provided project references with other elite technical sources:
-   - Real Academic/Technical Papers (2020-2026).
-   - High-authority Online Articles (e.g., IEEE Spectrum, NASA, MIT Tech Review).
-   - Official Documentation, Statutes, Law Reports, and Datasheets.
-4. **STRICT NO DUPLICATES**: Do not list the same reference twice. Cross-check your final list against the "PROJECT-WIDE REFERENCES" provided above.
+4. **DIVERSE SOURCING (DO NOT CITE ONLY JOURNALS)**:
+   Combine the scraped web & project references provided below with a realistic, balanced variety of source types (not just journals):
+   - Peer-Reviewed Academic & Technical Journals (2020-2026).
+   - Authoritative Web / Online Articles, Technical Portals & Industry Reports (e.g., IEEE Spectrum, MIT Technology Review, ScienceDirect, World Bank, WHO, NASA, NIST, official industry portals—include publisher/URL where available).
+   - Textbooks, Monographs, Official Documentation, Statutes, Law Reports, Standards (ISO/SON/IEEE), and Manufacturer Datasheets.
+5. **STRICT NO DUPLICATES**: Do not list the same reference twice. Cross-check your final list against the "SCRAPED WEB & PROJECT-WIDE REFERENCES" provided below.
 ${existingRefsText}
-5. **MANDATORY**: At the end of THIS chapter, you MUST include a "${referenceStyle === 'oscola' ? '## Bibliography' : '## References'}" section. 
+6. **MANDATORY**: At the end of THIS chapter, you MUST include a "${referenceStyle === 'oscola' ? '## Bibliography' : '## References'}" section. 
    - **STRICT FORMAT**: Use a Markdown numbered list (1. [Reference]).
    - **CLEANLINESS**: Each reference must be its own list item. Ensure there is exactly one blank line between each numbered item to prevent text bunching.
-   - **CONTENT**: List only the sources actually cited in this chapter.
-   - **NO FORGING**: Do NOT hallucinate or "make up" references. Ensure all sources are real and verifiable.
+   - **CONTENT**: List only the sources actually cited in this chapter (100% exact match with in-text citations).
+   - **NO FORGING**: Do NOT hallucinate or "make up" fake references. Ensure all sources are real and verifiable.
    - If this is the FINAL chapter, ensure the list is comprehensive for the whole project.
    - Max 40 unique references for the entire project.
    - RECENCY: All sources must be between 2020-2026.

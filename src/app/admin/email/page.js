@@ -358,16 +358,28 @@ export default function EmailPage() {
     }
   };
 
-  // Filter customer list
+  // Global customer list search (searches across all users and fields)
+  const [visibleCount, setVisibleCount] = useState(150);
+
   const filteredCustomers = customers.filter(c => {
-    const text = searchTerm.toLowerCase();
-    return (
-      c.email.toLowerCase().includes(text) ||
-      c.username.toLowerCase().includes(text) ||
-      c.fullName.toLowerCase().includes(text) ||
-      c.department.toLowerCase().includes(text)
-    );
+    const query = (searchTerm || '').trim().toLowerCase();
+    if (!query) return true;
+    const terms = query.split(/\s+/).filter(Boolean);
+    const haystack = [
+      c.email || '',
+      c.username || '',
+      c.fullName || '',
+      c.department || '',
+      c.id || '',
+      c.premiumCount > 0 ? 'premium' : '',
+      c.standardCount > 0 ? 'standard' : '',
+      c.purchaseCount > 0 ? 'paying buyer' : 'free'
+    ].join(' ').toLowerCase();
+
+    return terms.every(term => haystack.includes(term));
   });
+
+  const displayedCustomers = filteredCustomers.slice(0, visibleCount);
 
   // Calculate summary metrics
   const totalRevenue = customers.reduce((acc, c) => acc + c.totalSpent, 0);
@@ -631,15 +643,54 @@ export default function EmailPage() {
 
             {/* Customer List Database Table */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2 border border-slate-200 rounded-2xl px-3 py-2 bg-slate-50/50">
-                <Search className="w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search customers in database..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none text-sm font-medium"
-                />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex-1 flex items-center gap-2 border border-slate-300 focus-within:border-slate-900 focus-within:bg-white rounded-2xl px-3.5 py-2.5 bg-white shadow-2xs transition">
+                  <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Global search by email, name, username, department, or tier..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setVisibleCount(150);
+                    }}
+                    className="w-full bg-transparent border-0 focus:ring-0 focus:outline-none text-sm font-bold text-slate-900 placeholder:text-slate-400"
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchTerm('');
+                        setVisibleCount(150);
+                      }}
+                      className="text-slate-400 hover:text-slate-700 p-1 rounded-full"
+                      title="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between sm:justify-end gap-2 px-1">
+                  <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                    {filteredCustomers.length.toLocaleString()} {searchTerm ? 'matching' : 'total'} users
+                  </span>
+                  {searchTerm && filteredCustomers.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const matchEmails = filteredCustomers
+                          .map(c => c.email)
+                          .filter(e => e && e !== 'Unknown' && e.includes('@'));
+                        const merged = [...new Set([...recipients, ...matchEmails])];
+                        setRecipients(merged);
+                        toast.success(`Added ${matchEmails.length} matching customer(s) to recipients.`);
+                      }}
+                      className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition"
+                    >
+                      + Select All Matches
+                    </button>
+                  )}
+                </div>
               </div>
 
               {loadingCustomers ? (
@@ -651,7 +702,7 @@ export default function EmailPage() {
                 <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                   <div className="max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
                     <table className="w-full text-left border-collapse">
-                      <thead className="bg-slate-50 sticky top-0 border-b border-slate-200">
+                      <thead className="bg-slate-50 sticky top-0 border-b border-slate-200 z-10">
                         <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                           <th className="p-3 w-12 text-center">Select</th>
                           <th className="p-3">Customer Details</th>
@@ -661,13 +712,17 @@ export default function EmailPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs">
-                        {filteredCustomers.map(customer => {
+                        {displayedCustomers.length > 0 ? displayedCustomers.map(customer => {
                           const isSelected = recipients.includes(customer.email);
                           return (
                             <tr key={customer.id} className={`hover:bg-slate-50/70 transition-colors ${isSelected ? 'bg-indigo-50/20' : ''}`}>
                               <td className="p-3 text-center">
                                 <button
                                   onClick={() => {
+                                    if (!customer.email || customer.email === 'Unknown') {
+                                      toast.error('This user record does not have a valid email address.');
+                                      return;
+                                    }
                                     if (isSelected) {
                                       handleRemoveRecipient(customer.email);
                                     } else {
@@ -685,7 +740,7 @@ export default function EmailPage() {
                               </td>
                               <td className="p-3">
                                 <div className="font-bold text-slate-950">{customer.fullName}</div>
-                                <div className="text-[10px] text-slate-400 font-medium">{customer.email}</div>
+                                <div className="text-[10px] text-slate-500 font-medium">{customer.email}</div>
                               </td>
                               <td className="p-3 text-slate-500 font-bold">{customer.department}</td>
                               <td className="p-3 text-right font-medium">
@@ -700,9 +755,26 @@ export default function EmailPage() {
                               {userRole !== 'support' && <td className="p-3 text-right font-black text-slate-950">₦{(customer.totalSpent).toLocaleString()}</td>}
                             </tr>
                           );
-                        })}
+                        }) : (
+                          <tr>
+                            <td colSpan={userRole !== 'support' ? 5 : 4} className="p-8 text-center text-slate-400 font-bold">
+                              No customers found matching &ldquo;{searchTerm}&rdquo;.
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
+                    {filteredCustomers.length > visibleCount && (
+                      <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
+                        <button
+                          type="button"
+                          onClick={() => setVisibleCount(prev => prev + 200)}
+                          className="px-4 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl text-[11px] font-black text-slate-700 uppercase tracking-wider transition"
+                        >
+                          Show More ({filteredCustomers.length - visibleCount} remaining)
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

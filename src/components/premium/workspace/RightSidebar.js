@@ -43,18 +43,40 @@ export default function RightSidebar({
       'application/pdf', 
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      'text/csv',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/webp'
     ];
     
-    const validExtensions = ['.pdf', '.docx', '.txt', '.xlsx'];
+    const validExtensions = ['.pdf', '.docx', '.txt', '.xlsx', '.csv', '.png', '.jpg', '.jpeg', '.webp'];
     const extension = '.' + file.name.split('.').pop().toLowerCase();
     
     if (!validTypes.includes(file.type) && !validExtensions.includes(extension)) {
-      onError('Only PDF, DOCX, XLSX, and TXT files are allowed.');
+      if (onError) onError('Only PNG, JPG, WEBP images and PDF, DOCX, XLSX, CSV, TXT documents are allowed.');
+      e.target.value = '';
+      return;
+    }
+
+    const isImage = file.type?.startsWith('image/') || ['.png', '.jpg', '.jpeg', '.webp'].includes(extension);
+    const maxBytes = isImage ? 3.5 * 1024 * 1024 : 5 * 1024 * 1024;
+
+    if (file.size > maxBytes) {
+      if (onError) {
+        onError(
+          isImage
+            ? `Image "${file.name}" exceeds the 3.5 MB limit for AI visual analysis. Please compress or resize it.`
+            : `Document "${file.name}" exceeds the 5.0 MB limit for AI analysis.`
+        );
+      }
+      e.target.value = '';
       return;
     }
 
     onUpload(file);
+    e.target.value = '';
   };
 
   return (
@@ -94,31 +116,49 @@ export default function RightSidebar({
           </div>
         ) : (
           <div className="files-panel p-4">
+            <div className="mb-3 p-2.5 bg-indigo-50/70 border border-indigo-100 rounded-lg">
+              <p className="text-[11px] font-bold text-indigo-950 m-0">AI Analysis Context Bank</p>
+              <p className="text-[10px] text-indigo-700 m-0 mt-0.5 leading-snug">
+                Upload images (charts, circuits, notes) &amp; documents here for the AI to analyze during chapter generation. No figure captions needed.
+              </p>
+            </div>
             <div className="mb-4">
               <label className={`flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
-                <input type="file" className="hidden" onChange={handleQuickUpload} disabled={uploading} accept=".pdf,.docx,.txt,.xlsx" />
+                <input type="file" className="hidden" onChange={handleQuickUpload} disabled={uploading} accept=".pdf,.docx,.txt,.xlsx,.csv,.png,.jpg,.jpeg,.webp" />
                 <div className="text-center">
-                  <div className="text-indigo-600 mb-1">{uploading ? 'Uploading...' : <Icons.Upload />}</div>
-                  <span className="text-xs font-medium text-gray-600">{uploading ? 'Please wait' : 'Click to Upload Document'}</span>
+                  <div className="text-indigo-600 mb-1 flex justify-center">{uploading ? 'Uploading...' : <Icons.Upload />}</div>
+                  <span className="text-xs font-semibold text-gray-700 block">{uploading ? 'Please wait...' : 'Upload Image or Document'}</span>
+                  <span className="text-[10px] text-gray-400 block mt-0.5">Images ≤ 3.5MB • PDF, DOCX, XLSX, CSV, TXT ≤ 5MB</span>
                 </div>
               </label>
             </div>
             <div className="files-list space-y-3">
-              {files.length > 0 ? files.map((file) => (
-                <div key={file.id} className="file-item flex items-start gap-3 p-3 bg-white border border-gray-100 rounded-lg hover:shadow-sm transition cursor-pointer" onClick={() => onFileClick(file)}>
-                  <span className="text-xl">{file.file_type?.includes('image') ? '🖼️' : '📄'}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate" title={file.original_name}>{file.original_name}</p>
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-[10px] text-gray-500">{(file.size_bytes / 1024).toFixed(1)} KB</span>
-                      <div className="flex gap-2">
-                        <span className="text-[10px] text-indigo-600 hover:underline font-medium">View</span>
-                        <button onClick={(e) => { e.stopPropagation(); onDelete(file); }} disabled={deleting} className="text-red-500 hover:text-red-700 disabled:opacity-50"><Icons.Trash /></button>
+              {files.length > 0 ? files.map((file) => {
+                const isImg = file.file_type?.includes('image') || /\.(png|jpe?g|webp)$/i.test(file.original_name || file.name || '');
+                return (
+                  <div key={file.id} className="file-item flex items-start gap-3 p-3 bg-white border border-gray-100 rounded-lg hover:shadow-sm transition cursor-pointer" onClick={() => onFileClick(file)}>
+                    {isImg ? (
+                      <img src={file.file_url || file.src} alt={file.original_name} className="w-9 h-9 rounded-md object-cover border border-gray-200 shrink-0" />
+                    ) : (
+                      <span className="text-xl shrink-0">📄</span>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate" title={file.original_name}>{file.original_name}</p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-[10px] text-gray-500">
+                          {file.size_bytes >= 1024 * 1024
+                            ? `${(file.size_bytes / (1024 * 1024)).toFixed(2)} MB`
+                            : `${((file.size_bytes || 0) / 1024).toFixed(1)} KB`} • {isImg ? 'AI Image' : 'AI Doc'}
+                        </span>
+                        <div className="flex gap-2">
+                          <span className="text-[10px] text-indigo-600 hover:underline font-medium">View</span>
+                          <button onClick={(e) => { e.stopPropagation(); onDelete(file); }} disabled={deleting} className="text-red-500 hover:text-red-700 disabled:opacity-50"><Icons.Trash /></button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )) : <div className="tool-placeholder text-center py-8"><span className="placeholder-icon text-4xl block mb-2">📂</span><p className="text-sm text-gray-500">No files uploaded yet.</p></div>}
+                );
+              }) : <div className="tool-placeholder text-center py-8"><span className="placeholder-icon text-4xl block mb-2">📂</span><p className="text-sm text-gray-500">No AI analysis files or images uploaded yet.</p></div>}
             </div>
           </div>
         )}

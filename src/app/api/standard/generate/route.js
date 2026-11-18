@@ -2,7 +2,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getStandardPrompt } from '@/lib/standardPrompts';
-import { callAI, checkTokenLimit } from '@/lib/aiProvider';
+import { callAI, checkTokenLimit, sanitizeAIError } from '@/lib/aiProvider';
+import { fetchDiverseReferences } from '@/lib/referenceExtractor';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -137,26 +138,20 @@ export async function POST(request) {
       finalReferencesList = [...studentRefs, ...finalReferencesList];
     }
     const totalMaxProjectRefs = chapterNumber === 2 ? 50 : 40;
-    const refFetchLimit = chapterNumber === 2 ? '25' : '10';
+    const refFetchLimit = chapterNumber === 2 ? 25 : 12;
 
     if (finalReferencesList.length < totalMaxProjectRefs && project.reference_style !== 'none') {
       try {
-        const query = (project.title + " " + project.description).substring(0, 200);
-        const searchUrl = new URL('https://api.semanticscholar.org/graph/v1/paper/search', 'https://api.semanticscholar.org');
-        searchUrl.searchParams.set('query', query);
-        searchUrl.searchParams.set('year', '2020-2026');
-        searchUrl.searchParams.set('limit', refFetchLimit);
-        searchUrl.searchParams.set('fields', 'title,authors,year,venue,url');
-        const searchRes = await fetch(searchUrl.toString());
-        if (searchRes.ok) {
-          const searchData = await searchRes.json();
-          if (searchData.data) {
-            const existingTitles = new Set(finalReferencesList.map(p => p.title?.toLowerCase() || p.reference_text?.toLowerCase()));
-            for (const paper of searchData.data) {
-              if (!existingTitles.has(paper.title.toLowerCase()) && finalReferencesList.length < totalMaxProjectRefs) {
-                finalReferencesList.push(paper);
-              }
-            }
+        const scrapedRefs = await fetchDiverseReferences({
+          title: project.title,
+          department: project.department,
+          limit: refFetchLimit
+        });
+        const existingTitles = new Set(finalReferencesList.map(p => p.title?.toLowerCase() || p.reference_text?.toLowerCase()));
+        for (const paper of scrapedRefs) {
+          if (paper.title && !existingTitles.has(paper.title.toLowerCase()) && finalReferencesList.length < totalMaxProjectRefs) {
+            existingTitles.add(paper.title.toLowerCase());
+            finalReferencesList.push(paper);
           }
         }
       } catch (err) { console.error('Web search error:', err); }
@@ -245,6 +240,6 @@ export async function POST(request) {
         console.error('Failed to reset chapter status:', statusErr);
       }
     }
-    return NextResponse.json({ error: error.message || 'Failed to generate' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeAIError(error, 'Failed to generate chapter. Please try again.') }, { status: 500 });
   }
 }

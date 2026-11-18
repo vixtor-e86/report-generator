@@ -1,7 +1,7 @@
 // src/app/api/premium/visual-tools/route.js
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { callAI } from '@/lib/aiProvider';
+import { callAI, sanitizeAIError } from '@/lib/aiProvider';
 
 export async function POST(request) {
   try {
@@ -57,7 +57,8 @@ export async function POST(request) {
     } else if (type === 'image') {
       // 3. Generate Image using Together AI with model fallback
       if (!process.env.TOGETHER_API_KEY) {
-        return NextResponse.json({ error: 'TOGETHER_API_KEY is not configured' }, { status: 500 });
+        console.error('TOGETHER_API_KEY is not configured');
+        return NextResponse.json({ error: 'Visual Studio is temporarily under maintenance. Please try again later.' }, { status: 500 });
       }
 
       const candidateModels = [
@@ -108,8 +109,9 @@ export async function POST(request) {
       }
 
       if (!base64Image) {
+        console.error('Image generation failed across models:', lastError);
         return NextResponse.json({ 
-          error: lastError || 'Image generation failed. Please verify your Together AI account credits or dedicated endpoint status.' 
+          error: 'Visual generation is temporarily unavailable. Please try again shortly.' 
         }, { status: 500 });
       }
 
@@ -141,6 +143,6 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Visual Tools Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeAIError(error, 'Visual generation encountered a temporary issue. Please try again.') }, { status: 500 });
   }
 }

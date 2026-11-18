@@ -20,7 +20,10 @@ export async function POST(request) {
     // 1. Env Validation
     const limit = parseInt(process.env.HUMANIZER_LIMIT) || 20000;
     const apiKey = process.env.STEALTHGPT_API_KEY || process.env.HUMANIZER_API_KEY || process.env.WRITEHUMAN_API_KEY; 
-    if (!apiKey) throw new Error('Server configuration error: STEALTHGPT_API_KEY missing.');
+    if (!apiKey) {
+      console.error('Server configuration error: STEALTHGPT_API_KEY missing.');
+      throw new Error('Humanizer service is temporarily undergoing maintenance.');
+    }
 
     if (!content || !projectId) return NextResponse.json({ error: 'Missing content or projectId' }, { status: 400 });
 

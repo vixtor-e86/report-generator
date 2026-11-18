@@ -1,8 +1,10 @@
 // src/app/api/premium/generate/route.js
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { callAI } from '@/lib/aiProvider';
+import { callAI, sanitizeAIError } from '@/lib/aiProvider';
+import { fetchDiverseReferences } from '@/lib/referenceExtractor';
 import mammoth from 'mammoth';
+import * as XLSX from 'xlsx';
 
 // Polyfills for Vercel
 if (typeof global.DOMMatrix === 'undefined') { global.DOMMatrix = class DOMMatrix { constructor() { this.a = 1; this.d = 1; } }; }
@@ -114,22 +116,131 @@ export async function POST(request) {
       return NextResponse.json({ success: true, content: updatedFullContent });
     }
 
-    // --- 2. Data Extraction ---
+    // --- 2. Data Extraction & Strict Claude Multimodal Attachment Processing ---
+    const isClaudeProvider = provider === 'claude';
     let contextualSourceData = "";
-    if (selectedContextFiles.length > 0) {
+    const claudeAttachments = [];
+
+    const MAX_ANALYSIS_IMAGES = 3;
+    const MAX_ANALYSIS_DOCS = 2;
+    const MAX_IMAGE_BYTES = 3.5 * 1024 * 1024; // 3.5 MB
+    const MAX_DOC_BYTES = 5 * 1024 * 1024; // 5.0 MB
+    const MAX_TOTAL_BYTES = 10 * 1024 * 1024; // 10.0 MB
+
+    let processedImagesCount = 0;
+    let processedDocsCount = 0;
+    let processedTotalBytes = 0;
+
+    const detectImageMediaType = (buf, lowerName) => {
+      if (buf.length >= 4) {
+        if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) return 'image/png';
+        if (buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) return 'image/jpeg';
+        if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46) return 'image/gif';
+        if (buf.length >= 12 && buf.slice(8, 12).toString('ascii') === 'WEBP') return 'image/webp';
+      }
+      if (lowerName.endsWith('.png')) return 'image/png';
+      if (lowerName.endsWith('.webp')) return 'image/webp';
+      if (lowerName.endsWith('.gif')) return 'image/gif';
+      return 'image/jpeg';
+    };
+
+    if (Array.isArray(selectedContextFiles) && selectedContextFiles.length > 0) {
       for (const file of selectedContextFiles) {
         try {
-          const res = await fetch(file.file_url || file.src);
-          const buffer = Buffer.from(await res.arrayBuffer());
-          let extractedText = "";
-          if ((file.name || file.original_name || "").toLowerCase().endsWith('.docx')) {
-            const result = await mammoth.extractRawText({ buffer });
-            extractedText = result.value;
-          } else {
-            extractedText = buffer.toString('utf-8');
+          const fileName = file.name || file.original_name || "File";
+          const lowerName = fileName.toLowerCase();
+          const isImg = file.file_type?.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(lowerName);
+
+          // STRICT RULE: If provider is switched away from Claude (e.g., to DeepSeek), NEVER analyze images
+          if (isImg) {
+            if (!isClaudeProvider) continue;
+            if (processedImagesCount >= MAX_ANALYSIS_IMAGES) continue;
+
+            const res = await fetch(file.file_url || file.src);
+            if (!res.ok) continue;
+            const buffer = Buffer.from(await res.arrayBuffer());
+
+            if (buffer.length > MAX_IMAGE_BYTES || (processedTotalBytes + buffer.length) > MAX_TOTAL_BYTES) {
+              continue;
+            }
+
+            const mediaType = detectImageMediaType(buffer, lowerName);
+            claudeAttachments.push({
+              type: 'text',
+              text: `[AI Reference Image for Chapter ${chapterNumber} Visual Analysis (Context Only - DO NOT embed as a figure URL): "${fileName}"]`
+            });
+            claudeAttachments.push({
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: buffer.toString('base64')
+              }
+            });
+
+            processedImagesCount++;
+            processedTotalBytes += buffer.length;
+            continue;
           }
-          contextualSourceData += `\n--- DATA FROM: ${file.name || "File"} ---\n${extractedText.split(/\s+/).slice(0, 500).join(" ")}\n`;
-        } catch (e) {}
+
+          // Document Processing (.docx, .xlsx, .csv, .txt, .pdf)
+          if (processedDocsCount >= MAX_ANALYSIS_DOCS) continue;
+
+          const res = await fetch(file.file_url || file.src);
+          if (!res.ok) continue;
+          const buffer = Buffer.from(await res.arrayBuffer());
+
+          if (buffer.length > MAX_DOC_BYTES || (processedTotalBytes + buffer.length) > MAX_TOTAL_BYTES) {
+            continue;
+          }
+
+          if (lowerName.endsWith('.pdf')) {
+            // Native PDF analysis strictly on Claude
+            if (isClaudeProvider) {
+              claudeAttachments.push({
+                type: 'text',
+                text: `[AI Reference PDF Document for Chapter ${chapterNumber} Analysis: "${fileName}"]`
+              });
+              claudeAttachments.push({
+                type: 'document',
+                source: {
+                  type: 'base64',
+                  media_type: 'application/pdf',
+                  data: buffer.toString('base64')
+                }
+              });
+              processedDocsCount++;
+              processedTotalBytes += buffer.length;
+            }
+          } else if (lowerName.endsWith('.docx')) {
+            const result = await mammoth.extractRawText({ buffer });
+            const extractedText = (result.value || '').trim();
+            if (extractedText) {
+              contextualSourceData += `\n--- DATA FROM DOCUMENT: ${fileName} ---\n${extractedText.split(/\s+/).slice(0, 1800).join(" ")}\n`;
+              processedDocsCount++;
+              processedTotalBytes += buffer.length;
+            }
+          } else if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls') || lowerName.endsWith('.csv')) {
+            const workbook = XLSX.read(buffer, { type: 'buffer' });
+            const firstSheetName = workbook.SheetNames[0];
+            if (firstSheetName) {
+              const csvText = XLSX.utils.sheet_to_csv(workbook.Sheets[firstSheetName]);
+              const rows = csvText.split('\n').slice(0, 120).join('\n');
+              contextualSourceData += `\n--- DATASET FROM SPREADSHEET: ${fileName} ---\n${rows.split(/\s+/).slice(0, 1800).join(" ")}\n`;
+              processedDocsCount++;
+              processedTotalBytes += buffer.length;
+            }
+          } else {
+            const extractedText = buffer.toString('utf-8').trim();
+            if (extractedText) {
+              contextualSourceData += `\n--- DATA FROM FILE: ${fileName} ---\n${extractedText.split(/\s+/).slice(0, 1800).join(" ")}\n`;
+              processedDocsCount++;
+              processedTotalBytes += buffer.length;
+            }
+          }
+        } catch (e) {
+          console.warn('Context file extraction skipped:', e.message);
+        }
       }
     }
 
@@ -220,20 +331,16 @@ export async function POST(request) {
 
     if (finalReferencesList.length < totalNeeded && !skipReferences) {
       try {
-        const query = (project.title + " " + project.description).substring(0, 200);
-        const searchUrl = new URL('https://api.semanticscholar.org/graph/v1/paper/search', 'https://api.semanticscholar.org');
-        searchUrl.searchParams.set('query', query);
-        searchUrl.searchParams.set('year', '2020-2026');
-        searchUrl.searchParams.set('limit', '15');
-        searchUrl.searchParams.set('fields', 'title,authors,year,venue,url');
-        const searchRes = await fetch(searchUrl.toString());
-        if (searchRes.ok) {
-          const searchData = await searchRes.json();
-          if (searchData.data) {
-            const existingTitles = new Set(finalReferencesList.map(p => p.title.toLowerCase()));
-            for (const paper of searchData.data) {
-              if (!existingTitles.has(paper.title.toLowerCase()) && finalReferencesList.length < totalNeeded) finalReferencesList.push(paper);
-            }
+        const scrapedRefs = await fetchDiverseReferences({
+          title: project.title,
+          department: project.department,
+          limit: Math.max(totalNeeded, 15)
+        });
+        const existingTitles = new Set(finalReferencesList.map(p => (p.title || '').toLowerCase()));
+        for (const paper of scrapedRefs) {
+          if (paper.title && !existingTitles.has(paper.title.toLowerCase()) && finalReferencesList.length < totalNeeded) {
+            existingTitles.add(paper.title.toLowerCase());
+            finalReferencesList.push(paper);
           }
         }
       } catch (err) {}
@@ -244,7 +351,8 @@ export async function POST(request) {
         `STRICT RULE: Prioritize reusing these specific references. Consistency is required.\n\n` +
         finalReferencesList.slice(0, totalNeeded).map((p, idx) => {
           const auths = Array.isArray(p.authors) ? p.authors.map(a => typeof a === 'object' ? a.name : a).join(', ') : (p.authors || 'Unknown');
-          return `SOURCE [${idx + 1}]: ${auths} (${p.year}). "${p.title}". ${p.venue || 'Research Journal'}.`;
+          const urlSuffix = p.url ? ` Available at: ${p.url}` : '';
+          return `SOURCE [${idx + 1}]: ${auths} (${p.year}). "${p.title}". ${p.venue || 'Technical Publication'}.${urlSuffix}`;
         }).join('\n\n')
       : '';
 
@@ -269,23 +377,34 @@ export async function POST(request) {
     const chapterTitle = currentChapterData?.title || `Chapter ${chapterNumber}`;
     const mandatorySections = currentChapterData?.sections?.length > 0 ? `## MANDATORY SECTIONS\n` + currentChapterData.sections.map(s => `- ${s}`).join('\n') : '';
 
+    const visualAnalysisInstruction = (isClaudeProvider && claudeAttachments.length > 0)
+      ? `\n\n### MANDATORY AI VISUAL & DOCUMENT CONTEXT ANALYSIS:\n` +
+        `You have been provided with attached reference image(s) and/or PDF document(s) in this request for visual and technical inspection.\n` +
+        `1. Carefully inspect all attached reference images (charts, circuit schematics, diagrams, experimental results, tables, or notes) and attached PDF documents.\n` +
+        `2. Extract and integrate the exact technical parameters, numerical values, architectural flows, trends, and findings directly into your academic prose and analysis for Chapter ${chapterNumber}.\n` +
+        `3. STRICT SEPARATION OF ROLES: Attached reference images are for your visual analysis ONLY—do NOT create or invent markdown image tags (![...](...)) for reference images. ONLY insert markdown image placeholders for the explicit "MANDATORY IMAGE ATTACHMENTS (REPORT FIGURES)" listed below (if any).`
+      : '';
+
     const imageInstruction = selectedImages.length > 0
-      ? `\n\n### MANDATORY IMAGE ATTACHMENTS:\n` +
-        `Insert using: ![Caption](URL). Reference them in text (e.g. "see Fig X").\n` +
+      ? `\n\n### MANDATORY IMAGE ATTACHMENTS (REPORT FIGURES TO INSERT AS PLACEHOLDERS):\n` +
+        `Insert ONLY these specific report figures into the chapter using: ![Caption](URL). Reference them naturally in the text (e.g. "see Fig X").\n` +
         selectedImages.map(img => `- Caption: "${img.caption || img.original_name}", URL: ${img.file_url}`).join('\n')
       : '';
 
     const referenceRequirements = !skipReferences ? `
     ## CITATION AND REFERENCE REQUIREMENTS
     ${citationStyleInst}
-    - COUNT: Exactly ${totalNeeded} references. 
-    - SOURCING: Combine the technical papers provided above with other elite sources:
-      1. Technical Journals and Research Papers (Provided).
-      2. High-authority Online Articles (e.g., IEEE Spectrum, NASA, MIT Tech Review).
-      3. Official Documentation and Datasheets (e.g., Arduino, STMicroelectronics).
-      4. Citations from reputable academic repositories.
+    - COUNT: Exactly ${totalNeeded} references.
+    - CITE EXACTLY WHAT THE USER WROTE (CRITICAL FIDELITY):
+      1. If the user specified any authors, books, journals, websites, standards, or references in their Description, Components, Research Context, Uploaded Documents, Continuation Baseline, or Custom Instructions, you MUST cite **EXACTLY what the user wrote**.
+      2. Every single in-text citation MUST directly correspond to the exact technical concept, statement, component, or methodology written in that sentence—NEVER insert generic, random, or off-topic citations that do not match what is written.
+      3. Every in-text citation MUST have a 1-to-1 matching entry in the final reference list, and every item in the reference list MUST be cited in-text.
+    - DIVERSE SOURCING (NOT JUST JOURNALS): Combine the scraped web & technical references provided above with a balanced variety of verifiable sources:
+      1. Peer-Reviewed Academic & Technical Journals (2020-2026).
+      2. High-Authority Web / Online Articles, Technical Portals & Industry Reports (e.g., IEEE Spectrum, MIT Technology Review, ScienceDirect, World Bank, WHO, NASA, NIST—include publisher/URL where available).
+      3. Textbooks, Monographs, Official Documentation, Standards (ISO/SON/IEEE), Statutes, and Datasheets.
     - RECENCY: Focus on 2020-2026.
-    - NO FORGING: Do NOT hallucinate or "make up" references. If you supplement the provided list, ensure they are real, verifiable sources. 
+    - NO FORGING: Do NOT hallucinate or "make up" fake references. Ensure all sources are real, verifiable sources. 
     - CONSISTENCY: Ensure in-text citations match the final reference list perfectly.` : '';
 
     let templateAiInstruction = project.custom_templates?.ai_instruction || "";
@@ -315,7 +434,8 @@ export async function POST(request) {
     ${mandatorySections}
     ${templateAiInstruction ? `\n\n### ADVANCED TEMPLATE INSTRUCTIONS (CRITICAL PRIORITY):\n${templateAiInstruction}` : ''}
     ${technicalTableInstruction}
-    ${contextualSourceData ? `## MANDATORY EXPERIMENTAL DATA ANALYSIS\n${contextualSourceData}` : ''}
+    ${contextualSourceData ? `## MANDATORY EXPERIMENTAL & DOCUMENT DATA ANALYSIS\n${contextualSourceData}` : ''}
+    ${visualAnalysisInstruction}
     ${imageInstruction}
     ${referencesMapping}
     ${referenceRequirements}
@@ -342,7 +462,13 @@ export async function POST(request) {
     ${skipReferences ? '--- STRICT: NO REFERENCES OR CITATIONS. ---' : '--- MANDATORY: Include "## References" at the end. ---'}`;
 
     // --- 7. Call AI & Save (8192 tokens ensure full 2,500-3,500 words are completed without cutoff) ---
-    const aiResponse = await callAI(systemPrompt, { provider, model, maxTokens: 8192, temperature: 0.5 });
+    const aiResponse = await callAI(systemPrompt, {
+      provider,
+      model,
+      maxTokens: 8192,
+      temperature: 0.5,
+      claudeAttachments: isClaudeProvider && claudeAttachments.length > 0 ? claudeAttachments : null
+    });
 
     let { data: chapter } = await supabaseAdmin.from('premium_chapters').select('*').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
     if (!chapter) {
@@ -370,6 +496,6 @@ export async function POST(request) {
 
   } catch (error) { 
     console.error('Gen Error:', error); 
-    return NextResponse.json({ error: error.message }, { status: 500 }); 
+    return NextResponse.json({ error: sanitizeAIError(error) }, { status: 500 }); 
   }
 }

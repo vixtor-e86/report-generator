@@ -306,9 +306,11 @@ function WorkspaceContent() {
 
     if (assets) {
       const process = (items) => items.map(a => ({ ...a, src: a.file_url, name: a.original_name }));
-      setImages(process(assets.filter(a => a.file_type.startsWith('image/'))));
+      // Left Sidebar: strictly content images with captions/placeholders (not right-sidebar AI analysis images)
+      setImages(process(assets.filter(a => a.file_type?.startsWith('image/') && a.purpose !== 'sidebar' && a.purpose !== 'ai_analysis')));
       setProjectDocs(process(assets.filter(a => a.purpose === 'project_component')));
-      setFiles(process(assets.filter(a => !a.file_type.startsWith('image/') && a.purpose !== 'project_component')));
+      // Right Sidebar: all files & images uploaded for AI Analysis
+      setFiles(process(assets.filter(a => a.purpose === 'sidebar' || a.purpose === 'ai_analysis' || (!a.file_type?.startsWith('image/') && a.purpose !== 'project_component'))));
     }
 
     const { data: papers } = await supabase.from('premium_research_papers').select('*').eq('project_id', projectId).order('created_at', { ascending: false });
@@ -445,6 +447,7 @@ function WorkspaceContent() {
               <RightSidebar 
                 onClose={() => setIsRightSidebarOpen(false)} files={files} onUpload={(f) => handleUpload(f, 'sidebar')}
                 uploading={uploading} onDelete={handleDelete} deleting={deleting} onFileClick={handleFileClick}
+                onError={(m) => showNotification('Upload Error', m, 'error')}
                 onSearchClick={() => setIsSearchModalOpen(true)} onVisualToolsClick={() => setIsVisualToolsModalOpen(true)}
                 onPresentationClick={() => setIsPresentationModalOpen(true)} onHumanizerClick={() => setIsHumanizerModalOpen(true)}
                 onPlagiarismClick={() => setIsPlagiarismModalOpen(true)}

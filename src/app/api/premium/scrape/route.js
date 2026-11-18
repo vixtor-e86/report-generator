@@ -1,6 +1,6 @@
 // src/app/api/premium/scrape/route.js
 import { NextResponse } from 'next/server';
-import { callAI } from '@/lib/aiProvider';
+import { callAI, sanitizeAIError } from '@/lib/aiProvider';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import * as cheerio from 'cheerio';
 
@@ -88,6 +88,6 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('System Error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to process URL' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeAIError(error, 'Failed to process URL. Please try again.') }, { status: 500 });
   }
 }

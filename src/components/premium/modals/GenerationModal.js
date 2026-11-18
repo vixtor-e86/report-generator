@@ -30,12 +30,21 @@ export default function GenerationModal({
   const [activeTab, setActiveTab] = useState('details');
   const [showTableBuilder, setShowTableBuilder] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [previewFile, setPreviewFile] = useState(null);
-  const [extractedPreview, setExtractedPreview] = useState('');
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [capWarning, setCapWarning] = useState('');
+
+  // Per-chapter AI Analysis Cap Limits
+  const MAX_ANALYSIS_IMAGES = 3;
+  const MAX_ANALYSIS_DOCS = 2;
+  const MAX_IMAGE_BYTES = 3.5 * 1024 * 1024; // 3.5 MB
+  const MAX_DOC_BYTES = 5 * 1024 * 1024; // 5.0 MB
+  const MAX_TOTAL_ANALYSIS_BYTES = 10 * 1024 * 1024; // 10.0 MB
+
+  const isAnalysisImageFile = (file) => {
+    const name = (file?.name || file?.original_name || '').toLowerCase();
+    return file?.file_type?.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(name);
+  };
 
   const currentChapterNumber = activeChapter?.number || activeChapter?.id || 0;
-  const isChapter4 = currentChapterNumber === 4;
   const isSubsequentChapter = currentChapterNumber > 1;
   const isCustomTemplate = projectData?.custom_templates?.name === 'Custom Template';
 
@@ -51,6 +60,7 @@ export default function GenerationModal({
         userPrompt: '', selectedImages: [], selectedPapers: [], selectedContextFiles: [], skipReferences: false, targetWordCount: 2000,
         tableData: { headers: ['Parameter', 'Value'], rows: [['', '']] }
       });
+      setCapWarning('');
       setActiveTab(isSubsequentChapter ? 'materials' : 'details');
     }
   }, [isOpen, projectData, currentChapterNumber, isSubsequentChapter]);
@@ -92,29 +102,55 @@ export default function GenerationModal({
     setLocalData({...localData, tableData: { headers: newHeaders, rows: newRows }});
   };
 
-  const handlePreviewFile = async (file) => {
-    setPreviewFile(file);
-    setPreviewLoading(true);
-    try {
-      const res = await fetch('/api/premium/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: 'test', userId: 'test', chapterNumber: 4, selectedContextFiles: [file], testOnly: true })
-      });
-      const data = await res.json();
-      setExtractedPreview(data.debugExtractions || 'No text extracted.');
-    } catch (e) { setExtractedPreview('Error loading data.'); }
-    finally { setPreviewLoading(false); }
-  };
-
   const toggleContextFile = (file) => {
+    setCapWarning('');
+    const alreadySelected = localData.selectedContextFiles.some(f => f.id === file.id);
+
+    if (alreadySelected) {
+      setLocalData(prev => ({
+        ...prev,
+        selectedContextFiles: prev.selectedContextFiles.filter(f => f.id !== file.id)
+      }));
+      return;
+    }
+
+    const isImg = isAnalysisImageFile(file);
+    const fileSize = file.size_bytes || 0;
+
+    // 1. Validate individual file size limit
+    if (isImg && fileSize > MAX_IMAGE_BYTES) {
+      setCapWarning(`"${file.name || file.original_name}" exceeds the 3.5 MB limit per analysis image.`);
+      return;
+    }
+    if (!isImg && fileSize > MAX_DOC_BYTES) {
+      setCapWarning(`"${file.name || file.original_name}" exceeds the 5.0 MB limit per analysis document.`);
+      return;
+    }
+
+    // 2. Validate count limits
+    const currentImagesCount = localData.selectedContextFiles.filter(isAnalysisImageFile).length;
+    const currentDocsCount = localData.selectedContextFiles.filter(f => !isAnalysisImageFile(f)).length;
+
+    if (isImg && currentImagesCount >= MAX_ANALYSIS_IMAGES) {
+      setCapWarning(`Maximum of ${MAX_ANALYSIS_IMAGES} images can be selected for AI analysis per chapter.`);
+      return;
+    }
+    if (!isImg && currentDocsCount >= MAX_ANALYSIS_DOCS) {
+      setCapWarning(`Maximum of ${MAX_ANALYSIS_DOCS} documents can be selected for AI analysis per chapter.`);
+      return;
+    }
+
+    // 3. Validate combined 10 MB payload limit
+    const currentTotalBytes = localData.selectedContextFiles.reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+    if (currentTotalBytes + fileSize > MAX_TOTAL_ANALYSIS_BYTES) {
+      setCapWarning('Total selected files exceed the 10.0 MB per-chapter analysis limit.');
+      return;
+    }
+
     setLocalData(prev => ({
       ...prev,
-      selectedContextFiles: prev.selectedContextFiles.find(f => f.id === file.id)
-        ? prev.selectedContextFiles.filter(f => f.id !== file.id)
-        : [...prev.selectedContextFiles, file]
+      selectedContextFiles: [...prev.selectedContextFiles, file]
     }));
-    setPreviewFile(null);
   };
 
   const handleGenerateInit = async () => {
@@ -367,29 +403,123 @@ export default function GenerationModal({
                     </div>
                   </div>
 
-                  {isChapter4 && (
-                    <div style={{ padding: '16px', background: '#111827', borderRadius: '12px', color: 'white' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                        <Icons.Activity />
-                        <span style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase' }}>Experimental Data Analysis</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '8px', marginBottom: '12px' }}>
-                        <Icons.Info style={{ color: '#6366f1' }} />
-                        <p style={{ fontSize: '10px', color: '#9ca3af', margin: 0, fontWeight: '700' }}>Note: Only DOCX and TXT files are supported for extraction.</p>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {dataFiles.filter(f => {
-                          const name = (f.name || f.original_name || "").toLowerCase();
-                          return name.endsWith('.docx') || name.endsWith('.txt');
-                        }).map(f => (
-                          <div key={f.id} onClick={() => handlePreviewFile(f)} style={{ padding: '10px', borderRadius: '8px', background: localData.selectedContextFiles.find(sf => sf.id === f.id) ? '#374151' : '#1f2937', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: '12px' }}>{f.name || f.original_name}</span>
-                            {localData.selectedContextFiles.find(sf => sf.id === f.id) && <Icons.Check />}
+                  {/* ✅ AI Analysis Context Picker (Images & Documents from Right Sidebar) - Available for ALL chapters */}
+                  {(() => {
+                    const eligibleAnalysisFiles = dataFiles.filter(f => {
+                      const name = (f.name || f.original_name || '').toLowerCase();
+                      return /\.(pdf|docx|txt|xlsx|csv|png|jpe?g|webp)$/i.test(name) || f.file_type?.startsWith('image/');
+                    });
+                    const selectedImgCount = localData.selectedContextFiles.filter(isAnalysisImageFile).length;
+                    const selectedDocCount = localData.selectedContextFiles.filter(f => !isAnalysisImageFile(f)).length;
+                    const selectedTotalBytes = localData.selectedContextFiles.reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+                    const totalMB = (selectedTotalBytes / (1024 * 1024)).toFixed(2);
+                    const pctUsed = Math.min(Math.round((selectedTotalBytes / MAX_TOTAL_ANALYSIS_BYTES) * 100), 100);
+
+                    return (
+                      <div style={{ padding: '18px', background: '#111827', borderRadius: '14px', color: 'white' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Icons.Activity />
+                              <span style={{ fontSize: '13px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                                AI Analysis Files &amp; Images (Context Only)
+                              </span>
+                            </div>
+                            <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0', lineHeight: '1.4' }}>
+                              Select images or documents from the Right Sidebar for the AI to inspect and analyze for this chapter. These will NOT be inserted as figure placeholders.
+                            </p>
                           </div>
-                        ))}
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '6px', background: selectedImgCount >= MAX_ANALYSIS_IMAGES ? '#7f1d1d' : '#1f2937', color: '#e5e7eb', border: '1px solid #374151' }}>
+                              Images: {selectedImgCount}/{MAX_ANALYSIS_IMAGES}
+                            </span>
+                            <span style={{ fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '6px', background: selectedDocCount >= MAX_ANALYSIS_DOCS ? '#7f1d1d' : '#1f2937', color: '#e5e7eb', border: '1px solid #374151' }}>
+                              Docs: {selectedDocCount}/{MAX_ANALYSIS_DOCS}
+                            </span>
+                            <span style={{ fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '6px', background: '#1f2937', color: '#a5b4fc', border: '1px solid #374151' }}>
+                              {totalMB} / 10.0 MB
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Capacity Bar */}
+                        <div style={{ width: '100%', height: '6px', background: '#1f2937', borderRadius: '999px', overflow: 'hidden', marginBottom: '12px' }}>
+                          <div style={{ width: `${pctUsed}%`, height: '100%', background: pctUsed > 85 ? '#ef4444' : '#6366f1', transition: 'width 0.2s ease' }} />
+                        </div>
+
+                        {capWarning && (
+                          <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', borderRadius: '8px', marginBottom: '12px', fontSize: '11px', color: '#fca5a5', fontWeight: '600' }}>
+                            ⚠️ {capWarning}
+                          </div>
+                        )}
+
+                        {eligibleAnalysisFiles.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+                            {eligibleAnalysisFiles.map(f => {
+                              const isSelected = localData.selectedContextFiles.some(sf => sf.id === f.id);
+                              const isImg = isAnalysisImageFile(f);
+                              const sizeBytes = f.size_bytes || 0;
+                              const isOversized = isImg ? sizeBytes > MAX_IMAGE_BYTES : sizeBytes > MAX_DOC_BYTES;
+                              const sizeStr = sizeBytes >= 1024 * 1024
+                                ? `${(sizeBytes / (1024 * 1024)).toFixed(2)} MB`
+                                : `${(sizeBytes / 1024).toFixed(1)} KB`;
+                              const ext = (f.name || f.original_name || '').split('.').pop().toUpperCase();
+
+                              return (
+                                <div
+                                  key={f.id}
+                                  onClick={() => toggleContextFile(f)}
+                                  style={{
+                                    padding: '10px 12px',
+                                    borderRadius: '10px',
+                                    background: isSelected ? '#312e81' : '#1f2937',
+                                    border: isSelected ? '1px solid #6366f1' : '1px solid #374151',
+                                    cursor: isOversized ? 'not-allowed' : 'pointer',
+                                    opacity: isOversized ? 0.5 : 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '10px',
+                                    transition: 'all 0.15s'
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                                    {isImg ? (
+                                      <img
+                                        src={f.file_url || f.src}
+                                        alt={f.name || f.original_name}
+                                        style={{ width: '34px', height: '34px', borderRadius: '6px', objectFit: 'cover', border: '1px solid #4b5563', flexShrink: 0 }}
+                                      />
+                                    ) : (
+                                      <span style={{ fontSize: '10px', fontWeight: '800', padding: '4px 6px', borderRadius: '6px', background: '#374151', color: '#e5e7eb', flexShrink: 0 }}>
+                                        {ext || 'DOC'}
+                                      </span>
+                                    )}
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                      <div style={{ fontSize: '12px', fontWeight: '600', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {f.name || f.original_name}
+                                      </div>
+                                      <div style={{ fontSize: '10px', color: isOversized ? '#fca5a5' : '#9ca3af' }}>
+                                        {sizeStr} • {isImg ? 'Visual Analysis Image' : 'Analysis Document'}
+                                        {isOversized ? ` (Exceeds ${isImg ? '3.5MB' : '5MB'} cap)` : ''}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div style={{ width: '20px', height: '20px', borderRadius: '5px', border: `1.5px solid ${isSelected ? '#818cf8' : '#4b5563'}`, background: isSelected ? '#6366f1' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    {isSelected && <Icons.Check />}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div style={{ padding: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px', textAlign: 'center', fontSize: '12px', color: '#9ca3af' }}>
+                            No analysis files or images uploaded yet. Open the <strong>Right Sidebar → Files</strong> tab to upload images (PNG, JPG ≤ 3.5MB) or documents (PDF, DOCX, XLSX, CSV, TXT ≤ 5MB) for AI analysis.
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   <div>
                     <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Select Saved References</h4>
@@ -404,15 +534,29 @@ export default function GenerationModal({
                   </div>
 
                   <div>
-                    <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Select Visuals</h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
-                      {uploadedImages.map(img => (
-                        <div key={img.id} onClick={() => setLocalData({...localData, selectedImages: localData.selectedImages.includes(img.id) ? localData.selectedImages.filter(i => i !== img.id) : [...localData.selectedImages, img.id]})} style={{ position: 'relative', height: '100px', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', border: localData.selectedImages.includes(img.id) ? '3px solid #111827' : '1px solid #e5e7eb' }}>
-                          <img src={img.src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          {localData.selectedImages.includes(img.id) && <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#111827', color: 'white', borderRadius: '50%', padding: '2px' }}><Icons.Check /></div>}
-                        </div>
-                      ))}
+                    <div style={{ marginBottom: '12px' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: '700', margin: 0 }}>Select Report Figures to Insert (Placeholders)</h4>
+                      <p style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0 0' }}>
+                        Uploaded via Left Sidebar → Assets. The AI will insert these images with their captions directly into the chapter text.
+                      </p>
                     </div>
+                    {uploadedImages.length > 0 ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
+                        {uploadedImages.map(img => (
+                          <div key={img.id} onClick={() => setLocalData({...localData, selectedImages: localData.selectedImages.includes(img.id) ? localData.selectedImages.filter(i => i !== img.id) : [...localData.selectedImages, img.id]})} style={{ position: 'relative', height: '100px', borderRadius: '10px', overflow: 'hidden', cursor: 'pointer', border: localData.selectedImages.includes(img.id) ? '3px solid #111827' : '1px solid #e5e7eb' }}>
+                            <img src={img.src} alt={img.caption || img.original_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            {localData.selectedImages.includes(img.id) && <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#111827', color: 'white', borderRadius: '50%', padding: '2px' }}><Icons.Check /></div>}
+                            {img.caption && (
+                              <div style={{ position: 'absolute', bottom: 0, insetInline: 0, background: 'rgba(17,24,39,0.75)', color: 'white', fontSize: '10px', padding: '3px 6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {img.caption}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>No captioned report figures uploaded in Left Sidebar → Assets yet.</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -424,23 +568,6 @@ export default function GenerationModal({
             </div>
           </>
         )}
-
-        <AnimatePresence>
-          {previewFile && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, background: 'white', zIndex: 1100, display: 'flex', flexDirection: 'column', padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <h3 style={{ margin: 0 }}>Confirm Data Analysis (500 Words)</h3>
-                <button onClick={() => setPreviewFile(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Icons.X /></button>
-              </div>
-              <div style={{ flex: 1, background: '#f9fafb', padding: '20px', borderRadius: '12px', overflowY: 'auto', marginBottom: '20px', border: '1px solid #e5e7eb' }}>
-                {previewLoading ? 'Reading file...' : <pre style={{ fontSize: '11px', whiteSpace: 'pre-wrap' }}>{extractedPreview}</pre>}
-              </div>
-              <button onClick={() => toggleContextFile(previewFile)} style={{ padding: '16px', background: '#111827', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>
-                {localData.selectedContextFiles.find(f => f.id === previewFile.id) ? 'Deselect File' : 'Confirm & Use Data'}
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </>
   );

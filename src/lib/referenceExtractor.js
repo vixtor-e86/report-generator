@@ -249,3 +249,124 @@ export async function compileAllReferences(supabase, projectId, referenceStyle) 
   console.log(`Compiled ${sortedRefs.length} references for final chapter`);
   return sortedRefs;
 }
+
+/**
+ * Multi-source Web & Academic Reference Scraper (OpenAlex + Crossref + Semantic Scholar)
+ * Fetches real 2020-2026 books, online articles, technical reports, standards, and journals
+ */
+export async function fetchDiverseReferences({ title = '', department = '', limit = 15 }) {
+  const cleanKeywords = `${title} ${department}`
+    .replace(/[^\w\s-]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2)
+    .slice(0, 10)
+    .join(' ')
+    .trim();
+
+  if (!cleanKeywords) return [];
+
+  const results = [];
+  const seenTitles = new Set();
+
+  const addRef = (item) => {
+    if (!item?.title) return;
+    const normTitle = item.title.trim().toLowerCase();
+    if (!normTitle || seenTitles.has(normTitle)) return;
+    seenTitles.add(normTitle);
+    results.push(item);
+  };
+
+  // 1. OpenAlex (Books, Reports, Articles, Web Publications, Conference Papers - Fast & No Rate Limit)
+  const openAlexTask = (async () => {
+    try {
+      const url = new URL('https://api.openalex.org/works');
+      url.searchParams.set('search', cleanKeywords);
+      url.searchParams.set('filter', 'from_publication_date:2020-01-01');
+      url.searchParams.set('per-page', String(Math.min(limit, 15)));
+      const res = await fetch(url.toString(), { headers: { 'User-Agent': 'W3WriteLab/1.0 (mailto:support@w3writelab.com)' } });
+      if (!res.ok) return;
+      const data = await res.json();
+      for (const work of (data?.results || [])) {
+        const authors = (work.authorships || [])
+          .slice(0, 4)
+          .map(a => a.author?.display_name)
+          .filter(Boolean);
+        const venue = work.primary_location?.source?.display_name || work.primary_location?.raw_source_name || (work.type === 'book' ? 'Academic Book / Monograph' : 'Online Technical Publication');
+        const link = work.primary_location?.landing_page_url || work.doi || '';
+        addRef({
+          title: work.display_name || work.title,
+          authors: authors.length > 0 ? authors : ['Technical Research Group'],
+          year: work.publication_year || 2023,
+          venue: `${venue}${work.type && work.type !== 'article' ? ` (${work.type.replace(/-/g, ' ')})` : ''}`,
+          url: link,
+          source_type: work.type || 'publication'
+        });
+      }
+    } catch (e) {
+      console.warn('OpenAlex search warning:', e.message);
+    }
+  })();
+
+  // 2. Crossref (Books, Standards, Technical Reports, Web Articles & Proceedings)
+  const crossrefTask = (async () => {
+    try {
+      const url = new URL('https://api.crossref.org/works');
+      url.searchParams.set('query', cleanKeywords);
+      url.searchParams.set('filter', 'from-pub-date:2020-01-01');
+      url.searchParams.set('rows', String(Math.min(limit, 12)));
+      const res = await fetch(url.toString(), { headers: { 'User-Agent': 'W3WriteLab/1.0 (mailto:support@w3writelab.com)' } });
+      if (!res.ok) return;
+      const data = await res.json();
+      for (const item of (data?.message?.items || [])) {
+        const itemTitle = Array.isArray(item.title) ? item.title[0] : item.title;
+        const authors = (item.author || [])
+          .slice(0, 4)
+          .map(a => [a.family, a.given ? `${a.given[0]}.` : ''].filter(Boolean).join(', ') || a.name)
+          .filter(Boolean);
+        const year = item.published?.['date-parts']?.[0]?.[0] || item.created?.['date-parts']?.[0]?.[0] || 2023;
+        const container = Array.isArray(item['container-title']) ? item['container-title'][0] : item['container-title'];
+        const publisher = item.publisher || 'Technical Press';
+        const link = item.URL || (item.DOI ? `https://doi.org/${item.DOI}` : '');
+        addRef({
+          title: itemTitle,
+          authors: authors.length > 0 ? authors : [publisher],
+          year,
+          venue: container || `${publisher} (${(item.type || 'online report').replace(/-/g, ' ')})`,
+          url: link,
+          source_type: item.type || 'report'
+        });
+      }
+    } catch (e) {
+      console.warn('Crossref search warning:', e.message);
+    }
+  })();
+
+  // 3. Semantic Scholar (Clean keyword query for Academic & Technical Papers)
+  const semanticTask = (async () => {
+    try {
+      const searchUrl = new URL('https://api.semanticscholar.org/graph/v1/paper/search');
+      searchUrl.searchParams.set('query', cleanKeywords);
+      searchUrl.searchParams.set('year', '2020-2026');
+      searchUrl.searchParams.set('limit', String(Math.min(limit, 12)));
+      searchUrl.searchParams.set('fields', 'title,authors,year,venue,url');
+      const res = await fetch(searchUrl.toString());
+      if (!res.ok) return;
+      const data = await res.json();
+      for (const paper of (data?.data || [])) {
+        addRef({
+          title: paper.title,
+          authors: (paper.authors || []).map(a => a.name || a),
+          year: paper.year || 2023,
+          venue: paper.venue || 'Technical Research Publication',
+          url: paper.url || '',
+          source_type: 'journal-article'
+        });
+      }
+    } catch (e) {
+      console.warn('Semantic Scholar search warning:', e.message);
+    }
+  })();
+
+  await Promise.allSettled([openAlexTask, crossrefTask, semanticTask]);
+  return results.slice(0, limit);
+}
