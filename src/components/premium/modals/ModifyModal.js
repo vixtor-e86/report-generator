@@ -1,7 +1,7 @@
 // src/components/premium/modals/ModifyModal.js
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const Icons = {
   X: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
@@ -15,6 +15,7 @@ export default function ModifyModal({
   activeChapter, 
   projectId, 
   userId, 
+  dataFiles = [],
   onGenerateSuccess,
   setIsGlobalLoading,
   setGlobalLoadingText,
@@ -24,12 +25,35 @@ export default function ModifyModal({
   const [loading, setLoading] = useState(false);
   const [sections, setSections] = useState([]);
   const [selectedSectionIds, setSelectedSectionIds] = useState(['all']);
+  const [selectedContextFiles, setSelectedContextFiles] = useState([]);
+  const [capWarning, setCapWarning] = useState('');
+  const [mentionQuery, setMentionQuery] = useState(null);
+  const instructionInputRef = useRef(null);
+
+  const MAX_ANALYSIS_IMAGES = 3;
+  const MAX_ANALYSIS_DOCS = 2;
+  const MAX_IMAGE_BYTES = 3.5 * 1024 * 1024;
+  const MAX_DOC_BYTES = 5 * 1024 * 1024;
+  const MAX_TOTAL_ANALYSIS_BYTES = 10 * 1024 * 1024;
+
+  const isAnalysisImageFile = (file) => {
+    const name = (file?.name || file?.original_name || '').toLowerCase();
+    return file?.file_type?.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(name);
+  };
+
+  const eligibleAnalysisFiles = dataFiles.filter(f => {
+    const name = (f.name || f.original_name || '').toLowerCase();
+    return /\.(pdf|docx|txt|xlsx|csv|png|jpe?g|webp)$/i.test(name) || f.file_type?.startsWith('image/');
+  });
 
   useEffect(() => {
     if (isOpen && activeChapter?.content) {
       const parsed = parseChapterIntoSections(activeChapter.content);
       setSections(parsed);
       setSelectedSectionIds(['all']); // Default to all
+      setSelectedContextFiles([]);
+      setCapWarning('');
+      setMentionQuery(null);
     }
   }, [isOpen, activeChapter]);
 
@@ -104,6 +128,84 @@ export default function ModifyModal({
     });
   };
 
+  const handleInsertFileTag = (file, replaceActiveMention = false) => {
+    setCapWarning('');
+    const fileName = file.name || file.original_name || 'File';
+    const tagToken = `@[${fileName}]`;
+    const alreadySelected = selectedContextFiles.some(f => f.id === file.id);
+
+    if (!alreadySelected) {
+      const isImg = isAnalysisImageFile(file);
+      const fileSize = file.size_bytes || 0;
+      const currentImagesCount = selectedContextFiles.filter(isAnalysisImageFile).length;
+      const currentDocsCount = selectedContextFiles.filter(f => !isAnalysisImageFile(f)).length;
+      const currentTotalBytes = selectedContextFiles.reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+
+      if (isImg && fileSize > MAX_IMAGE_BYTES) {
+        setCapWarning(`"${fileName}" exceeds the 3.5 MB limit per analysis image.`);
+        return;
+      }
+      if (!isImg && fileSize > MAX_DOC_BYTES) {
+        setCapWarning(`"${fileName}" exceeds the 5.0 MB limit per analysis document.`);
+        return;
+      }
+      if (isImg && currentImagesCount >= MAX_ANALYSIS_IMAGES) {
+        setCapWarning(`Maximum of ${MAX_ANALYSIS_IMAGES} images can be attached per modification.`);
+        return;
+      }
+      if (!isImg && currentDocsCount >= MAX_ANALYSIS_DOCS) {
+        setCapWarning(`Maximum of ${MAX_ANALYSIS_DOCS} documents can be attached per modification.`);
+        return;
+      }
+      if (currentTotalBytes + fileSize > MAX_TOTAL_ANALYSIS_BYTES) {
+        setCapWarning('Total attached files exceed the 10.0 MB analysis limit.');
+        return;
+      }
+      setSelectedContextFiles(prev => [...prev, file]);
+    }
+
+    let nextInstruction = instruction || '';
+    const el = instructionInputRef.current;
+
+    if (replaceActiveMention && el) {
+      const cursorPos = el.selectionStart || nextInstruction.length;
+      const beforeCursor = nextInstruction.slice(0, cursorPos);
+      const afterCursor = nextInstruction.slice(cursorPos);
+      const replacedBefore = beforeCursor.replace(/@([^\s@\]]*)$/, `${tagToken} `);
+      nextInstruction = replacedBefore + afterCursor;
+    } else if (el) {
+      const start = el.selectionStart ?? nextInstruction.length;
+      const end = el.selectionEnd ?? nextInstruction.length;
+      const prefix = start > 0 && !/\s$/.test(nextInstruction.slice(0, start)) ? ' ' : '';
+      nextInstruction = nextInstruction.slice(0, start) + `${prefix}${tagToken} ` + nextInstruction.slice(end);
+    } else {
+      nextInstruction = `${nextInstruction}${nextInstruction && !/\s$/.test(nextInstruction) ? ' ' : ''}${tagToken} `;
+    }
+
+    setInstruction(nextInstruction);
+    setMentionQuery(null);
+
+    setTimeout(() => {
+      if (instructionInputRef.current) {
+        instructionInputRef.current.focus();
+      }
+    }, 20);
+  };
+
+  const handleInstructionChange = (e) => {
+    const val = e.target.value;
+    setInstruction(val);
+
+    const cursorPos = e.target.selectionStart || val.length;
+    const textBeforeCursor = val.slice(0, cursorPos);
+    const match = textBeforeCursor.match(/(?:^|\s)@([^\s@\]]*)$/);
+    if (match) {
+      setMentionQuery(match[1].toLowerCase());
+    } else {
+      setMentionQuery(null);
+    }
+  };
+
   const handleModify = async () => {
     if (!instruction.trim()) {
       if (showNotification) showNotification('Missing Input', 'Please enter modification instructions.', 'warning');
@@ -144,6 +246,7 @@ export default function ModifyModal({
           selectedSections: sections.filter(s => selectedSectionIds.includes(s.id)).map(s => s.title),
           fullContent: activeChapter.content,
           targetContent: contentToModify,
+          selectedContextFiles,
           userPrompt: `MODIFICATION REQUEST: ${instruction}`,
         })
       });
@@ -200,14 +303,127 @@ export default function ModifyModal({
             ))}
           </div>
 
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>2. Instructions for AI</label>
-          <textarea
-            value={instruction}
-            onChange={(e) => setInstruction(e.target.value)}
-            placeholder="e.g. Expand on the technical details here. Make this section more formal. Correct the calculations."
-            style={{ width: '100%', minHeight: '150px', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '16px', fontSize: '14px', lineHeight: '1.6', fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box', background: '#f8fafc' }}
-            autoFocus
-          />
+          <div style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '4px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                2. Instructions for AI
+              </label>
+              {eligibleAnalysisFiles.length > 0 && (
+                <span style={{ fontSize: '11px', color: '#6366f1', fontWeight: '700' }}>
+                  Type <strong>@</strong> or click a file below to tag &amp; analyze
+                </span>
+              )}
+            </div>
+
+            {eligibleAnalysisFiles.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '10px', padding: '8px 10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Tag File/Image:</span>
+                {eligibleAnalysisFiles.map(f => {
+                  const isImg = isAnalysisImageFile(f);
+                  const isSelected = selectedContextFiles.some(sf => sf.id === f.id);
+                  const fName = f.name || f.original_name;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => handleInsertFileTag(f, false)}
+                      title={`Click to tag @[${fName}] in instructions`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 8px',
+                        borderRadius: '999px',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        border: isSelected ? '1px solid #6366f1' : '1px solid #cbd5e1',
+                        background: isSelected ? '#eef2ff' : 'white',
+                        color: isSelected ? '#4338ca' : '#334155'
+                      }}
+                    >
+                      <span>{isImg ? '🖼️' : '📄'}</span>
+                      <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{fName}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {capWarning && (
+              <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', marginBottom: '8px', fontSize: '11px', color: '#b91c1c', fontWeight: '600' }}>
+                ⚠️ {capWarning}
+              </div>
+            )}
+
+            <textarea
+              ref={instructionInputRef}
+              value={instruction}
+              onChange={handleInstructionChange}
+              placeholder="e.g. Expand on the technical details here using @[circuit_diagram.png], or update the table values from @[results.xlsx]."
+              style={{ width: '100%', minHeight: '150px', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '16px', fontSize: '14px', lineHeight: '1.6', fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box', background: '#f8fafc' }}
+              autoFocus
+            />
+
+            {mentionQuery !== null && eligibleAnalysisFiles.length > 0 && (() => {
+              const matches = eligibleAnalysisFiles.filter(f =>
+                (f.name || f.original_name || '').toLowerCase().includes(mentionQuery)
+              );
+              if (matches.length === 0) return null;
+              return (
+                <div style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  bottom: '100%',
+                  marginBottom: '6px',
+                  background: '#111827',
+                  color: 'white',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)',
+                  zIndex: 50,
+                  maxHeight: '160px',
+                  overflowY: 'auto',
+                  border: '1px solid #374151'
+                }}>
+                  <div style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af', textTransform: 'uppercase', padding: '4px 8px' }}>
+                    Select Image or Document to Tag (@)
+                  </div>
+                  {matches.map(f => {
+                    const isImg = isAnalysisImageFile(f);
+                    const fName = f.name || f.original_name;
+                    return (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => handleInsertFileTag(f, true)}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '8px 10px',
+                          borderRadius: '8px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'white',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '12px',
+                          fontWeight: '600'
+                        }}
+                      >
+                        <span>{isImg ? '🖼️' : '📄'}</span>
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@[{fName}]</span>
+                        <span style={{ fontSize: '10px', color: '#a5b4fc' }}>{isImg ? 'AI Image' : 'AI Doc'}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
         </div>
 
         <div style={{ padding: '24px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '12px', justifyContent: 'flex-end', background: 'white' }}>

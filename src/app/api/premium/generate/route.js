@@ -54,69 +54,7 @@ export async function POST(request) {
       technicalTableInstruction = `\n\n### MANDATORY TECHNICAL DATA TABLE:\nYou MUST analyze and include the following experimental/technical data in this chapter:\n\n${markdownTable}\n\nSTRICT: Use this specific data for any calculations or results analysis discussed in the text.`;
     }
 
-    // --- 1. Surgical Modification Logic (ROBUST) ---
-    if (isModification && targetContent) {
-      const isPartial = modificationType === 'partial';
-      
-      // CRITICAL: Normalize newlines for reliable string replacement
-      const normalizedFull = fullContent.replace(/\r\n/g, '\n');
-      const normalizedTarget = targetContent.replace(/\r\n/g, '\n');
-
-      const surgicalPrompt = `You are a high-end academic system architect and expert editor.
-      TASK: ${isPartial ? 'Rewrite ONLY the specific section(s) provided.' : 'Rewrite the entire chapter based on user instructions.'}
-      PROJECT: "${project.title}"
-      CHAPTER: ${chapterNumber}
-
-      ## ORIGINAL CONTENT TO BE FIXED:
-      ${normalizedTarget}
-
-      ${isPartial ? `## CONTEXT: 
-      This section is part of a larger report. Ensure your new content flows perfectly into the existing text.` : ''}
-
-      ## USER INSTRUCTIONS FOR MODIFICATION:
-      ${userPrompt}
-
-      ## STRICT REQUIREMENTS (FAILURE TO FOLLOW WILL BREAK THE DOCUMENT):
-      1. ONLY return the rewritten text. No conversational filler.
-      2. Keep the exact same Markdown formatting.
-      3. MANDATORY: You MUST include the same Section Headers (## or ###) that were in the original content. Do not omit them.
-      4. Maintain technical accuracy and respect the ${referenceStyle.toUpperCase()} citation style.
-      5. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.`;
-
-      const aiResponse = await callAI(surgicalPrompt, { provider, model, maxTokens: 8000, temperature: 0.4 });
-      
-      let finalAiContent = aiResponse.content.trim();
-      
-      // Merge logic with normalization safety
-      let updatedFullContent;
-      if (isPartial) {
-        if (normalizedFull.includes(normalizedTarget)) {
-          updatedFullContent = normalizedFull.replace(normalizedTarget, finalAiContent);
-        } else {
-          // Fallback if exact match fails due to hidden whitespace
-          console.warn("Exact match failed, attempting trimmed match");
-          const trimmedTarget = normalizedTarget.trim();
-          if (normalizedFull.includes(trimmedTarget)) {
-            updatedFullContent = normalizedFull.replace(trimmedTarget, finalAiContent);
-          } else {
-            throw new Error("Could not locate the selected section in the document. Try selecting a different part.");
-          }
-        }
-      } else {
-        updatedFullContent = finalAiContent;
-      }
-
-      // Save version
-      const { data: chapter } = await supabaseAdmin.from('premium_chapters').select('id').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
-      if (chapter) {
-        await supabaseAdmin.from('premium_chapters').update({ content: updatedFullContent, updated_at: new Date().toISOString() }).eq('id', chapter.id);
-        await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: updatedFullContent, prompt_used: `MODIFICATION: ${userPrompt.substring(0, 50)}...`, model_used: aiResponse.model });
-      }
-
-      return NextResponse.json({ success: true, content: updatedFullContent });
-    }
-
-    // --- 2. Data Extraction & Strict Claude Multimodal Attachment Processing ---
+    // --- 1.8 Data Extraction & Strict Claude Multimodal Attachment Processing (Used in both Generation & Modification) ---
     const isClaudeProvider = provider === 'claude';
     let contextualSourceData = "";
     const claudeAttachments = [];
@@ -167,7 +105,7 @@ export async function POST(request) {
             const mediaType = detectImageMediaType(buffer, lowerName);
             claudeAttachments.push({
               type: 'text',
-              text: `[AI Reference Image for Chapter ${chapterNumber} Visual Analysis (Context Only - DO NOT embed as a figure URL): "${fileName}"]`
+              text: `[AI Reference Image — Tag Handle: @[${fileName}] for Chapter ${chapterNumber} Visual Analysis (Context Only - DO NOT embed as a figure URL)]`
             });
             claudeAttachments.push({
               type: 'image',
@@ -199,7 +137,7 @@ export async function POST(request) {
             if (isClaudeProvider) {
               claudeAttachments.push({
                 type: 'text',
-                text: `[AI Reference PDF Document for Chapter ${chapterNumber} Analysis: "${fileName}"]`
+                text: `[AI Reference PDF Document — Tag Handle: @[${fileName}] for Chapter ${chapterNumber} Analysis]`
               });
               claudeAttachments.push({
                 type: 'document',
@@ -216,7 +154,7 @@ export async function POST(request) {
             const result = await mammoth.extractRawText({ buffer });
             const extractedText = (result.value || '').trim();
             if (extractedText) {
-              contextualSourceData += `\n--- DATA FROM DOCUMENT: ${fileName} ---\n${extractedText.split(/\s+/).slice(0, 1800).join(" ")}\n`;
+              contextualSourceData += `\n--- DATA FROM DOCUMENT (Tag Handle: @[${fileName}]) ---\n${extractedText.split(/\s+/).slice(0, 1800).join(" ")}\n`;
               processedDocsCount++;
               processedTotalBytes += buffer.length;
             }
@@ -226,14 +164,14 @@ export async function POST(request) {
             if (firstSheetName) {
               const csvText = XLSX.utils.sheet_to_csv(workbook.Sheets[firstSheetName]);
               const rows = csvText.split('\n').slice(0, 120).join('\n');
-              contextualSourceData += `\n--- DATASET FROM SPREADSHEET: ${fileName} ---\n${rows.split(/\s+/).slice(0, 1800).join(" ")}\n`;
+              contextualSourceData += `\n--- DATASET FROM SPREADSHEET (Tag Handle: @[${fileName}]) ---\n${rows.split(/\s+/).slice(0, 1800).join(" ")}\n`;
               processedDocsCount++;
               processedTotalBytes += buffer.length;
             }
           } else {
             const extractedText = buffer.toString('utf-8').trim();
             if (extractedText) {
-              contextualSourceData += `\n--- DATA FROM FILE: ${fileName} ---\n${extractedText.split(/\s+/).slice(0, 1800).join(" ")}\n`;
+              contextualSourceData += `\n--- DATA FROM FILE (Tag Handle: @[${fileName}]) ---\n${extractedText.split(/\s+/).slice(0, 1800).join(" ")}\n`;
               processedDocsCount++;
               processedTotalBytes += buffer.length;
             }
@@ -242,6 +180,90 @@ export async function POST(request) {
           console.warn('Context file extraction skipped:', e.message);
         }
       }
+    }
+
+    // --- 1. Surgical Modification Logic (ROBUST + Supports Tagged Analysis Images/Files) ---
+    if (isModification && targetContent) {
+      const isPartial = modificationType === 'partial';
+      
+      // CRITICAL: Normalize newlines for reliable string replacement
+      const normalizedFull = fullContent.replace(/\r\n/g, '\n');
+      const normalizedTarget = targetContent.replace(/\r\n/g, '\n');
+
+      const modVisualInstruction = (isClaudeProvider && claudeAttachments.length > 0)
+        ? `\n\n## ATTACHED VISUAL & DOCUMENT CONTEXT FOR THIS MODIFICATION:\n` +
+          `The user has attached and/or tagged reference image(s) or PDF document(s) (using @[filename] tags in their instructions).\n` +
+          `Inspect the attached visual/document content carefully and apply the user's specific instructions regarding each tagged @[filename].\n` +
+          `STRICT: Attached reference images are for visual analysis ONLY—do NOT insert markdown image links (![...](...)) for them.`
+        : '';
+
+      const surgicalPrompt = `You are a high-end academic system architect and expert editor.
+      TASK: ${isPartial ? 'Rewrite ONLY the specific section(s) provided.' : 'Rewrite the entire chapter based on user instructions.'}
+      PROJECT: "${project.title}"
+      CHAPTER: ${chapterNumber}
+
+      ## ORIGINAL CONTENT TO BE FIXED:
+      ${normalizedTarget}
+
+      ${isPartial ? `## CONTEXT: 
+      This section is part of a larger report. Ensure your new content flows perfectly into the existing text.` : ''}
+      ${contextualSourceData ? `\n## ATTACHED DOCUMENT / SPREADSHEET DATA:\n${contextualSourceData}` : ''}
+      ${modVisualInstruction}
+
+      ## USER INSTRUCTIONS FOR MODIFICATION:
+      ${userPrompt}
+
+      ## STRICT REQUIREMENTS (FAILURE TO FOLLOW WILL BREAK THE DOCUMENT):
+      1. ONLY return the rewritten text. No conversational filler.
+      2. Keep the exact same Markdown formatting.
+      3. MANDATORY: You MUST include the same Section Headers (## or ###) that were in the original content. Do not omit them.
+      4. Maintain technical accuracy and respect the ${referenceStyle.toUpperCase()} citation style.
+      5. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.`;
+
+      const aiResponse = await callAI(surgicalPrompt, {
+        provider,
+        model,
+        maxTokens: 8000,
+        temperature: 0.4,
+        claudeAttachments: isClaudeProvider && claudeAttachments.length > 0 ? claudeAttachments : null
+      });
+      
+      let finalAiContent = aiResponse.content.trim();
+      
+      // Merge logic with normalization safety
+      let updatedFullContent;
+      if (isPartial) {
+        if (normalizedFull.includes(normalizedTarget)) {
+          updatedFullContent = normalizedFull.replace(normalizedTarget, finalAiContent);
+        } else {
+          // Fallback if exact match fails due to hidden whitespace
+          console.warn("Exact match failed, attempting trimmed match");
+          const trimmedTarget = normalizedTarget.trim();
+          if (normalizedFull.includes(trimmedTarget)) {
+            updatedFullContent = normalizedFull.replace(trimmedTarget, finalAiContent);
+          } else {
+            throw new Error("Could not locate the selected section in the document. Try selecting a different part.");
+          }
+        }
+      } else {
+        updatedFullContent = finalAiContent;
+      }
+
+      // Save version
+      const { data: chapter } = await supabaseAdmin.from('premium_chapters').select('id').eq('project_id', projectId).eq('chapter_number', chapterNumber).single();
+      if (chapter) {
+        await supabaseAdmin.from('premium_chapters').update({ content: updatedFullContent, updated_at: new Date().toISOString() }).eq('id', chapter.id);
+        await supabaseAdmin.from('premium_chapter_history').insert({ chapter_id: chapter.id, content: updatedFullContent, prompt_used: `MODIFICATION: ${userPrompt.substring(0, 50)}...`, model_used: aiResponse.model });
+      }
+
+      if (aiResponse.tokensUsed?.total) {
+        await supabaseAdmin.from('premium_projects').update({
+          tokens_used: (project.tokens_used || 0) + aiResponse.tokensUsed.total,
+          updated_at: new Date().toISOString()
+        }).eq('id', projectId);
+      }
+
+      return NextResponse.json({ success: true, content: updatedFullContent });
     }
 
     // If Custom Project, inject student's existing chapter texts as high-priority research context

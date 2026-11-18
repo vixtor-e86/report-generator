@@ -497,7 +497,7 @@ function WorkspaceContent() {
         setGlobalLoadingText={setGlobalLoadingText} onSaved={loadWorkspaceData} showNotification={showNotification}
         projectData={projectData} referenceStyle={stickyGenSettings.referenceStyle}
       />
-      <ModifyModal isOpen={isModifyModalOpen} onClose={() => setIsModifyModalOpen(false)} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} showNotification={showNotification} />
+      <ModifyModal isOpen={isModifyModalOpen} onClose={() => setIsModifyModalOpen(false)} activeChapter={activeChapter} projectId={projectId} userId={currentUser?.id} dataFiles={files} onGenerateSuccess={loadWorkspaceData} setIsGlobalLoading={setIsGlobalLoading} setGlobalLoadingText={setGlobalLoadingText} showNotification={showNotification} />
       <GenerationModal 
         isOpen={isGenerationModalOpen} onClose={() => setIsGenerationModalOpen(false)} 
         uploadedImages={images} researchPapers={researchPapers} dataFiles={files} 
