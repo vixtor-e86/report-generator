@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Image from 'next/image';
+import { normalizeChapterMarkdown } from '@/lib/utils';
 
 export default function ChapterView({ chapter, images, project, onPrint, onSavePastedChapter }) {
   const [processedContent, setProcessedContent] = useState('');
@@ -44,7 +45,7 @@ export default function ChapterView({ chapter, images, project, onPrint, onSaveP
       return `\n\n> **[Figure ${chNum}.${figNum} Placeholder]**\n\n`;
     });
 
-    setProcessedContent(content);
+    setProcessedContent(normalizeChapterMarkdown(content));
   }, [chapter, images]);
 
   const components = {

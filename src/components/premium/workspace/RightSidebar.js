@@ -61,14 +61,14 @@ export default function RightSidebar({
     }
 
     const isImage = file.type?.startsWith('image/') || ['.png', '.jpg', '.jpeg', '.webp'].includes(extension);
-    const maxBytes = isImage ? 3.5 * 1024 * 1024 : 5 * 1024 * 1024;
+    const maxBytes = 10 * 1024 * 1024; // 10 MB cap per upload bucket
 
     if (file.size > maxBytes) {
       if (onError) {
         onError(
           isImage
-            ? `Image "${file.name}" exceeds the 3.5 MB limit for AI visual analysis. Please compress or resize it.`
-            : `Document "${file.name}" exceeds the 5.0 MB limit for AI analysis.`
+            ? `Image "${file.name}" exceeds the 10.0 MB limit for AI visual analysis. Please compress or resize it.`
+            : `Document "${file.name}" exceeds the 10.0 MB limit for AI analysis.`
         );
       }
       e.target.value = '';
@@ -128,7 +128,7 @@ export default function RightSidebar({
                 <div className="text-center">
                   <div className="text-indigo-600 mb-1 flex justify-center">{uploading ? 'Uploading...' : <Icons.Upload />}</div>
                   <span className="text-xs font-semibold text-gray-700 block">{uploading ? 'Please wait...' : 'Upload Image or Document'}</span>
-                  <span className="text-[10px] text-gray-400 block mt-0.5">Images ≤ 3.5MB • PDF, DOCX, XLSX, CSV, TXT ≤ 5MB</span>
+                  <span className="text-[10px] text-gray-400 block mt-0.5">Images ≤ 10MB • PDF, DOCX, XLSX, CSV, TXT ≤ 10MB</span>
                 </div>
               </label>
             </div>

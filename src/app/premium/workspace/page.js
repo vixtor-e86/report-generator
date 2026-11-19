@@ -140,7 +140,12 @@ function WorkspaceContent() {
     setIsGenerationModalOpen(false);
     
     try {
-      setGlobalLoadingText(`System Architect is designing Chapter ${activeChapter.number || activeChapter.id}...`);
+      const hasAnalysisFiles = pendingGenData?.selectedContextFiles?.length > 0;
+      setGlobalLoadingText(
+        hasAnalysisFiles
+          ? `System Architect is analyzing ${pendingGenData.selectedContextFiles.length} image(s)/file(s) & designing Chapter ${activeChapter.number || activeChapter.id}...`
+          : `System Architect is designing Chapter ${activeChapter.number || activeChapter.id}...`
+      );
       setIsGlobalLoading(true);
 
       const response = await fetch('/api/premium/generate', {

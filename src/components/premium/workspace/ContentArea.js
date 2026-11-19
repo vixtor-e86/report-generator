@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { normalizeChapterMarkdown } from '@/lib/utils';
 import EditTemplateModal from '../modals/EditTemplateModal';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -849,7 +850,7 @@ export default function ContentArea({
                     </div>
                   )
                 ) : (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{localContent || '*No content yet.*'}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{normalizeChapterMarkdown(localContent) || '*No content yet.*'}</ReactMarkdown>
                 )}
               </div>
             )}

@@ -21,12 +21,15 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
   const [error, setError] = useState(null);
   const [showCaptionModal, setShowCaptionModal] = useState(false);
   const [imageCaption, setImageCaption] = useState('');
+  const [savingToAnalysis, setSavingToAnalysis] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setLoading(true);
     setError(null);
     setResult(null);
+    setZoomLevel(1);
     try {
       const response = await fetch('/api/premium/visual-tools', {
         method: 'POST',
@@ -40,7 +43,7 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
             .replace(/\+/g, '-')
             .replace(/\//g, '_')
             .replace(/=+$/, '');
-        const imageUrl = `https://mermaid.ink/img/${encodedCode}`;
+        const imageUrl = `https://mermaid.ink/img/${encodedCode}?type=png&bgColor=!white&width=1600`;
         setResult({ type: 'diagram', imageUrl, code: data.code });
       } else {
         setResult({ type: 'image', imageUrl: data.imageUrl });
@@ -58,6 +61,7 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
     if (!result?.imageUrl || !imageCaption.trim()) return;
     setLoading(true);
     try {
+      const cleanSlug = prompt.trim().replace(/[^a-zA-Z0-9]+/g, '_').substring(0, 28).toLowerCase() || 'visual';
       const response = await fetch('/api/premium/save-visual', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,14 +69,15 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
           imageUrl: result.imageUrl, 
           projectId, 
           userId, 
-          name: `${activeTool === 'diagram' ? 'Diagram' : 'Illustration'}: ${prompt.substring(0, 20)}...`, 
+          name: `${activeTool}_${cleanSlug}.png`, 
           type: activeTool,
+          purpose: 'project_image',
           caption: imageCaption.trim()
         })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to save');
-      if (showNotification) showNotification('Success', 'Visual added to your project assets!', 'success');
+      if (showNotification) showNotification('Success', 'Visual added to your Left Sidebar Report Assets (with placeholder)!', 'success');
       setShowCaptionModal(false);
       onImageSaved();
       onClose();
@@ -80,6 +85,43 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
       if (showNotification) showNotification('Save Error', err.message, 'error');
     }
     finally { setLoading(false); }
+  };
+
+  const handleSaveToFileAnalysis = async () => {
+    if (!result?.imageUrl) return;
+    setSavingToAnalysis(true);
+    try {
+      const cleanSlug = prompt.trim().replace(/[^a-zA-Z0-9]+/g, '_').substring(0, 28).toLowerCase() || 'visual';
+      const fileName = `${activeTool}_${cleanSlug}.png`;
+      const response = await fetch('/api/premium/save-visual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: result.imageUrl,
+          projectId,
+          userId,
+          name: fileName,
+          type: activeTool,
+          purpose: 'sidebar',
+          caption: prompt.substring(0, 80)
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to add to AI File Analysis');
+      if (showNotification) {
+        showNotification(
+          'Added to AI File Analysis',
+          `"${fileName}" has been added to your Right Sidebar AI File Analysis section! You can now select or @tag it when generating chapters.`,
+          'success'
+        );
+      }
+      if (onImageSaved) onImageSaved();
+      onClose();
+    } catch (err) {
+      if (showNotification) showNotification('Save Error', err.message, 'error');
+    } finally {
+      setSavingToAnalysis(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -139,13 +181,71 @@ export default function VisualToolsModal({ isOpen, onClose, projectId, userId, o
               )}
 
               {result && !loading && (
-                <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full h-full flex flex-col gap-6">
-                  <div className="flex-1 bg-slate-50 rounded-3xl border-2 border-slate-100 flex items-center justify-center p-4 overflow-hidden">
-                    <img src={result.imageUrl} alt="Result" className="max-w-full max-h-full object-contain rounded-lg shadow-lg" />
+                <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full h-full flex flex-col gap-4">
+                  {/* Zoom Toolbar */}
+                  <div className="flex items-center justify-between bg-slate-100 px-4 py-2 rounded-2xl shrink-0">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                      Preview Zoom ({Math.round(zoomLevel * 100)}%)
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setZoomLevel(z => Math.max(0.75, +(z - 0.25).toFixed(2)))}
+                        className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-700 hover:bg-slate-50"
+                      >
+                        −
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setZoomLevel(1)}
+                        className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-black text-slate-700 hover:bg-slate-50"
+                      >
+                        Reset
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setZoomLevel(z => Math.min(2.5, +(z + 0.25).toFixed(2)))}
+                        className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-700 hover:bg-slate-50"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <button onClick={() => setShowCaptionModal(true)} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs shadow-lg flex items-center justify-center gap-2 transition-all hover:bg-black active:scale-95"><Icons.Share /> ADD TO PROJECT</button>
-                    <a href={result.imageUrl} download className="flex-1 py-4 bg-white border-2 border-slate-100 text-slate-900 rounded-2xl font-black text-xs flex items-center justify-center gap-2 no-underline transition-all hover:bg-slate-50"><Icons.Download /> DOWNLOAD PNG</a>
+
+                  {/* Large Scrollable High-Resolution Canvas */}
+                  <div className="flex-1 bg-slate-50 rounded-3xl border-2 border-slate-100 overflow-auto p-4 md:p-6 flex items-center justify-center min-h-[320px]">
+                    <img
+                      src={result.imageUrl}
+                      alt="Result"
+                      onClick={() => setZoomLevel(z => (z < 1.5 ? 1.5 : 1))}
+                      title="Click to toggle zoom"
+                      style={{
+                        width: zoomLevel === 1 ? '100%' : `${Math.round(zoomLevel * 100)}%`,
+                        maxWidth: zoomLevel === 1 ? '100%' : 'none',
+                        height: 'auto'
+                      }}
+                      className="object-contain rounded-xl shadow-md bg-white p-2 cursor-zoom-in transition-all"
+                    />
+                  </div>
+
+                  {/* Action Buttons: Add to Report Assets (Left Sidebar) OR Add to AI File Analysis (Right Sidebar) */}
+                  <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowCaptionModal(true)}
+                      disabled={savingToAnalysis}
+                      className="flex-1 py-3.5 px-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] shadow-lg flex items-center justify-center gap-2 transition-all hover:bg-black active:scale-95"
+                    >
+                      <Icons.Share /> ADD TO REPORT ASSETS (PLACEHOLDER)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveToFileAnalysis}
+                      disabled={savingToAnalysis}
+                      className="flex-1 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[11px] shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      <Icons.Activity /> {savingToAnalysis ? 'ADDING...' : 'ADD TO AI FILE ANALYSIS'}
+                    </button>
                   </div>
                 </motion.div>
               )}

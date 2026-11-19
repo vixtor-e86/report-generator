@@ -59,14 +59,13 @@ export async function POST(request) {
     let contextualSourceData = "";
     const claudeAttachments = [];
 
-    const MAX_ANALYSIS_IMAGES = 3;
-    const MAX_ANALYSIS_DOCS = 2;
-    const MAX_IMAGE_BYTES = 3.5 * 1024 * 1024; // 3.5 MB
-    const MAX_DOC_BYTES = 5 * 1024 * 1024; // 5.0 MB
-    const MAX_TOTAL_BYTES = 10 * 1024 * 1024; // 10.0 MB
+    // Pure Size-Based Cap Limits: 10MB Images + 10MB Docs/PDFs = 20MB Total (No count limit)
+    const MAX_IMAGE_BUCKET_BYTES = 10 * 1024 * 1024; // 10.0 MB total for images
+    const MAX_DOC_BUCKET_BYTES = 10 * 1024 * 1024; // 10.0 MB total for documents/PDFs
+    const MAX_TOTAL_BYTES = 20 * 1024 * 1024; // 20.0 MB combined total
 
-    let processedImagesCount = 0;
-    let processedDocsCount = 0;
+    let processedImageBytes = 0;
+    let processedDocBytes = 0;
     let processedTotalBytes = 0;
 
     const detectImageMediaType = (buf, lowerName) => {
@@ -92,13 +91,12 @@ export async function POST(request) {
           // STRICT RULE: If provider is switched away from Claude (e.g., to DeepSeek), NEVER analyze images
           if (isImg) {
             if (!isClaudeProvider) continue;
-            if (processedImagesCount >= MAX_ANALYSIS_IMAGES) continue;
 
             const res = await fetch(file.file_url || file.src);
             if (!res.ok) continue;
             const buffer = Buffer.from(await res.arrayBuffer());
 
-            if (buffer.length > MAX_IMAGE_BYTES || (processedTotalBytes + buffer.length) > MAX_TOTAL_BYTES) {
+            if ((processedImageBytes + buffer.length) > MAX_IMAGE_BUCKET_BYTES || (processedTotalBytes + buffer.length) > MAX_TOTAL_BYTES) {
               continue;
             }
 
@@ -116,19 +114,17 @@ export async function POST(request) {
               }
             });
 
-            processedImagesCount++;
+            processedImageBytes += buffer.length;
             processedTotalBytes += buffer.length;
             continue;
           }
 
           // Document Processing (.docx, .xlsx, .csv, .txt, .pdf)
-          if (processedDocsCount >= MAX_ANALYSIS_DOCS) continue;
-
           const res = await fetch(file.file_url || file.src);
           if (!res.ok) continue;
           const buffer = Buffer.from(await res.arrayBuffer());
 
-          if (buffer.length > MAX_DOC_BYTES || (processedTotalBytes + buffer.length) > MAX_TOTAL_BYTES) {
+          if ((processedDocBytes + buffer.length) > MAX_DOC_BUCKET_BYTES || (processedTotalBytes + buffer.length) > MAX_TOTAL_BYTES) {
             continue;
           }
 
@@ -147,7 +143,7 @@ export async function POST(request) {
                   data: buffer.toString('base64')
                 }
               });
-              processedDocsCount++;
+              processedDocBytes += buffer.length;
               processedTotalBytes += buffer.length;
             }
           } else if (lowerName.endsWith('.docx')) {
@@ -155,7 +151,7 @@ export async function POST(request) {
             const extractedText = (result.value || '').trim();
             if (extractedText) {
               contextualSourceData += `\n--- DATA FROM DOCUMENT (Tag Handle: @[${fileName}]) ---\n${extractedText.split(/\s+/).slice(0, 1800).join(" ")}\n`;
-              processedDocsCount++;
+              processedDocBytes += buffer.length;
               processedTotalBytes += buffer.length;
             }
           } else if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls') || lowerName.endsWith('.csv')) {
@@ -165,14 +161,14 @@ export async function POST(request) {
               const csvText = XLSX.utils.sheet_to_csv(workbook.Sheets[firstSheetName]);
               const rows = csvText.split('\n').slice(0, 120).join('\n');
               contextualSourceData += `\n--- DATASET FROM SPREADSHEET (Tag Handle: @[${fileName}]) ---\n${rows.split(/\s+/).slice(0, 1800).join(" ")}\n`;
-              processedDocsCount++;
+              processedDocBytes += buffer.length;
               processedTotalBytes += buffer.length;
             }
           } else {
             const extractedText = buffer.toString('utf-8').trim();
             if (extractedText) {
               contextualSourceData += `\n--- DATA FROM FILE (Tag Handle: @[${fileName}]) ---\n${extractedText.split(/\s+/).slice(0, 1800).join(" ")}\n`;
-              processedDocsCount++;
+              processedDocBytes += buffer.length;
               processedTotalBytes += buffer.length;
             }
           }
@@ -218,7 +214,9 @@ export async function POST(request) {
       2. Keep the exact same Markdown formatting.
       3. MANDATORY: You MUST include the same Section Headers (## or ###) that were in the original content. Do not omit them.
       4. Maintain technical accuracy and respect the ${referenceStyle.toUpperCase()} citation style.
-      5. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.`;
+      5. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.
+      6. NO LATEX DOLLAR SIGNS ($) OR RAW LATEX CODE: NEVER wrap formulas or variables in $ or $$ and NEVER output raw LaTeX commands like \\frac, \\times, \\approx, \\theta, \\Omega. Write all mathematical equations in clean, plain readable Unicode text (e.g., "Efficiency (η) = (P_out / P_in) × 100%", "R = 10 kΩ", "± 5%", "x²").
+      7. CLEAN MARKDOWN TABLES: For any Markdown table, ensure every single row is on a single line starting and ending with |, has the exact same number of columns as the header row, and has NO blank lines between table rows.`;
 
       const aiResponse = await callAI(surgicalPrompt, {
         provider,
@@ -479,6 +477,8 @@ export async function POST(request) {
     6. NO CONVERSATIONAL FILLER: Start directly with the ## Chapter heading. Do NOT include conversational introductions (e.g., "Certainly, here is...", "In this chapter, we explore...").
     7. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.
     8. THESIS STRUCTURE PRESERVATION: You MUST strictly adhere to the designated chapter title and mandatory sub-sections defined above. Do NOT alter, omit, merge, or rename the designated thesis sections.
+    9. NO LATEX DOLLAR SIGNS ($) OR RAW LATEX CODE: NEVER wrap mathematical equations, formulas, or variables in LaTeX dollar signs ($...$ or $$...$$) and NEVER use raw LaTeX commands like \\frac, \\times, \\div, \\approx, \\mu, \\Omega, \\eta, \\theta, \\sqrt. Write all equations and symbols in clean, plain readable Unicode text (e.g., "V_out = (R₂ / (R₁ + R₂)) × V_in", "Efficiency (η) = 92.5%", "R = 10 kΩ", "± 5%", "x²").
+    10. STRICT MARKDOWN TABLE INTEGRITY: Whenever you write a Markdown table, every row MUST be on a single line starting and ending with |, every row MUST have the exact same number of | pipe columns as the header row, and you MUST NOT insert blank lines between rows of the same table.
     - USER INSTRUCTIONS: ${userPrompt || 'Deliver elite technical content.'}
 
     ${skipReferences ? '--- STRICT: NO REFERENCES OR CITATIONS. ---' : '--- MANDATORY: Include "## References" at the end. ---'}`;

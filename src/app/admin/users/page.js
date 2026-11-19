@@ -26,11 +26,22 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
-  const filteredUsers = users.filter(user => 
-    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const query = (searchTerm || '').trim().toLowerCase();
+    if (!query) return true;
+    const terms = query.split(/\s+/).filter(Boolean);
+    const haystack = [
+      user.full_name || '',
+      user.username || '',
+      user.email || '',
+      user.institution_name || '',
+      user.department || '',
+      user.role || '',
+      user.id || ''
+    ].join(' ').toLowerCase();
+
+    return terms.every(term => haystack.includes(term));
+  });
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage) || 1;
   const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -57,20 +68,33 @@ export default function UsersPage() {
 
       {/* Search & Stats */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="relative flex-1">
+        <div className="relative flex-1 flex items-center">
+          <svg className="w-5 h-5 text-slate-400 absolute left-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
           <input
             type="text"
             value={searchTerm}
             onChange={handleSearchChange}
-            placeholder="Search by name, email, or username..."
-            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 placeholder-slate-400"
+            placeholder="Global search by email, name, username, institution, department, or ID..."
+            className="w-full pl-11 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none"
           />
-          <svg className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('');
+                setCurrentPage(1);
+              }}
+              title="Clear search"
+              className="absolute right-3 text-slate-400 hover:text-slate-700 font-bold text-sm p-1"
+            >
+              ✕
+            </button>
+          )}
         </div>
         <div className="text-xs font-bold text-slate-500 shrink-0">
-          Showing <span className="text-slate-900 font-black">{filteredUsers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> of <span className="text-slate-900 font-black">{filteredUsers.length.toLocaleString()}</span> users
+          Showing <span className="text-slate-900 font-black">{filteredUsers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> of <span className="text-slate-900 font-black">{filteredUsers.length.toLocaleString()}</span> {searchTerm ? 'matching' : 'total'} users
         </div>
       </div>
 

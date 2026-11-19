@@ -201,7 +201,9 @@ STRICT COMPLIANCE MANDATE:
   5. RECENCY: Citations must be 2020-2026.
   6. NO conversational filler. Start directly with ## heading.
   7. NO EM-DASHES: Do NOT use the long dash symbol (—) as a separator or watermark. Use standard hyphens (-) or colons (:) instead.
-  ${customInstruction && customInstruction.trim() ? `8. USER MODIFICATION COMPLIANCE (STRICT): You MUST fulfill the user's specific modification request: "${customInstruction.trim()}".` : ''}`;
+  8. NO LATEX DOLLAR SIGNS ($) OR RAW LATEX CODE: NEVER wrap mathematical equations, formulas, or variables in LaTeX dollar signs ($...$ or $$...$$) and NEVER use raw LaTeX commands like \\frac, \\times, \\div, \\approx, \\mu, \\Omega, \\eta, \\theta, \\sqrt. Write all equations and symbols in clean, plain readable Unicode text (e.g., "V_out = (R₂ / (R₁ + R₂)) × V_in", "Efficiency (η) = 92.5%", "R = 10 kΩ", "± 5%", "x²").
+  9. STRICT MARKDOWN TABLE INTEGRITY: Whenever you write a Markdown table, every row MUST be on a single line starting and ending with |, every row MUST have the exact same number of | pipe columns as the header row, and you MUST NOT insert blank lines between rows of the same table.
+  ${customInstruction && customInstruction.trim() ? `10. USER MODIFICATION COMPLIANCE (STRICT): You MUST fulfill the user's specific modification request: "${customInstruction.trim()}".` : ''}`;
 
   return prompt;
 }

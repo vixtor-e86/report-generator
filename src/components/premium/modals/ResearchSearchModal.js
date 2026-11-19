@@ -19,25 +19,35 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
   const [savingId, setSavingId] = useState(null);
   const [savedIds, setSavedIds] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
-  const handleSearch = async (e) => {
-    if (e) e.preventDefault();
+  const fetchPage = async (targetPage = 1) => {
     if (!query.trim()) return;
 
     setLoading(true);
     setHasSearched(true);
     try {
-      const res = await fetch(`/api/premium/search-papers?query=${encodeURIComponent(query.trim())}&year=${yearStart}-${yearEnd}`);
+      const res = await fetch(
+        `/api/premium/search-papers?query=${encodeURIComponent(query.trim())}&year=${yearStart}-${yearEnd}&page=${targetPage}&limit=15`
+      );
       const data = await res.json();
       if (!res.ok || data.error) {
         throw new Error(data.error || 'Failed to fetch research papers');
       }
       setResults(data.data || []);
+      setPage(targetPage);
+      setHasMore(Boolean(data.hasMore));
     } catch (err) {
       if (showNotification) showNotification('Search Error', err.message || 'Failed to fetch research papers. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = async (e) => {
+    if (e) e.preventDefault();
+    await fetchPage(1);
   };
 
   const savePaper = async (paper) => {
@@ -152,6 +162,31 @@ export default function ResearchSearchModal({ isOpen, onClose, projectId, onPape
             </div>
           )}
         </div>
+
+        {/* Pagination Footer */}
+        {hasSearched && (results.length > 0 || page > 1) && (
+          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-4 shrink-0">
+            <button
+              type="button"
+              onClick={() => fetchPage(Math.max(1, page - 1))}
+              disabled={loading || page <= 1}
+              className="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-bold hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              ← Previous Page
+            </button>
+            <span className="text-xs font-bold text-slate-600">
+              Page <strong className="text-slate-900">{page}</strong> • Showing {results.length} results
+            </span>
+            <button
+              type="button"
+              onClick={() => fetchPage(page + 1)}
+              disabled={loading || !hasMore}
+              className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              Next Page →
+            </button>
+          </div>
+        )}
       </motion.div>
     </div>
   );

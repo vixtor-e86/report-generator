@@ -6,7 +6,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 export async function POST(request) {
   try {
-    const { imageUrl, projectId, userId, name, type, sizeBytes, caption } = await request.json();
+    const { imageUrl, projectId, userId, name, type, sizeBytes, caption, purpose: requestedPurpose } = await request.json();
 
     if (!imageUrl || !projectId || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -15,12 +15,12 @@ export async function POST(request) {
     let finalUrl = imageUrl;
     let fileKey = `visuals/${projectId}/${Date.now()}.png`;
     let fileType = 'image/png';
-    let purpose = 'project_image';
+    let purpose = requestedPurpose || 'project_image';
     let finalSize = sizeBytes || 0;
 
     // 1. Handle Document Saves (Exports)
     if (type === 'general') {
-      purpose = 'general';
+      purpose = requestedPurpose || 'general';
       fileType = name.toLowerCase().endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/pdf';
     } 
     // 2. Handle Base64 Image Saves (Flux)
@@ -42,6 +42,28 @@ export async function POST(request) {
       } catch (uploadError) {
         console.error('R2 Upload Error:', uploadError);
         return NextResponse.json({ error: 'Failed to upload generated image to storage' }, { status: 500 });
+      }
+    }
+    // 2b. Handle Mermaid Diagram URLs -> Persist PNG to R2 & record accurate byte size for AI Analysis
+    else if (imageUrl.startsWith('https://mermaid.ink/')) {
+      try {
+        const imgRes = await fetch(imageUrl);
+        if (imgRes.ok) {
+          const buffer = Buffer.from(await imgRes.arrayBuffer());
+          finalSize = buffer.length;
+          const bucketName = process.env.R2_BUCKET_NAME;
+          if (bucketName) {
+            await r2Client.send(new PutObjectCommand({
+              Bucket: bucketName,
+              Key: fileKey,
+              Body: buffer,
+              ContentType: 'image/png',
+            }));
+            finalUrl = getPublicUrl(fileKey) || imageUrl;
+          }
+        }
+      } catch (diagramErr) {
+        console.warn('Mermaid R2 persistence fallback to direct URL:', diagramErr.message);
       }
     }
 

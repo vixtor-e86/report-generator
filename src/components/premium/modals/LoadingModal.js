@@ -62,6 +62,26 @@ export default function LoadingModal({ isOpen, loadingText = 'Processing...' }) 
                 Please do not close this window or refresh the page. System is architecting your academic content.
               </p>
 
+              {loadingText && /analyzing.*(?:image|file)/i.test(loadingText) && (
+                <div style={{
+                  marginTop: '18px',
+                  padding: '12px 14px',
+                  background: '#eef2ff',
+                  border: '1px solid #c7d2fe',
+                  borderRadius: '14px',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px'
+                }}>
+                  <span style={{ fontSize: '16px', lineHeight: 1 }}>🔍</span>
+                  <div style={{ fontSize: '12px', color: '#312e81', lineHeight: '1.45', fontWeight: '600' }}>
+                    <strong style={{ display: 'block', color: '#1e1b4b', marginBottom: '2px' }}>Deep Image &amp; File Analysis Active</strong>
+                    The AI is inspecting your attached images and documents in detail. Generation will take a little extra time to complete.
+                  </div>
+                </div>
+              )}
+
               {/* Progress Pulse */}
               <div style={{ marginTop: '32px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
                 {[0, 1, 2].map(i => (

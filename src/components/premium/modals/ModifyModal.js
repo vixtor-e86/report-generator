@@ -30,11 +30,10 @@ export default function ModifyModal({
   const [mentionQuery, setMentionQuery] = useState(null);
   const instructionInputRef = useRef(null);
 
-  const MAX_ANALYSIS_IMAGES = 3;
-  const MAX_ANALYSIS_DOCS = 2;
-  const MAX_IMAGE_BYTES = 3.5 * 1024 * 1024;
-  const MAX_DOC_BYTES = 5 * 1024 * 1024;
-  const MAX_TOTAL_ANALYSIS_BYTES = 10 * 1024 * 1024;
+  // Pure Size-Based Cap Limits: 10MB Images + 10MB Docs/PDFs = 20MB Total
+  const MAX_IMAGE_BUCKET_BYTES = 10 * 1024 * 1024;
+  const MAX_DOC_BUCKET_BYTES = 10 * 1024 * 1024;
+  const MAX_TOTAL_ANALYSIS_BYTES = 20 * 1024 * 1024;
 
   const isAnalysisImageFile = (file) => {
     const name = (file?.name || file?.original_name || '').toLowerCase();
@@ -63,51 +62,65 @@ export default function ModifyModal({
     // Normalize line endings and trim
     const normalized = content.replace(/\r\n/g, '\n');
     
-    // Identify the top-level heading style used in this chapter
-    const hasH2 = /^## /m.test(normalized);
-    const headingRegex = hasH2 ? /^## (.*)/gm : /^### (.*)/gm;
-    
+    // Match both ## and ### headings (as well as #### if numbered like #### 3.1.1) so chapters where
+    // the Chapter Title is ## and sections are ### 3.1, ### 3.2 are always broken down into all their sections!
+    let headingRegex = /^#{1,4}\s+(.+)$/gm;
+    let matches = [...normalized.matchAll(headingRegex)];
+
+    // Fallback: if the chapter used bold numbered headings like **3.1 System Design** without # hashes
+    if (matches.length <= 1) {
+      headingRegex = /^(?:#{1,4}\s+|\*\*)(\d+\.\d+[^*\n]+|\b(?:Introduction|References|Bibliography)[^*\n]*)(?:\*\*)?$/gim;
+      matches = [...normalized.matchAll(headingRegex)];
+    }
+
     const parsedSections = [];
-    let match;
-    let lastIndex = 0;
-    
-    while ((match = headingRegex.exec(normalized)) !== null) {
-      if (parsedSections.length === 0 && match.index > 0) {
-        const introContent = normalized.substring(0, match.index).trim();
+
+    if (matches.length > 0) {
+      // Check if there is intro text before the first heading
+      if (matches[0].index > 0) {
+        const introContent = normalized.substring(0, matches[0].index).trim();
         if (introContent) {
           parsedSections.push({
-            id: "intro",
-            title: "Introduction / Overview",
+            id: 'intro',
+            title: 'Introduction / Overview',
             content: introContent
           });
         }
       }
-      
-      if (parsedSections.length > 0 && parsedSections[parsedSections.length - 1].id !== "intro") {
-        const prevSection = parsedSections[parsedSections.length - 1];
-        prevSection.content = normalized.substring(lastIndex, match.index).trim();
+
+      for (let i = 0; i < matches.length; i++) {
+        const currentMatch = matches[i];
+        const nextMatch = matches[i + 1];
+        const startIdx = currentMatch.index;
+        const endIdx = nextMatch ? nextMatch.index : normalized.length;
+        const sectionChunk = normalized.substring(startIdx, endIdx).trim();
+        const rawTitle = (currentMatch[1] || '').replace(/\*\*/g, '').trim();
+
+        // If this heading is just the top-level "## CHAPTER X: TITLE" line with no body text before the first ### 3.1 subsection, skip it as a separate empty section
+        const bodyWithoutHeader = sectionChunk.replace(/^[^\n]+/, '').trim();
+        const isBareChapterHeader = /^chapter\s+\d+/i.test(rawTitle) && bodyWithoutHeader.length === 0 && matches.length > 1;
+        if (isBareChapterHeader) {
+          continue;
+        }
+
+        if (sectionChunk.length > 0) {
+          parsedSections.push({
+            id: `sec-${parsedSections.length}`,
+            title: rawTitle || `Section ${parsedSections.length + 1}`,
+            content: sectionChunk
+          });
+        }
       }
-      
-      parsedSections.push({
-        id: `sec-${parsedSections.length}`,
-        title: match[1].trim(),
-        content: "" 
-      });
-      
-      lastIndex = match.index;
     }
-    
-    if (parsedSections.length > 0) {
-      const lastSection = parsedSections[parsedSections.length - 1];
-      lastSection.content = normalized.substring(lastIndex).trim();
-    } else {
+
+    if (parsedSections.length === 0) {
       parsedSections.push({
-        id: "whole",
-        title: "Entire Chapter Content",
+        id: 'whole',
+        title: 'Entire Chapter Content',
         content: normalized
       });
     }
-    
+
     return parsedSections.filter(s => s.content.length > 0);
   };
 
@@ -137,28 +150,24 @@ export default function ModifyModal({
     if (!alreadySelected) {
       const isImg = isAnalysisImageFile(file);
       const fileSize = file.size_bytes || 0;
-      const currentImagesCount = selectedContextFiles.filter(isAnalysisImageFile).length;
-      const currentDocsCount = selectedContextFiles.filter(f => !isAnalysisImageFile(f)).length;
-      const currentTotalBytes = selectedContextFiles.reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+      const currentImageBytes = selectedContextFiles
+        .filter(isAnalysisImageFile)
+        .reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+      const currentDocBytes = selectedContextFiles
+        .filter(f => !isAnalysisImageFile(f))
+        .reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+      const currentTotalBytes = currentImageBytes + currentDocBytes;
 
-      if (isImg && fileSize > MAX_IMAGE_BYTES) {
-        setCapWarning(`"${fileName}" exceeds the 3.5 MB limit per analysis image.`);
+      if (isImg && (currentImageBytes + fileSize) > MAX_IMAGE_BUCKET_BYTES) {
+        setCapWarning(`Adding "${fileName}" exceeds the 10.0 MB total image analysis limit.`);
         return;
       }
-      if (!isImg && fileSize > MAX_DOC_BYTES) {
-        setCapWarning(`"${fileName}" exceeds the 5.0 MB limit per analysis document.`);
+      if (!isImg && (currentDocBytes + fileSize) > MAX_DOC_BUCKET_BYTES) {
+        setCapWarning(`Adding "${fileName}" exceeds the 10.0 MB total document/PDF analysis limit.`);
         return;
       }
-      if (isImg && currentImagesCount >= MAX_ANALYSIS_IMAGES) {
-        setCapWarning(`Maximum of ${MAX_ANALYSIS_IMAGES} images can be attached per modification.`);
-        return;
-      }
-      if (!isImg && currentDocsCount >= MAX_ANALYSIS_DOCS) {
-        setCapWarning(`Maximum of ${MAX_ANALYSIS_DOCS} documents can be attached per modification.`);
-        return;
-      }
-      if (currentTotalBytes + fileSize > MAX_TOTAL_ANALYSIS_BYTES) {
-        setCapWarning('Total attached files exceed the 10.0 MB analysis limit.');
+      if ((currentTotalBytes + fileSize) > MAX_TOTAL_ANALYSIS_BYTES) {
+        setCapWarning('Total attached files exceed the 20.0 MB combined analysis limit.');
         return;
       }
       setSelectedContextFiles(prev => [...prev, file]);
@@ -215,7 +224,12 @@ export default function ModifyModal({
 
     setLoading(true);
     if (setIsGlobalLoading) {
-      setGlobalLoadingText(`Surgically modifying selected sections...`);
+      const hasAnalysisFiles = selectedContextFiles && selectedContextFiles.length > 0;
+      setGlobalLoadingText(
+        hasAnalysisFiles
+          ? `Analyzing ${selectedContextFiles.length} attached file(s)/image(s) & modifying chapter... This will take a little extra time.`
+          : `Surgically modifying selected sections...`
+      );
       setIsGlobalLoading(true);
     }
 

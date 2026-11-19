@@ -34,12 +34,10 @@ export default function GenerationModal({
   const [mentionQuery, setMentionQuery] = useState(null); // null or string after '@'
   const promptInputRef = useRef(null);
 
-  // Per-chapter AI Analysis Cap Limits
-  const MAX_ANALYSIS_IMAGES = 3;
-  const MAX_ANALYSIS_DOCS = 2;
-  const MAX_IMAGE_BYTES = 3.5 * 1024 * 1024; // 3.5 MB
-  const MAX_DOC_BYTES = 5 * 1024 * 1024; // 5.0 MB
-  const MAX_TOTAL_ANALYSIS_BYTES = 10 * 1024 * 1024; // 10.0 MB
+  // Per-chapter AI Analysis Pure Size Cap Limits (No file count limit: 10MB Images + 10MB Docs/PDFs = 20MB Total)
+  const MAX_IMAGE_BUCKET_BYTES = 10 * 1024 * 1024; // 10.0 MB total for images
+  const MAX_DOC_BUCKET_BYTES = 10 * 1024 * 1024; // 10.0 MB total for documents/PDFs
+  const MAX_TOTAL_ANALYSIS_BYTES = 20 * 1024 * 1024; // 20.0 MB combined total
 
   const isAnalysisImageFile = (file) => {
     const name = (file?.name || file?.original_name || '').toLowerCase();
@@ -109,6 +107,34 @@ export default function GenerationModal({
     setLocalData({...localData, tableData: { headers: newHeaders, rows: newRows }});
   };
 
+  const validateFileAddition = (file) => {
+    const isImg = isAnalysisImageFile(file);
+    const fileSize = file.size_bytes || 0;
+    const fileName = file.name || file.original_name || 'File';
+
+    const currentImageBytes = localData.selectedContextFiles
+      .filter(isAnalysisImageFile)
+      .reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+    const currentDocBytes = localData.selectedContextFiles
+      .filter(f => !isAnalysisImageFile(f))
+      .reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+    const currentTotalBytes = currentImageBytes + currentDocBytes;
+
+    if (isImg && (currentImageBytes + fileSize) > MAX_IMAGE_BUCKET_BYTES) {
+      setCapWarning(`Adding "${fileName}" exceeds the 10.0 MB total image analysis limit (${((currentImageBytes + fileSize) / (1024 * 1024)).toFixed(2)} MB / 10.0 MB).`);
+      return false;
+    }
+    if (!isImg && (currentDocBytes + fileSize) > MAX_DOC_BUCKET_BYTES) {
+      setCapWarning(`Adding "${fileName}" exceeds the 10.0 MB total document/PDF analysis limit (${((currentDocBytes + fileSize) / (1024 * 1024)).toFixed(2)} MB / 10.0 MB).`);
+      return false;
+    }
+    if ((currentTotalBytes + fileSize) > MAX_TOTAL_ANALYSIS_BYTES) {
+      setCapWarning('Total selected files exceed the 20.0 MB combined analysis limit.');
+      return false;
+    }
+    return true;
+  };
+
   const toggleContextFile = (file) => {
     setCapWarning('');
     const alreadySelected = localData.selectedContextFiles.some(f => f.id === file.id);
@@ -121,38 +147,7 @@ export default function GenerationModal({
       return;
     }
 
-    const isImg = isAnalysisImageFile(file);
-    const fileSize = file.size_bytes || 0;
-
-    // 1. Validate individual file size limit
-    if (isImg && fileSize > MAX_IMAGE_BYTES) {
-      setCapWarning(`"${file.name || file.original_name}" exceeds the 3.5 MB limit per analysis image.`);
-      return;
-    }
-    if (!isImg && fileSize > MAX_DOC_BYTES) {
-      setCapWarning(`"${file.name || file.original_name}" exceeds the 5.0 MB limit per analysis document.`);
-      return;
-    }
-
-    // 2. Validate count limits
-    const currentImagesCount = localData.selectedContextFiles.filter(isAnalysisImageFile).length;
-    const currentDocsCount = localData.selectedContextFiles.filter(f => !isAnalysisImageFile(f)).length;
-
-    if (isImg && currentImagesCount >= MAX_ANALYSIS_IMAGES) {
-      setCapWarning(`Maximum of ${MAX_ANALYSIS_IMAGES} images can be selected for AI analysis per chapter.`);
-      return;
-    }
-    if (!isImg && currentDocsCount >= MAX_ANALYSIS_DOCS) {
-      setCapWarning(`Maximum of ${MAX_ANALYSIS_DOCS} documents can be selected for AI analysis per chapter.`);
-      return;
-    }
-
-    // 3. Validate combined 10 MB payload limit
-    const currentTotalBytes = localData.selectedContextFiles.reduce((acc, f) => acc + (f.size_bytes || 0), 0);
-    if (currentTotalBytes + fileSize > MAX_TOTAL_ANALYSIS_BYTES) {
-      setCapWarning('Total selected files exceed the 10.0 MB per-chapter analysis limit.');
-      return;
-    }
+    if (!validateFileAddition(file)) return;
 
     setLocalData(prev => ({
       ...prev,
@@ -168,32 +163,7 @@ export default function GenerationModal({
     const alreadySelected = localData.selectedContextFiles.some(f => f.id === file.id);
 
     if (!alreadySelected) {
-      const isImg = isAnalysisImageFile(file);
-      const fileSize = file.size_bytes || 0;
-      const currentImagesCount = localData.selectedContextFiles.filter(isAnalysisImageFile).length;
-      const currentDocsCount = localData.selectedContextFiles.filter(f => !isAnalysisImageFile(f)).length;
-      const currentTotalBytes = localData.selectedContextFiles.reduce((acc, f) => acc + (f.size_bytes || 0), 0);
-
-      if (isImg && fileSize > MAX_IMAGE_BYTES) {
-        setCapWarning(`"${fileName}" exceeds the 3.5 MB limit per analysis image.`);
-        return;
-      }
-      if (!isImg && fileSize > MAX_DOC_BYTES) {
-        setCapWarning(`"${fileName}" exceeds the 5.0 MB limit per analysis document.`);
-        return;
-      }
-      if (isImg && currentImagesCount >= MAX_ANALYSIS_IMAGES) {
-        setCapWarning(`Maximum of ${MAX_ANALYSIS_IMAGES} images can be selected for AI analysis per chapter.`);
-        return;
-      }
-      if (!isImg && currentDocsCount >= MAX_ANALYSIS_DOCS) {
-        setCapWarning(`Maximum of ${MAX_ANALYSIS_DOCS} documents can be selected for AI analysis per chapter.`);
-        return;
-      }
-      if (currentTotalBytes + fileSize > MAX_TOTAL_ANALYSIS_BYTES) {
-        setCapWarning('Total selected files exceed the 10.0 MB per-chapter analysis limit.');
-        return;
-      }
+      if (!validateFileAddition(file)) return;
     }
 
     let nextPrompt = localData.userPrompt || '';
@@ -365,17 +335,6 @@ export default function GenerationModal({
                         </div>
                     </div>
                   )}
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Components Used</label>
-                      <textarea placeholder="e.g. Arduino, React, Tensile Tester" value={localData.componentsUsed} onChange={(e) => setLocalData({...localData, componentsUsed: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '80px' }} />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#374151', marginBottom: '6px', textTransform: 'uppercase' }}>Research Context / Journals</label>
-                      <textarea placeholder="e.g. IEEE Journal, Academic Journals" value={localData.researchBooks} onChange={(e) => setLocalData({...localData, researchBooks: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', minHeight: '80px' }} />
-                    </div>
-                  </div>
 
                   <div style={{ position: 'relative' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
@@ -610,15 +569,17 @@ export default function GenerationModal({
                     </div>
                   </div>
 
-                  {/* ✅ AI Analysis Context Picker (Images & Documents from Right Sidebar) - Available for ALL chapters */}
+                  {/* ✅ AI Analysis Context Picker (Images & Documents from Right Sidebar) - Pure Size Limit: 10MB Images + 10MB Docs/PDFs = 20MB Total */}
                   {(() => {
-                    const eligibleAnalysisFiles = dataFiles.filter(f => {
-                      const name = (f.name || f.original_name || '').toLowerCase();
-                      return /\.(pdf|docx|txt|xlsx|csv|png|jpe?g|webp)$/i.test(name) || f.file_type?.startsWith('image/');
-                    });
-                    const selectedImgCount = localData.selectedContextFiles.filter(isAnalysisImageFile).length;
-                    const selectedDocCount = localData.selectedContextFiles.filter(f => !isAnalysisImageFile(f)).length;
-                    const selectedTotalBytes = localData.selectedContextFiles.reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+                    const selectedImageBytes = localData.selectedContextFiles
+                      .filter(isAnalysisImageFile)
+                      .reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+                    const selectedDocBytes = localData.selectedContextFiles
+                      .filter(f => !isAnalysisImageFile(f))
+                      .reduce((acc, f) => acc + (f.size_bytes || 0), 0);
+                    const selectedTotalBytes = selectedImageBytes + selectedDocBytes;
+                    const imgMB = (selectedImageBytes / (1024 * 1024)).toFixed(2);
+                    const docMB = (selectedDocBytes / (1024 * 1024)).toFixed(2);
                     const totalMB = (selectedTotalBytes / (1024 * 1024)).toFixed(2);
                     const pctUsed = Math.min(Math.round((selectedTotalBytes / MAX_TOTAL_ANALYSIS_BYTES) * 100), 100);
 
@@ -633,18 +594,18 @@ export default function GenerationModal({
                               </span>
                             </div>
                             <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0', lineHeight: '1.4' }}>
-                              Select images or documents from the Right Sidebar for the AI to inspect and analyze for this chapter. These will NOT be inserted as figure placeholders.
+                              Select any number of images (up to 10 MB total) and documents/PDFs (up to 10 MB total) for the AI to inspect and analyze for this chapter.
                             </p>
                           </div>
                           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '6px', background: selectedImgCount >= MAX_ANALYSIS_IMAGES ? '#7f1d1d' : '#1f2937', color: '#e5e7eb', border: '1px solid #374151' }}>
-                              Images: {selectedImgCount}/{MAX_ANALYSIS_IMAGES}
+                            <span style={{ fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '6px', background: selectedImageBytes >= MAX_IMAGE_BUCKET_BYTES ? '#7f1d1d' : '#1f2937', color: '#e5e7eb', border: '1px solid #374151' }}>
+                              Images: {imgMB} / 10.0 MB
                             </span>
-                            <span style={{ fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '6px', background: selectedDocCount >= MAX_ANALYSIS_DOCS ? '#7f1d1d' : '#1f2937', color: '#e5e7eb', border: '1px solid #374151' }}>
-                              Docs: {selectedDocCount}/{MAX_ANALYSIS_DOCS}
+                            <span style={{ fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '6px', background: selectedDocBytes >= MAX_DOC_BUCKET_BYTES ? '#7f1d1d' : '#1f2937', color: '#e5e7eb', border: '1px solid #374151' }}>
+                              Docs/PDFs: {docMB} / 10.0 MB
                             </span>
                             <span style={{ fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '6px', background: '#1f2937', color: '#a5b4fc', border: '1px solid #374151' }}>
-                              {totalMB} / 10.0 MB
+                              Total: {totalMB} / 20.0 MB
                             </span>
                           </div>
                         </div>
@@ -666,7 +627,7 @@ export default function GenerationModal({
                               const isSelected = localData.selectedContextFiles.some(sf => sf.id === f.id);
                               const isImg = isAnalysisImageFile(f);
                               const sizeBytes = f.size_bytes || 0;
-                              const isOversized = isImg ? sizeBytes > MAX_IMAGE_BYTES : sizeBytes > MAX_DOC_BYTES;
+                              const isOversized = isImg ? sizeBytes > MAX_IMAGE_BUCKET_BYTES : sizeBytes > MAX_DOC_BUCKET_BYTES;
                               const sizeStr = sizeBytes >= 1024 * 1024
                                 ? `${(sizeBytes / (1024 * 1024)).toFixed(2)} MB`
                                 : `${(sizeBytes / 1024).toFixed(1)} KB`;
@@ -708,7 +669,7 @@ export default function GenerationModal({
                                       </div>
                                       <div style={{ fontSize: '10px', color: isOversized ? '#fca5a5' : '#9ca3af' }}>
                                         {sizeStr} • {isImg ? 'Visual Analysis Image' : 'Analysis Document'}
-                                        {isOversized ? ` (Exceeds ${isImg ? '3.5MB' : '5MB'} cap)` : ''}
+                                        {isOversized ? ' (Exceeds 10MB bucket limit)' : ''}
                                       </div>
                                     </div>
                                   </div>
@@ -743,7 +704,7 @@ export default function GenerationModal({
                           </div>
                         ) : (
                           <div style={{ padding: '16px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px', textAlign: 'center', fontSize: '12px', color: '#9ca3af' }}>
-                            No analysis files or images uploaded yet. Open the <strong>Right Sidebar → Files</strong> tab to upload images (PNG, JPG ≤ 3.5MB) or documents (PDF, DOCX, XLSX, CSV, TXT ≤ 5MB) for AI analysis.
+                            No analysis files or images uploaded yet. Open the <strong>Right Sidebar → Files</strong> tab to upload images (up to 10MB) or documents (PDF, DOCX, XLSX, CSV, TXT up to 10MB) for AI analysis.
                           </div>
                         )}
                       </div>

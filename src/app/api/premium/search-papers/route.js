@@ -32,10 +32,11 @@ function parseYearBounds(yearRange) {
   return { start, end };
 }
 
-async function searchOpenAlex(query, yearBounds, limit = 50) {
+async function searchOpenAlex(query, yearBounds, limit = 15, page = 1) {
   const url = new URL('https://api.openalex.org/works');
   url.searchParams.set('search', query);
   url.searchParams.set('per-page', String(Math.min(limit, 50)));
+  url.searchParams.set('page', String(Math.max(1, page)));
   if (yearBounds) {
     url.searchParams.set('filter', `publication_year:${yearBounds.start}-${yearBounds.end}`);
   }
@@ -91,10 +92,11 @@ async function searchOpenAlex(query, yearBounds, limit = 50) {
     });
 }
 
-async function searchCrossRef(query, yearBounds, limit = 30) {
+async function searchCrossRef(query, yearBounds, limit = 15, page = 1) {
   const url = new URL('https://api.crossref.org/works');
   url.searchParams.set('query', query);
   url.searchParams.set('rows', String(Math.min(limit, 50)));
+  url.searchParams.set('offset', String(Math.max(0, (page - 1) * limit)));
   if (yearBounds) {
     url.searchParams.set('filter', `from-pub-date:${yearBounds.start},until-pub-date:${yearBounds.end}`);
   }
@@ -149,11 +151,12 @@ async function searchCrossRef(query, yearBounds, limit = 30) {
     });
 }
 
-async function searchSemanticScholar(query, yearRange, apiKey, limit = 50) {
+async function searchSemanticScholar(query, yearRange, apiKey, limit = 15, page = 1) {
   const url = new URL('https://api.semanticscholar.org/graph/v1/paper/search');
   url.searchParams.set('query', query);
   if (yearRange) url.searchParams.set('year', yearRange);
   url.searchParams.set('limit', String(limit));
+  url.searchParams.set('offset', String(Math.max(0, (page - 1) * limit)));
   url.searchParams.set('fields', 'title,authors,year,abstract,url,venue,citationCount,openAccessPdf');
 
   const response = await fetch(url.toString(), {
@@ -182,6 +185,8 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query')?.trim();
   const yearRange = searchParams.get('year'); // e.g., "2020-2026"
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+  const limit = Math.min(30, Math.max(5, parseInt(searchParams.get('limit') || '15', 10) || 15));
 
   if (!query) {
     return NextResponse.json({ error: 'Query is required' }, { status: 400 });
@@ -196,7 +201,7 @@ export async function GET(request) {
     // 1. If a dedicated Semantic Scholar API key is configured, try it first
     if (apiKey) {
       try {
-        papers = await searchSemanticScholar(query, yearRange, apiKey, 50);
+        papers = await searchSemanticScholar(query, yearRange, apiKey, limit, page);
       } catch (ssErr) {
         console.warn('Semantic Scholar with key failed, falling back to OpenAlex:', ssErr.message);
       }
@@ -205,10 +210,10 @@ export async function GET(request) {
     // 2. Primary reliable search: OpenAlex (250M+ works, no key required, generous rate limits)
     if (!papers || papers.length === 0) {
       try {
-        papers = await searchOpenAlex(query, yearBounds, 50);
+        papers = await searchOpenAlex(query, yearBounds, limit, page);
         // If strict year bounds returned nothing, retry without year filter
         if (papers.length === 0 && yearBounds) {
-          papers = await searchOpenAlex(query, null, 50);
+          papers = await searchOpenAlex(query, null, limit, page);
         }
       } catch (oaErr) {
         console.warn('OpenAlex search failed, falling back to CrossRef:', oaErr.message);
@@ -218,9 +223,9 @@ export async function GET(request) {
     // 3. Secondary fallback: CrossRef
     if (!papers || papers.length === 0) {
       try {
-        papers = await searchCrossRef(query, yearBounds, 30);
+        papers = await searchCrossRef(query, yearBounds, limit, page);
         if (papers.length === 0 && yearBounds) {
-          papers = await searchCrossRef(query, null, 30);
+          papers = await searchCrossRef(query, null, limit, page);
         }
       } catch (crErr) {
         console.warn('CrossRef search failed:', crErr.message);
@@ -230,15 +235,21 @@ export async function GET(request) {
     // 4. Final fallback: Unauthenticated Semantic Scholar
     if (!papers || papers.length === 0) {
       try {
-        papers = await searchSemanticScholar(query, yearRange, null, 30);
+        papers = await searchSemanticScholar(query, yearRange, null, limit, page);
       } catch (ssFallbackErr) {
         console.warn('Semantic Scholar fallback failed:', ssFallbackErr.message);
       }
     }
 
-    return NextResponse.json({ data: papers || [] });
+    const list = papers || [];
+    return NextResponse.json({
+      data: list,
+      page,
+      limit,
+      hasMore: list.length >= limit
+    });
   } catch (error) {
     console.error('Paper Search Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch research papers', data: [] }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch research papers', data: [], page, hasMore: false }, { status: 500 });
   }
 }
